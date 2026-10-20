@@ -47,13 +47,16 @@ async function leSessao(env, req) {
 const cookie = (valor, idade) => `${COOKIE}=${valor}; Path=/; Max-Age=${idade}; HttpOnly; Secure; SameSite=Lax`;
 const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-porteiro': '1', ...extra } });
 
-// PROJETOS: { "/caminho/": "https://origem/"  ou  { "origem": "https://...", "assinar": true } }
+// PROJETOS: { "/caminho/": "https://origem/"  ou  { "origem": "https://...", "assinar": true, "servico": "...", "nuvem": true }
+//            ou { "para": "/outro/caminho/" }  (só redireciona) }
+// "nuvem": o projeto fala com o servidor de sons da equipe: o porteiro entrega o sons-url.json apontando para /nuvem/
+//          (que leva o passe) e deixa a "senha da equipe" do navegador preenchida com um aviso — ninguém digita senha.
 function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch { return {}; } }
 function achaProjeto(env, caminho) {
   // o caminho mais comprido ganha (ex.: /shorts/modelador/ antes de /shorts/)
   for (const [pref, v] of Object.entries(projetos(env)).sort((a, b) => b[0].length - a[0].length)) {
     const base = pref.replace(/\/+$/, ''), o = typeof v === 'string' ? { origem: v } : v;
-    const info = { pref, origem: o.origem, assinar: !!o.assinar, servico: o.servico || null }; // servico: nome da ligação direta (worker da mesma conta)
+    const info = { pref, origem: o.origem, assinar: !!o.assinar, servico: o.servico || null, nuvem: !!o.nuvem, para: o.para || null }; // servico: nome da ligação direta (worker da mesma conta)
     if (caminho === base) return { ...info, redirecionar: true };
     if (caminho.startsWith(base + '/')) return { ...info, resto: caminho.slice(base.length + 1) };
   }
@@ -78,7 +81,9 @@ async function passe(env, email, host) {
 }
 
 // busca o arquivo do projeto na origem (ex.: GitHub Pages) e entrega como se fosse deste endereço
+const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do Google do menu (o porteiro leva o passe) */try{if(!localStorage.getItem('estudio.senhaSons'))localStorage.setItem('estudio.senhaSons','login-google')}catch(e){}</script>`;
 async function repassa(req, url, p, env, s) {
+  if (p.nuvem && /(^|\/)dados\/sons-url\.json$/.test(p.resto)) return json({ url: url.origin + '/nuvem' }); // servidor de sons pelo porteiro
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
   const h = new Headers(req.headers); h.delete('cookie'); h.delete('host'); h.delete('x-porteiro-passe');
   if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
@@ -92,6 +97,12 @@ async function repassa(req, url, p, env, s) {
   }
   const out = new Headers(r.headers);
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
+  if (p.nuvem && r.ok && (out.get('content-type') || '').includes('text/html')) {
+    let h = await r.text(); const m = h.match(/<head[^>]*>/i);
+    h = m ? h.slice(0, m.index + m[0].length) + NUVEM_JS + h.slice(m.index + m[0].length) : NUVEM_JS + h;
+    out.delete('content-length'); out.delete('content-encoding'); out.delete('etag');
+    return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
+  }
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: out });
 }
 
@@ -184,7 +195,8 @@ export default {
     if (caminho === '/diagnostico') {
       const out = {};
       for (const [pref, v] of Object.entries(projetos(env))) {
-        const o = typeof v === 'string' ? { origem: v } : v, raiz = new URL(o.origem.replace(/\/?$/, '/'));
+        const o = typeof v === 'string' ? { origem: v } : v; if (o.para) { out[pref] = { para: o.para }; continue; }
+        const raiz = new URL(o.origem.replace(/\/?$/, '/'));
         try {
           const teste = o.assinar ? new URL('/porteiro-teste', raiz) : raiz, h = new Headers();
           if (o.assinar) h.set('x-porteiro-passe', await passe(env, 'diagnostico', teste.host) || '');
@@ -206,6 +218,7 @@ export default {
     // projetos: só com cookie válido
     const p = achaProjeto(env, caminho);
     if (p) {
+      if (p.para) return Response.redirect(new URL(p.para.replace(/\/?$/, '/') + (p.resto || '') + url.search, url).href, 302);
       if (p.redirecionar) return Response.redirect(new URL(p.pref.replace(/\/?$/, '/') + url.search, url).href, 302);
       const s = await leSessao(env, req);
       if (!s) {

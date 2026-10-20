@@ -31,13 +31,16 @@ service = "editor-problems"
 [vars]
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.
+# "nuvem": true = o projeto usa o servidor de sons; ele vai por /nuvem/ (com o passe), sem senha da equipe.
+# "para": só redireciona (o Modelador usa caminhos do estúdio, então mora em /shorts/modelador/).
 # "servico": nome da ligação direta, quando o projeto é um worker desta mesma conta (precisa do [[services]] abaixo).
 # "assinar": true = o projeto tem portão próprio e aceita o passe assinado do porteiro (no lugar da senha).
 PROJETOS = '''{
   "/animador/":  "https://problemsbloxcreate-lab.github.io/animador/",
-  "/shorts/":    { "origem": "https://estudio-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "SHORTS" },
-  "/modelador/": { "origem": "https://estudio-problems.problemsraiz.workers.dev/modelador/", "assinar": true, "servico": "SHORTS" },
-  "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR" }
+  "/shorts/":    { "origem": "https://estudio-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "SHORTS", "nuvem": true },
+  "/modelador/": { "para": "/shorts/modelador/" },
+  "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR", "nuvem": true },
+  "/nuvem/":     { "origem": "https://sons-problems.problemsbloxcreate.workers.dev/", "assinar": true }
 }'''
 
 # contas das pessoas (nome, foto, fundo do menu). O id é preenchido pela Action (cria o KV na primeira vez).
