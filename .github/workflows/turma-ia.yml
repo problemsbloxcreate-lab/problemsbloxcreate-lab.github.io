@@ -1,0 +1,76 @@
+name: Publicar o servidor turma-ia (Cloudflare)
+
+# Publica servidor/turma-ia/worker.js no Worker "turma-ia" (conta "problemsraiz"): login do Google (/quem), IA, nuvem da
+# equipe, links do menu e a lista de quem pode entrar (ADM › Acesso).
+# NÃO mexe no que já está na Cloudflare: antes de publicar, lê as configurações atuais do worker (ligação com o KV
+# EQUIPE, data de compatibilidade) e publica com keep_vars, então as variáveis (EMAILS_PERMITIDOS, ADMINS, ORIGENS…)
+# e as chaves secretas (ANTHROPIC_API_KEY…) continuam como estão. Nenhum e-mail ou chave passa por aqui.
+# Precisa dos segredos do repositório CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID (os mesmos do porteiro).
+
+on:
+  push:
+    branches: [main]
+    paths: ["servidor/turma-ia/**", ".github/workflows/turma-ia.yml"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turma-ia
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WR: npx --yes wrangler@4.20.0
+    defaults:
+      run:
+        working-directory: servidor/turma-ia
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Conferir o código
+        run: node -e "import('./worker.js').then(m=>{if(typeof m.default?.fetch!=='function')throw new Error('sem fetch');console.log('worker ok')})"
+      - name: Ler as configurações atuais do turma-ia na Cloudflare
+        run: |
+          set -euo pipefail
+          [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Faltam os segredos CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID."; exit 1; }
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/turma-ia/settings" > settings.json
+          node - <<'EOF'
+          const fs = require('fs'), j = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+          if (!j.success) { console.log('::error::Não consegui ler o worker turma-ia: ' + JSON.stringify(j.errors || j).slice(0, 300)); process.exit(1); }
+          const r = j.result || {}, b = r.bindings || [];
+          // só os NOMES e tipos aparecem no log (nunca os valores)
+          console.log('ligações atuais:', b.map(x => x.name + ':' + x.type).join(', '));
+          const conhecidos = ['plain_text', 'secret_text', 'kv_namespace', 'json'];
+          const outros = b.filter(x => !conhecidos.includes(x.type));
+          if (outros.length) { console.log('::error::O turma-ia tem ligações que esta Action não sabe manter (' + outros.map(x => x.name + ':' + x.type).join(', ') + '). Nada foi publicado.'); process.exit(1); }
+          if (!b.some(x => x.name === 'EMAILS_PERMITIDOS')) { console.log('::error::O turma-ia está sem EMAILS_PERMITIDOS na Cloudflare. Nada foi publicado (para ninguém ficar trancado para fora).'); process.exit(1); }
+          if (!b.some(x => x.name === 'FIREBASE_PROJECT_ID')) { console.log('::error::O turma-ia está sem FIREBASE_PROJECT_ID. Nada foi publicado.'); process.exit(1); }
+          const kv = b.filter(x => x.type === 'kv_namespace');
+          let t = `name = "turma-ia"\nmain = "worker.js"\ncompatibility_date = "${r.compatibility_date || '2024-09-23'}"\n`;
+          if ((r.compatibility_flags || []).length) t += `compatibility_flags = ${JSON.stringify(r.compatibility_flags)}\n`;
+          t += `workers_dev = true\nkeep_vars = true\n`;
+          for (const k of kv) t += `\n[[kv_namespaces]]\nbinding = "${k.name}"\nid = "${k.namespace_id}"\n`;
+          fs.writeFileSync('wrangler.toml', t); console.log(t.replace(/id = "[0-9a-f]+"/g, 'id = "…"'));
+          EOF
+      - name: Testar a publicação (sem publicar)
+        run: $WR deploy --dry-run --outdir /tmp/turma-dry 2>&1 | tail -20
+      - name: Publicar
+        run: $WR deploy 2>&1 | tail -15
+      - name: Conferir depois de publicar
+        run: |
+          sleep 5
+          s=$(curl -sS https://turma-ia.problemsraiz.workers.dev/ || true)
+          echo "::notice::Situação do servidor: $(echo "$s" | head -c 300)"
+          echo "$s" | grep -q '"login":"ligado' || { echo "::error::O servidor não respondeu com o login ligado."; exit 1; }
+          c=$(curl -s -o /dev/null -w '%{http_code}' -H 'origin: https://estudio.problemsraiz.workers.dev' https://turma-ia.problemsraiz.workers.dev/acesso)
+          echo "::notice::/acesso sem login respondeu $c (o certo é 401)"
+          [ "$c" = "401" ] || { echo "::error::/acesso sem login deveria responder 401."; exit 1; }

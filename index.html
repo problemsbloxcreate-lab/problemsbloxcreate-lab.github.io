@@ -111,6 +111,16 @@ svg{display:block;flex:none}
 .adm{max-width:1100px;width:100%;margin:0 auto;padding:4px 24px 40px;flex:1}
 .adm h2{font-size:12.5px;text-transform:uppercase;letter-spacing:1px;color:var(--tx2);font-weight:700;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
 .adm h2 .sp{flex:1}
+.acesso-add{display:flex;gap:8px;flex-wrap:wrap}.acesso-add input{flex:1;min-width:220px;height:36px;border-radius:9px;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx);padding:0 12px;font:inherit}
+.acesso-lista{display:grid;gap:8px;margin-top:12px}
+.ac-l{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--bg2,rgba(255,255,255,.02))}
+.ac-av{width:42px;height:42px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0)}.ac-av img{width:100%;height:100%;object-fit:cover}
+.ac-n{flex:1;min-width:0}.ac-n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ac-n small{display:block;color:var(--tx2);font-size:12px}
+.ac-orig{display:inline-flex;align-items:center;gap:6px;color:var(--tx2);font-size:12px;margin-top:2px}.ac-orig .mini{width:18px;height:18px;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:var(--bg3);font-size:10px}.ac-orig .mini img{width:100%;height:100%;object-fit:cover}
+.ac-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}.ac-tag{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--bg3);color:var(--tx2)}
+.ac-tag.ehadm{background:rgba(61,139,255,.18);color:#8cbcff}.ac-tag.voce{background:rgba(25,211,240,.16);color:#7fe8f7}.ac-tag.fixo{background:rgba(255,207,74,.14);color:#ffd970}
+.ac-em{font-variant-numeric:tabular-nums;color:var(--tx2);font-size:12.5px;white-space:nowrap}
+@media (max-width:640px){.ac-l{flex-wrap:wrap}.ac-em{width:100%;order:3}}
 .box{background:rgba(48,48,48,.92);border:1px solid var(--bd);border-radius:14px;padding:16px;backdrop-filter:blur(6px)}
 .lrow{display:grid;grid-template-columns:210px 1fr;gap:18px;padding:16px;background:rgba(48,48,48,.92);border:1px solid var(--bd);border-radius:14px;margin-bottom:12px;backdrop-filter:blur(6px)}
 .lrow .card{animation:none;cursor:default;touch-action:none}
@@ -221,6 +231,14 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
       <div class="bgitems" id="bg-items"></div>
       <div class="acts" style="margin-top:12px"><button class="btn sm" data-addbg="arquivo">Enviar imagem, GIF ou vídeo</button><button class="btn sm" data-addbg="link">Colar link</button><span class="hint">Arquivos de até 25 MB. Vídeo maior: use um link https.</span></div>
     </div>
+    <section id="acesso-sec" hidden>
+      <h2>Quem pode entrar<span class="sp"></span><span class="hint" id="acesso-n"></span></h2>
+      <div class="box">
+        <form class="acesso-add" id="acesso-add"><input type="email" required placeholder="E-mail do Google da pessoa (ex.: nome@gmail.com)" aria-label="E-mail para liberar" autocomplete="off"><button class="btn sm primary" type="submit">Liberar acesso</button></form>
+        <div class="hint" id="acesso-st" style="margin:8px 0 2px">Vale na hora para quem entrar (até 1 minuto). Quem for tirado perde o acesso em até 1 minuto, mesmo se estiver com o site aberto. Os e-mails da lista fixa (EMAILS_PERMITIDOS) só mudam na Cloudflare.</div>
+        <div class="acesso-lista" id="acesso-lista"></div>
+      </div>
+    </section>
   </div>
   <div class="savebar"><button class="btn primary" id="btn-save">Salvar</button><button class="btn" id="btn-undo">Desfazer mudanças</button><span class="st" id="save-st"></span></div>
 </section>
@@ -861,7 +879,39 @@ function renderMensagens() {
   }));
   $('#msg-cfg [data-a=padrao]').onclick = () => { EDIT.mensagens = JSON.parse(JSON.stringify(MSG_PADRAO)); mudou(); renderMensagens(); };
 }
+// ADM › Quem pode entrar: lista do servidor (turma-ia) com nome/foto de cada conta, e-mail censurado; só para os ADMINS
+async function renderAcesso() {
+  const sec = $('#acesso-sec'), lista = $('#acesso-lista'), stA = (t, err) => { const e = $('#acesso-st'); e.textContent = t; e.style.color = err ? 'var(--err,#ff8a9a)' : ''; };
+  const chama = async (opt = {}) => { const r = await fetch('/acesso', { credentials: 'same-origin', cache: 'no-store', ...opt, headers: { authorization: 'Bearer ' + await token(), 'content-type': 'application/json', ...(opt.headers || {}) } });
+    const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.error?.message || 'Não deu certo.'); e.status = r.status; throw e; } return j; };
+  const av = (f, n, cls = 'ac-av') => `<span class="${cls}">${f ? `<img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${esc((n || '?')[0].toUpperCase())}'))">` : esc((n || '?')[0].toUpperCase())}</span>`;
+  const quando = t => t ? new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  const pinta = itens => {
+    $('#acesso-n').textContent = itens.length + (itens.length === 1 ? ' conta' : ' contas');
+    lista.innerHTML = itens.map(it => `<div class="ac-l">${av(it.foto, it.nome || it.mascara)}
+      <div class="ac-n"><b>${esc(it.nome || 'Ainda não entrou')}</b><small>${esc(it.mascara)}</small>
+        ${(it.nomeProprio || it.fotoPropria) && it.nomeOriginal ? `<span class="ac-orig" title="Como está no Google">original: ${av(it.fotoOriginal, it.nomeOriginal, 'mini')}${esc(it.nomeOriginal)}</span>` : ''}
+        <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm">ADM</span>' : ''}${it.fixo ? '<span class="ac-tag fixo" title="Lista fixa EMAILS_PERMITIDOS: só muda na Cloudflare">Fixo</span>' : `<span class="ac-tag" style="text-transform:none;letter-spacing:0" title="Liberado pela tela ADM">${it.por ? 'por ' + esc(it.por) : 'adicionado'}${it.em ? ' · ' + esc(quando(it.em).split(',')[0]) : ''}</span>`}</div></div>
+      <span class="ac-em">${it.visto ? 'último login ' + esc(quando(it.visto)) : 'ainda não entrou'}</span>
+      ${it.fixo || it.voce ? '' : `<button class="btn sm" data-tira="${esc(it.id)}" title="Tirar o acesso">Remover</button>`}</div>`).join('') || '<div class="hint">Ninguém na lista.</div>';
+    $$('[data-tira]', lista).forEach(b => b.onclick = async () => {
+      const it = itens.find(x => x.id === b.dataset.tira);
+      if (!confirm(`Tirar o acesso de ${it.nome || it.mascara} (${it.mascara})? A pessoa sai de todos os projetos em até 1 minuto.`)) return;
+      b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'del', id: it.id }) }); stA('Acesso removido.'); carrega(); } catch (e) { stA(e.message, true); b.disabled = false; }
+    });
+  };
+  const carrega = async () => { try { const j = await chama(); sec.hidden = false; pinta(j.itens || []); }
+    catch (e) { if (e.status === 403 && /ADMINS do servidor/.test(e.message)) { sec.hidden = false; lista.innerHTML = ''; $('#acesso-add').hidden = true; stA(e.message); } else sec.hidden = true; } };
+  $('#acesso-add').onsubmit = async ev => {
+    ev.preventDefault(); const inp = $('#acesso-add input'), email = inp.value.trim(); if (!email) return;
+    const bt = $('#acesso-add button'); bt.disabled = true;
+    try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'add', email }) }); inp.value = ''; stA('Acesso liberado! A pessoa já pode entrar pelo menu com essa conta Google.'); carrega(); }
+    catch (e) { stA(e.message, true); } finally { bt.disabled = false; }
+  };
+  carrega();
+}
 function showAdm() {
+  renderAcesso();
   $('#adm').hidden = false; $('#badge-adm').hidden = false;
   const ver = $('#btn-ver'); ver.hidden = false; ver.href = BASE;
   document.title = 'ADM — Estúdio Problems';

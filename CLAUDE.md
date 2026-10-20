@@ -26,3 +26,11 @@
 - Tela inicial com atalhos e projetos/abertos recentemente.
 - O que o projeto guarda no navegador aparece no círculo de espaço: banco em `BANCOS` (estudio-conta.js) + `EstudioConta.espaco.registrar(...)` com "Baixar" o arquivo do projeto (.toon, .edicao.json…). Quem passar a guardar algo novo, registra junto.
 - Projeto novo: comece do `modelo-projeto/` do repositório `problemsbloxcreate-lab.github.io` (login do Google/Firebase pelo menu, porteiro, cabeçalho e ícones prontos).
+
+## Servidor turma-ia e quem pode entrar (decisão do dono, 20/10/2026)
+- O código do turma-ia fica em `servidor/turma-ia/worker.js` e é publicado pela Action `turma-ia.yml`, que lê as ligações atuais
+  da Cloudflare e publica com `keep_vars` (EMAILS_PERMITIDOS, ADMINS, ORIGENS e as chaves secretas continuam lá, nunca aqui).
+- Quem entra = `EMAILS_PERMITIDOS` (base fixa, só na Cloudflare) + os liberados pela tela **ADM › Quem pode entrar**
+  (KV EQUIPE `acesso/extras`). Só os e-mails da variável `ADMINS` do turma-ia podem ver/adicionar/remover; sem ADMINS, ninguém.
+- O porteiro (`/acesso`) mostra os e-mails CENSURADOS, com nome/foto personalizados e os originais do Google; quem é tirado
+  perde a sessão em até ~1 min (marca `r:<email>` no KV PERFIS). Nunca devolva e-mails inteiros para o navegador.

@@ -34,6 +34,13 @@ async function criaSessao(env, email) {
   const ass = b64u(await crypto.subtle.sign('HMAC', await chave(env), enc.encode(dados)));
   return dados + '.' + ass;
 }
+// guarda na memória por 60 s (o porteiro lê isto a cada arquivo pedido; assim não gasta leituras do KV à toa)
+const TIRADOS = new Map();
+async function foiTirado(env, email) {
+  const c = TIRADOS.get(email); if (c && Date.now() - c.t < 60e3) return c.v;
+  const v = await env.PERFIS?.get('r:' + email, { cacheTtl: 60 }).catch(() => null) || null;
+  TIRADOS.set(email, { v, t: Date.now() }); if (TIRADOS.size > 500) TIRADOS.clear(); return v;
+}
 async function leSessao(env, req) {
   const m = (req.headers.get('cookie') || '').match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([\\w-]+\\.[\\w-]+)'));
   if (!m || !env.SESSAO_SEGREDO) return null;
@@ -41,7 +48,11 @@ async function leSessao(env, req) {
   try {
     if (!(await crypto.subtle.verify('HMAC', await chave(env), deB64u(ass), enc.encode(dados)))) return null;
     const s = JSON.parse(new TextDecoder().decode(deB64u(dados)));
-    return s.x > Date.now() / 1000 && s.e ? s : null;
+    if (!(s.x > Date.now() / 1000 && s.e)) return null;
+    // tirado pela tela ADM › Acesso depois de entrar: a sessão deixa de valer
+    const tirado = await foiTirado(env, String(s.e).toLowerCase());
+    if (tirado && +tirado > (s.x - DURACAO) * 1000) return null;
+    return s;
   } catch { return null; }
 }
 const cookie = (valor, idade) => `${COOKIE}=${valor}; Path=/; Max-Age=${idade}; HttpOnly; Secure; SameSite=Lax`;
@@ -114,12 +125,67 @@ async function lePerfil(env, email) { try { return (await env.PERFIS?.get(chaveP
 async function guardaGoogle(env, email, nome, foto) {
   if (!env.PERFIS) return;
   const p = await lePerfil(env, email), g = { nome: String(nome || '').slice(0, 80), foto: /^https:\/\//.test(foto || '') ? String(foto).slice(0, 500) : '' };
-  if (p.google?.nome !== g.nome || p.google?.foto !== g.foto) await env.PERFIS.put(chavePerfil(email), JSON.stringify({ ...p, google: g }));
+  await env.PERFIS.put(chavePerfil(email), JSON.stringify({ ...p, google: g, visto: Date.now() })); // visto = último login (aparece na tela Acesso)
 }
 function contaPublica(email, p) {
   const nomeG = p.google?.nome || String(email).split('@')[0], fotoG = p.google?.foto || null;
   return { email, nome: p.nome || nomeG, foto: p.fotoV ? '/conta/foto?v=' + p.fotoV : fotoG, nomeGoogle: nomeG, fotoGoogle: fotoG,
     nomeProprio: !!p.nome, fotoPropria: !!p.fotoV, fundo: p.fundo === 'cor' ? 'cor' : 'padrao', cor: /^#[0-9a-f]{6}$/i.test(p.cor || '') ? p.cor : '#262626' };
+}
+/* ---------- ADM › Acesso: quem pode entrar (lista do servidor turma-ia) com nome e foto da conta de cada um ----------
+   Quem pode: só os e-mails da variável ADMINS do turma-ia (quem decide é ele; o porteiro só repassa o login do Google).
+   Os e-mails saem CENSURADOS para o navegador (ex.: pr•••••@gmail.com); para tirar alguém, o navegador manda só o "id". */
+const mascara = e => { const [u, d = ''] = String(e).split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; };
+async function idDe(email) { return b64u(await crypto.subtle.digest('SHA-256', enc.encode('acesso:' + email))).slice(0, 16); }
+async function acesso(req, env, url) {
+  const s = await leSessao(env, req);
+  if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS.' } }, 503);
+  // foto de outra pessoa: só para quem abriu a lista como ADM há pouco (marca guardada quando o servidor confirmou)
+  if (url.pathname === '/acesso/foto') {
+    const ok = +(await env.PERFIS.get('adm:' + s.e.toLowerCase()).catch(() => 0)) > Date.now();
+    if (!ok) return new Response('sem permissão', { status: 403, headers: { 'cache-control': 'no-store' } });
+    const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + s.e.toLowerCase()).catch(() => '{}') || '{}'), em = mapa[url.searchParams.get('id') || ''];
+    if (!em) return new Response('não achei', { status: 404, headers: { 'cache-control': 'no-store' } });
+    const p = await lePerfil(env, em); if (!p.fotoV) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
+    let r = await env.PERFIS.getWithMetadata(chaveFoto(em) + ':' + p.fotoV, { type: 'stream' }); if (!r.value) r = await env.PERFIS.getWithMetadata(chaveFoto(em), { type: 'stream' });
+    if (!r.value) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
+    return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': 'private, max-age=3600', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+  }
+  if (req.method === 'POST' && (req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+  const auth = req.headers.get('authorization') || '';
+  if (!/^Bearer \S+/.test(auth)) return json({ error: { message: 'Faltou o login do Google.' } }, 401);
+  const turma = (metodo, corpo) => { const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/acesso', { method: metodo, headers: { authorization: auth, origin: url.origin, 'content-type': 'application/json' }, body: corpo ? JSON.stringify(corpo) : undefined });
+    return env.TURMA ? env.TURMA.fetch(pedido) : fetch(pedido); };
+  let r, j;
+  try {
+    if (req.method === 'POST') {
+      let b = {}; try { b = await req.json(); } catch { }
+      let email = String(b.email || '').trim().toLowerCase();
+      if (b.acao === 'del') { // o navegador só conhece o id: o porteiro acha o e-mail na lista atual
+        const r0 = await turma('GET'); const j0 = await r0.json().catch(() => ({})); if (!r0.ok) return json({ error: j0.error || { message: 'Sem permissão.' } }, r0.status);
+        for (const e of [...(j0.base || []), ...(j0.extras || []).map(x => x.email)]) if (await idDe(e) === b.id) email = e;
+        if (!email) return json({ error: { message: 'Não achei esse e-mail na lista.' } }, 404);
+      }
+      r = await turma('POST', { acao: b.acao, email }); j = await r.json().catch(() => ({}));
+      if (r.ok && b.acao === 'del') { await env.PERFIS.put('r:' + email, String(Date.now()), { expirationTtl: DURACAO + 3600 }); TIRADOS.delete(email); } // a sessão dele cai
+      if (r.ok && b.acao === 'add') { await env.PERFIS.delete('r:' + email); TIRADOS.delete(email); }
+    } else { r = await turma('GET'); j = await r.json().catch(() => ({})); }
+  } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
+  // monta a lista com nome/foto da conta (personalizado e original do Google)
+  const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], mapa = {}, itens = [];
+  for (const [email, fixo, info] of [...base.map(e => [e, true, null]), ...extras.map(x => [x.email, false, x])]) {
+    const id = await idDe(email), p = await lePerfil(env, email); mapa[id] = email;
+    const nomeG = p.google?.nome || '', fotoG = p.google?.foto || '';
+    itens.push({ id, mascara: mascara(email), voce: email === s.e.toLowerCase(), fixo, adm: admins.has(email),
+      nome: p.nome || nomeG || '', nomeOriginal: nomeG, nomeProprio: !!p.nome, foto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : fotoG, fotoOriginal: fotoG, fotoPropria: !!p.fotoV,
+      visto: p.visto || null, por: info?.por ? mascara(info.por) : null, em: info?.em || null });
+  }
+  const eu = s.e.toLowerCase();
+  await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
+  await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
+  return json({ itens });
 }
 async function conta(req, env, url, s) {
   if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS. Rode a Action de publicação de novo.' } }, 503);
@@ -216,6 +282,7 @@ export default {
       }
       return json(out);
     }
+    if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url);
     if (caminho === '/conta' || caminho === '/conta/foto') {
       const s = await leSessao(env, req);
       if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
