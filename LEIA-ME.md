@@ -4,7 +4,7 @@ O menu é a porta de entrada: é aqui que se entra com o Google. Depois do login
 
 ## Arquivos e como subir
 
-São só dois arquivos de página: `index.html` (o menu) e `404.html` (cópia idêntica). Suba os dois na raiz do site. O `404.html` faz o menu abrir em qualquer endereço que não exista, inclusive `/adm`. Funciona assim no GitHub Pages e no Cloudflare Pages. As configurações (servidor e Firebase) ficam dentro do próprio `index.html`. Se mudar algo lá, copie o arquivo de novo para `404.html`.
+Suba na raiz do site: `index.html` (o menu), `404.html` (cópia idêntica) e `estudio-login.js` (o porteiro dos projetos). O `404.html` faz o menu abrir em qualquer endereço que não exista, inclusive `/adm`. Funciona assim no GitHub Pages e no Cloudflare Pages. As configurações (servidor e Firebase) ficam dentro do próprio `index.html`. Se mudar algo lá, copie o arquivo de novo para `404.html`.
 
 Se você tinha subido a versão anterior, apague a pasta `adm/` e o `config.js` do site. Era o `adm/index.html` que causava o loop.
 
@@ -12,7 +12,13 @@ Se você tinha subido a versão anterior, apague a pasta `adm/` e o `config.js` 
 
 Os projetos ficam no mesmo domínio do menu, cada um no seu caminho (ex.: `/animar/`, `/modelador/`). Quem abre um projeto sem ter entrado é mandado para o menu, entra com o Google e, se o servidor liberar a conta, volta sozinho para o projeto que estava tentando abrir. O menu só devolve para endereços do mesmo site. Se um projeto mandar a pessoa de volta para o menu várias vezes seguidas, o menu para de redirecionar e mostra os botões, para não ficar em loop.
 
-Para um projeto novo fazer isso, ele precisa, ao abrir sem login, ir para `/?volta=` + o endereço atual. O Animador já faz isso (veja `js/auth.js` e `menuUrl` em `js/config.js`).
+Para qualquer projeto fazer isso, basta colocar esta linha no `<head>` dele, antes dos outros scripts:
+
+```html
+<script src="/estudio-login.js"></script>
+```
+
+O arquivo `estudio-login.js` fica na raiz do site, junto do menu, e serve para todos os projetos. Ele esconde a página, manda para o menu quem não entrou (com o `?volta=` automático) e só mostra a página depois que o servidor libera o e-mail. Dentro do projeto, `await EstudioLogin.pronto` dá o e-mail, `await EstudioLogin.token()` dá o token para chamar o servidor e `EstudioLogin.sair()` sai da conta. O Animador tem o seu próprio `js/auth.js`, que já faz a mesma coisa, então não precisa dessa linha.
 
 ## Tela ADM
 

@@ -38,6 +38,7 @@ svg{display:block;flex:none}
 
 /* ---------- topo ---------- */
 .top{display:flex;align-items:center;gap:10px;padding:16px 24px;max-width:1100px;width:100%;margin:0 auto}
+#top{z-index:6} /* o balão da conta fica por cima do menu e da ADM */
 .brand{display:flex;align-items:center;gap:10px;font-size:15px;white-space:nowrap}
 .brand b{font-weight:800}
 .badge{font-size:11px;font-weight:800;letter-spacing:.8px;padding:3px 8px;border-radius:20px;background:var(--ac);color:#fff}
@@ -264,7 +265,7 @@ async function init() {
 const token = () => fb.currentUser.getIdToken();
 async function api(path, opt = {}) {
   let r; try { r = await fetch(SRV + path, { cache: 'no-store', ...opt, headers: { authorization: 'Bearer ' + await token(), ...(opt.headers || {}) } }); }
-  catch { throw new Error('Não consegui falar com o servidor da turma. Verifique a internet e tente de novo.'); }
+  catch { throw new Error(location.protocol === 'file:' ? 'Abra o menu pelo endereço do site (https://...), não pelo arquivo no computador.' : `Não consegui falar com o servidor da turma. Se a internet estiver ok, falta liberar este site na Cloudflare: coloque ${location.origin} na variável ORIGENS do worker turma-ia.`); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(j.error?.message || 'O servidor recusou o pedido.'); e.status = r.status; e.denied = r.status === 401 || r.status === 403; e.type = j.error?.type; throw e; }
   return j;
