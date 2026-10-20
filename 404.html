@@ -992,7 +992,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
 /* ======================= início ======================= */
 (async () => {
   const btn = $('#btn-in'), other = $('#btn-other');
-  if (MODO_ADM) $('#login-txt').textContent = 'Área ADM. Entre com a conta Google liberada para mudar o menu.';
+  // /adm parece o menu comum até o servidor confirmar que a conta é ADM (quem não é volta para o menu, sem aviso)
   other.onclick = signOut;
   const pass = async () => {
     btn.disabled = true; msg('Conferindo seu acesso…', false, true);
@@ -1003,7 +1003,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
       DADOS = await carregar();
       if (MODO_ADM) {
         if (!DADOS.servidor) throw Object.assign(new Error(DADOS.erro?.type === 'sem_kv' || DADOS.erro?.status === 404 ? 'O servidor ainda não tem a parte do menu. Atualize o worker na Cloudflare (veja o LEIA-ME).' : (DADOS.erro?.message || 'Não consegui ler o menu no servidor.')), { soAviso: true });
-        if (!DADOS.adm) throw Object.assign(new Error('Esta conta não é ADM. Só os e-mails da lista ADMINS (Cloudflare) abrem esta área.'), { soAviso: true });
+        if (!DADOS.adm) return location.replace(BASE); // quem não é ADM volta direto para o menu, sem aviso
       }
       if (!MODO_ADM) { const v = destinoVolta(); if (v?.url) { msg('Abrindo o site…', false, true); return location.replace(v.url); }
         if (v?.bloqueado) setTimeout(() => toast('Esse site não reconheceu o login. Abra pelo botão do menu ou avise o ADM.'), 600); }
