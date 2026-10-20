@@ -25,12 +25,12 @@
     servidor: 'https://turma-ia.problemsraiz.workers.dev',       // servidor que confere o e-mail (/quem)
     sdk: 'https://www.gstatic.com/firebasejs/10.14.1/',
     firebase: { // dados PÚBLICOS por natureza; a segurança está no servidor
-      apiKey: 'AIzaSyAhMU9NN8-rVowcGTxpI3Rs8eTSiwKoAB0',
-      authDomain: 'editor-animacao.firebaseapp.com',
-      projectId: 'editor-animacao',
-      storageBucket: 'editor-animacao.firebasestorage.app',
-      messagingSenderId: '301911447851',
-      appId: '1:301911447851:web:5841eaec1f01ab94460d6e',
+      apiKey: 'AIzaSyAi04-Bbe-1yUG6xi9S2Ef26nImJUi6q60',
+      authDomain: 'problems-estudios.firebaseapp.com',
+      projectId: 'problems-estudios',
+      storageBucket: 'problems-estudios.firebasestorage.app',
+      messagingSenderId: '987944796866',
+      appId: '1:987944796866:web:15f571c0ad18b12c91f15b',
     },
   };
   const root = document.documentElement;
