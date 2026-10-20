@@ -50,13 +50,6 @@ svg{display:block;flex:none}
 .badge{font-size:11px;font-weight:800;letter-spacing:.8px;padding:3px 8px;border-radius:20px;background:var(--ac);color:#fff}
 .sp{flex:1}
 .me{position:relative}
-.me-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--bd2);background:var(--bg3);font-weight:700;cursor:pointer;display:grid;place-items:center;overflow:hidden;padding:0}
-.me-btn:hover{border-color:var(--ac)}
-.me-btn img{width:100%;height:100%;object-fit:cover}
-.me-pop{position:absolute;right:0;top:42px;width:250px;background:var(--bg1);border:1px solid var(--bd2);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:6px;z-index:5}
-.me-pop .head{padding:8px 10px 10px;color:var(--tx2);font-size:12.5px;border-bottom:1px solid var(--bd);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.me-pop button{width:100%;display:flex;align-items:center;gap:9px;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left}
-.me-pop button:hover{background:var(--bg3)}
 
 /* ---------- botões dos projetos, centralizados ---------- */
 .main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px 60px}
@@ -171,6 +164,8 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   if (/^#[0-9a-f]{6}$/i.test(c.cor || '')) { const n = parseInt(c.cor.slice(1), 16), s = document.documentElement.style;
     s.setProperty('--ac', c.cor); s.setProperty('--ac-rgb', [n >> 16, n >> 8 & 255, n & 255].join(',')); } } catch { } })();
 </script>
+<script>window.ESTUDIO_CONTA = { semMenu: true, autoMontar: false, conta: () => abrirConta(), sair: () => signOut(), extras: () => [] };</script>
+<script src="/estudio-conta.js"></script>
 </head>
 <body>
 <div id="pagebg" hidden></div>
@@ -192,11 +187,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5" fill="#fff" fill-opacity=".18"/><path d="m15.5 10.2 5-3v9.6l-5-3z" fill="#fff"/></svg></span><b>Estúdio Problems</b><span class="badge" id="badge-adm" hidden>ADM</span></div>
   <span class="sp"></span>
   <a class="btn sm" id="btn-ver" hidden>Ver o menu</a>
-  <div class="me"><button class="me-btn" id="me-btn" aria-haspopup="true" aria-expanded="false"></button>
-    <div class="me-pop" id="me-pop" hidden><div class="head" id="me-email"></div>
-      <button id="btn-conta" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Minha conta</button>
-      <button id="btn-atualiza" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam."><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Atualizar todos os sites</button>
-      <button id="btn-out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Sair da conta</button></div></div>
+  <span data-estudio-conta></span><!-- foto e conta: o mesmo componente de todos os projetos (/estudio-conta.js) -->
 </header>
 
 <!-- 2) MENU — só aparece depois que o servidor confirma a conta -->
@@ -411,7 +402,7 @@ const avatarHtml = (foto, nome) => { const l = esc((String(nome || '?')[0] || '?
 const saudacao = (h = new Date().getHours()) => h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 function aplicaConta() {
   const u = fb.currentUser, nome = CONTA?.nome || u?.displayName || '', foto = CONTA ? CONTA.foto : u?.photoURL;
-  $('#me-btn').innerHTML = avatarHtml(foto, nome || u?.email);
+  const chave = JSON.stringify([CONTA?.nome, CONTA?.foto]); if (aplicaConta.ult !== undefined && aplicaConta.ult !== chave) window.EstudioConta?.recarregar(); aplicaConta.ult = chave; // nome/foto mudaram: o botão da conta mostra na hora
   const h = $('#hello'); if (h) { const p = nome.split(' ')[0]; h.textContent = p ? `${saudacao()}, ${p}!` : `${saudacao()}!`; }
 }
 let fraseTimer = null;
@@ -541,47 +532,14 @@ function abrirConta() {
 
 /* ======================= telas ======================= */
 function topo(email) {
-  const u = fb.currentUser; $('#top').hidden = false;
-  const mb = $('#me-btn'); mb.title = email; $('#me-email').textContent = email;
-  aplicaConta();
-  const bc = $('#btn-conta'); bc.hidden = !CONTA; bc.onclick = () => { $('#me-pop').hidden = true; abrirConta(); };
-  const pop = $('#me-pop');
-  mb.onclick = e => { e.stopPropagation(); pop.hidden = !pop.hidden; mb.setAttribute('aria-expanded', String(!pop.hidden)); };
-  document.addEventListener('click', e => { if (!pop.contains(e.target)) { pop.hidden = true; mb.setAttribute('aria-expanded', 'false'); } });
-  $('#btn-out').onclick = signOut;
-  $('#btn-atualiza').onclick = () => { pop.hidden = true; atualizarTudo(); };
+  $('#top').hidden = false; aplicaConta();
+  window.EstudioConta?.montar(); // [foto] com Minha conta, Atualizar todos os sites e Sair — igual em todos os projetos
 }
 // "Ctrl+F5 para todos os sites": baixa de novo (sem a memória do navegador) as páginas e os arquivos do menu e de cada projeto.
 // NÃO apaga nada guardado no navegador (projetos, rascunhos, preferências ficam no IndexedDB/localStorage, que não são tocados).
-async function atualizarTudo() {
-  const aviso = document.createElement('div'); aviso.className = 'toast'; aviso.style.bottom = '24px'; document.body.appendChild(aviso);
-  const diz = t => { aviso.textContent = t; };
-  diz('Atualizando os sites…');
-  try {
-    // service workers (ex.: o Animador instalado como programa): só pede a versão nova, sem desinstalar
-    if (navigator.serviceWorker?.getRegistrations) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.update(); } catch { } }
-    // cópias offline dos service workers (só arquivos do site; projetos não ficam aqui)
-    if (window.caches?.keys) for (const k of await caches.keys()) { try { await caches.delete(k); } catch { } }
-    const raizes = new Set(['/', '/estudio-login.js', '/estudio-conta.js', '/shorts/', '/shorts/producao/', '/editor/', '/modelador/', '/modelador/blockbench/', '/animador/', '/animador/animar.html']);
-    (DADOS?.links || []).forEach(l => { try { const u = new URL(l.url, location.href); if (u.origin === location.origin) raizes.add(u.pathname); } catch { } });
-    if (CONTA?.foto && CONTA.foto.startsWith('/')) raizes.add(CONTA.foto);
-    const feitos = new Set(), fila = [...raizes];
-    const pega = async caminho => {
-      if (feitos.has(caminho) || feitos.size > 600) return; feitos.add(caminho);
-      let r; try { r = await fetch(caminho, { cache: 'reload', credentials: 'same-origin', redirect: 'follow' }); } catch { return; }
-      if (!r.ok || !raizes.has(caminho) || !(r.headers.get('content-type') || '').includes('text/html')) return;
-      // das páginas, pega também os scripts, estilos e ícones do mesmo endereço
-      const base = new URL(r.url), html = await r.text();
-      for (const m of html.matchAll(/<(?:script|link|img)\b[^>]*?\b(?:src|href)\s*=\s*["']([^"'#]+)["']/gi)) {
-        if (m[1].includes('${')) continue; // pedaço de código, não é arquivo
-        try { const u = new URL(m[1], base); if (u.origin === location.origin && !/\/(entrar|sair|conta)$/.test(u.pathname)) fila.push(u.pathname + u.search); } catch { }
-      }
-    };
-    let n = 0;
-    while (fila.length) { const lote = fila.splice(0, 6); await Promise.all(lote.map(pega)); n = feitos.size; diz(`Atualizando os sites… ${n} arquivos`); }
-    diz('Pronto! Tudo atualizado. Recarregando…');
-  } catch (e) { diz('Não consegui atualizar tudo: ' + e.message); }
-  setTimeout(() => location.reload(), 900);
+function atualizarTudo() {
+  const extras = []; (DADOS?.links || []).forEach(l => { try { const u = new URL(l.url, location.href); if (u.origin === location.origin) extras.push(u.pathname); } catch { } });
+  window.EstudioConta?.atualizarTudo(extras);
 }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- MODELO de projeto novo do Estúdio Problems. Troque NOMEDOPROJETO pelo nome (em MAIÚSCULAS no título e no cabeçalho). -->
+<title>NOMEDOPROJETO · Estúdio Problems</title>
+<!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
+<script src="/estudio-login.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#141518;--panel:#1c1d21;--panel-2:#23252b;--line:#33363e;--text:#e9ebef;--muted:#9aa0ab;--accent:#3d9bff;--problems:#19f0f0;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.45 "Rubik",system-ui,sans-serif}
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer}
+.logo .cubo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--problems));flex:none}
+.logo b{font:22px/1 "Lilita One","Rubik",sans-serif;letter-spacing:.3px;display:block}.logo small{color:var(--muted);font-size:12px}
+.esp{flex:1}
+main{max-width:1100px;margin:0 auto;padding:22px 18px 50px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo" title="Voltar ao início"><div class="cubo" aria-hidden="true"></div><div><b>NOMEDOPROJETO</b><small>Estúdio Problems · o que este projeto faz</small></div></div>
+  <div class="esp"></div>
+  <!-- botões do próprio projeto aqui -->
+  <span data-estudio-conta></span><!-- padrão de todos: [círculo de espaço] [Menu] [foto da conta] -->
+</header>
+<main>
+  <h2>Tela inicial</h2>
+  <p>Comece aqui: atalhos (cartões com ícones de linha, sem emoji) e "Abertos recentemente", como no Editor e no Modelador.</p>
+</main>
+<script>
+/* Se o projeto guardar coisas no navegador (IndexedDB), ponha o nome do banco em BANCOS no /estudio-conta.js
+   e registre a lista aqui, para aparecer no círculo de espaço com "Baixar" e "Apagar": */
+addEventListener('DOMContentLoaded', () => window.EstudioConta?.espaco.registrar({
+  programa: 'NOMEDOPROJETO',
+  async listar() { return [ /* { nome, bytes, data, thumb, rotuloBaixar: 'Baixar .ext', baixar: async () => {}, apagar: async () => {} } */ ]; },
+}));
+</script>
+<script src="/estudio-conta.js" defer></script>
+</body>
+</html>

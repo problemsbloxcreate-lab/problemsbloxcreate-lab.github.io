@@ -17,3 +17,12 @@
 - Conta da pessoa (nome, foto, fundo do menu): `GET/POST /conta` no porteiro (KV PERFIS). Fundo próprio de imagem/vídeo fica só
   no navegador (IndexedDB).
 - Depois de qualquer mudança: conferir o diagnóstico da Action "Publicar o porteiro" (todos os projetos com passe aceito).
+
+## Padrão visual de todos os projetos (decisão do dono, 20/10/2026)
+- Cabeçalho: nome do projeto em MAIÚSCULAS (ANIMADOR, EDITOR, MODELADOR, SHORTS…) com "Estúdio Problems" embaixo; título da aba `NOME · Estúdio Problems`.
+- À direita, sempre o componente `/estudio-conta.js` (`<span data-estudio-conta></span>`): **círculo de espaço no navegador**, **Menu** e **foto da conta**
+  (Minha conta, Voltar ao menu, Atualizar todos os sites, itens do projeto, Sair). Não crie botões próprios de voltar ao menu nem de conta.
+- Ícones de linha iguais aos do menu (SVG, `stroke="currentColor"`, 1.9), sem emoji nas telas novas.
+- Tela inicial com atalhos e projetos/abertos recentemente.
+- O que o projeto guarda no navegador aparece no círculo de espaço: banco em `BANCOS` (estudio-conta.js) + `EstudioConta.espaco.registrar(...)` com "Baixar" o arquivo do projeto (.toon, .edicao.json…). Quem passar a guardar algo novo, registra junto.
+- Projeto novo: comece do `modelo-projeto/` do repositório `problemsbloxcreate-lab.github.io` (login do Google/Firebase pelo menu, porteiro, cabeçalho e ícones prontos).
