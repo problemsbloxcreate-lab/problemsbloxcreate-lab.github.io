@@ -248,6 +248,8 @@ const ICONES = {
 const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, z) => Math.min(z, Math.max(a, v));
+// "site.github.io/animador" (sem https://) viraria uma pasta dentro do menu; aqui completamos o https://
+const normUrl = u => { u = String(u || '').trim(); if (!u) return u; if (/^\/\//.test(u)) return 'https:' + u; if (!/^[a-z][\w+.-]*:/i.test(u) && /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/|\?|#|$)/i.test(u) && !/\.(html?|php|js|css|json|png|jpe?g|gif|svg|webp|mp4|webm)$/i.test(u.split(/[/?#]/)[0])) return 'https://' + u; return u; };
 const SRV = MENU_CONFIG.servidor, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
 const MODO_ADM = /\/adm\/?$/i.test(location.pathname);              // só abre a ADM digitando /adm no endereço
 const BASE = location.pathname.replace(/\/adm\/?$/i, '/').replace(/[^/]*$/, '') || '/'; // endereço do menu principal
@@ -371,7 +373,7 @@ function showMenu() {
   DADOS.links.forEach((l, i) => {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.style.animationDelay = (i * .06) + 's';
-    if (ok) el.href = l.url; else el.setAttribute('aria-disabled', 'true');
+    if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
     el.innerHTML = cardHtml(l, ok ? '' : '<span class="tag">em breve</span>'); montarCard(el, l); g.appendChild(el);
   });
   if (!DADOS.links.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
@@ -488,11 +490,12 @@ function renderLinks() {
     const soon = () => { const s = !l.url || l.embreve; card.classList.toggle('soon', s); let t = $('.tag', card); if (s && !t) card.insertAdjacentHTML('afterbegin', '<span class="tag">em breve</span>'); if (!s && t) t.remove(); }; soon();
     const refresh = () => { $('b', card).textContent = l.nome || 'Sem nome'; $('small', card).textContent = l.desc || ''; pintarIcone(card, l); card.style.setProperty('--esc', l.escurecer ?? .45); soon(); const m = $('.mfill', card); if (m && l.fundo) posicionar(m, l.fundo); const z = $('[data-k=zoom]', row); if (z && l.fundo) { z.value = l.fundo.zoom; z.nextElementSibling.textContent = vez(l.fundo.zoom); } };
     arrastavel(card, () => l.fundo, fim => { refresh(); if (fim) mudou(); });
+    const campoUrl = $('[data-k=url]', row); campoUrl.addEventListener('blur', () => { const n = normUrl(campoUrl.value); if (n !== campoUrl.value.trim()) { campoUrl.value = n; toast('Completei o endereço com https://'); } });
     $$('[data-k]', row).forEach(inp => inp.addEventListener('input', () => {
       const k = inp.dataset.k;
       if (k === 'zoom') { l.fundo.zoom = +inp.value; inp.nextElementSibling.textContent = vez(inp.value); }
       else if (k === 'escurecer') { l.escurecer = +inp.value; inp.nextElementSibling.textContent = pct(inp.value); }
-      else if (k === 'url') { const tinha = !!l.url; l.url = inp.value.trim() || null; inp.classList.toggle('bad', !urlOk(inp.value.trim())); if (tinha !== !!l.url) { mudou(); return renderLinks(); } }
+      else if (k === 'url') { const tinha = !!l.url; l.url = normUrl(inp.value) || null; inp.classList.toggle('bad', !urlOk(inp.value.trim())); if (tinha !== !!l.url) { mudou(); return renderLinks(); } }
       else if (k === 'embreve') l.embreve = inp.checked;
       else if (k === 'iconeTam') { l.iconeTam = +inp.value; inp.nextElementSibling.textContent = inp.value + '%'; }
       else if (k === 'iconeCaixa') l.iconeCaixa = inp.checked;
@@ -554,12 +557,13 @@ function showAdm() {
   const ver = $('#btn-ver'); ver.hidden = false; ver.href = BASE;
   document.title = 'ADM — Estúdio Problems';
   const copia = () => JSON.parse(JSON.stringify({ links: DADOS.links, fundo: DADOS.fundo }));
-  EDIT = copia(); renderLinks(); renderFundo(); fundoTela(EDIT.fundo);
+  EDIT = copia(); EDIT.links.forEach(l => { if (l.url) { const n = normUrl(l.url); if (n !== l.url) { l.url = n; sujo = true; } } }); renderLinks(); renderFundo(); fundoTela(EDIT.fundo);
   st(DADOS.em ? `Última mudança: ${new Date(DADOS.em).toLocaleString('pt-BR')}${DADOS.por ? ' por ' + DADOS.por : ''}.` : 'Ainda não salvo no servidor: mostrando os botões padrão.');
   $('#add-link').onclick = () => { EDIT.links.push({ nome: 'Novo link', desc: '', url: null, embreve: false, icone: 'link', iconeImg: null, iconeTam: 62, iconeCaixa: true, fundo: null, escurecer: .45 }); mudou(); renderLinks(); $('#links').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
   $$('[data-addbg]').forEach(b => b.onclick = async () => { const m = await novaMidia(b.dataset.addbg); if (!m) return; EDIT.fundo.itens.push(m); if (EDIT.fundo.modo === 'nenhum') EDIT.fundo.modo = 'um'; mudou(); renderFundo(); fundoTela(EDIT.fundo); });
   $('#btn-undo').onclick = () => { if (sujo && !confirm('Desfazer tudo o que ainda não foi salvo?')) return; EDIT = copia(); sujo = false; renderLinks(); renderFundo(); fundoTela(EDIT.fundo); st('Mudanças desfeitas.'); };
   $('#btn-save').onclick = async () => {
+    EDIT.links.forEach(l => { if (l.url) l.url = normUrl(l.url); });
     const ruim = EDIT.links.find(l => !l.nome.trim() || !urlOk(l.url || ''));
     if (ruim) { st(ruim.nome.trim() ? `Endereço inválido em "${ruim.nome}". Use https://...` : 'Todo link precisa de um nome.', 'err'); return; }
     const b = $('#btn-save'); b.disabled = true; st('Salvando…');
