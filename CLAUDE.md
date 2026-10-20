@@ -30,6 +30,7 @@
 ## Servidor turma-ia e quem pode entrar (decisão do dono, 20/10/2026)
 - O código do turma-ia fica em `servidor/turma-ia/worker.js` e é publicado pela Action `turma-ia.yml`, que lê as ligações atuais
   da Cloudflare e publica com `keep_vars` (EMAILS_PERMITIDOS, ADMINS, ORIGENS e as chaves secretas continuam lá, nunca aqui).
+- A tela ADM (/adm) inteira só abre para os e-mails da variável `ADMINS` do turma-ia (vazia = ninguém). Quem é ADM vê o item "ADM" e o selo ao lado do nome no botão da conta (o porteiro guarda isso na sessão a cada login).
 - Quem entra = `EMAILS_PERMITIDOS` (base fixa, só na Cloudflare) + os liberados pela tela **ADM › Quem pode entrar**
   (KV EQUIPE `acesso/extras`). Só os e-mails da variável `ADMINS` do turma-ia podem ver/adicionar/remover; sem ADMINS, ninguém.
 - O porteiro (`/acesso`) mostra os e-mails CENSURADOS, com nome/foto personalizados e os originais do Google; quem é tirado

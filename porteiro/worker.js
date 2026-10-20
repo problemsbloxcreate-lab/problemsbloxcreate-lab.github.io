@@ -29,8 +29,8 @@ const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(
 const deB64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
 async function chave(env) { return crypto.subtle.importKey('raw', enc.encode(env.SESSAO_SEGREDO), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']); }
 
-async function criaSessao(env, email) {
-  const dados = b64u(enc.encode(JSON.stringify({ e: email, x: Math.floor(Date.now() / 1000) + DURACAO })));
+async function criaSessao(env, email, adm) {
+  const dados = b64u(enc.encode(JSON.stringify({ e: email, x: Math.floor(Date.now() / 1000) + DURACAO, ...(adm ? { a: 1 } : {}) })));
   const ass = b64u(await crypto.subtle.sign('HMAC', await chave(env), enc.encode(dados)));
   return dados + '.' + ass;
 }
@@ -191,7 +191,7 @@ async function conta(req, env, url, s) {
   if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS. Rode a Action de publicação de novo.' } }, 503);
   const mesmoSite = (req.headers.get('origin') || '') === url.origin, p = await lePerfil(env, s.e);
   if (url.pathname === '/conta') {
-    if (req.method === 'GET') return json(contaPublica(s.e, p));
+    if (req.method === 'GET') return json({ ...contaPublica(s.e, p), adm: !!s.a }); // adm: está na variável ADMINS (atualiza a cada vez que o menu abre)
     if (req.method !== 'POST') return json({ error: { message: 'Use GET ou POST.' } }, 405);
     if (!mesmoSite) return json({ error: { message: 'Pedido de outro site.' } }, 403);
     let b = {}; try { b = await req.json(); } catch { }
@@ -260,7 +260,7 @@ export default {
       if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor do Estúdio Problems (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
       // nome e foto do Google (vêm no próprio token, que o servidor do Estúdio Problems acabou de conferir): viram o padrão da conta
       try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { }
-      return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email), DURACAO) });
+      return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email, j.adm === true), DURACAO) });
     }
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
     if (caminho === '/chave-publica') { const k = await chavesAssinatura(env); return k ? json(k.pub, 200, { 'cache-control': 'public, max-age=3600', 'access-control-allow-origin': '*' }) : json({ error: { message: 'sem chave' } }, 503); }

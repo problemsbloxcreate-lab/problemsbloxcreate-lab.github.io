@@ -115,6 +115,7 @@ svg{display:block;flex:none}
 .acesso-lista{display:grid;gap:8px;margin-top:12px}
 .ac-l{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--bg2,rgba(255,255,255,.02))}
 .ac-av{width:42px;height:42px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0)}.ac-av img{width:100%;height:100%;object-fit:cover}
+.ac-selo{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff;vertical-align:-3px;margin-left:4px}
 .ac-n{flex:1;min-width:0}.ac-n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ac-n small{display:block;color:var(--tx2);font-size:12px}
 .ac-orig{display:inline-flex;align-items:center;gap:6px;color:var(--tx2);font-size:12px;margin-top:2px}.ac-orig .mini{width:18px;height:18px;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:var(--bg3);font-size:10px}.ac-orig .mini img{width:100%;height:100%;object-fit:cover}
 .ac-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}.ac-tag{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--bg3);color:var(--tx2)}
@@ -889,7 +890,7 @@ async function renderAcesso() {
   const pinta = itens => {
     $('#acesso-n').textContent = itens.length + (itens.length === 1 ? ' conta' : ' contas');
     lista.innerHTML = itens.map(it => `<div class="ac-l">${av(it.foto, it.nome || it.mascara)}
-      <div class="ac-n"><b>${esc(it.nome || 'Ainda não entrou')}</b><small>${esc(it.mascara)}</small>
+      <div class="ac-n"><b>${esc(it.nome || 'Ainda não entrou')}${it.adm ? ' <i class="ac-selo" title="ADM do Estúdio Problems"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg></i>' : ''}</b><small>${esc(it.mascara)}</small>
         ${(it.nomeProprio || it.fotoPropria) && it.nomeOriginal ? `<span class="ac-orig" title="Como está no Google">original: ${av(it.fotoOriginal, it.nomeOriginal, 'mini')}${esc(it.nomeOriginal)}</span>` : ''}
         <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm">ADM</span>' : ''}${it.fixo ? '<span class="ac-tag fixo" title="Lista fixa EMAILS_PERMITIDOS: só muda na Cloudflare">Fixo</span>' : `<span class="ac-tag" style="text-transform:none;letter-spacing:0" title="Liberado pela tela ADM">${it.por ? 'por ' + esc(it.por) : 'adicionado'}${it.em ? ' · ' + esc(quando(it.em).split(',')[0]) : ''}</span>`}</div></div>
       <span class="ac-em">${it.visto ? 'último login ' + esc(quando(it.visto)) : 'ainda não entrou'}</span>
@@ -964,7 +965,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
       DADOS = await carregar();
       if (MODO_ADM) {
         if (!DADOS.servidor) throw Object.assign(new Error(DADOS.erro?.type === 'sem_kv' || DADOS.erro?.status === 404 ? 'O servidor ainda não tem a parte do menu. Atualize o worker na Cloudflare (veja o LEIA-ME).' : (DADOS.erro?.message || 'Não consegui ler o menu no servidor.')), { soAviso: true });
-        if (!DADOS.adm) throw Object.assign(new Error('Esta conta não pode mudar o menu.'), { soAviso: true });
+        if (!DADOS.adm) throw Object.assign(new Error('Esta conta não é ADM. Só os e-mails da lista ADMINS (Cloudflare) abrem esta área.'), { soAviso: true });
       }
       if (!MODO_ADM) { const v = destinoVolta(); if (v?.url) { msg('Abrindo o site…', false, true); return location.replace(v.url); }
         if (v?.bloqueado) setTimeout(() => toast('Esse site não reconheceu o login. Abra pelo botão do menu ou avise o ADM.'), 600); }
@@ -973,7 +974,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
       MODO_ADM ? showAdm() : showMenu();
       if (QS.has('conta') && CONTA) abrirConta();
     } catch (e) {
-      btn.disabled = false; msg(esc(e.message), true); other.hidden = !fb?.currentUser;
+      btn.disabled = false; msg(esc(e.message) + (e.soAviso ? ' <a href="/" style="color:var(--ac);font-weight:600">Voltar ao menu</a>' : ''), true); other.hidden = !fb?.currentUser;
       if (e.denied && !e.soAviso) { try { await fb.signOut(); } catch { } other.hidden = true; }
     }
   };

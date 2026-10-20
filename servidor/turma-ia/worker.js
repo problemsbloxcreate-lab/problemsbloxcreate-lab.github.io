@@ -11,7 +11,7 @@
      ORIGENS            (Text)    sites que podem usar, ex.: https://naoentendinada.github.io  (só o domínio; vírgula para vários)
      FIREBASE_PROJECT_ID (Text) problems-estudios — liga o login com Google: sem login, nada funciona (nem abrir o editor)
      EMAILS_PERMITIDOS  (Text) e-mails liberados, separados por vírgula (ex.: fulano@gmail.com,ciclano@gmail.com) — os e-mails reais ficam SÓ aqui na Cloudflare, nunca no código
-     ADMINS             (Text, opcional) e-mails que podem mudar os links do menu (tela ADM). Vazio = qualquer conta liberada pode.
+     ADMINS             (Text) e-mails que podem abrir a tela ADM (mudar o menu e quem entra). Vazio = ninguém.
                         Gerenciar QUEM ENTRA (tela ADM › Acesso) exige esta variável: só os e-mails dela podem; vazia = ninguém.
      Além de EMAILS_PERMITIDOS (base fixa, só muda aqui na Cloudflare), entram os e-mails adicionados pela tela ADM › Acesso,
      guardados no KV EQUIPE (chave "acesso/extras"). Tirar alguém de lá vale em até ~1 minuto.
@@ -33,6 +33,8 @@ const custo = (m, u) => { const [pi, po] = PRECOS[m] || PRECOS['claude-sonnet-5-
 let jwks = null, jwksAt = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
 // quem entra = EMAILS_PERMITIDOS (base fixa, Cloudflare) + os adicionados pela tela ADM › Acesso (KV EQUIPE "acesso/extras")
+// ADM (mudar o menu e quem entra): só os e-mails da variável ADMINS; vazia = ninguém
+const ehAdmin = (env, email) => (env.ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean).includes(String(email || '').toLowerCase());
 const baseFixa = env => (env.EMAILS_PERMITIDOS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 async function extrasAcesso(env) { try { const v = await env.EQUIPE?.get('acesso/extras', { type: 'json', cacheTtl: 60 }); return Array.isArray(v) ? v.filter(x => x && typeof x.email === 'string') : []; } catch { return []; } }
 const EMAIL_OK = /^[^\s@,;<>"']{1,64}@[^\s@,;<>"']{1,190}\.[a-z]{2,24}$/i;
@@ -150,8 +152,7 @@ export default {
     if (p0 === '/menu-links' || p0 === '/menu-midia') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
-      const admins = (env.ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-      const adm = !admins.length || admins.includes(String(login.email).toLowerCase());
+      const adm = ehAdmin(env, login.email);
       const semAdm = () => json({ error: { type: 'adm', message: 'Esta conta não pode mudar o menu (variável ADMINS na Cloudflare).' } }, 403, cors);
       const q = new URL(req.url).searchParams, KM = /^menu\/midia\/[\w.\- ]{1,120}$/;
       if (p0 === '/menu-midia') {
@@ -206,7 +207,7 @@ export default {
     }
     if (p0 === '/quem' || p0 === '/app-key') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'O login com Google ainda não foi ligado no servidor (falta FIREBASE_PROJECT_ID).' } }, 403, cors);
-      if (p0 === '/quem') return json({ email: login.email }, 200, { ...cors, 'cache-control': 'no-store' });
+      if (p0 === '/quem') return json({ email: login.email, adm: ehAdmin(env, login.email) }, 200, { ...cors, 'cache-control': 'no-store' });
       if (!env.APP_KEY) return json({ error: { type: 'config', message: 'O servidor está sem a APP_KEY (chave do app).' } }, 500, cors);
       return json({ key: env.APP_KEY }, 200, { ...cors, 'cache-control': 'no-store' });
     }
