@@ -80,6 +80,7 @@ jobs:
           ECOD="$(curl -s -o entrar.json -w '%{http_code}' -X POST -H "Origin: $URL" -H 'content-type: application/json' -d '{"token":"teste-falso"}' "$URL/entrar")"
           echo "/entrar com login falso: $ECOD $(head -c 200 entrar.json)"
           [ "$ECOD" = "403" ] || { echo "::error::O porteiro não conseguiu conferir o login no servidor da turma (resposta $ECOD: $(head -c 160 entrar.json))."; exit 1; }
+          if grep -q 'liberado no servidor' entrar.json; then echo "::error::O servidor da turma recusou o porteiro: coloque $URL na variável ORIGENS do turma-ia e faça Deploy."; exit 1; fi
           {
             echo "### 🚪 Porteiro no ar: $URL"
             echo ""

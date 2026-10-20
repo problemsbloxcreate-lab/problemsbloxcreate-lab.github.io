@@ -88,7 +88,8 @@ export default {
       if (!token) return json({ error: { message: 'Faltou o login do Google.' } }, 400);
       // fala com o servidor da turma por dentro da Cloudflare (Service Binding TURMA): um worker não consegue chamar
       // outro da mesma conta pelo endereço público. Sem a ligação, tenta o endereço (útil em outra conta).
-      const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token } });
+      // o servidor da turma só atende sites da lista ORIGENS: o porteiro se apresenta com o próprio endereço
+      const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token, origin: url.origin } });
       let r; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); }
       catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor da turma.' } }, 502); }
       const j = await r.json().catch(() => ({}));
