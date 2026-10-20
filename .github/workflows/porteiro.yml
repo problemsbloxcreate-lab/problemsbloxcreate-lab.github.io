@@ -73,7 +73,9 @@ jobs:
           LOC="$(curl -s -o /dev/null -w '%{redirect_url}' -H 'Accept: text/html' "$URL/animador/")"
           echo "/animador/ sem login: $COD → $LOC"
           [ "$COD" = "302" ] && echo "$LOC" | grep -q '/?volta=' || { echo "::error::/animador/ respondeu $COD sem login (esperado 302 para o menu). Confira o porteiro!"; exit 1; }
-          curl -s "$URL/" | grep -q 'Entrar com Google' || { echo "::error::O menu não apareceu em $URL/"; exit 1; }
+          MCOD="$(curl -s -o menu.html -w '%{http_code}' "$URL/")"   # salva antes de procurar (procurar direto no curl falhava à toa)
+          echo "menu: $MCOD, $(wc -c < menu.html) bytes"
+          grep -q 'Entrar com Google' menu.html || { head -c 600 menu.html; echo; echo "::error::O menu não apareceu em $URL/ (resposta $MCOD)"; exit 1; }
           {
             echo "### 🚪 Porteiro no ar: $URL"
             echo ""
