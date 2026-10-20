@@ -21,10 +21,11 @@ service = "turma-ia"
 [vars]
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.
+# "servico": nome da ligação direta, quando o projeto é um worker desta mesma conta (precisa do [[services]] abaixo).
 # "assinar": true = o projeto tem portão próprio e aceita o passe assinado do porteiro (no lugar da senha).
 PROJETOS = '''{
   "/animador/":  "https://problemsbloxcreate-lab.github.io/animador/",
   "/shorts/":    { "origem": "https://estudio-problems.problemsbloxcreate.workers.dev/", "assinar": true },
   "/modelador/": { "origem": "https://estudio-problems.problemsbloxcreate.workers.dev/modelador/", "assinar": true },
-  "/editor/":    { "origem": "https://editor-problems.problemsbloxcreate.workers.dev/", "assinar": true }
+  "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR" }
 }'''

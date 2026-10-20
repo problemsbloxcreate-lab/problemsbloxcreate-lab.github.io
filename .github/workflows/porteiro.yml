@@ -106,3 +106,16 @@ jobs:
           if [ "$ACAO" != "$URL" ] && [ "$ACAO" != "*" ]; then
             echo "::warning::O servidor da turma ainda NÃO aceita $URL. Na Cloudflare: worker turma-ia → Settings → Variables and Secrets → ORIGENS deve conter $URL → salvar e Deploy."
           fi
+      - name: Diagnóstico dos projetos (o porteiro chega neles? os portões aceitam o passe?)
+        if: steps.seg.outputs.ok == '1'
+        shell: bash
+        run: |
+          set -uo pipefail
+          URL="$(grep -oE 'https://estudio\.[a-z0-9-]+\.workers\.dev' deploy.log | head -1)"
+          curl -s "$URL/diagnostico" > diag.json; cat diag.json; echo
+          node -e "
+            const d=JSON.parse(require('fs').readFileSync('diag.json','utf8'));
+            for (const [p,v] of Object.entries(d)) {
+              const ok = !v.erro && v.status < 500 && v.passe !== false && !String(v.ligacao||'').startsWith('FALTA');
+              console.log((ok?'::notice::':'::warning::')+p+' → '+JSON.stringify(v));
+            }"

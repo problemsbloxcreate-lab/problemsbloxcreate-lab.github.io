@@ -50,9 +50,10 @@ function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch 
 function achaProjeto(env, caminho) {
   // o caminho mais comprido ganha (ex.: /shorts/modelador/ antes de /shorts/)
   for (const [pref, v] of Object.entries(projetos(env)).sort((a, b) => b[0].length - a[0].length)) {
-    const base = pref.replace(/\/+$/, ''), origem = typeof v === 'string' ? v : v.origem, assinar = typeof v === 'object' && !!v.assinar;
-    if (caminho === base) return { pref, origem, assinar, redirecionar: true };
-    if (caminho.startsWith(base + '/')) return { pref, origem, assinar, resto: caminho.slice(base.length + 1) };
+    const base = pref.replace(/\/+$/, ''), o = typeof v === 'string' ? { origem: v } : v;
+    const info = { pref, origem: o.origem, assinar: !!o.assinar, servico: o.servico || null }; // servico: nome da ligação direta (worker da mesma conta)
+    if (caminho === base) return { ...info, redirecionar: true };
+    if (caminho.startsWith(base + '/')) return { ...info, resto: caminho.slice(base.length + 1) };
   }
   return null;
 }
@@ -79,7 +80,9 @@ async function repassa(req, url, p, env, s) {
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
   const h = new Headers(req.headers); h.delete('cookie'); h.delete('host'); h.delete('x-porteiro-passe');
   if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
-  let r = await fetch(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
+  const pedido = new Request(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
+  // worker da mesma conta: só dá para chamar pela ligação direta (Service Binding); os outros, pela internet
+  let r = p.servico && env[p.servico] ? await env[p.servico].fetch(pedido) : await fetch(pedido);
   if ([301, 302, 307, 308].includes(r.status)) { // a origem pediu outro endereço (ex.: faltou a barra no fim): traduz para o nosso
     const loc = new URL(r.headers.get('location'), alvo), raiz = new URL(p.origem.replace(/\/?$/, '/'));
     if (loc.origin === raiz.origin && loc.pathname.startsWith(raiz.pathname)) return Response.redirect(new URL(p.pref.replace(/\/?$/, '/') + loc.pathname.slice(raiz.pathname.length) + loc.search, url).href, 302);
@@ -122,6 +125,23 @@ export default {
     }
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
     if (caminho === '/chave-publica') { const k = await chavesAssinatura(env); return k ? json(k.pub, 200, { 'cache-control': 'public, max-age=3600', 'access-control-allow-origin': '*' }) : json({ error: { message: 'sem chave' } }, 503); }
+    // diagnóstico sem login: o porteiro consegue chegar em cada projeto? os portões aceitam o passe dele?
+    // (não mostra nada dos projetos: só o código de resposta e, nos portões, se o passe foi aceito)
+    if (caminho === '/diagnostico') {
+      const out = {};
+      for (const [pref, v] of Object.entries(projetos(env))) {
+        const o = typeof v === 'string' ? { origem: v } : v, raiz = new URL(o.origem.replace(/\/?$/, '/'));
+        try {
+          const teste = o.assinar ? new URL('/porteiro-teste', raiz) : raiz, h = new Headers();
+          if (o.assinar) h.set('x-porteiro-passe', await passe(env, 'diagnostico', teste.host) || '');
+          const pedido = new Request(teste, { headers: h, redirect: 'manual' });
+          const r = o.servico && env[o.servico] ? await env[o.servico].fetch(pedido) : await fetch(pedido);
+          const j = o.assinar ? await r.json().catch(() => null) : null;
+          out[pref] = { status: r.status, ligacao: o.servico ? (env[o.servico] ? 'direta' : 'FALTA ' + o.servico) : 'internet', ...(o.assinar ? { passe: j?.passe === true } : {}) };
+        } catch (e) { out[pref] = { erro: String(e.message || e).slice(0, 120) }; }
+      }
+      return json(out);
+    }
     if (caminho === '/sessao') { const s = await leSessao(env, req); return json(s ? { email: s.e, ate: s.x * 1000 } : { email: null }); }
 
     // projetos: só com cookie válido
