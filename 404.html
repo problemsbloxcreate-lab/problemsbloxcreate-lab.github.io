@@ -139,6 +139,9 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .f.chk{flex-direction:row;align-items:flex-start;gap:9px;cursor:pointer}.f.chk input{margin:2px 0 0;accent-color:var(--ac);width:16px;height:16px;flex:none}.f.chk span{font-size:12.5px;color:var(--tx2)}.f.chk b{color:var(--tx)}
 .lrow .card.soon{opacity:.6}
 .rng{display:flex;align-items:center;gap:8px}
+.corte{display:grid;justify-items:center;gap:12px}
+.corte canvas{width:min(280px,70vw);height:min(280px,70vw);border-radius:50%;background:var(--bg3);cursor:grab;touch-action:none;box-shadow:0 0 0 1px var(--bd2),0 10px 30px rgba(0,0,0,.35)}
+.corte canvas:active{cursor:grabbing}.corte .rng{width:100%}.corte .gira{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .rng input{flex:1;accent-color:var(--ac);min-width:0}
 .rng output{width:46px;text-align:right;font-size:12px;color:var(--tx2)}
 .acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -237,7 +240,7 @@ const MENU_CONFIG = {
     { id: 'animar', nome: 'ANIMAR', desc: 'Personagens com ossos e cenas', url: null },
     { id: 'modelar', nome: 'MODELAGEM', desc: 'Modelos e texturas estilo Minecraft', url: '/modelador/' },
   ],
-  // servidor da turma (Cloudflare) — confere se o e-mail está liberado (rota /quem)
+  // servidor do Estúdio Problems (Cloudflare) — confere se o e-mail está liberado (rota /quem)
   servidor: 'https://turma-ia.problemsraiz.workers.dev',
   // Firebase (só login com Google). Estes dados são PÚBLICOS por natureza — a segurança está no servidor.
   firebase: {
@@ -292,7 +295,7 @@ async function init() {
 const token = () => fb.currentUser.getIdToken();
 async function api(path, opt = {}) {
   let r; try { r = await fetch(SRV + path, { cache: 'no-store', ...opt, headers: { authorization: 'Bearer ' + await token(), ...(opt.headers || {}) } }); }
-  catch { throw new Error(location.protocol === 'file:' ? 'Abra o menu pelo endereço do site (https://...), não pelo arquivo no computador.' : `Não consegui falar com o servidor da turma. Se a internet estiver ok, falta liberar este site na Cloudflare: coloque ${location.origin} na variável ORIGENS do worker turma-ia.`); }
+  catch { throw new Error(location.protocol === 'file:' ? 'Abra o menu pelo endereço do site (https://...), não pelo arquivo no computador.' : `Não consegui falar com o servidor do Estúdio Problems. Se a internet estiver ok, falta liberar este site na Cloudflare: coloque ${location.origin} na variável ORIGENS do worker turma-ia.`); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(j.error?.message || 'O servidor recusou o pedido.'); e.status = r.status; e.denied = r.status === 401 || r.status === 403; e.type = j.error?.type; throw e; }
   return j;
@@ -436,6 +439,46 @@ async function contaApi(path, opt) {
   const r = await fetch(path, { credentials: 'same-origin', cache: 'no-store', ...opt }); const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error?.message || 'Não deu para salvar.'); return j;
 }
+// ajuste da foto antes de aplicar: arrastar para posicionar, zoom e giro. Sai um quadrado de 512 px (JPEG) para o porteiro.
+function cortarFoto(arq) {
+  return new Promise(async fim => {
+    let img; try { img = await createImageBitmap(arq); } catch { alert('Não consegui abrir essa imagem.'); return fim(null); }
+    const T = 512, st = { z: 1, r: 0, x: 0, y: 0 };
+    const d = document.createElement('div'); d.className = 'modal'; d.style.zIndex = 30;
+    d.innerHTML = `<div class="mc" role="dialog" aria-label="Ajustar a foto"><b style="font-size:16px">Ajustar a foto</b>
+      <span class="hint">Arraste a foto para posicionar. Use a rodinha do mouse ou o controle para dar zoom.${/gif/.test(arq.type) ? ' (GIF vira imagem parada.)' : ''}</span>
+      <div class="corte"><canvas width="${T}" height="${T}" aria-label="Prévia da foto"></canvas>
+        <span class="rng"><span class="hint" style="width:70px">Zoom</span><input type="range" min="1" max="5" step=".01" value="1" data-k="z"><output>100%</output></span>
+        <span class="rng"><span class="hint" style="width:70px">Girar</span><input type="range" min="-180" max="180" step="1" value="0" data-k="r"><output>0°</output></span>
+        <div class="gira"><button class="btn sm" data-g="-90">⟲ 90°</button><button class="btn sm" data-g="90">⟳ 90°</button><button class="btn sm" data-g="0">Recomeçar</button></div></div>
+      <div class="acts"><span class="sp"></span><button class="btn sm" data-x>Cancelar</button><button class="btn sm primary" data-ok>Aplicar foto</button></div></div>`;
+    document.body.appendChild(d);
+    const cv = $('canvas', d), g = cv.getContext('2d'), zi = $('[data-k=z]', d), ri = $('[data-k=r]', d);
+    const base = () => { const rad = st.r * Math.PI / 180, w = Math.abs(img.width * Math.cos(rad)) + Math.abs(img.height * Math.sin(rad)), h = Math.abs(img.width * Math.sin(rad)) + Math.abs(img.height * Math.cos(rad)); return T / Math.min(w, h); }; // cobre o círculo inteiro no zoom 100%
+    const desenha = () => {
+      g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, T, T);
+      const k = base() * st.z; g.translate(T / 2 + st.x, T / 2 + st.y); g.rotate(st.r * Math.PI / 180); g.scale(k, k); g.drawImage(img, -img.width / 2, -img.height / 2);
+      zi.value = st.z; zi.nextElementSibling.textContent = Math.round(st.z * 100) + '%'; ri.value = ((st.r + 540) % 360) - 180; ri.nextElementSibling.textContent = ri.value + '°';
+    };
+    const zoom = z => { const n = Math.min(5, Math.max(1, z)), f = n / st.z; st.x *= f; st.y *= f; st.z = n; desenha(); };
+    zi.oninput = () => zoom(+zi.value);
+    ri.oninput = () => { st.r = +ri.value; desenha(); };
+    d.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const v = +b.dataset.g; if (v) st.r = ((st.r + v + 540) % 360) - 180; else Object.assign(st, { z: 1, r: 0, x: 0, y: 0 }); desenha(); });
+    cv.onwheel = e => { e.preventDefault(); zoom(st.z * (e.deltaY < 0 ? 1.08 : 1 / 1.08)); };
+    const toques = new Map(); let dist0 = 0, z0 = 1;
+    const escala = () => T / cv.getBoundingClientRect().width; // a prévia na tela é menor que os 512 px
+    cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); toques.set(e.pointerId, [e.clientX, e.clientY]); if (toques.size === 2) { const [a, b] = [...toques.values()]; dist0 = Math.hypot(a[0] - b[0], a[1] - b[1]); z0 = st.z; } };
+    cv.onpointermove = e => { const ant = toques.get(e.pointerId); if (!ant) return; toques.set(e.pointerId, [e.clientX, e.clientY]);
+      if (toques.size === 2) { const [a, b] = [...toques.values()]; if (dist0) zoom(z0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / dist0); return; } // pinça no celular
+      const k = escala(); st.x += (e.clientX - ant[0]) * k; st.y += (e.clientY - ant[1]) * k; desenha(); };
+    cv.onpointerup = cv.onpointercancel = e => { toques.delete(e.pointerId); dist0 = 0; };
+    const sai = v => { d.remove(); img.close?.(); fim(v); };
+    $('[data-x]', d).onclick = () => sai(null); d.onclick = e => { if (e.target === d) sai(null); };
+    d.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); sai(null); } };
+    $('[data-ok]', d).onclick = () => cv.toBlob(b => sai(b), 'image/jpeg', .9);
+    desenha(); $('[data-ok]', d).focus();
+  });
+}
 function abrirConta() {
   if (!CONTA) return;
   const d = document.createElement('div'); d.className = 'modal';
@@ -461,8 +504,9 @@ function abrirConta() {
     $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
     $('[data-a=foto]', d).onclick = async () => {
       const f = await pedirArquivo('image/png,image/jpeg,image/webp,image/gif'); if (!f) return;
-      if (f.size > 3 * 1048576) return m('A foto precisa ter até 3 MB.');
-      m('Enviando a foto…'); try { CONTA = await contaApi('/conta/foto', { method: 'PUT', body: f, headers: { 'content-type': f.type } }); aplicaConta(); pinta(); } catch (e) { m(e.message); }
+      if (f.size > 25 * 1048576) return m('Essa imagem é grande demais (até 25 MB).');
+      const pronta = await cortarFoto(f); if (!pronta) return; // a pessoa ajusta zoom, giro e posição antes de aplicar
+      m('Enviando a foto…'); try { CONTA = await contaApi('/conta/foto', { method: 'PUT', body: pronta, headers: { 'content-type': pronta.type } }); aplicaConta(); pinta(); } catch (e) { m(e.message); }
     };
     const sf = $('[data-a=semfoto]', d); if (sf) sf.onclick = async () => { try { CONTA = await contaApi('/conta/foto', { method: 'DELETE' }); aplicaConta(); pinta(); } catch (e) { m(e.message); } };
     $('[data-k=nome]', d).oninput = e => { rasc.nome = e.target.value; };

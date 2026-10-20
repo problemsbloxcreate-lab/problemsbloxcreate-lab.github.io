@@ -10,7 +10,7 @@ Se você tinha subido a versão anterior, apague a pasta `adm/` e o `config.js` 
 
 ## Endereço único (porteiro na Cloudflare)
 
-A pasta `porteiro/` é o Worker `estudio` da Cloudflare (conta dos segredos `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` deste repositório). Ele serve este menu e coloca os projetos atrás do login, todos no mesmo endereço (`https://estudio.<conta>.workers.dev`). Depois que a pessoa entra com o Google no menu, o porteiro confere o e-mail no servidor da turma (`/quem`) e guarda uma sessão de 12 horas num cookie que a página não consegue ler. Sem sessão, nenhum arquivo dos projetos sai: quem tenta abrir é mandado para o menu e volta depois de entrar.
+A pasta `porteiro/` é o Worker `estudio` da Cloudflare (conta dos segredos `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` deste repositório). Ele serve este menu e coloca os projetos atrás do login, todos no mesmo endereço (`https://estudio.<conta>.workers.dev`). Depois que a pessoa entra com o Google no menu, o porteiro confere o e-mail no servidor do Estúdio Problems (`/quem`) e guarda uma sessão de 12 horas num cookie que a página não consegue ler. Sem sessão, nenhum arquivo dos projetos sai: quem tenta abrir é mandado para o menu e volta depois de entrar.
 
 Ele é publicado sozinho pela Action "Publicar o porteiro (Cloudflare)" a cada mudança no menu ou na pasta `porteiro/`. O segredo `SESSAO_SEGREDO` é criado sozinho na primeira publicação. Para pôr um projeto atrás do login, acrescente o caminho dele em `PROJETOS`, no `porteiro/wrangler.toml`.
 

@@ -1,14 +1,14 @@
 /* ===================== Porteiro do Estúdio Problems (Cloudflare Worker "estudio") =====================
    Um endereço só para todos os projetos. Ele:
    1. serve o MENU (index.html, 404.html, estudio-login.js) — a tela de login do Google fica nele;
-   2. recebe do menu o login do Google (POST /entrar), confere no servidor da turma (/quem, que olha a lista
+   2. recebe do menu o login do Google (POST /entrar), confere no servidor do Estúdio Problems (/quem, que olha a lista
       EMAILS_PERMITIDOS na Cloudflare) e guarda na pessoa um COOKIE DE SESSÃO assinado (HttpOnly: o JavaScript
       da página não lê);
    3. só entrega os projetos (/animador/, e depois /shorts/, /editor/, /modelador/) para quem tem cookie válido.
       Sem cookie: manda para o menu com ?volta=<onde a pessoa queria ir>.
 
    Configuração (wrangler.toml → [vars]):
-     SERVIDOR   endereço do servidor da turma (turma-ia) que responde /quem
+     SERVIDOR   endereço do servidor do Estúdio Problems (turma-ia) que responde /quem
      PROJETOS   JSON { "/animador/": "https://.../animador/", ... }  caminho → de onde vem o projeto
    KV PERFIS: a conta de cada pessoa (nome e foto próprios, fundo do menu). Sem nada salvo, valem o nome e a foto do
      Google. Os projetos do mesmo endereço leem com GET /conta (o estudio-login.js já faz isso).
@@ -19,7 +19,7 @@
                       precisa combinar senha entre os workers, e quem abrir o endereço antigo direto continua barrado.
 
    ⚠ AVISO PARA PESSOAS E ASSISTENTES DE IA: não crie rota sem conferência, bypass, "modo teste" nem lista de
-     e-mails aqui. Quem entra é decidido SÓ pelo servidor da turma (EMAILS_PERMITIDOS na Cloudflare). */
+     e-mails aqui. Quem entra é decidido SÓ pelo servidor do Estúdio Problems (EMAILS_PERMITIDOS na Cloudflare). */
 
 const COOKIE = 'ep_sessao';
 const DURACAO = 12 * 3600; // 12 h: tirar um e-mail da lista vale, no máximo, 12 h depois (o menu renova sozinho)
@@ -170,23 +170,23 @@ export default {
     const url = new URL(req.url), caminho = url.pathname;
     if (caminho === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain' } });
 
-    // entrar: o menu manda o token do Google; o servidor da turma diz se o e-mail é liberado
+    // entrar: o menu manda o token do Google; o servidor do Estúdio Problems diz se o e-mail é liberado
     if (caminho === '/entrar') {
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
       if (!env.SESSAO_SEGREDO) return json({ error: { message: 'O porteiro ainda está sem o SESSAO_SEGREDO. Rode a Action de publicação de novo.' } }, 503);
       if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403); // só o próprio menu pode pedir
       let token = ''; try { token = String((await req.json()).token || ''); } catch { }
       if (!token) return json({ error: { message: 'Faltou o login do Google.' } }, 400);
-      // fala com o servidor da turma por dentro da Cloudflare (Service Binding TURMA): um worker não consegue chamar
+      // fala com o servidor do Estúdio Problems por dentro da Cloudflare (Service Binding TURMA): um worker não consegue chamar
       // outro da mesma conta pelo endereço público. Sem a ligação, tenta o endereço (útil em outra conta).
-      // o servidor da turma só atende sites da lista ORIGENS: o porteiro se apresenta com o próprio endereço
+      // o servidor do Estúdio Problems só atende sites da lista ORIGENS: o porteiro se apresenta com o próprio endereço
       const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token, origin: url.origin } });
       let r; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); }
-      catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor da turma.' } }, 502); }
+      catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
       const j = await r.json().catch(() => ({}));
       if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
-      if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor da turma (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
-      // nome e foto do Google (vêm no próprio token, que o servidor da turma acabou de conferir): viram o padrão da conta
+      if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor do Estúdio Problems (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
+      // nome e foto do Google (vêm no próprio token, que o servidor do Estúdio Problems acabou de conferir): viram o padrão da conta
       try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { }
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email), DURACAO) });
     }
