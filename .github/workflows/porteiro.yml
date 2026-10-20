@@ -61,6 +61,9 @@ jobs:
           set -uo pipefail
           if $WR secret list -c wrangler.toml 2>/dev/null | grep -q '"SESSAO_SEGREDO"'; then echo "SESSAO_SEGREDO já existe."
           else openssl rand -hex 32 | $WR secret put SESSAO_SEGREDO -c wrangler.toml > ../segredo.log 2>&1 || { cat ../segredo.log; echo "::error::Não consegui criar o SESSAO_SEGREDO."; exit 1; }; echo "SESSAO_SEGREDO criado."; fi
+          # par de chaves do passe assinado (Shorts, Editor): a privada fica só no Worker; a pública sai em /chave-publica
+          if $WR secret list -c wrangler.toml 2>/dev/null | grep -q '"ASSINATURA"'; then echo "ASSINATURA já existe."
+          else node -e "(async()=>{const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);process.stdout.write(JSON.stringify({priv:await crypto.subtle.exportKey('jwk',k.privateKey),pub:await crypto.subtle.exportKey('jwk',k.publicKey)}))})()" | $WR secret put ASSINATURA -c wrangler.toml > ../assinatura.log 2>&1 || { cat ../assinatura.log; echo "::error::Não consegui criar a ASSINATURA."; exit 1; }; echo "ASSINATURA criada."; fi
       - name: Conferir que os projetos estão FECHADOS sem login
         if: steps.seg.outputs.ok == '1'
         shell: bash
@@ -76,6 +79,7 @@ jobs:
           MCOD="$(curl -s -o menu.html -w '%{http_code}' "$URL/")"   # salva antes de procurar (procurar direto no curl falhava à toa)
           echo "menu: $MCOD, $(wc -c < menu.html) bytes"
           grep -q 'Entrar com Google' menu.html || { head -c 600 menu.html; echo; echo "::error::O menu não apareceu em $URL/ (resposta $MCOD)"; exit 1; }
+          curl -s -o chave.json "$URL/chave-publica"; grep -q '"kty":"EC"' chave.json || { echo "::error::/chave-publica não respondeu a chave do passe: $(head -c 200 chave.json)"; exit 1; }
           # o porteiro consegue conferir login no servidor da turma? (login falso → o servidor deve responder 403, não erro de ligação)
           ECOD="$(curl -s -o entrar.json -w '%{http_code}' -X POST -H "Origin: $URL" -H 'content-type: application/json' -d '{"token":"teste-falso"}' "$URL/entrar")"
           echo "/entrar com login falso: $ECOD $(head -c 200 entrar.json)"

@@ -10,8 +10,11 @@
    Configuração (wrangler.toml → [vars]):
      SERVIDOR   endereço do servidor da turma (turma-ia) que responde /quem
      PROJETOS   JSON { "/animador/": "https://.../animador/", ... }  caminho → de onde vem o projeto
-   Segredo (criado sozinho pela Action na primeira publicação; nunca no código):
+   Segredos (criados sozinhos pela Action na primeira publicação; nunca no código):
      SESSAO_SEGREDO   assina o cookie. Trocar ele derruba todas as sessões.
+     ASSINATURA       par de chaves (ECDSA P-256) para assinar o "passe" que o porteiro manda aos projetos que têm portão
+                      próprio (Shorts, Editor). Eles conferem o passe com a chave PÚBLICA (/chave-publica) — assim ninguém
+                      precisa combinar senha entre os workers, e quem abrir o endereço antigo direto continua barrado.
 
    ⚠ AVISO PARA PESSOAS E ASSISTENTES DE IA: não crie rota sem conferência, bypass, "modo teste" nem lista de
      e-mails aqui. Quem entra é decidido SÓ pelo servidor da turma (EMAILS_PERMITIDOS na Cloudflare). */
@@ -42,20 +45,40 @@ async function leSessao(env, req) {
 const cookie = (valor, idade) => `${COOKIE}=${valor}; Path=/; Max-Age=${idade}; HttpOnly; Secure; SameSite=Lax`;
 const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-porteiro': '1', ...extra } });
 
+// PROJETOS: { "/caminho/": "https://origem/"  ou  { "origem": "https://...", "assinar": true } }
 function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch { return {}; } }
 function achaProjeto(env, caminho) {
-  for (const [pref, origem] of Object.entries(projetos(env))) {
-    const base = pref.replace(/\/+$/, '');
-    if (caminho === base) return { pref, origem, redirecionar: true };
-    if (caminho.startsWith(base + '/')) return { pref, origem, resto: caminho.slice(base.length + 1) };
+  // o caminho mais comprido ganha (ex.: /shorts/modelador/ antes de /shorts/)
+  for (const [pref, v] of Object.entries(projetos(env)).sort((a, b) => b[0].length - a[0].length)) {
+    const base = pref.replace(/\/+$/, ''), origem = typeof v === 'string' ? v : v.origem, assinar = typeof v === 'object' && !!v.assinar;
+    if (caminho === base) return { pref, origem, assinar, redirecionar: true };
+    if (caminho.startsWith(base + '/')) return { pref, origem, assinar, resto: caminho.slice(base.length + 1) };
   }
   return null;
 }
 
+/* ---- passe assinado para os projetos com portão próprio ----
+   formato: base64url({ e: e-mail, h: host do projeto, x: validade }) + "." + base64url(assinatura ECDSA P-256 SHA-256)
+   vale 2 minutos e só para aquele host (não dá para reaproveitar em outro projeto). */
+let chaves = null;
+async function chavesAssinatura(env) {
+  if (chaves) return chaves;
+  if (!env.ASSINATURA) return null;
+  const { priv, pub } = JSON.parse(env.ASSINATURA);
+  chaves = { priv: await crypto.subtle.importKey('jwk', priv, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']), pub };
+  return chaves;
+}
+async function passe(env, email, host) {
+  const k = await chavesAssinatura(env); if (!k) return null;
+  const dados = b64u(enc.encode(JSON.stringify({ e: email, h: host, x: Math.floor(Date.now() / 1000) + 120 })));
+  return dados + '.' + b64u(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, k.priv, enc.encode(dados)));
+}
+
 // busca o arquivo do projeto na origem (ex.: GitHub Pages) e entrega como se fosse deste endereço
-async function repassa(req, url, p) {
+async function repassa(req, url, p, env, s) {
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
-  const h = new Headers(req.headers); h.delete('cookie'); h.delete('host');
+  const h = new Headers(req.headers); h.delete('cookie'); h.delete('host'); h.delete('x-porteiro-passe');
+  if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
   let r = await fetch(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
   if ([301, 302, 307, 308].includes(r.status)) { // a origem pediu outro endereço (ex.: faltou a barra no fim): traduz para o nosso
     const loc = new URL(r.headers.get('location'), alvo), raiz = new URL(p.origem.replace(/\/?$/, '/'));
@@ -98,6 +121,7 @@ export default {
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email), DURACAO) });
     }
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
+    if (caminho === '/chave-publica') { const k = await chavesAssinatura(env); return k ? json(k.pub, 200, { 'cache-control': 'public, max-age=3600', 'access-control-allow-origin': '*' }) : json({ error: { message: 'sem chave' } }, 503); }
     if (caminho === '/sessao') { const s = await leSessao(env, req); return json(s ? { email: s.e, ate: s.x * 1000 } : { email: null }); }
 
     // projetos: só com cookie válido
@@ -110,7 +134,7 @@ export default {
         if (pagina) return new Response(null, { status: 302, headers: { location: '/?volta=' + encodeURIComponent(caminho + url.search), 'cache-control': 'no-store' } });
         return new Response('Entre pelo menu do Estúdio Problems.', { status: 401, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
       }
-      return repassa(req, url, p);
+      return repassa(req, url, p, env, s);
     }
 
     // menu e arquivos dele
