@@ -105,6 +105,12 @@ svg{display:block;flex:none}
 .btn:hover{background:var(--bg4)}
 .btn.primary{background:var(--ac);border-color:var(--ac);color:#fff}.btn.primary:hover{filter:brightness(1.08)}
 .btn.danger{background:#3a1d24;border-color:#6b2a37;color:#ff9aa9}
+.btn.danger:hover{background:#4a1f29;border-color:#a33a4e;color:#ffb7c2}.btn.danger.forte{background:#d63a52;border-color:#d63a52;color:#fff}.btn.danger.forte:hover{background:#e84a62}
+.modal .mc.pergunta{width:min(420px,100%);text-align:center;display:grid;justify-items:center;gap:8px}
+.pergunta .pg-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(61,139,255,.16);color:#8cbcff}.pergunta .pg-ic.perigo{background:rgba(214,58,82,.16);color:#ff8a9a}
+.pergunta .pg-t{font-size:17px}.pergunta .pg-x{margin:2px 0 6px;color:var(--tx2);font-size:13.5px;line-height:1.5}
+.pergunta .pg-quem{display:flex;align-items:center;gap:10px;text-align:left;padding:8px 12px;border:1px solid var(--bd);border-radius:12px;width:100%}.pergunta .pg-quem small{display:block;color:var(--tx2);font-size:12px}
+.pergunta .acts{width:100%}
 .btn.sm{height:27px;padding:0 9px;font-size:12px}
 .btn:disabled{opacity:.45;pointer-events:none}
 #adm{flex:1;display:flex;flex-direction:column}
@@ -906,6 +912,26 @@ function renderMensagens() {
   }));
   $('#msg-cfg [data-a=padrao]').onclick = () => { EDIT.mensagens = JSON.parse(JSON.stringify(MSG_PADRAO)); mudou(); renderMensagens(); };
 }
+// janela de confirmação do Estúdio Problems (no lugar do confirm() do navegador)
+function pergunta({ titulo, texto, ok = 'Confirmar', perigo = false, foto, nome, detalhe }) {
+  return new Promise(fim => {
+    const d = document.createElement('div'); d.className = 'modal'; d.style.zIndex = 40;
+    const ini = esc(String(nome || '?')[0].toUpperCase());
+    d.innerHTML = `<div class="mc pergunta" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}">
+      <div class="pg-ic${perigo ? ' perigo' : ''}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <b class="pg-t">${esc(titulo)}</b>
+      ${nome ? `<div class="pg-quem"><span class="ac-av">${foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${ini}'))">` : ini}</span><span><b>${esc(nome)}</b><small>${esc(detalhe || '')}</small></span></div>` : ''}
+      <p class="pg-x">${esc(texto)}</p>
+      <div class="acts"><span class="sp"></span><button class="btn sm" data-n>Cancelar</button><button class="btn sm ${perigo ? 'danger forte' : 'primary'}" data-s>${esc(ok)}</button></div></div>`;
+    document.body.appendChild(d);
+    const sai = v => { d.remove(); document.removeEventListener('keydown', tecla); fim(v); };
+    const tecla = e => { if (e.key === 'Escape') sai(false); };
+    document.addEventListener('keydown', tecla);
+    d.onclick = e => { if (e.target === d) sai(false); };
+    d.querySelector('[data-n]').onclick = () => sai(false); d.querySelector('[data-s]').onclick = () => sai(true);
+    d.querySelector('[data-n]').focus(); // o botão seguro fica selecionado
+  });
+}
 // ADM › Quem pode entrar: lista do servidor (turma-ia) com nome/foto de cada conta, e-mail censurado; só para os ADMINS
 async function renderAcesso() {
   const sec = $('#acesso-sec'), lista = $('#acesso-lista'), stA = (t, err) => { const e = $('#acesso-st'); e.textContent = t; e.style.color = err ? 'var(--err,#ff8a9a)' : ''; };
@@ -921,10 +947,11 @@ async function renderAcesso() {
         ${(it.nomeProprio || it.fotoPropria) && it.nomeOriginal ? `<span class="ac-orig" title="Como está no Google">original: ${av(it.fotoOriginal, it.nomeOriginal, 'mini')}${esc(it.nomeOriginal)}</span>` : ''}
         <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm">ADM</span>' : ''}${it.fixo ? '<span class="ac-tag fixo" title="Lista fixa EMAILS_PERMITIDOS: só muda na Cloudflare">Fixo</span>' : `<span class="ac-tag" style="text-transform:none;letter-spacing:0;display:inline-flex;align-items:center;gap:4px" title="Liberado pela tela ADM">${it.porNome ? `por ${av(it.porFoto, it.porNome, 'mini')}${esc(it.porNome)}` : 'adicionado'}${it.em ? ' · ' + esc(quando(it.em).split(',')[0]) : ''}</span>`}</div></div>
       <span class="ac-em">${it.online ? `<span class="ac-on"><i></i>online · ${esc(it.online)}</span>` : it.visto ? 'último login ' + esc(quando(it.visto)) : 'ainda não entrou'}</span>
-      ${it.fixo || it.voce ? '' : `<button class="btn sm" data-tira="${esc(it.id)}" title="Tirar o acesso">Remover</button>`}</div>`).join('') || '<div class="hint">Ninguém na lista.</div>';
+      ${it.fixo || it.voce ? '' : `<button class="btn sm danger" data-tira="${esc(it.id)}" title="Tirar o acesso">Remover</button>`}</div>`).join('') || '<div class="hint">Ninguém na lista.</div>';
     $$('[data-tira]', lista).forEach(b => b.onclick = async () => {
       const it = itens.find(x => x.id === b.dataset.tira);
-      if (!confirm(`Tirar o acesso de ${it.nome || it.mascara} (${it.mascara})? A pessoa sai de todos os projetos em até 1 minuto.`)) return;
+      if (!(await pergunta({ titulo: 'Tirar o acesso?', foto: it.foto, nome: it.nome || 'Ainda não entrou', detalhe: it.mascara,
+        texto: 'Essa pessoa não vai mais conseguir abrir o menu nem os projetos. Se estiver com algum aberto, sai em até 1 minuto. Dá para liberar de novo depois.', ok: 'Remover acesso', perigo: true }))) return;
       b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'del', id: it.id }) }); stA('Acesso removido.'); carrega(); } catch (e) { stA(e.message, true); b.disabled = false; }
     });
   };

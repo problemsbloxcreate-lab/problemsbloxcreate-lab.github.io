@@ -214,13 +214,21 @@ async function presenca(env, corpo) {
   const r = await o.fetch('https://presenca/', corpo ? { method: 'POST', body: JSON.stringify(corpo) } : {});
   return r.json();
 }
-export class Presenca {
-  constructor() { this.m = new Map(); }
+export class Presenca { // cada aba conta separado (e-mail|aba); guarda no armazenamento do objeto (não some se a Cloudflare desligar ele)
+  constructor(state) { this.state = state; }
   async fetch(req) {
-    const agora = Date.now();
-    for (const [k, v] of this.m) if (agora - v.t > 150e3) this.m.delete(k);
-    if (req.method === 'POST') { const b = await req.json(); if (b.prog) this.m.set(b.e, { prog: b.prog, t: agora }); else this.m.delete(b.e); return Response.json({ ok: true }); }
-    return Response.json(Object.fromEntries(this.m));
+    const agora = Date.now(), m = (await this.state.storage.get('m')) || {};
+    let mudou = false;
+    for (const k of Object.keys(m)) if (agora - m[k].t > 150e3) { delete m[k]; mudou = true; }
+    if (req.method === 'POST') {
+      const b = await req.json(), k = b.e + '|' + String(b.aba || '').slice(0, 20);
+      if (b.prog) m[k] = { prog: b.prog, t: agora }; else delete m[k];
+      await this.state.storage.put('m', m); return Response.json({ ok: true });
+    }
+    if (mudou) await this.state.storage.put('m', m);
+    const porEmail = {}; // a aba mais recente de cada pessoa
+    for (const [k, v] of Object.entries(m)) { const e = k.split('|')[0]; if (!porEmail[e] || porEmail[e].t < v.t) porEmail[e] = v; }
+    return Response.json(porEmail);
   }
 }
 async function conta(req, env, url, s) {
@@ -326,7 +334,7 @@ export default {
       if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
       let b = {}; try { b = await req.json(); } catch { }
       const prog = PROGS.includes(b.programa) ? b.programa : null;
-      if (env.PRESENCA && (prog || b.saiu)) await presenca(env, { e: s.e.toLowerCase(), prog: b.saiu ? null : prog }).catch(() => null); // programa desconhecido: ignora
+      if (env.PRESENCA && (prog || b.saiu)) await presenca(env, { e: s.e.toLowerCase(), aba: String(b.aba || ''), prog: b.saiu ? null : prog }).catch(() => null); // programa desconhecido: ignora
       return json({ ok: true });
     }
     if (caminho === '/conta' || caminho === '/conta/foto') {
