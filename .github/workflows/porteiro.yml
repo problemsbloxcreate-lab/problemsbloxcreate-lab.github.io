@@ -83,3 +83,17 @@ jobs:
             echo "- no Firebase: Authentication → Settings → Authorized domains"
             echo "- na Cloudflare: variável ORIGENS do worker turma-ia (se ela não for \`*\`): \`$URL\`"
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Conferir se o servidor da turma aceita este endereço (ORIGENS)
+        if: steps.seg.outputs.ok == '1'
+        shell: bash
+        run: |
+          set -uo pipefail
+          URL="$(grep -oE 'https://estudio\.[a-z0-9-]+\.workers\.dev' deploy.log | head -1)"
+          SRV="$(grep -oE '^SERVIDOR = "[^"]+"' porteiro/wrangler.toml | cut -d'"' -f2)"
+          ACAO="$(curl -s -o /dev/null -D - -X OPTIONS -H "Origin: $URL" -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: authorization' "$SRV/quem" | tr -d '\r' | grep -i '^access-control-allow-origin:' | cut -d' ' -f2-)"
+          STATUS="$(curl -s "$SRV/" | head -c 400)"
+          echo "::notice::Servidor $SRV respondeu para $URL: access-control-allow-origin = '${ACAO:-nada}'"
+          echo "::notice::Situação do servidor: $STATUS"
+          if [ "$ACAO" != "$URL" ] && [ "$ACAO" != "*" ]; then
+            echo "::warning::O servidor da turma ainda NÃO aceita $URL. Na Cloudflare: worker turma-ia → Settings → Variables and Secrets → ORIGENS deve conter $URL → salvar e Deploy."
+          fi
