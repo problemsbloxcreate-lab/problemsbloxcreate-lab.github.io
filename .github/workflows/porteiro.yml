@@ -76,6 +76,10 @@ jobs:
           MCOD="$(curl -s -o menu.html -w '%{http_code}' "$URL/")"   # salva antes de procurar (procurar direto no curl falhava à toa)
           echo "menu: $MCOD, $(wc -c < menu.html) bytes"
           grep -q 'Entrar com Google' menu.html || { head -c 600 menu.html; echo; echo "::error::O menu não apareceu em $URL/ (resposta $MCOD)"; exit 1; }
+          # o porteiro consegue conferir login no servidor da turma? (login falso → o servidor deve responder 403, não erro de ligação)
+          ECOD="$(curl -s -o entrar.json -w '%{http_code}' -X POST -H "Origin: $URL" -H 'content-type: application/json' -d '{"token":"teste-falso"}' "$URL/entrar")"
+          echo "/entrar com login falso: $ECOD $(head -c 200 entrar.json)"
+          [ "$ECOD" = "403" ] || { echo "::error::O porteiro não conseguiu conferir o login no servidor da turma (resposta $ECOD: $(head -c 160 entrar.json))."; exit 1; }
           {
             echo "### 🚪 Porteiro no ar: $URL"
             echo ""

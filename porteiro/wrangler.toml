@@ -12,6 +12,11 @@ binding = "ASSETS"
 run_worker_first = true        # o porteiro decide tudo antes de qualquer arquivo sair
 not_found_handling = "none"
 
+# ligação direta com o servidor da turma (mesma conta da Cloudflare)
+[[services]]
+binding = "TURMA"
+service = "turma-ia"
+
 [vars]
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.

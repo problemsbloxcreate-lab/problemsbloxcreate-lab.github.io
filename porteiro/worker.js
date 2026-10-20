@@ -86,10 +86,14 @@ export default {
       if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403); // só o próprio menu pode pedir
       let token = ''; try { token = String((await req.json()).token || ''); } catch { }
       if (!token) return json({ error: { message: 'Faltou o login do Google.' } }, 400);
-      let r; try { r = await fetch(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token }, cache: 'no-store' }); }
+      // fala com o servidor da turma por dentro da Cloudflare (Service Binding TURMA): um worker não consegue chamar
+      // outro da mesma conta pelo endereço público. Sem a ligação, tenta o endereço (útil em outra conta).
+      const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token } });
+      let r; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); }
       catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor da turma.' } }, 502); }
       const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.email) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, r.status === 401 || r.status === 403 ? 403 : 502);
+      if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
+      if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor da turma (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email), DURACAO) });
     }
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
