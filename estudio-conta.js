@@ -28,6 +28,7 @@
 .ep-conta-head small{display:block;color:#b5b5b5;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-conta-pop a,.ep-conta-pop button.it{width:100%;display:flex;align-items:center;gap:9px;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;color:#e7e7e7;text-decoration:none;font:inherit}
 .ep-conta-pop a:hover,.ep-conta-pop button.it:hover{background:#434343}
+.ep-conta-pop svg{flex:none;width:15px;height:15px}
 .ep-conta-pop .sep{height:1px;background:#1f1f1f;margin:4px 0}`;
   const ini = p => esc((String(p?.nome || p?.email || '?')[0] || '?').toUpperCase());
   const av = p => p?.foto ? `<img src="${esc(p.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${ini(p)}'))">` : ini(p);
@@ -42,10 +43,10 @@
     box.innerHTML = `<button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button>
       <div class="ep-conta-pop" hidden role="menu">
         <div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}</b><small>${esc(p.email)}</small></span></div>
-        <a href="/?conta=1" role="menuitem">👤 Minha conta</a>
-        <a href="/" role="menuitem">🏠 Voltar ao menu</a>
+        <a href="/?conta=1" role="menuitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Minha conta</a>
+        <a href="/" role="menuitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z"/></svg>Voltar ao menu</a>
         <div class="sep"></div>
-        <button class="it" type="button" data-sair role="menuitem">🔒 Sair da conta</button>
+        <button class="it" type="button" data-sair role="menuitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Sair da conta</button>
       </div>`;
     const lugar = document.querySelector('[data-estudio-conta]'), tema = document.querySelector('[data-tema-aqui]');
     if (lugar) lugar.replaceWith(box);
