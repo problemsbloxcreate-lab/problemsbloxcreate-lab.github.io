@@ -49,6 +49,7 @@ const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), { 
 
 // PROJETOS: { "/caminho/": "https://origem/"  ou  { "origem": "https://...", "assinar": true, "servico": "...", "nuvem": true }
 //            ou { "para": "/outro/caminho/" }  (só redireciona) }
+// "conta": as páginas do projeto ganham o botão da conta (/estudio-conta.js) se ainda não carregarem ele.
 // "nuvem": o projeto fala com o servidor de sons da equipe: o porteiro entrega o sons-url.json apontando para /nuvem/
 //          (que leva o passe) e deixa a "senha da equipe" do navegador preenchida com um aviso — ninguém digita senha.
 function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch { return {}; } }
@@ -56,7 +57,7 @@ function achaProjeto(env, caminho) {
   // o caminho mais comprido ganha (ex.: /shorts/modelador/ antes de /shorts/)
   for (const [pref, v] of Object.entries(projetos(env)).sort((a, b) => b[0].length - a[0].length)) {
     const base = pref.replace(/\/+$/, ''), o = typeof v === 'string' ? { origem: v } : v;
-    const info = { pref, origem: o.origem, assinar: !!o.assinar, servico: o.servico || null, nuvem: !!o.nuvem, para: o.para || null }; // servico: nome da ligação direta (worker da mesma conta)
+    const info = { pref, origem: o.origem, assinar: !!o.assinar, servico: o.servico || null, nuvem: !!o.nuvem, conta: !!o.conta, para: o.para || null }; // servico: nome da ligação direta (worker da mesma conta)
     if (caminho === base) return { ...info, redirecionar: true };
     if (caminho.startsWith(base + '/')) return { ...info, resto: caminho.slice(base.length + 1) };
   }
@@ -97,9 +98,10 @@ async function repassa(req, url, p, env, s) {
   }
   const out = new Headers(r.headers);
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
-  if (p.nuvem && r.ok && (out.get('content-type') || '').includes('text/html')) {
+  if ((p.nuvem || p.conta) && r.ok && (out.get('content-type') || '').includes('text/html')) {
     let h = await r.text(); const m = h.match(/<head[^>]*>/i);
-    h = m ? h.slice(0, m.index + m[0].length) + NUVEM_JS + h.slice(m.index + m[0].length) : NUVEM_JS + h;
+    const extra = (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
+    h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h;
     out.delete('content-length'); out.delete('content-encoding'); out.delete('etag');
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
   }
@@ -231,7 +233,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url);
-    if (caminho === '/estudio-login.js') { const r = await env.ASSETS.fetch(req); if (r.ok) return r; }
+    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js') { const r = await env.ASSETS.fetch(req); if (r.ok) return r; }
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url);
     return menu(env, url, 404);
   },

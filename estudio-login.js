@@ -52,7 +52,8 @@
     if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.innerHTML = '<div class="c"><b>Estúdio Problems</b><div data-m style="margin-top:10px"></div></div>'; (document.body || root).appendChild(el); }
     return el;
   };
-  const mostra = (html) => { const put = () => { porta().querySelector('[data-m]').innerHTML = html; }; document.body ? put() : addEventListener('DOMContentLoaded', put, { once: true }); };
+  let aberto = false; // depois de liberar, nenhuma mensagem atrasada recria a tela de espera por cima da página
+  const mostra = (html) => { const put = () => { if (!aberto) porta().querySelector('[data-m]').innerHTML = html; }; document.body ? put() : addEventListener('DOMContentLoaded', put, { once: true }); };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const carrega = f => new Promise((ok, no) => { const s = document.createElement('script'); s.src = CFG.sdk + f; s.onload = ok; s.onerror = () => no(new Error('Não consegui carregar o login do Google. Verifique a internet e recarregue.')); (document.head || root).appendChild(s); });
 
@@ -90,7 +91,7 @@
         throw new Error(j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.');
       }
       API.email = j.email;
-      const abre = () => { document.getElementById('estudio-porta')?.remove(); root.classList.remove('estudio-trancado'); document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
+      const abre = () => { aberto = true; document.getElementById('estudio-porta')?.remove(); root.classList.remove('estudio-trancado'); document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
         API.perfil().then(p => document.dispatchEvent(new CustomEvent('estudio-perfil', { detail: p }))); };
       document.body ? abre() : addEventListener('DOMContentLoaded', abre, { once: true });
       return j.email;

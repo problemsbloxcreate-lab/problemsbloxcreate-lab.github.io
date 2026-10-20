@@ -764,6 +764,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
       limparVolta();
       $('#login').hidden = true; topo(email);
       MODO_ADM ? showAdm() : showMenu();
+      if (QS.has('conta') && CONTA) abrirConta();
     } catch (e) {
       btn.disabled = false; msg(esc(e.message), true); other.hidden = !fb?.currentUser;
       if (e.denied && !e.soAviso) { try { await fb.signOut(); } catch { } other.hidden = true; }
@@ -774,6 +775,9 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
     try { await signIn(); if (fb.currentUser) await pass(); }
     catch (e) { btn.disabled = false; msg(/popup-closed|cancelled/.test(e.code || '') ? 'Login cancelado.' : esc(e.message || 'Não deu para entrar.'), true); }
   };
+  // vindo do botão da conta de um projeto: ?sair=1 sai da conta; ?conta=1 abre a Minha conta depois de entrar
+  const QS = new URLSearchParams(location.search);
+  if (QS.has('sair')) { try { await init(); await fb.signOut(); } catch { } location.replace(BASE); return; }
   try { const u = await init(); if (u) await pass(); else { btn.disabled = false; msg(new URLSearchParams(location.search).has('volta') ? 'Entre com o Google para abrir o site.' : ''); } }
   catch (e) { btn.disabled = true; msg(esc(e.message || String(e)), true); }
 })();
