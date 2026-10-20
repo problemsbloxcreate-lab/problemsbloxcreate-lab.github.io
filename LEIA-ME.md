@@ -8,6 +8,14 @@ Suba na raiz do site: `index.html` (o menu), `404.html` (cópia idêntica) e `es
 
 Se você tinha subido a versão anterior, apague a pasta `adm/` e o `config.js` do site. Era o `adm/index.html` que causava o loop.
 
+## Endereço único (porteiro na Cloudflare)
+
+A pasta `porteiro/` é o Worker `estudio` da Cloudflare (conta dos segredos `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` deste repositório). Ele serve este menu e coloca os projetos atrás do login, todos no mesmo endereço (`https://estudio.<conta>.workers.dev`). Depois que a pessoa entra com o Google no menu, o porteiro confere o e-mail no servidor da turma (`/quem`) e guarda uma sessão de 12 horas num cookie que a página não consegue ler. Sem sessão, nenhum arquivo dos projetos sai: quem tenta abrir é mandado para o menu e volta depois de entrar.
+
+Ele é publicado sozinho pela Action "Publicar o porteiro (Cloudflare)" a cada mudança no menu ou na pasta `porteiro/`. O segredo `SESSAO_SEGREDO` é criado sozinho na primeira publicação. Para pôr um projeto atrás do login, acrescente o caminho dele em `PROJETOS`, no `porteiro/wrangler.toml`.
+
+O endereço novo precisa estar nos domínios autorizados do Firebase e na variável `ORIGENS` do `turma-ia` (se ela não for `*`). O resumo da Action mostra o endereço exato.
+
 ## Login e volta para o site certo
 
 Os projetos ficam no mesmo domínio do menu, cada um no seu caminho (ex.: `/animar/`, `/modelador/`). Quem abre um projeto sem ter entrado é mandado para o menu, entra com o Google e, se o servidor liberar a conta, volta sozinho para o projeto que estava tentando abrir. O menu só devolve para endereços do mesmo site. Se um projeto mandar a pessoa de volta para o menu várias vezes seguidas, o menu para de redirecionar e mostra os botões, para não ficar em loop.

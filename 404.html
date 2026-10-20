@@ -282,7 +282,14 @@ async function signIn() {
   const p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
   try { await fb.signInWithPopup(p); } catch (e) { if (/popup-blocked|operation-not-supported/.test(e.code || '')) return fb.signInWithRedirect(p); throw e; }
 }
-async function signOut() { try { await fb?.signOut(); } catch { } location.replace(BASE); }
+// Porteiro (endereço único na Cloudflare): depois do login, entrega o token do Google para ele guardar a sessão
+// (cookie que libera os projetos). No GitHub Pages não existe porteiro: aí não faz nada e o menu segue igual.
+async function abrirSessao() {
+  let r; try { r = await fetch('/entrar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: await fb.currentUser.getIdToken() }), credentials: 'same-origin', cache: 'no-store' }); } catch { return; }
+  if (!r.headers.get('x-porteiro')) return;
+  if (!r.ok) { const j = await r.json().catch(() => ({})); const e = new Error(j.error?.message || 'O porteiro não liberou a entrada.'); e.denied = r.status === 403; throw e; }
+}
+async function signOut() { try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } try { await fb?.signOut(); } catch { } location.replace(BASE); }
 
 /* ======================= dados (links + fundo) ======================= */
 const padrao = () => ({ links: MENU_CONFIG.projetos.map(p => ({ nome: p.nome, desc: p.desc || '', url: p.url || null, icone: p.icone || p.id, fundo: null, escurecer: .45 })), fundo: { modo: 'nenhum', intervalo: 8, escurecer: .55, itens: [] } });
@@ -600,6 +607,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
     btn.disabled = true; msg('Conferindo seu acesso…', false, true);
     try {
       const email = await check();
+      await abrirSessao();
       DADOS = await carregar();
       if (MODO_ADM) {
         if (!DADOS.servidor) throw Object.assign(new Error(DADOS.erro?.type === 'sem_kv' || DADOS.erro?.status === 404 ? 'O servidor ainda não tem a parte do menu. Atualize o worker na Cloudflare (veja o LEIA-ME).' : (DADOS.erro?.message || 'Não consegui ler o menu no servidor.')), { soAviso: true });

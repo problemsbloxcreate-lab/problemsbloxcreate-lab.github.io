@@ -58,7 +58,7 @@
   const API = window.EstudioLogin = {
     email: null,
     async token() { const u = auth?.currentUser; return u ? 'Bearer ' + await u.getIdToken() : null; },
-    async sair() { try { await auth?.signOut(); } catch { } location.href = menuUrl(false); },
+    async sair() { try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } try { await auth?.signOut(); } catch { } location.href = menuUrl(false); },
     pronto: null,
   };
   API.pronto = (async () => {

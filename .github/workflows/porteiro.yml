@@ -1,0 +1,83 @@
+name: Publicar o porteiro (Cloudflare)
+
+# Publica o menu + o porteiro (pasta porteiro/) no Worker "estudio" da Cloudflare: um endereço só, com o login do
+# Google conferido no servidor, para o menu e todos os projetos.
+# Precisa dos segredos do repositório CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID (conta "problemsraiz").
+# O segredo SESSAO_SEGREDO do Worker é criado sozinho na primeira vez (e nunca aparece aqui).
+
+on:
+  push:
+    branches: [main]
+    paths: ["porteiro/**", "index.html", "404.html", "estudio-login.js", ".github/workflows/porteiro.yml"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: porteiro
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WR: npx --yes wrangler@4.20.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Conferir os arquivos
+        run: |
+          node -e "import('./porteiro/worker.js').then(()=>console.log('porteiro ok'))"
+          node -e "new Function(require('fs').readFileSync('estudio-login.js','utf8'))"
+          cmp index.html 404.html || { echo "::error::index.html e 404.html precisam ser iguais (o 404.html é cópia do menu)."; exit 1; }
+          mkdir -p dist && cp index.html 404.html estudio-login.js dist/
+          ls -la dist
+      - name: Conferir os segredos
+        id: seg
+        shell: bash
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Faltam os segredos CLOUDFLARE_API_TOKEN e/ou CLOUDFLARE_ACCOUNT_ID em Settings → Secrets and variables → Actions. Nada foi publicado."
+            echo "ok=0" >> "$GITHUB_OUTPUT"
+          else echo "ok=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Publicar
+        if: steps.seg.outputs.ok == '1'
+        working-directory: porteiro
+        shell: bash
+        run: |
+          set -uo pipefail
+          $WR deploy -c wrangler.toml > ../deploy.log 2>&1 || { cat ../deploy.log; echo "::error::A publicação do porteiro falhou (veja o log acima)."; exit 1; }
+          cat ../deploy.log
+      - name: Criar o segredo da sessão (só na primeira vez)
+        if: steps.seg.outputs.ok == '1'
+        working-directory: porteiro
+        shell: bash
+        run: |
+          set -uo pipefail
+          if $WR secret list -c wrangler.toml 2>/dev/null | grep -q '"SESSAO_SEGREDO"'; then echo "SESSAO_SEGREDO já existe."
+          else openssl rand -hex 32 | $WR secret put SESSAO_SEGREDO -c wrangler.toml > ../segredo.log 2>&1 || { cat ../segredo.log; echo "::error::Não consegui criar o SESSAO_SEGREDO."; exit 1; }; echo "SESSAO_SEGREDO criado."; fi
+      - name: Conferir que os projetos estão FECHADOS sem login
+        if: steps.seg.outputs.ok == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(grep -oE 'https://estudio\.[a-z0-9-]+\.workers\.dev' deploy.log | head -1)"
+          [ -n "$URL" ] || { echo "::error::Não achei o endereço workers.dev no resultado."; exit 1; }
+          sleep 8
+          COD="$(curl -s -o /dev/null -w '%{http_code}' -H 'Accept: text/html' "$URL/animador/")"
+          LOC="$(curl -s -o /dev/null -w '%{redirect_url}' -H 'Accept: text/html' "$URL/animador/")"
+          echo "/animador/ sem login: $COD → $LOC"
+          [ "$COD" = "302" ] && echo "$LOC" | grep -q '/?volta=' || { echo "::error::/animador/ respondeu $COD sem login (esperado 302 para o menu). Confira o porteiro!"; exit 1; }
+          curl -s "$URL/" | grep -q 'Entrar com Google' || { echo "::error::O menu não apareceu em $URL/"; exit 1; }
+          {
+            echo "### 🚪 Porteiro no ar: $URL"
+            echo ""
+            echo "Para o login funcionar nesse endereço, adicione o domínio \`${URL#https://}\`:"
+            echo "- no Firebase: Authentication → Settings → Authorized domains"
+            echo "- na Cloudflare: variável ORIGENS do worker turma-ia (se ela não for \`*\`): \`$URL\`"
+          } >> "$GITHUB_STEP_SUMMARY"
