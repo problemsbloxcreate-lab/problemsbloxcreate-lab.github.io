@@ -49,7 +49,7 @@ jobs:
           const r = j.result || {}, b = r.bindings || [];
           // só os NOMES e tipos aparecem no log (nunca os valores)
           console.log('ligações atuais:', b.map(x => x.name + ':' + x.type).join(', '));
-          const conhecidos = ['plain_text', 'secret_text', 'kv_namespace', 'json'];
+          const conhecidos = ['plain_text', 'secret_text', 'kv_namespace', 'json', 'ai'];
           const outros = b.filter(x => !conhecidos.includes(x.type));
           if (outros.length) { console.log('::error::O turma-ia tem ligações que esta Action não sabe manter (' + outros.map(x => x.name + ':' + x.type).join(', ') + '). Nada foi publicado.'); process.exit(1); }
           if (!b.some(x => x.name === 'EMAILS_PERMITIDOS')) { console.log('::error::O turma-ia está sem EMAILS_PERMITIDOS na Cloudflare. Nada foi publicado (para ninguém ficar trancado para fora).'); process.exit(1); }
@@ -59,6 +59,7 @@ jobs:
           if ((r.compatibility_flags || []).length) t += `compatibility_flags = ${JSON.stringify(r.compatibility_flags)}\n`;
           t += `workers_dev = true\nkeep_vars = true\n`;
           for (const k of kv) t += `\n[[kv_namespaces]]\nbinding = "${k.name}"\nid = "${k.namespace_id}"\n`;
+          const ai = b.find(x => x.type === 'ai'); if (ai) t += `\n[ai]\nbinding = "${ai.name}"\n`; // IA da Cloudflare (transcrição)
           fs.writeFileSync('wrangler.toml', t); console.log(t.replace(/id = "[0-9a-f]+"/g, 'id = "…"'));
           EOF
       - name: Testar a publicação (sem publicar)
