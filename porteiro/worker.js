@@ -138,19 +138,25 @@ async function conta(req, env, url, s) {
   }
   if (url.pathname === '/conta/foto') {
     if (req.method === 'GET') {
-      const r = await env.PERFIS.getWithMetadata(chaveFoto(s.e), { type: 'stream' });
-      if (!r.value) return new Response('sem foto', { status: 404 });
-      return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+      // cada foto nova fica numa chave própria (f:<email>:<versão>): o KV nunca devolve a foto velha no endereço da nova,
+      // e cada endereço pode ficar guardado no navegador para sempre (o conteúdo dele nunca muda)
+      const v = /^\d{1,15}$/.test(url.searchParams.get('v') || '') ? url.searchParams.get('v') : '';
+      let r = v ? await env.PERFIS.getWithMetadata(chaveFoto(s.e) + ':' + v, { type: 'stream' }) : { value: null };
+      if (!r.value) r = await env.PERFIS.getWithMetadata(chaveFoto(s.e), { type: 'stream' }); // fotos salvas antes desta mudança
+      if (!r.value) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
+      return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': v ? 'private, max-age=31536000, immutable' : 'no-cache', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
     }
     if (!mesmoSite) return json({ error: { message: 'Pedido de outro site.' } }, 403);
-    if (req.method === 'DELETE') { await env.PERFIS.delete(chaveFoto(s.e)); const n = { ...p }; delete n.fotoV; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); return json(contaPublica(s.e, n)); }
+    if (req.method === 'DELETE') { await env.PERFIS.delete(chaveFoto(s.e)); if (p.fotoV) await env.PERFIS.delete(chaveFoto(s.e) + ':' + p.fotoV); const n = { ...p }; delete n.fotoV; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); return json(contaPublica(s.e, n)); }
     if (req.method === 'PUT' || req.method === 'POST') {
       const tipo = (req.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
       if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(tipo)) return json({ error: { message: 'Use uma imagem PNG, JPG, WebP ou GIF.' } }, 400); // SVG não: poderia ter script
       const buf = await req.arrayBuffer();
       if (!buf.byteLength || buf.byteLength > 3 * 1048576) return json({ error: { message: 'A foto precisa ter até 3 MB.' } }, 413);
-      await env.PERFIS.put(chaveFoto(s.e), buf, { metadata: { tipo } });
-      const n = { ...p, fotoV: Date.now() }; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
+      const fotoV = Date.now();
+      await env.PERFIS.put(chaveFoto(s.e) + ':' + fotoV, buf, { metadata: { tipo } });
+      const n = { ...p, fotoV }; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
+      if (p.fotoV) await env.PERFIS.delete(chaveFoto(s.e) + ':' + p.fotoV); await env.PERFIS.delete(chaveFoto(s.e)); // a anterior não serve mais
       return json(contaPublica(s.e, n));
     }
     return json({ error: { message: 'Método não aceito.' } }, 405);

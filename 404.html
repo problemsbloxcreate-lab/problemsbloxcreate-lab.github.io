@@ -195,6 +195,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <div class="me"><button class="me-btn" id="me-btn" aria-haspopup="true" aria-expanded="false"></button>
     <div class="me-pop" id="me-pop" hidden><div class="head" id="me-email"></div>
       <button id="btn-conta" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Minha conta</button>
+      <button id="btn-atualiza" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam."><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Atualizar todos os sites</button>
       <button id="btn-out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Sair da conta</button></div></div>
 </header>
 
@@ -404,7 +405,9 @@ async function carregaConta() {
   try { const r = await fetch('/conta', { credentials: 'same-origin', cache: 'no-store' }); if (r.ok && r.headers.get('x-porteiro')) CONTA = await r.json(); } catch { }
   return CONTA;
 }
-const avatarHtml = (foto, nome) => foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer">` : esc((String(nome || '?')[0] || '?').toUpperCase());
+const avatarHtml = (foto, nome) => { const l = esc((String(nome || '?')[0] || '?').toUpperCase());
+  // se a foto falhar, tenta de novo uma vez (sem a memória do navegador) antes de mostrar a letra
+  return foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer" onerror="if(!this.dataset.r){this.dataset.r=1;var i=this;setTimeout(function(){i.src=i.src+(i.src.indexOf('?')<0?'?':'&')+'r='+Date.now()},1200)}else this.replaceWith(document.createTextNode('${l}'))">` : l; };
 const saudacao = (h = new Date().getHours()) => h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 function aplicaConta() {
   const u = fb.currentUser, nome = CONTA?.nome || u?.displayName || '', foto = CONTA ? CONTA.foto : u?.photoURL;
@@ -546,6 +549,39 @@ function topo(email) {
   mb.onclick = e => { e.stopPropagation(); pop.hidden = !pop.hidden; mb.setAttribute('aria-expanded', String(!pop.hidden)); };
   document.addEventListener('click', e => { if (!pop.contains(e.target)) { pop.hidden = true; mb.setAttribute('aria-expanded', 'false'); } });
   $('#btn-out').onclick = signOut;
+  $('#btn-atualiza').onclick = () => { pop.hidden = true; atualizarTudo(); };
+}
+// "Ctrl+F5 para todos os sites": baixa de novo (sem a memória do navegador) as páginas e os arquivos do menu e de cada projeto.
+// NÃO apaga nada guardado no navegador (projetos, rascunhos, preferências ficam no IndexedDB/localStorage, que não são tocados).
+async function atualizarTudo() {
+  const aviso = document.createElement('div'); aviso.className = 'toast'; aviso.style.bottom = '24px'; document.body.appendChild(aviso);
+  const diz = t => { aviso.textContent = t; };
+  diz('Atualizando os sites…');
+  try {
+    // service workers (ex.: o Animador instalado como programa): só pede a versão nova, sem desinstalar
+    if (navigator.serviceWorker?.getRegistrations) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.update(); } catch { } }
+    // cópias offline dos service workers (só arquivos do site; projetos não ficam aqui)
+    if (window.caches?.keys) for (const k of await caches.keys()) { try { await caches.delete(k); } catch { } }
+    const raizes = new Set(['/', '/estudio-login.js', '/estudio-conta.js', '/shorts/', '/shorts/producao/', '/editor/', '/modelador/', '/modelador/blockbench/', '/animador/', '/animador/animar.html']);
+    (DADOS?.links || []).forEach(l => { try { const u = new URL(l.url, location.href); if (u.origin === location.origin) raizes.add(u.pathname); } catch { } });
+    if (CONTA?.foto && CONTA.foto.startsWith('/')) raizes.add(CONTA.foto);
+    const feitos = new Set(), fila = [...raizes];
+    const pega = async caminho => {
+      if (feitos.has(caminho) || feitos.size > 600) return; feitos.add(caminho);
+      let r; try { r = await fetch(caminho, { cache: 'reload', credentials: 'same-origin', redirect: 'follow' }); } catch { return; }
+      if (!r.ok || !raizes.has(caminho) || !(r.headers.get('content-type') || '').includes('text/html')) return;
+      // das páginas, pega também os scripts, estilos e ícones do mesmo endereço
+      const base = new URL(r.url), html = await r.text();
+      for (const m of html.matchAll(/<(?:script|link|img)\b[^>]*?\b(?:src|href)\s*=\s*["']([^"'#]+)["']/gi)) {
+        if (m[1].includes('${')) continue; // pedaço de código, não é arquivo
+        try { const u = new URL(m[1], base); if (u.origin === location.origin && !/\/(entrar|sair|conta)$/.test(u.pathname)) fila.push(u.pathname + u.search); } catch { }
+      }
+    };
+    let n = 0;
+    while (fila.length) { const lote = fila.splice(0, 6); await Promise.all(lote.map(pega)); n = feitos.size; diz(`Atualizando os sites… ${n} arquivos`); }
+    diz('Pronto! Tudo atualizado. Recarregando…');
+  } catch (e) { diz('Não consegui atualizar tudo: ' + e.message); }
+  setTimeout(() => location.reload(), 900);
 }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);

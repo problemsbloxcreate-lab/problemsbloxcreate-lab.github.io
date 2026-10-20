@@ -31,7 +31,8 @@
 .ep-conta-pop svg{flex:none;width:15px;height:15px}
 .ep-conta-pop .sep{height:1px;background:#1f1f1f;margin:4px 0}`;
   const ini = p => esc((String(p?.nome || p?.email || '?')[0] || '?').toUpperCase());
-  const av = p => p?.foto ? `<img src="${esc(p.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${ini(p)}'))">` : ini(p);
+  // se a foto falhar, tenta de novo uma vez (sem a memória do navegador) antes de mostrar a letra
+  const av = p => p?.foto ? `<img src="${esc(p.foto)}" alt="" referrerpolicy="no-referrer" onerror="if(!this.dataset.r){this.dataset.r=1;var i=this;setTimeout(function(){i.src=i.src+(i.src.indexOf('?')<0?'?':'&')+'r='+Date.now()},1200)}else this.replaceWith(document.createTextNode('${ini(p)}'))">` : ini(p);
   let perfilP = null;
   const perfil = () => perfilP || (perfilP = fetch('/conta', { credentials: 'same-origin', cache: 'no-store' })
     .then(r => r.ok && r.headers.get('x-porteiro') ? r.json() : null).catch(() => null));
