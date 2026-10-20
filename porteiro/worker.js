@@ -239,7 +239,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url);
-    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js') { const r = await env.ASSETS.fetch(req); if (r.ok) return r; }
+    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) return r; } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url);
     return menu(env, url, 404);
   },
