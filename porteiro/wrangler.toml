@@ -18,6 +18,11 @@ not_found_handling = "none"
 binding = "TURMA"
 service = "turma-ia"
 
+# Shorts + Modelador (worker estudio-problems, nesta mesma conta)
+[[services]]
+binding = "SHORTS"
+service = "estudio-problems"
+
 [vars]
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.
@@ -25,7 +30,7 @@ SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # "assinar": true = o projeto tem portão próprio e aceita o passe assinado do porteiro (no lugar da senha).
 PROJETOS = '''{
   "/animador/":  "https://problemsbloxcreate-lab.github.io/animador/",
-  "/shorts/":    { "origem": "https://estudio-problems.problemsbloxcreate.workers.dev/", "assinar": true },
-  "/modelador/": { "origem": "https://estudio-problems.problemsbloxcreate.workers.dev/modelador/", "assinar": true },
+  "/shorts/":    { "origem": "https://estudio-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "SHORTS" },
+  "/modelador/": { "origem": "https://estudio-problems.problemsraiz.workers.dev/modelador/", "assinar": true, "servico": "SHORTS" },
   "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR" }
 }'''
