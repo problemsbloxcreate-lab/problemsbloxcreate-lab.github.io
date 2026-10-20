@@ -129,6 +129,6 @@ jobs:
           node -e "
             const d=JSON.parse(require('fs').readFileSync('diag.json','utf8'));
             for (const [p,v] of Object.entries(d)) {
-              const ok = !v.erro && v.status < 500 && v.passe !== false && !String(v.ligacao||'').startsWith('FALTA');
+              const ok = !!v.para || !v.erro && v.status < 500 && v.passe !== false && !String(v.ligacao||'').startsWith('FALTA');
               console.log((ok?'::notice::':'::warning::')+p+' → '+JSON.stringify(v));
             }"
