@@ -180,12 +180,31 @@ async function acesso(req, env, url) {
     const nomeG = p.google?.nome || '', fotoG = p.google?.foto || '';
     itens.push({ id, mascara: mascara(email), voce: email === s.e.toLowerCase(), fixo, adm: admins.has(email),
       nome: p.nome || nomeG || '', nomeOriginal: nomeG, nomeProprio: !!p.nome, foto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : fotoG, fotoOriginal: fotoG, fotoPropria: !!p.fotoV,
-      visto: p.visto || null, por: info?.por ? mascara(info.por) : null, em: info?.em || null });
+      visto: p.visto || null, em: info?.em || null, ...(info?.por ? await (async () => { const q = await lePerfil(env, info.por); return { porNome: q.nome || q.google?.nome || mascara(info.por), porFoto: q.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(info.por) + '&v=' + q.fotoV : (q.google?.foto || null) }; })() : {}) });
   }
   const eu = s.e.toLowerCase();
   await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
   await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
   return json({ itens });
+}
+/* ---------- quem fez uma mudança: nome e foto da conta (no lugar do e-mail) ----------
+   GET /pessoa?e=<e-mail> → { nome, foto }. Só para quem entrou; só de quem já entrou no Estúdio (tem conta aqui).
+   O e-mail não volta na resposta; sem conta, devolve o e-mail censurado no lugar do nome. */
+async function pessoa(req, env, url) {
+  const s = await leSessao(env, req);
+  if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  const em = String(url.searchParams.get('e') || '').trim().toLowerCase().slice(0, 254);
+  if (!/^[^\s@]+@[^\s@]+$/.test(em)) return json({ error: { message: 'E-mail inválido.' } }, 400);
+  const p = env.PERFIS ? await lePerfil(env, em) : {};
+  if (url.pathname === '/pessoa/foto') {
+    if (!p.fotoV) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
+    let r = await env.PERFIS.getWithMetadata(chaveFoto(em) + ':' + p.fotoV, { type: 'stream' }); if (!r.value) r = await env.PERFIS.getWithMetadata(chaveFoto(em), { type: 'stream' });
+    if (!r.value) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
+    return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+  }
+  if (!p.google && !p.nome) return json({ nome: mascara(em), foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' });
+  const nomeG = p.google?.nome || mascara(em);
+  return json({ nome: p.nome || nomeG, foto: p.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(em) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
 }
 async function conta(req, env, url, s) {
   if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS. Rode a Action de publicação de novo.' } }, 503);
@@ -283,6 +302,7 @@ export default {
       return json(out);
     }
     if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url);
+    if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
     if (caminho === '/conta' || caminho === '/conta/foto') {
       const s = await leSessao(env, req);
       if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);

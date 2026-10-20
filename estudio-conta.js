@@ -295,6 +295,25 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const det = cx.querySelector('[data-det]'); if (det) det.onclick = () => { fechar(); prov.detalhes(); };
   }
 
-  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco };
+  /* ---------------- quem fez: foto e nome no lugar do e-mail ----------------
+     Em qualquer programa: <span data-quem="email@..."></span> vira [foto] Nome (da Minha conta, ou do Google).
+     Para texto simples (ex.: dica ao passar o mouse): await EstudioConta.nomeDe(email). */
+  const QUEM = new Map();
+  const quem = email => { const k = String(email || '').trim().toLowerCase(); if (!k) return Promise.resolve(null);
+    if (!QUEM.has(k)) QUEM.set(k, fetch('/pessoa?e=' + encodeURIComponent(k), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEM.get(k); };
+  const nomeDe = async email => (await quem(email))?.nome || '';
+  async function pintaQuem(el) {
+    el.dataset.quemOk = '1'; const q = await quem(el.dataset.quem); if (!q) { el.textContent = ''; return; }
+    const ini = esc((q.nome || '?')[0].toUpperCase());
+    el.innerHTML = `<span class="ep-quem" title="${esc(q.nome)}"><span class="ep-quem-av">${q.foto ? `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${ini}'))">` : ini}</span>${esc(q.nome)}</span>`;
+  }
+  const procuraQuem = () => document.querySelectorAll('[data-quem]:not([data-quem-ok])').forEach(pintaQuem);
+  (() => { const st = document.createElement('style'); st.textContent = `.ep-quem{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;font-weight:600;max-width:100%}
+.ep-quem-av{width:18px;height:18px;border-radius:50%;overflow:hidden;flex:none;display:inline-grid;place-items:center;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0)}.ep-quem-av img{width:100%;height:100%;object-fit:cover}`;
+    (document.head || document.documentElement).appendChild(st);
+    const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
+    if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
+
+  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();
