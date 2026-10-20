@@ -39,3 +39,8 @@ PROJETOS = '''{
   "/modelador/": { "origem": "https://estudio-problems.problemsraiz.workers.dev/modelador/", "assinar": true, "servico": "SHORTS" },
   "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR" }
 }'''
+
+# contas das pessoas (nome, foto, fundo do menu). O id é preenchido pela Action (cria o KV na primeira vez).
+[[kv_namespaces]]
+binding = "PERFIS"
+id = "PREENCHIDO_PELA_ACTION"

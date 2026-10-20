@@ -45,6 +45,19 @@ jobs:
             echo "::warning::Faltam os segredos CLOUDFLARE_API_TOKEN e/ou CLOUDFLARE_ACCOUNT_ID em Settings → Secrets and variables → Actions. Nada foi publicado."
             echo "ok=0" >> "$GITHUB_OUTPUT"
           else echo "ok=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Criar ou achar o KV das contas (PERFIS)
+        if: steps.seg.outputs.ok == '1'
+        working-directory: porteiro
+        shell: bash
+        run: |
+          set -euo pipefail
+          achar() { $WR kv namespace list 2>/dev/null | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{let a=[];const m=s.match(/\[\s*[{\]]/);if(m){try{a=JSON.parse(s.slice(m.index,s.lastIndexOf(']')+1));}catch(e){}}const n=a.find(x=>/^estudio-PERFIS$|^PERFIS$/.test(x.title||''));process.stdout.write(n?n.id:'')})"; }
+          ID="$(achar || true)"
+          if [ -z "$ID" ]; then $WR kv namespace create PERFIS -c wrangler.toml 2>&1 | tee kv.log || true; ID="$(achar || true)"; fi
+          [ -n "$ID" ] || ID="$(grep -oE '[0-9a-f]{32}' kv.log 2>/dev/null | head -1 || true)"
+          [ -n "$ID" ] || { echo "::error::Não consegui criar nem achar o KV PERFIS (o token precisa de Workers KV Storage: Edit)."; exit 1; }
+          sed -i "s/PREENCHIDO_PELA_ACTION/$ID/" wrangler.toml
+          echo "KV PERFIS: $ID"
       - name: Publicar
         if: steps.seg.outputs.ok == '1'
         working-directory: porteiro

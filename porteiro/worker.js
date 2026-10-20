@@ -10,6 +10,8 @@
    Configuração (wrangler.toml → [vars]):
      SERVIDOR   endereço do servidor da turma (turma-ia) que responde /quem
      PROJETOS   JSON { "/animador/": "https://.../animador/", ... }  caminho → de onde vem o projeto
+   KV PERFIS: a conta de cada pessoa (nome e foto próprios, fundo do menu). Sem nada salvo, valem o nome e a foto do
+     Google. Os projetos do mesmo endereço leem com GET /conta (o estudio-login.js já faz isso).
    Segredos (criados sozinhos pela Action na primeira publicação; nunca no código):
      SESSAO_SEGREDO   assina o cookie. Trocar ele derruba todas as sessões.
      ASSINATURA       par de chaves (ECDSA P-256) para assinar o "passe" que o porteiro manda aos projetos que têm portão
@@ -93,6 +95,56 @@ async function repassa(req, url, p, env, s) {
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: out });
 }
 
+/* ---- conta da pessoa (KV PERFIS) ---- */
+const chavePerfil = (email) => 'p:' + String(email).toLowerCase(), chaveFoto = (email) => 'f:' + String(email).toLowerCase();
+async function lePerfil(env, email) { try { return (await env.PERFIS?.get(chavePerfil(email), { type: 'json' })) || {}; } catch { return {}; } }
+async function guardaGoogle(env, email, nome, foto) {
+  if (!env.PERFIS) return;
+  const p = await lePerfil(env, email), g = { nome: String(nome || '').slice(0, 80), foto: /^https:\/\//.test(foto || '') ? String(foto).slice(0, 500) : '' };
+  if (p.google?.nome !== g.nome || p.google?.foto !== g.foto) await env.PERFIS.put(chavePerfil(email), JSON.stringify({ ...p, google: g }));
+}
+function contaPublica(email, p) {
+  const nomeG = p.google?.nome || String(email).split('@')[0], fotoG = p.google?.foto || null;
+  return { email, nome: p.nome || nomeG, foto: p.fotoV ? '/conta/foto?v=' + p.fotoV : fotoG, nomeGoogle: nomeG, fotoGoogle: fotoG,
+    nomeProprio: !!p.nome, fotoPropria: !!p.fotoV, fundo: p.fundo === 'cor' ? 'cor' : 'padrao', cor: /^#[0-9a-f]{6}$/i.test(p.cor || '') ? p.cor : '#262626' };
+}
+async function conta(req, env, url, s) {
+  if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS. Rode a Action de publicação de novo.' } }, 503);
+  const mesmoSite = (req.headers.get('origin') || '') === url.origin, p = await lePerfil(env, s.e);
+  if (url.pathname === '/conta') {
+    if (req.method === 'GET') return json(contaPublica(s.e, p));
+    if (req.method !== 'POST') return json({ error: { message: 'Use GET ou POST.' } }, 405);
+    if (!mesmoSite) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    let b = {}; try { b = await req.json(); } catch { }
+    const n = { ...p };
+    if ('nome' in b) { const nome = String(b.nome || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 40); if (nome) n.nome = nome; else delete n.nome; }
+    if ('fundo' in b) n.fundo = b.fundo === 'cor' ? 'cor' : 'padrao';
+    if ('cor' in b && /^#[0-9a-f]{6}$/i.test(b.cor || '')) n.cor = b.cor.toLowerCase();
+    await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
+    return json(contaPublica(s.e, n));
+  }
+  if (url.pathname === '/conta/foto') {
+    if (req.method === 'GET') {
+      const r = await env.PERFIS.getWithMetadata(chaveFoto(s.e), { type: 'stream' });
+      if (!r.value) return new Response('sem foto', { status: 404 });
+      return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+    }
+    if (!mesmoSite) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    if (req.method === 'DELETE') { await env.PERFIS.delete(chaveFoto(s.e)); const n = { ...p }; delete n.fotoV; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); return json(contaPublica(s.e, n)); }
+    if (req.method === 'PUT' || req.method === 'POST') {
+      const tipo = (req.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+      if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(tipo)) return json({ error: { message: 'Use uma imagem PNG, JPG, WebP ou GIF.' } }, 400); // SVG não: poderia ter script
+      const buf = await req.arrayBuffer();
+      if (!buf.byteLength || buf.byteLength > 3 * 1048576) return json({ error: { message: 'A foto precisa ter até 3 MB.' } }, 413);
+      await env.PERFIS.put(chaveFoto(s.e), buf, { metadata: { tipo } });
+      const n = { ...p, fotoV: Date.now() }; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
+      return json(contaPublica(s.e, n));
+    }
+    return json({ error: { message: 'Método não aceito.' } }, 405);
+  }
+  return json({ error: { message: 'Não encontrado.' } }, 404);
+}
+
 // o menu (index.html) é público: é a tela de login. Qualquer endereço desconhecido também mostra o menu.
 async function menu(env, url, status = 200) {
   const r = await env.ASSETS.fetch(new Request(new URL('/', url)));
@@ -121,6 +173,8 @@ export default {
       const j = await r.json().catch(() => ({}));
       if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
       if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor da turma (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
+      // nome e foto do Google (vêm no próprio token, que o servidor da turma acabou de conferir): viram o padrão da conta
+      try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { }
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email), DURACAO) });
     }
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
@@ -141,6 +195,11 @@ export default {
         } catch (e) { out[pref] = { erro: String(e.message || e).slice(0, 120) }; }
       }
       return json(out);
+    }
+    if (caminho === '/conta' || caminho === '/conta/foto') {
+      const s = await leSessao(env, req);
+      if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+      return conta(req, env, url, s);
     }
     if (caminho === '/sessao') { const s = await leSessao(env, req); return json(s ? { email: s.e, ate: s.x * 1000 } : { email: null }); }
 

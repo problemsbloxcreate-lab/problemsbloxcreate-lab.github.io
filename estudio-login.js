@@ -14,7 +14,9 @@
        const email = await EstudioLogin.pronto;        // e-mail liberado
        const token = await EstudioLogin.token();       // "Bearer ..." para o servidor
        EstudioLogin.sair();                            // sai da conta e volta ao menu
-   Também dispara o evento  document 'estudio-login'  (e.detail.email) quando libera.
+       const p = await EstudioLogin.perfil();          // { nome, foto, email, ... } da "Minha conta" do menu
+                                                       // (sem nada mudado lá: nome e foto do Google)
+   Também dispara os eventos  document 'estudio-login'  (e.detail.email) e 'estudio-perfil' (e.detail = perfil).
 
    SEGURANÇA: isto é a porta da frente. Quem decide quem entra é o servidor (EMAILS_PERMITIDOS na Cloudflare).
    Nunca coloque e-mails, senhas ou chaves neste arquivo. */
@@ -60,6 +62,16 @@
     async token() { const u = auth?.currentUser; return u ? 'Bearer ' + await u.getIdToken() : null; },
     async sair() { try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } try { await auth?.signOut(); } catch { } location.href = menuUrl(false); },
     pronto: null,
+    _perfil: null,
+    // nome e foto escolhidos na "Minha conta" do menu (porteiro: /conta); se não tiver, os do Google
+    perfil() {
+      return this._perfil || (this._perfil = (async () => {
+        await this.pronto; const u = auth?.currentUser;
+        const base = { email: this.email, nome: u?.displayName || String(this.email || '').split('@')[0], foto: u?.photoURL || null };
+        try { const r = await fetch('/conta', { credentials: 'same-origin', cache: 'no-store' }); if (r.ok && r.headers.get('x-porteiro')) return { ...base, ...(await r.json()) }; } catch { }
+        return base;
+      })());
+    },
   };
   API.pronto = (async () => {
     mostra('<span class="s"></span>Conferindo seu acesso…');
@@ -78,7 +90,8 @@
         throw new Error(j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.');
       }
       API.email = j.email;
-      const abre = () => { document.getElementById('estudio-porta')?.remove(); root.classList.remove('estudio-trancado'); document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } })); };
+      const abre = () => { document.getElementById('estudio-porta')?.remove(); root.classList.remove('estudio-trancado'); document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
+        API.perfil().then(p => document.dispatchEvent(new CustomEvent('estudio-perfil', { detail: p }))); };
       document.body ? abre() : addEventListener('DOMContentLoaded', abre, { once: true });
       return j.email;
     } catch (e) {
