@@ -175,12 +175,13 @@ async function acesso(req, env, url) {
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
   // monta a lista com nome/foto da conta (personalizado e original do Google)
   const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], mapa = {}, itens = [];
+  const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {};
   for (const [email, fixo, info] of [...base.map(e => [e, true, null]), ...extras.map(x => [x.email, false, x])]) {
     const id = await idDe(email), p = await lePerfil(env, email); mapa[id] = email;
     const nomeG = p.google?.nome || '', fotoG = p.google?.foto || '';
     itens.push({ id, mascara: mascara(email), voce: email === s.e.toLowerCase(), fixo, adm: admins.has(email),
       nome: p.nome || nomeG || '', nomeOriginal: nomeG, nomeProprio: !!p.nome, foto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : fotoG, fotoOriginal: fotoG, fotoPropria: !!p.fotoV,
-      visto: p.visto || null, em: info?.em || null, ...(info?.por ? await (async () => { const q = await lePerfil(env, info.por); return { porNome: q.nome || q.google?.nome || mascara(info.por), porFoto: q.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(info.por) + '&v=' + q.fotoV : (q.google?.foto || null) }; })() : {}) });
+      visto: p.visto || null, online: on[email]?.prog || null, em: info?.em || null, ...(info?.por ? await (async () => { const q = await lePerfil(env, info.por); return { porNome: q.nome || q.google?.nome || mascara(info.por), porFoto: q.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(info.por) + '&v=' + q.fotoV : (q.google?.foto || null) }; })() : {}) });
   }
   const eu = s.e.toLowerCase();
   await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
@@ -205,6 +206,22 @@ async function pessoa(req, env, url) {
   if (!p.google && !p.nome) return json({ nome: mascara(em), foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' });
   const nomeG = p.google?.nome || mascara(em);
   return json({ nome: p.nome || nomeG, foto: p.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(em) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
+}
+/* ---------- quem está online (objeto durável "Presenca": só memória, some sozinho em ~2,5 min sem aviso) ---------- */
+const PROGS = ['MENU', 'ADM', 'ANIMADOR', 'EDITOR', 'SHORTS', 'MODELADOR', 'BLOCKBENCH'];
+async function presenca(env, corpo) {
+  const o = env.PRESENCA.get(env.PRESENCA.idFromName('todos'));
+  const r = await o.fetch('https://presenca/', corpo ? { method: 'POST', body: JSON.stringify(corpo) } : {});
+  return r.json();
+}
+export class Presenca {
+  constructor() { this.m = new Map(); }
+  async fetch(req) {
+    const agora = Date.now();
+    for (const [k, v] of this.m) if (agora - v.t > 150e3) this.m.delete(k);
+    if (req.method === 'POST') { const b = await req.json(); if (b.prog) this.m.set(b.e, { prog: b.prog, t: agora }); else this.m.delete(b.e); return Response.json({ ok: true }); }
+    return Response.json(Object.fromEntries(this.m));
+  }
 }
 async function conta(req, env, url, s) {
   if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS. Rode a Action de publicação de novo.' } }, 503);
@@ -303,6 +320,15 @@ export default {
     }
     if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
+    if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
+      if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
+      const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);
+      if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+      let b = {}; try { b = await req.json(); } catch { }
+      const prog = PROGS.includes(b.programa) ? b.programa : null;
+      if (env.PRESENCA && (prog || b.saiu)) await presenca(env, { e: s.e.toLowerCase(), prog: b.saiu ? null : prog }).catch(() => null); // programa desconhecido: ignora
+      return json({ ok: true });
+    }
     if (caminho === '/conta' || caminho === '/conta/foto') {
       const s = await leSessao(env, req);
       if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);

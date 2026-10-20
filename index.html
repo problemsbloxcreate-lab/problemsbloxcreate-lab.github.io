@@ -127,6 +127,8 @@ svg{display:block;flex:none}
 .ac-orig{display:inline-flex;align-items:center;gap:6px;color:var(--tx2);font-size:12px;margin-top:2px}.ac-l .mini{width:18px;height:18px;flex:none;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:var(--bg3);font-size:10px;vertical-align:middle}.ac-l .mini img{width:100%;height:100%;object-fit:cover;display:block}.ac-tag .mini{width:15px;height:15px}
 .ac-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}.ac-tag{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--bg3);color:var(--tx2)}
 .ac-tag.ehadm{background:rgba(61,139,255,.18);color:#8cbcff}.ac-tag.voce{background:rgba(25,211,240,.16);color:#7fe8f7}.ac-tag.fixo{background:rgba(255,207,74,.14);color:#ffd970}
+.ac-l .ac-av{position:relative;overflow:visible}.ac-l .ac-av img{border-radius:50%}.ac-l.on .ac-av::after{content:'';position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:#3ddc84;box-shadow:0 0 0 2px var(--bg1,#2a2a2a)}
+.ac-on{display:inline-flex;align-items:center;gap:6px;color:#5fe39a;font-weight:700}.ac-on i{width:8px;height:8px;border-radius:50%;background:#3ddc84;box-shadow:0 0 0 3px rgba(61,220,132,.2)}
 .ac-em{font-variant-numeric:tabular-nums;color:var(--tx2);font-size:12.5px;white-space:nowrap}
 @media (max-width:640px){.ac-l{flex-wrap:wrap}.ac-em{width:100%;order:3}}
 .box{background:rgba(48,48,48,.92);border:1px solid var(--bd);border-radius:14px;padding:16px;backdrop-filter:blur(6px)}
@@ -912,11 +914,12 @@ async function renderAcesso() {
   const quando = t => t ? new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
   const pinta = itens => {
     $('#acesso-n').textContent = itens.length + (itens.length === 1 ? ' conta' : ' contas');
-    lista.innerHTML = itens.map(it => `<div class="ac-l">${av(it.foto, it.nome || it.mascara)}
+    itens = itens.slice().sort((a, b) => (!!b.online - !!a.online)); // quem está online aparece primeiro
+    lista.innerHTML = itens.map(it => `<div class="ac-l${it.online ? ' on' : ''}">${av(it.foto, it.nome || it.mascara)}
       <div class="ac-n"><b>${esc(it.nome || 'Ainda não entrou')}${it.adm ? ' <i class="ac-selo" title="ADM do Estúdio Problems"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg></i>' : ''}</b><small>${esc(it.mascara)}</small>
         ${(it.nomeProprio || it.fotoPropria) && it.nomeOriginal ? `<span class="ac-orig" title="Como está no Google">original: ${av(it.fotoOriginal, it.nomeOriginal, 'mini')}${esc(it.nomeOriginal)}</span>` : ''}
         <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm">ADM</span>' : ''}${it.fixo ? '<span class="ac-tag fixo" title="Lista fixa EMAILS_PERMITIDOS: só muda na Cloudflare">Fixo</span>' : `<span class="ac-tag" style="text-transform:none;letter-spacing:0;display:inline-flex;align-items:center;gap:4px" title="Liberado pela tela ADM">${it.porNome ? `por ${av(it.porFoto, it.porNome, 'mini')}${esc(it.porNome)}` : 'adicionado'}${it.em ? ' · ' + esc(quando(it.em).split(',')[0]) : ''}</span>`}</div></div>
-      <span class="ac-em">${it.visto ? 'último login ' + esc(quando(it.visto)) : 'ainda não entrou'}</span>
+      <span class="ac-em">${it.online ? `<span class="ac-on"><i></i>online · ${esc(it.online)}</span>` : it.visto ? 'último login ' + esc(quando(it.visto)) : 'ainda não entrou'}</span>
       ${it.fixo || it.voce ? '' : `<button class="btn sm" data-tira="${esc(it.id)}" title="Tirar o acesso">Remover</button>`}</div>`).join('') || '<div class="hint">Ninguém na lista.</div>';
     $$('[data-tira]', lista).forEach(b => b.onclick = async () => {
       const it = itens.find(x => x.id === b.dataset.tira);
@@ -932,6 +935,7 @@ async function renderAcesso() {
     try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'add', email }) }); inp.value = ''; stA('Acesso liberado! A pessoa já pode entrar pelo menu com essa conta Google.'); carrega(); }
     catch (e) { stA(e.message, true); } finally { bt.disabled = false; }
   };
+  clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 30e3); // online/offline ao vivo
   return carrega();
 }
 function abaAdm(n) {

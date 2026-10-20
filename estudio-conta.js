@@ -156,10 +156,22 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     P = await perfil(); if (!P) return; // fora do porteiro ou sem sessão: não mostra nada
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     if (alvo) poe(typeof alvo === 'string' ? document.querySelector(alvo) : alvo); else procura();
+    online();
     if (!montar.obs) { // telas que se redesenham: o marcador novo ganha os botões de novo
       montar.obs = new MutationObserver(() => { if (document.querySelector('[data-estudio-conta]:not([data-ep-montado])')) procura(); });
       montar.obs.observe(document.body, { childList: true, subtree: true });
     }
+  }
+  // "online · PROGRAMA" na tela ADM › Quem pode entrar: avisa o porteiro a cada minuto, só com a aba à vista
+  const programaAqui = () => { const p = location.pathname;
+    return /^\/adm\/?$/i.test(p) ? 'ADM' : p === '/' ? 'MENU' : [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR']].find(([k]) => p.startsWith(k))?.[1] || null; };
+  function online() {
+    if (online.ligado || !programaAqui()) return; online.ligado = true;
+    const avisa = saiu => fetch('/presenca', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ programa: programaAqui(), saiu: !!saiu }) }).catch(() => { });
+    const vez = () => { if (document.visibilityState === 'visible') avisa(); };
+    vez(); setInterval(vez, 60e3);
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' ? avisa() : avisa(true));
+    addEventListener('pagehide', () => avisa(true));
   }
   async function recarregar() { // depois de trocar nome ou foto
     P = await perfil(true); if (!P) return;

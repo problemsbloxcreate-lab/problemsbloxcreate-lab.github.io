@@ -47,3 +47,12 @@ PROJETOS = '''{
 [[kv_namespaces]]
 binding = "PERFIS"
 id = "PREENCHIDO_PELA_ACTION"
+
+# quem está online e em qual programa (ADM › Quem pode entrar): fica só na memória deste objeto, sem gastar gravações do KV
+[[durable_objects.bindings]]
+name = "PRESENCA"
+class_name = "Presenca"
+
+[[migrations]]
+tag = "presenca-v1"
+new_sqlite_classes = ["Presenca"]
