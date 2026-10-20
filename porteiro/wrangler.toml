@@ -23,6 +23,11 @@ service = "turma-ia"
 binding = "SHORTS"
 service = "estudio-problems"
 
+# Editor de vídeo longo (worker editor-problems, nesta mesma conta)
+[[services]]
+binding = "EDITOR"
+service = "editor-problems"
+
 [vars]
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.
