@@ -292,7 +292,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const dataTxt = t => { if (!t) return ''; const d = new Date(t); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
   function anel(pct) {
     const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : '#19d3f0', r = 13, L = 2 * Math.PI * r;
-    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct, 2) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/></svg>`;
+    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct, 2) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><g fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="10.6" y="11" width="10.8" height="7.4" rx="1.3"/><path d="M14 21.4h4M16 18.4v3"/></g></svg>`; // computador no meio: é o espaço DESTE computador
   }
   const estimativa = async () => { try { return await navigator.storage.estimate(); } catch { return {}; } };
   async function atualizaAneis() {

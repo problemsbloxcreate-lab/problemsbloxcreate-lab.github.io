@@ -293,9 +293,22 @@ async function acesso(req, env, url) {
 /* ---------- quem fez uma mudança: nome e foto da conta (no lugar do e-mail) ----------
    GET /pessoa?e=<e-mail> → { nome, foto }. Só para quem entrou; só de quem já entrou no Estúdio (tem conta aqui).
    O e-mail não volta na resposta; sem conta, devolve o e-mail censurado no lugar do nome. */
+// código de pessoa que os programas guardam nos arquivos (Animador: "u" + 16 hex do SHA-256 de "estudio-problems:<e-mail>"),
+// para mostrar SEMPRE o nome e a foto de agora de quem subiu/editou, sem o e-mail nunca sair daqui
+async function codigoU(email) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('estudio-problems:' + email))); return 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); }
+async function emailDoCodigo(env, u) {
+  if (!env.PERFIS || !/^u[0-9a-f]{16}$/.test(u)) return null;
+  const k = await env.PERFIS.get('u:' + u).catch(() => null); if (k) return k;
+  let cur; do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); const c = await codigoU(em);
+    await env.PERFIS.put('u:' + c, em).catch(() => { }); if (c === u) return em; } cur = l.list_complete ? null : l.cursor; } while (cur);
+  return null;
+}
 async function pessoa(req, env, url) {
   const s = await leSessao(env, req);
   if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  const u = url.searchParams.get('u');
+  const porCodigo = !!u; // pedido pelo código: a resposta nunca leva o e-mail (nem no endereço da foto)
+  if (u) { const e2 = await emailDoCodigo(env, u); if (!e2) return json({ nome: null, foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' }); url.searchParams.delete('u'); url.searchParams.set('e', e2); }
   const em = String(url.searchParams.get('e') || '').trim().toLowerCase().slice(0, 254);
   if (!/^[^\s@]+@[^\s@]+$/.test(em)) return json({ error: { message: 'E-mail inválido.' } }, 400);
   const p = env.PERFIS ? await lePerfil(env, em) : {};
@@ -305,9 +318,9 @@ async function pessoa(req, env, url) {
     if (!r.value) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
     return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
   }
-  if (!p.google && !p.nome) return json({ nome: mascara(em), foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' });
-  const nomeG = p.google?.nome || mascara(em);
-  return json({ nome: p.nome || nomeG, foto: p.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(em) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
+  if (!p.google && !p.nome) return json({ nome: porCodigo ? null : mascara(em), foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' });
+  const nomeG = p.google?.nome || (porCodigo ? null : mascara(em));
+  return json({ nome: p.nome || nomeG, foto: p.fotoV ? (porCodigo ? '/pessoa/foto?u=' + encodeURIComponent(u) : '/pessoa/foto?e=' + encodeURIComponent(em)) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
 }
 /* ---------- quem está online (objeto durável "Presenca": só memória, some sozinho em ~2,5 min sem aviso) ---------- */
 const PROGS = ['MENU', 'ADM', 'ANIMADOR', 'EDITOR', 'SHORTS', 'MODELADOR', 'BLOCKBENCH'];
