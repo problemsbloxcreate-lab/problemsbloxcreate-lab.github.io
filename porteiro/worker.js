@@ -1,6 +1,7 @@
 /* ===================== Porteiro do Estúdio Problems (Cloudflare Worker "estudio") =====================
    Um endereço só para todos os projetos. Ele:
-   1. serve o MENU (index.html, 404.html, estudio-login.js, estudio-conta.js, estudio-carregando.js) — a tela de login do Google fica nele;
+   1. serve o MENU (index.html, 404.html, estudio-login.js, estudio-conta.js, estudio-carregando.js e o ícone: favicon.svg,
+      favicon.ico, icone-180.png) — a tela de login do Google fica nele;
    2. recebe do menu o login do Google (POST /entrar), confere no servidor do Estúdio Problems (/quem, que olha a lista
       EMAILS_PERMITIDOS na Cloudflare) e guarda na pessoa um COOKIE DE SESSÃO assinado (HttpOnly: o JavaScript
       da página não lê);
@@ -113,7 +114,9 @@ async function repassa(req, url, p, env, s) {
   if ((p.nuvem || p.conta) && r.ok && (out.get('content-type') || '').includes('text/html')) {
     let h = await r.text(); const m = h.match(/<head[^>]*>/i);
     const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
-    const extra = carregando + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
+    // ícone da aba: o mesmo logo do menu em todos os projetos (só nas páginas que não escolheram um)
+    const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
+    const extra = carregando + icone + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
     h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h;
     out.delete('content-length'); out.delete('content-encoding'); out.delete('etag');
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
@@ -430,7 +433,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url);
-    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) return r; } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
+    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) return r; } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url);
     return menu(env, url, 404);
   },

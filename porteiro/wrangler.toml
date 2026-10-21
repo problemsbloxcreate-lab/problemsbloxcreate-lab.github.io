@@ -8,7 +8,7 @@ compatibility_flags = ["global_fetch_strictly_public"]
 workers_dev = true
 
 [assets]
-directory = "../dist"          # a Action copia para cá index.html, 404.html, estudio-login.js, estudio-conta.js e estudio-carregando.js
+directory = "../dist"          # a Action copia para cá index.html, 404.html, estudio-login.js, estudio-conta.js, estudio-carregando.js e o ícone (favicon.svg, favicon.ico, icone-180.png)
 binding = "ASSETS"
 run_worker_first = true        # o porteiro decide tudo antes de qualquer arquivo sair
 not_found_handling = "none"

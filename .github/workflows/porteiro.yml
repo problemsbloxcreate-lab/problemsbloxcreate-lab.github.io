@@ -8,7 +8,7 @@ name: Publicar o porteiro (Cloudflare)
 on:
   push:
     branches: [main]
-    paths: ["porteiro/**", "index.html", "404.html", "estudio-login.js", "estudio-conta.js", "estudio-carregando.js", ".github/workflows/porteiro.yml"]
+    paths: ["porteiro/**", "index.html", "404.html", "estudio-login.js", "estudio-conta.js", "estudio-carregando.js", "favicon.svg", "favicon.ico", "icone-180.png", ".github/workflows/porteiro.yml"]
   workflow_dispatch: {}
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
           node -e "new Function(require('fs').readFileSync('estudio-conta.js','utf8'))"
           node -e "new Function(require('fs').readFileSync('estudio-carregando.js','utf8'))"
           cmp index.html 404.html || { echo "::error::index.html e 404.html precisam ser iguais (o 404.html é cópia do menu)."; exit 1; }
-          mkdir -p dist && cp index.html 404.html estudio-login.js estudio-conta.js estudio-carregando.js dist/
+          mkdir -p dist && cp index.html 404.html estudio-login.js estudio-conta.js estudio-carregando.js favicon.svg favicon.ico icone-180.png dist/
           ls -la dist
       - name: Conferir os segredos
         id: seg
