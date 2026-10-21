@@ -358,6 +358,9 @@ export class Conversas {
       CREATE TABLE IF NOT EXISTS msgs(id INTEGER PRIMARY KEY AUTOINCREMENT, conv TEXT, de TEXT, texto TEXT, em INTEGER);
       CREATE INDEX IF NOT EXISTS msgs_conv ON msgs(conv, id);
       CREATE TABLE IF NOT EXISTS lidas(u TEXT, conv TEXT, ate INTEGER, PRIMARY KEY(u, conv));`);
+    this.sql.exec('CREATE TABLE IF NOT EXISTS cfg(k TEXT PRIMARY KEY, v TEXT)');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS apelidos(u TEXT, alvo TEXT, nick TEXT, PRIMARY KEY(u, alvo))'); // apelido que CADA pessoa dá às outras (só ela vê) // nome e foto da conversa geral (ADM muda)
+    try { this.sql.exec('ALTER TABLE msgs ADD COLUMN cita TEXT'); } catch { } // citação (programa, item, parte, arquivo anexo)
     this.ritmo = new Map();
   }
   limpa() { const t = Date.now(); if (t - this.limpo < 36e5) return; this.limpo = t; this.sql.exec('DELETE FROM msgs WHERE em < ?', t - SETE_DIAS); }
@@ -378,7 +381,9 @@ export class Conversas {
       const desde = Math.max(0, +b.desde || 0);
       const novas = desde ? this.sql.exec(`SELECT * FROM msgs WHERE id > ? AND ${M} ORDER BY id LIMIT 300`, desde).toArray() : [];
       const ultimo = this.sql.exec('SELECT MAX(id) AS m FROM msgs').toArray()[0]?.m || 0;
-      return Response.json({ nao, ultimas, novas, ultimo });
+      let geral = null; try { geral = JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'geral'").toArray()[0]?.v || 'null'); } catch { }
+      const apelidos = Object.fromEntries(this.sql.exec('SELECT alvo, nick FROM apelidos WHERE u = ?', u).toArray().map(r => [r.alvo, r.nick]));
+      return Response.json({ nao, ultimas, novas, ultimo, geral, apelidos });
     }
     if (b.op === 'conversa') {
       const conv = String(b.conv || ''); if (!minhaConv(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
@@ -389,13 +394,23 @@ export class Conversas {
       this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, +b.ate || 0);
       return Response.json({ ok: true });
     }
+    if (b.op === 'apelido') {
+      const alvo = String(b.alvo || ''), nick = String(b.nick || '').replace(/\s+/g, ' ').trim().slice(0, 30); if (!/^u[0-9a-f]{16}$/.test(alvo)) return Response.json({ erro: 'Pessoa?' }, { status: 400 });
+      if (nick) this.sql.exec('INSERT INTO apelidos(u,alvo,nick) VALUES(?,?,?) ON CONFLICT(u,alvo) DO UPDATE SET nick=excluded.nick', u, alvo, nick); else this.sql.exec('DELETE FROM apelidos WHERE u = ? AND alvo = ?', u, alvo);
+      return Response.json({ ok: true, alvo, nick });
+    }
+    if (b.op === 'geral') { // o porteiro já conferiu que é ADM
+      const g = { nome: String(b.nome || '').trim().slice(0, 40) || null, foto: typeof b.foto === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(b.foto) && b.foto.length < 70000 ? b.foto : null, por: u, em: agora };
+      this.sql.exec('INSERT INTO cfg(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v', 'geral', JSON.stringify(g)); return Response.json({ geral: g });
+    }
     if (b.op === 'enviar') {
       const para = String(b.para || ''); if (para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u || !this.sql.exec('SELECT 1 FROM pessoas WHERE u = ?', para).toArray().length)) return Response.json({ erro: 'Pessoa não encontrada.' }, { status: 400 });
-      const texto = String(b.texto || '').replace(/\r\n?/g, '\n').trim().slice(0, 2000); if (!texto) return Response.json({ erro: 'Mensagem vazia.' }, { status: 400 });
+      const texto = String(b.texto || '').replace(/\r\n?/g, '\n').trim().slice(0, 2000), cita = typeof b.cita === 'string' && b.cita.length <= 80000 ? b.cita : null; if (!texto && !cita) return Response.json({ erro: 'Mensagem vazia.' }, { status: 400 });
       const rt = (this.ritmo.get(u) || []).filter(t => agora - t < 60e3); if (rt.length >= 20) return Response.json({ erro: 'Muitas mensagens seguidas: espere um pouquinho.' }, { status: 429 });
       rt.push(agora); this.ritmo.set(u, rt);
       const conv = convDe(u, para);
-      const m = this.sql.exec('INSERT INTO msgs(conv,de,texto,em) VALUES(?,?,?,?) RETURNING *', conv, u, texto, agora).toArray()[0];
+      if (b.conv && b.conv !== conv) return Response.json({ erro: 'O arquivo foi preparado para outra conversa.' }, { status: 400 });
+      const m = this.sql.exec('INSERT INTO msgs(conv,de,texto,em,cita) VALUES(?,?,?,?,?) RETURNING *', conv, u, texto, agora, cita).toArray()[0];
       this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, m.id);
       return Response.json({ msg: m });
     }
@@ -403,20 +418,74 @@ export class Conversas {
   }
 }
 const conversas = async (env, corpo) => { const o = env.CONVERSAS.get(env.CONVERSAS.idFromName('estudio')); const r = await o.fetch('https://conversas/', { method: 'POST', body: JSON.stringify(corpo) }); return { status: r.status, j: await r.json() }; };
+/* citação: o programa manda { prog, titulo, sub, mini, url, parte, anexo } — só caminhos deste endereço e textos curtos */
+function limpaCita(c) {
+  if (!c || typeof c !== 'object') return { erro: 'Citação inválida.' };
+  const t = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  const out = { prog: t(c.prog, 30), titulo: t(c.titulo, 120), sub: t(c.sub, 160) };
+  if (!out.titulo) return { erro: 'A citação ficou sem nome.' };
+  if (c.url) { const u = String(c.url); if (!/^\/(?![\/\\])[^\s]*$/.test(u) || u.length > 600) return { erro: 'Endereço da citação inválido.' }; out.url = u; }
+  if (c.abrir) { const a = String(c.abrir); if (!/^\/(?![\/\\])[\w\/.-]*$/.test(a) || a.length > 120) return { erro: 'Programa da citação inválido.' }; out.abrir = a; }
+  if (c.mini) { const m = String(c.mini); if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(m) || m.length > 60000) return { erro: 'Miniatura grande demais.' }; out.mini = m; }
+  if (c.parte && typeof c.parte === 'object') { const p = JSON.stringify(c.parte); if (p.length > 4000) return { erro: 'Parte citada grande demais.' }; out.parte = JSON.parse(p); }
+  if (c.anexo) { if (!/^[a-z0-9]{20}$/.test(c.anexo.id || '')) return { erro: 'Anexo inválido.' }; out.anexo = { id: c.anexo.id }; }
+  if (!out.url && !out.anexo) return { erro: 'A citação precisa de um endereço ou de um arquivo.' };
+  return { cita: out };
+}
+/* arquivo anexado a uma mensagem (projeto local: .animador etc.). Fica no KV PERFIS em pedaços de 20 MB e some sozinho em 7 dias.
+   Só quem está na conversa para a qual ele foi enviado consegue baixar. */
+const PEDACO = 20 * 1024 * 1024, ANEXO_MAX = 95 * 1024 * 1024;
+async function anexo(req, env, url, s) {
+  const e = String(s.e).toLowerCase(), u = await codigoU(e);
+  if (req.method === 'POST') {
+    if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    const para = url.searchParams.get('para') || ''; if (para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u)) return json({ error: { message: 'Para quem?' } }, 400);
+    const tam = +req.headers.get('content-length') || 0; if (tam > ANEXO_MAX) return json({ error: { message: 'Arquivo grande demais para mandar por mensagem (máximo 95 MB).' } }, 413);
+    const nome = (url.searchParams.get('nome') || 'arquivo').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').slice(0, 120);
+    const id = [...crypto.getRandomValues(new Uint8Array(20))].map(x => 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]).join(''), ttl = { expirationTtl: 7 * 86400 };
+    // lê aos pedaços (não segura o arquivo inteiro na memória do porteiro) e guarda cada 20 MB
+    const ler = req.body?.getReader(); if (!ler) return json({ error: { message: 'Arquivo vazio.' } }, 400);
+    let buf = new Uint8Array(PEDACO), cheio = 0, n = 0, total = 0;
+    const guarda = async () => { if (!cheio) return; await env.PERFIS.put('ax:' + id + ':' + n, buf.slice(0, cheio).buffer, ttl); n++; cheio = 0; };
+    for (;;) { const { done, value } = await ler.read(); if (done) break;
+      total += value.length; if (total > ANEXO_MAX) { for (let i = 0; i < n; i++) await env.PERFIS.delete('ax:' + id + ':' + i).catch(() => { }); return json({ error: { message: 'Arquivo grande demais (máximo 95 MB).' } }, 413); }
+      let o = 0; while (o < value.length) { const k = Math.min(PEDACO - cheio, value.length - o); buf.set(value.subarray(o, o + k), cheio); cheio += k; o += k; if (cheio === PEDACO) await guarda(); } }
+    await guarda(); if (!total) return json({ error: { message: 'Arquivo vazio.' } }, 400);
+    await env.PERFIS.put('ax:' + id, JSON.stringify({ nome, bytes: total, n, conv: convDe(u, para), de: u, em: Date.now() }), ttl);
+    return json({ id, nome, bytes: total });
+  }
+  const id = url.searchParams.get('id') || ''; if (!/^[a-z0-9]{20}$/.test(id)) return json({ error: { message: 'Arquivo inválido.' } }, 400);
+  const meta = await env.PERFIS.get('ax:' + id, { type: 'json' }).catch(() => null);
+  if (!meta) return json({ error: { message: 'Este arquivo não existe mais (as mensagens e os arquivos somem depois de 7 dias).' } }, 404);
+  if (!minhaConv(u, meta.conv)) return json({ error: { message: 'Este arquivo é de outra conversa.' } }, 403);
+  const { readable, writable } = new FixedLengthStream(meta.bytes);
+  (async () => { const w = writable.getWriter(); try { for (let i = 0; i < meta.n; i++) { const p = await env.PERFIS.get('ax:' + id + ':' + i, { type: 'arrayBuffer' }); if (!p) throw new Error('pedaço sumiu'); await w.write(new Uint8Array(p)); } await w.close(); } catch (er) { await w.abort(er).catch(() => { }); } })();
+  return new Response(readable, { headers: { 'content-type': 'application/octet-stream', 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(meta.nome)}`, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff', 'x-porteiro': '1' } });
+}
 async function mensagens(req, env, url) {
   const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
   if (!env.CONVERSAS) return json({ error: { message: 'As mensagens ainda não estão ligadas. Rode a Action de publicação de novo.' } }, 503);
+  if (url.pathname === '/mensagens/anexo') return anexo(req, env, url, s);
   const e = String(s.e).toLowerCase(), u = await codigoU(e);
   if (req.method === 'POST') {
     if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
     let b = {}; try { b = await req.json(); } catch { }
+    if (b.op === 'geral') { if (!s.a) return json({ error: { message: 'Só um ADM muda o nome e a foto da conversa geral.' } }, 403);
+      if (b.foto && (typeof b.foto !== 'string' || !/^data:image\/(png|jpeg|webp);base64,/.test(b.foto) || b.foto.length >= 70000)) return json({ error: { message: 'Foto grande demais.' } }, 400);
+      const r = await conversas(env, { op: 'geral', u, e, nome: b.nome, foto: b.foto }); return json(r.j); }
+    if (b.op === 'apelido') { const r = await conversas(env, { op: 'apelido', u, e, alvo: b.alvo, nick: b.nick }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op !== 'enviar' && b.op !== 'lida') return json({ error: { message: 'Pedido desconhecido.' } }, 400);
-    const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.conv, ate: b.ate });
+    let cita = null, convAnexo;
+    if (b.op === 'enviar' && b.cita) { const c = limpaCita(b.cita); if (c.erro) return json({ error: { message: c.erro } }, 400); cita = c.cita;
+      if (cita.anexo) { const meta = await env.PERFIS.get('ax:' + cita.anexo.id, { type: 'json' }).catch(() => null);
+        if (!meta || meta.de !== u) return json({ error: { message: 'O arquivo anexado não foi encontrado. Tente de novo.' } }, 400);
+        convAnexo = meta.conv; cita.anexo = { id: cita.anexo.id, nome: meta.nome, bytes: meta.bytes }; } }
+    const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.op === 'enviar' ? convAnexo : b.conv, ate: b.ate, cita: cita ? JSON.stringify(cita) : null });
     return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j);
   }
   if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e, conv: url.searchParams.get('conv') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
   const r = await conversas(env, { op: 'resumo', u, e, desde: url.searchParams.get('desde') });
-  const out = { eu: u, ...r.j };
+  const out = { eu: u, adm: !!s.a, ...r.j };
   if (url.searchParams.get('pessoas') === '1') {
     let lista = (await conversas(env, { op: 'pessoas' })).j;
     if (lista.length < 2 && env.PERFIS) { // primeira vez: quem já entrou no Estúdio alguma vez
@@ -534,7 +603,7 @@ export default {
     if (caminho === '/nuvem-uso/arq') return nuvemArq(req, env, url);
     if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
-    if (caminho === '/mensagens') return mensagens(req, env, url);
+    if (caminho === '/mensagens' || caminho === '/mensagens/anexo') return mensagens(req, env, url);
     if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);

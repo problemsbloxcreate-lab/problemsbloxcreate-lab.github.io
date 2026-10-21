@@ -42,6 +42,10 @@
     msg: svg('<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/>'),
     equipe: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2a5 5 0 0 1 5.5 5.3"/>'),
     enviar: svg('<path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/>'),
+    arquivo: svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'),
+    baixar: svg('<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>'),
+    lapis: svg('<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>'),
+    fechar: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
     voltar: svg('<path d="m15 18-6-6 6-6"/>'),
     conta: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     atualizar: svg('<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>'),
@@ -118,33 +122,53 @@
 .ep-msgs aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid #3a3c43;background:#26272c}
 .ep-msgs h2{font-size:16px;margin:0;padding:16px 16px 10px;display:flex;align-items:center;gap:9px}
 .ep-msgs h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8d919b;margin:12px 8px 6px;font-weight:600}
-.ep-msgs .lista{flex:1;overflow:auto;padding:0 8px 8px}.ep-msgs .nota{color:#a9adb7;font-size:12.5px;margin:6px 8px}.ep-msgs .pe{border-top:1px solid #3a3c43;margin:0;padding:10px 16px;font-size:11.5px}
-.ep-msgs .pes{width:100%;display:flex;align-items:center;gap:10px;padding:8px;border:0;border-radius:10px;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
-.ep-msgs .pes:hover{background:#33353b}.ep-msgs .pes.sel{background:#353a4a;box-shadow:inset 0 0 0 1px #3d8bff}
-.ep-msgs .pes .tx{flex:1;min-width:0}.ep-msgs .pes .tx b,.ep-msgs .pes .tx small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs .pes .tx b{font-size:13.5px}.ep-msgs .pes .tx small{color:#a9adb7;font-size:12px}
-.ep-msgs .pes.tem .tx b{color:#ffd966}.ep-msgs .pes.tem .tx small{color:#e9ebef}
-.ep-msgs .cont{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ffcc33;color:#1b1c21;font-size:11.5px;font-weight:800;display:inline-grid;place-items:center;box-sizing:border-box;flex:none}
-.ep-msgs .onde{flex:none;font-style:normal;font-size:10.5px;font-weight:600;color:#7ee0a1;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.3);border-radius:999px;padding:1px 7px;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ep-msgs .avw{position:relative;flex:none;display:inline-grid}.ep-msgs .avw .on{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#2ecc71;border:2px solid #26272c}
-.ep-msgs .av{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:none;display:inline-grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0);font-size:14px}
-.ep-msgs .av img{width:100%;height:100%;object-fit:cover;display:block}.ep-msgs .av.geral{background:linear-gradient(135deg,#9b7bff,#3d8bff)}.ep-msgs .av.geral svg{width:18px;height:18px}
+.ep-msgs .epm-lista{flex:1;overflow:auto;padding:0 8px 8px}.ep-msgs .epm-nota{color:#a9adb7;font-size:12.5px;margin:6px 8px}.ep-msgs .epm-pe{border-top:1px solid #3a3c43;margin:0;padding:10px 16px;font-size:11.5px}
+.ep-msgs .epm-pes{width:100%;display:flex;align-items:center;gap:10px;padding:8px;border:0;border-radius:10px;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ep-msgs .epm-pes:hover{background:#33353b}.ep-msgs .epm-pes.epm-sel{background:#353a4a;box-shadow:inset 0 0 0 1px #3d8bff}
+.ep-msgs .epm-pes .epm-tx{flex:1;min-width:0}.ep-msgs .epm-pes .epm-tx b,.ep-msgs .epm-pes .epm-tx small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs .epm-pes .epm-tx b{font-size:13.5px}.ep-msgs .epm-pes .epm-tx small{color:#a9adb7;font-size:12px}
+.ep-msgs .epm-pes.epm-tem .epm-tx b{color:#ffd966}.ep-msgs .epm-pes.epm-tem .epm-tx small{color:#e9ebef}
+.ep-msgs .epm-cont{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ffcc33;color:#1b1c21;font-size:11.5px;font-weight:800;display:inline-grid;place-items:center;box-sizing:border-box;flex:none}
+.ep-msgs .epm-onde{flex:none;font-style:normal;font-size:10.5px;font-weight:600;color:#7ee0a1;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.3);border-radius:999px;padding:1px 7px;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep-msgs .epm-avw{position:relative;flex:none;display:inline-grid}.ep-msgs .epm-avw .epm-on{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#2ecc71;border:2px solid #26272c}
+.ep-msgs .epm-av{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:none;display:inline-grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0);font-size:14px}
+.ep-msgs .epm-av img{width:100%;height:100%;object-fit:cover;display:block}.ep-msgs .epm-av.epm-geral{background:linear-gradient(135deg,#9b7bff,#3d8bff)}.ep-msgs .epm-av.epm-geral svg{width:18px;height:18px}
 .ep-msgs section{display:flex;flex-direction:column;min-width:0;min-height:0}
 .ep-msgs header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #3a3c43;min-height:62px;box-sizing:border-box}
-.ep-msgs header .tit{flex:1;min-width:0;display:flex;align-items:center;gap:10px}.ep-msgs header .tit b,.ep-msgs header .tit small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs header .tit small{color:#a9adb7;font-size:12px}
-.ep-msgs .bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 11px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap}.ep-msgs .bt:hover{border-color:#3d8bff}
-.ep-msgs .volta{display:none;padding:0 7px}.ep-msgs h2 .x2{display:none;margin-left:auto}
-.ep-msgs .fala{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
-.ep-msgs .fala .vazio{margin:auto;color:#8d919b;text-align:center;max-width:300px}
-.ep-msgs .dia{text-align:center;margin:12px 0 8px}.ep-msgs .dia span{font-size:11.5px;color:#a9adb7;background:#33353b;border-radius:999px;padding:3px 10px;text-transform:capitalize}
-.ep-msgs .m{display:flex;align-items:flex-end;gap:8px;max-width:78%;margin-top:6px}.ep-msgs .m.junto{margin-top:0}.ep-msgs .m .av{width:28px;height:28px;font-size:12px}.ep-msgs .m .av.vazio{background:none}
-.ep-msgs .m .b{background:#3a3c43;border-radius:14px 14px 14px 4px;padding:7px 11px 5px;min-width:0}.ep-msgs .m .b b{display:block;font-size:12px;color:#8cc4ff;margin-bottom:1px}
-.ep-msgs .m .b p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.ep-msgs .m .b a{color:#8cc4ff}.ep-msgs .m time{display:block;text-align:right;font-size:10.5px;color:#a9adb7;margin-top:1px}
-.ep-msgs .m.meu{align-self:flex-end}.ep-msgs .m.meu .b{background:#2f6fe0;border-radius:14px 14px 4px 14px}.ep-msgs .m.meu time{color:#cfe0ff}.ep-msgs .m.meu .b a{color:#fff}
-.ep-msgs .erro{align-self:center;color:#ff9a9a;font-size:12.5px;margin-top:8px}
-.ep-msgs .escreve{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;border-top:1px solid #3a3c43}.ep-msgs .escreve[hidden]{display:none}
-.ep-msgs .escreve textarea{flex:1;resize:none;min-height:38px;max-height:140px;box-sizing:border-box;border-radius:10px;border:1px solid #4a4c55;background:#1f2025;color:#e9ebef;font:inherit;padding:8px 11px;outline:none}.ep-msgs .escreve textarea:focus{border-color:#3d8bff}
-.ep-msgs .envia{height:38px;width:42px;padding:0;background:#3d8bff;border-color:#3d8bff;color:#fff}.ep-msgs .escreve.ind .envia{opacity:.5}
-@media (max-width:680px){.ep-msgs{padding:0}.ep-msgs .cx{grid-template-columns:1fr;height:100%;border-radius:0;border:0}.ep-msgs .cx section{display:none}.ep-msgs .cx.so-conv aside{display:none}.ep-msgs .cx.so-conv section{display:flex}.ep-msgs .volta{display:inline-flex}.ep-msgs h2 .x2{display:inline-flex}.ep-msgs .m{max-width:88%}}
+.ep-msgs header .epm-tit{flex:1;min-width:0;display:flex;align-items:center;gap:10px}.ep-msgs header .epm-tit b,.ep-msgs header .epm-tit small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs header .epm-tit small{color:#a9adb7;font-size:12px}
+.ep-msgs .epm-bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 11px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap}.ep-msgs .epm-bt:hover{border-color:#3d8bff}
+.ep-msgs .epm-volta{display:none;padding:0 7px}.ep-msgs h2 .epm-x2{display:none;margin-left:auto}
+.ep-msgs .epm-fala{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.ep-msgs .epm-fala .epm-vazio{margin:auto;color:#8d919b;text-align:center;max-width:300px}
+.ep-msgs .epm-dia{text-align:center;margin:12px 0 8px}.ep-msgs .epm-dia span{font-size:11.5px;color:#a9adb7;background:#33353b;border-radius:999px;padding:3px 10px;text-transform:capitalize}
+.ep-msgs .epm-m{display:flex;align-items:flex-end;gap:8px;max-width:78%;margin-top:6px}.ep-msgs .epm-m.epm-junto{margin-top:0}.ep-msgs .epm-m .epm-av{width:28px;height:28px;font-size:12px}.ep-msgs .epm-m .epm-av.epm-vazio{background:none}
+.ep-msgs .epm-m .epm-b{background:#3a3c43;border-radius:14px 14px 14px 4px;padding:7px 11px 5px;min-width:0}.ep-msgs .epm-m .epm-b b{display:block;font-size:12px;color:#8cc4ff;margin-bottom:1px}
+.ep-msgs .epm-m .epm-b p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.ep-msgs .epm-m .epm-b a{color:#8cc4ff}.ep-msgs .epm-m time{display:block;text-align:right;font-size:10.5px;color:#a9adb7;margin-top:1px}
+.ep-msgs .epm-m.epm-meu{align-self:flex-end}.ep-msgs .epm-m.epm-meu .epm-b{background:#2f6fe0;border-radius:14px 14px 4px 14px}.ep-msgs .epm-m.epm-meu time{color:#cfe0ff}.ep-msgs .epm-m.epm-meu .epm-b a{color:#fff}
+.ep-msgs .epm-cita{display:flex;gap:10px;align-items:stretch;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.12);border-left:3px solid #9b7bff;border-radius:10px;padding:7px;margin:3px 0 5px;cursor:pointer;max-width:340px;text-align:left}
+.ep-msgs .epm-cita:hover{background:rgba(0,0,0,.32);border-color:rgba(155,123,255,.7)}.ep-msgs .epm-cita:focus-visible{outline:2px solid #9b7bff}
+.ep-msgs .epm-cmini{width:64px;height:64px;flex:none;border-radius:7px;overflow:hidden;display:grid;place-items:center;background:#1f2025;color:#a9adb7}.ep-msgs .epm-cmini img{width:100%;height:100%;object-fit:cover;display:block}.ep-msgs .epm-cmini svg{width:24px;height:24px}
+.ep-msgs .epm-ctx{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px}.ep-msgs .epm-ctx small{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#c4b2ff;font-weight:600}.ep-msgs .epm-ctx b{font-size:13.5px;color:#fff;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ep-msgs .epm-ctx span{font-size:12px;color:#d0d3da;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs .epm-ctx em{font-style:normal;font-size:11.5px;color:#c4b2ff;font-weight:600;margin-top:2px}
+.ep-msgs .epm-m.epm-meu .epm-cita{background:rgba(0,0,0,.2);border-color:rgba(255,255,255,.25);border-left-color:#fff}.ep-msgs .epm-m.epm-meu .epm-ctx small,.ep-msgs .epm-m.epm-meu .epm-ctx em{color:#e3ecff}
+.ep-msgs .epm-cbaixa{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:#a9c8ff;text-decoration:none;margin:0 0 3px}.ep-msgs .epm-m.epm-meu .epm-cbaixa{color:#e3ecff}.ep-msgs .epm-cbaixa:hover{text-decoration:underline}.ep-msgs .epm-cbaixa svg{width:13px;height:13px}
+.ep-msgs .epm-cita.epm-mini{cursor:default;padding:0;border:0;background:none;margin:0;max-width:none}.ep-msgs .epm-cita.epm-mini>.epm-cita{cursor:default;margin:0;max-width:none;flex:1;min-width:0}.ep-msgs .epm-cita.epm-mini .epm-cmini{width:44px;height:44px}
+.ep-msgs .epm-enviaPara{margin:0 12px 6px;padding:10px;border-radius:12px;background:rgba(155,123,255,.1);border:1px solid rgba(155,123,255,.35)}.ep-msgs .epm-enviaPara .epm-nota{margin:8px 0 0}
+.ep-msgs .epm-citaPrev{display:flex;gap:8px;align-items:center;margin-bottom:8px}.ep-msgs .epm-citaPrev[hidden]{display:none}.ep-msgs .epm-citaPrev .epm-cita.epm-mini{flex:1;min-width:0;display:flex}.ep-msgs .epm-citaPrev .epm-tira{padding:0 8px;flex:none}
+.ep-msgs .epm-escreve{flex-direction:column;align-items:stretch}.ep-msgs .epm-linhaE{display:flex;gap:8px;align-items:flex-end;width:100%}.ep-msgs .epm-linhaE textarea{width:auto;min-width:0;margin:0}
+.ep-msgs .epm-enviando{align-self:center;color:#c4b2ff;font-size:12.5px;margin-top:8px}
+.ep-msgs .epm-edg{flex:none;margin-left:6px}.ep-msgs .epm-edg svg{width:14px;height:14px}
+.ep-msgs .cx{position:relative}.ep-msgs .epm-gedit{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:2;padding:16px}
+.ep-msgs .epm-gcx{width:min(380px,100%);background:#2b2c31;border:1px solid #4a4c55;border-radius:14px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}.ep-msgs .epm-gcx h3{margin:0 0 12px;font-size:12px}
+.ep-msgs .epm-gl{display:flex;gap:14px;align-items:center}.ep-msgs .epm-gl label{flex:1;display:grid;gap:4px;font-size:12.5px;color:#a9adb7}.ep-msgs .epm-gl input{height:34px;border-radius:8px;border:1px solid #4a4c55;background:#1f2025;color:#e9ebef;font:inherit;padding:0 10px;outline:none}.ep-msgs .epm-gl input:focus{border-color:#3d8bff}
+.ep-msgs .epm-gfoto{width:64px;height:64px;border-radius:50%;border:2px dashed #6a6d78;background:linear-gradient(135deg,#9b7bff,#3d8bff);color:#fff;display:grid;place-items:center;cursor:pointer;overflow:hidden;padding:0;flex:none}.ep-msgs .epm-gfoto img{width:100%;height:100%;object-fit:cover}.ep-msgs .epm-gfoto svg{width:26px;height:26px}
+.ep-msgs .epm-gbt{display:flex;gap:8px;margin-top:12px}.ep-msgs .epm-bt.epm-pri{background:#3d8bff;border-color:#3d8bff;color:#fff}.ep-msgs .epm-gerr{color:#ff9a9a}
+.ep-msgs .epm-m .epm-b .epm-ctx b{color:#fff;display:block;font-size:13.5px;margin:0}.ep-msgs .epm-m .epm-b .epm-ctx small{display:inline;color:#c4b2ff}.ep-msgs .epm-m.epm-meu .epm-b .epm-ctx small{color:#e3ecff}
+.ep-msgs .epm-gl .epm-av{width:56px;height:56px;font-size:20px}
+.ep-msgs .epm-erro{align-self:center;color:#ff9a9a;font-size:12.5px;margin-top:8px}
+.ep-msgs .epm-escreve{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;border-top:1px solid #3a3c43}.ep-msgs .epm-escreve[hidden]{display:none}
+.ep-msgs .epm-escreve textarea{flex:1;resize:none;min-height:38px;max-height:140px;box-sizing:border-box;border-radius:10px;border:1px solid #4a4c55;background:#1f2025;color:#e9ebef;font:inherit;padding:8px 11px;outline:none}.ep-msgs .epm-escreve textarea:focus{border-color:#3d8bff}
+.ep-msgs .epm-envia{height:38px;width:42px;padding:0;background:#3d8bff;border-color:#3d8bff;color:#fff}.ep-msgs .epm-escreve.ind .epm-envia{opacity:.5}
+@media (max-width:680px){.ep-msgs{padding:0}.ep-msgs .cx{grid-template-columns:1fr;height:100%;border-radius:0;border:0}.ep-msgs .cx section{display:none}.ep-msgs .cx.so-conv aside{display:none}.ep-msgs .cx.so-conv section{display:flex}.ep-msgs .epm-volta{display:inline-flex}.ep-msgs h2 .epm-x2{display:inline-flex}.ep-msgs .epm-m{max-width:88%}}
 .ep-esp{position:fixed;inset:0;z-index:2147483002;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef}
 .ep-esp .cx{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:20px}
 .ep-esp h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:10px}.ep-esp h2 .x{margin-left:auto}
@@ -581,81 +605,199 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const diaTxt = t => { const d = new Date(t), h = new Date(); const um = 864e5, ini = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
     const dif = Math.round((ini(h) - ini(d)) / um); return dif === 0 ? 'Hoje' : dif === 1 ? 'Ontem' : d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }); };
   const textoMsg = t => esc(t).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
-  const avU = (q, cls = 'av') => `<span class="${cls}">${q?.foto ? `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer">` : esc(((q?.nome || '?')[0] || '?').toUpperCase())}</span>`;
-  async function painelMensagens() {
+  const nomeU = (u, q) => { const n = q?.nome || 'Alguém', a = MSG.res?.apelidos?.[u]; return a ? `${n} (${a})` : n; };
+  const avU = (q, cls = 'epm-av') => `<span class="${cls}">${q?.foto ? `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer">` : esc(((q?.nome || '?')[0] || '?').toUpperCase())}</span>`;
+  // citação: o programa chama EstudioConta.citar({ prog, titulo, sub, mini, url | abrir + arquivo, parte }) → escolhe para quem → escreve → envia
+  const fmtTam = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  async function miniPequena(src) {
+    if (!src) return null;
+    try { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = src; await im.decode(); const k = Math.min(1, 200 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+      const x = c.getContext('2d'); x.fillStyle = '#2b2c31'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      for (const q of [.8, .6, .4]) { const d = c.toDataURL('image/jpeg', q); if (d.length < 55000) return d; } } catch { }
+    return null;
+  }
+  async function fotoQuadrada(src) { // foto da conversa geral: quadrado de 160 px, leve
+    try { const im = new Image(); im.src = src; await im.decode(); const l = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = 160;
+      c.getContext('2d').drawImage(im, (im.naturalWidth - l) / 2, (im.naturalHeight - l) / 2, l, l, 0, 0, 160, 160);
+      for (const t of ['image/webp', 'image/jpeg']) for (const q of [.85, .7, .5]) { const d = c.toDataURL(t, q); if (d.startsWith('data:' + t) && d.length < 60000) return d; } } catch { }
+    return null;
+  }
+  function citar(info) { if (!info || !info.titulo) return; return painelMensagens({ citar: info }); }
+  // o programa aberto por uma citação: ?anexo=<id>&parte=<json> (arquivo) ou só ?parte=<json> (item da nuvem)
+  function citacaoRecebida() {
+    const q = new URLSearchParams(location.search), id = q.get('anexo'), pt = q.get('parte'); if (!id && !pt) return null;
+    let parte = null; try { parte = pt ? JSON.parse(pt) : null; } catch { }
+    q.delete('anexo'); q.delete('parte'); const nome = q.get('anexoNome') || 'arquivo'; q.delete('anexoNome');
+    try { history.replaceState(history.state, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } catch { }
+    return { parte, nome, anexo: id || null,
+      async baixar() { if (!id) return null; const r = await fetch('/mensagens/anexo?id=' + encodeURIComponent(id), { credentials: 'same-origin' });
+        if (!r.ok) { let m = 'Não consegui baixar o arquivo.'; try { m = (await r.json()).error?.message || m; } catch { } throw new Error(m); }
+        return new File([await r.blob()], nome); } };
+  }
+  function abreCitacao(c) {
+    if (!c) return;
+    const parte = c.parte ? JSON.stringify(c.parte) : '';
+    let u;
+    if (c.anexo && c.abrir) u = c.abrir + '?anexo=' + encodeURIComponent(c.anexo.id) + '&anexoNome=' + encodeURIComponent(c.anexo.nome || 'arquivo') + (parte ? '&parte=' + encodeURIComponent(parte) : '');
+    else if (c.url) u = c.url + (parte && !/[?&]parte=/.test(c.url) ? (c.url.includes('?') ? '&' : '?') + 'parte=' + encodeURIComponent(parte) : '');
+    if (u) window.open(u, '_blank', 'noopener');
+  }
+  const citaHtml = (c, i, comBaixar) => `<div class="epm-cita" role="button" tabindex="0" data-cita="${i}" title="${c.anexo ? 'Abrir no programa (o arquivo vem junto)' : 'Abrir'}">
+      <span class="epm-cmini">${c.mini ? `<img src="${esc(c.mini)}" alt="">` : ICONES.arquivo}</span>
+      <span class="epm-ctx"><small>${esc(c.prog || 'Estúdio')} · ${c.anexo ? 'arquivo ' + esc(fmtTam(c.anexo.bytes || 0)) : 'na nuvem'}</small><b>${esc(c.titulo)}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ''}
+      <em>${c.anexo ? 'Abrir e continuar daqui' : 'Abrir e ir direto para aqui'}</em></span></div>${comBaixar && c.anexo ? `<a class="epm-cbaixa" href="/mensagens/anexo?id=${esc(c.anexo.id)}" download="${esc(c.anexo.nome || 'arquivo')}">${ICONES.baixar} Baixar ${esc(c.anexo.nome || 'arquivo')}</a>` : ''}`;
+  async function painelMensagens(o = {}) {
+    if (o.citar) { MSG.citando = { ...o.citar }; MSG.citando.mini = await miniPequena(o.citar.mini); }
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-msgs')?.remove();
     const d = document.createElement('div'); d.className = 'ep-msgs';
     d.innerHTML = `<div class="cx" role="dialog" aria-label="Mensagens">
-      <aside><h2>${ICONES.msg} Mensagens<button class="bt x2" type="button" data-x>Fechar</button></h2><div class="lista" role="list"><p class="nota">Carregando…</p></div><p class="nota pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
-      <section><header><button class="bt volta" type="button" title="Voltar para a lista">${ICONES.voltar}</button><div class="tit"></div><button class="bt x" type="button" data-x>Fechar</button></header>
-        <div class="fala" aria-live="polite"><div class="vazio">Escolha a conversa geral ou uma pessoa ao lado.</div></div>
-        <form class="escreve" hidden><textarea rows="1" maxlength="2000" placeholder="Escreva uma mensagem…"></textarea><button class="bt envia" type="submit" title="Enviar (Enter)">${ICONES.enviar}</button></form></section></div>`;
+      <aside><h2>${ICONES.msg} <span data-h2>Mensagens</span><button class="epm-bt epm-x2" type="button" data-x>Fechar</button></h2><div class="epm-enviaPara" hidden></div><div class="epm-lista" role="list"><p class="epm-nota">Carregando…</p></div><p class="epm-nota epm-pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
+      <section><header><button class="epm-bt epm-volta" type="button" title="Voltar para a lista">${ICONES.voltar}</button><div class="epm-tit"></div><button class="epm-bt x" type="button" data-x>Fechar</button></header>
+        <div class="epm-fala" aria-live="polite"><div class="epm-vazio">Escolha a conversa geral ou uma pessoa ao lado.</div></div>
+        <form class="epm-escreve" hidden><div class="epm-citaPrev" hidden></div><div class="epm-linhaE"><textarea rows="1" maxlength="2000" placeholder="Escreva uma mensagem…"></textarea><button class="epm-bt epm-envia" type="submit" title="Enviar (Enter)">${ICONES.enviar}</button></div></form></section></div>`;
     document.body.appendChild(d);
-    const cx = d.querySelector('.cx'), lista = d.querySelector('.lista'), fala = d.querySelector('.fala'), tit = d.querySelector('.tit'), form = d.querySelector('.escreve'), ta = form.querySelector('textarea');
-    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); MSG.janela = null; MSG.conv = null; }, esc1 = e => { if (e.key === 'Escape') fechar(); };
+    const cx = d.querySelector('.cx'), lista = d.querySelector('.epm-lista'), fala = d.querySelector('.epm-fala'), tit = d.querySelector('.epm-tit'), form = d.querySelector('.epm-escreve'), ta = form.querySelector('textarea');
+    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); MSG.janela = null; MSG.conv = null; MSG.citando = null; }, esc1 = e => { if (e.key === 'Escape') fechar(); };
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
-    d.querySelectorAll('[data-x]').forEach(b => b.onclick = fechar); d.querySelector('.volta').onclick = () => { cx.classList.remove('so-conv'); MSG.conv = null; desenhaLista(); };
+    d.querySelectorAll('[data-x]').forEach(b => b.onclick = fechar); d.querySelector('.epm-volta').onclick = () => { cx.classList.remove('so-conv'); MSG.conv = null; desenhaLista(); };
     const pessoaDe = u => MSG.pessoas.find(p => p.u === u);
+    const geralNome = () => MSG.res?.geral?.nome || 'Geral';
+    // apelido que VOCÊ deu (só você vê): "Nome (apelido)"
+    function editaApelido(u, q) {
+      d.querySelector('.epm-gedit')?.remove();
+      const atual = MSG.res?.apelidos?.[u] || '', g = document.createElement('div'); g.className = 'epm-gedit';
+      g.innerHTML = `<form class="epm-gcx"><h3>Apelido</h3><div class="epm-gl">${avU(q)}<label>Apelido para ${esc(q?.nome || 'esta pessoa')}<input type="text" maxlength="30" value="${esc(atual)}" placeholder="Ex.: ${esc(String(q?.nome || 'Fulano').split(' ')[0])}zinho"></label></div>
+        <p class="epm-nota">Só você vê. Aparece entre parênteses depois do nome, em todas as conversas.</p><p class="epm-gerr epm-nota" hidden></p>
+        <div class="epm-gbt">${atual ? '<button type="button" class="epm-bt" data-tira>Tirar o apelido</button>' : ''}<span style="flex:1"></span><button type="button" class="epm-bt" data-c>Cancelar</button><button class="epm-bt epm-pri" type="submit">Salvar</button></div></form>`;
+      d.querySelector('.cx').appendChild(g);
+      const salva = async nick => { const er = g.querySelector('.epm-gerr');
+        try { const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'apelido', alvo: u, nick }) });
+          const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não salvou.');
+          if (MSG.res) { MSG.res.apelidos = { ...(MSG.res.apelidos || {}) }; if (j.nick) MSG.res.apelidos[u] = j.nick; else delete MSG.res.apelidos[u]; }
+          g.remove(); desenhaLista(); pintaTitulo(); desenhaConversa(); }
+        catch (x) { er.hidden = false; er.textContent = x.message; } };
+      g.querySelector('[data-tira]')?.addEventListener('click', () => salva(''));
+      g.querySelector('[data-c]').onclick = () => g.remove(); g.onclick = e => { if (e.target === g) g.remove(); };
+      g.querySelector('form').onsubmit = e => { e.preventDefault(); salva(g.querySelector('input').value); };
+      const i = g.querySelector('input'); i.focus(); i.select();
+    }
+    const geralAv = () => MSG.res?.geral?.foto ? `<span class="epm-av epm-geral"><img src="${esc(MSG.res.geral.foto)}" alt=""></span>` : `<span class="epm-av epm-geral">${ICONES.equipe}</span>`;
+    // ADM: nome e foto da conversa geral
+    function editaGeral() {
+      d.querySelector('.epm-gedit')?.remove();
+      let foto = MSG.res?.geral?.foto || null;
+      const g = document.createElement('div'); g.className = 'epm-gedit';
+      g.innerHTML = `<form class="epm-gcx"><h3>Conversa geral</h3><div class="epm-gl"><button type="button" class="epm-gfoto" title="Escolher a foto">${foto ? `<img src="${esc(foto)}" alt="">` : ICONES.equipe}</button>
+        <label>Nome<input type="text" maxlength="40" value="${esc(MSG.res?.geral?.nome || '')}" placeholder="Geral"></label></div>
+        <p class="epm-nota">Só ADM muda. Todo mundo da equipe passa a ver o nome e a foto novos.</p><p class="epm-gerr epm-nota" hidden></p>
+        <div class="epm-gbt"><button type="button" class="epm-bt" data-tira>Tirar a foto</button><span style="flex:1"></span><button type="button" class="epm-bt" data-c>Cancelar</button><button class="epm-bt epm-pri" type="submit">Salvar</button></div></form>`;
+      d.querySelector('.cx').appendChild(g);
+      const gf = g.querySelector('.epm-gfoto'), pinta = () => { gf.innerHTML = foto ? `<img src="${esc(foto)}" alt="">` : ICONES.equipe; g.querySelector('[data-tira]').hidden = !foto; }; pinta();
+      gf.onclick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { const f = i.files?.[0]; if (!f) return; const u = URL.createObjectURL(f); foto = await fotoQuadrada(u); URL.revokeObjectURL(u); pinta(); }; i.click(); };
+      g.querySelector('[data-tira]').onclick = () => { foto = null; pinta(); };
+      g.querySelector('[data-c]').onclick = () => g.remove(); g.onclick = e => { if (e.target === g) g.remove(); };
+      g.querySelector('form').onsubmit = async e => { e.preventDefault(); const er = g.querySelector('.epm-gerr');
+        try { const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'geral', nome: g.querySelector('input').value, foto }) });
+          const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não salvou.');
+          if (MSG.res) MSG.res.geral = j.geral; g.remove(); desenhaLista(); pintaTitulo(); }
+        catch (x) { er.hidden = false; er.textContent = x.message; } };
+      g.querySelector('input').focus();
+    }
+    const citaPrev = form.querySelector('.epm-citaPrev'), enviaPara = d.querySelector('.epm-enviaPara');
+    function pintaCitando() {
+      const c = MSG.citando; d.querySelector('[data-h2]').textContent = c ? 'Enviar para…' : 'Mensagens';
+      enviaPara.hidden = !c; citaPrev.hidden = !c;
+      if (!c) { citaPrev.innerHTML = ''; return; }
+      const cc = { ...c, anexo: c.arquivo ? { bytes: c.tamanho || 0, nome: c.nomeArquivo || '' } : null };
+      enviaPara.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><p class="epm-nota">Escolha a conversa: a citação vai junto e você pode escrever mais.</p>`;
+      citaPrev.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><button class="epm-bt epm-tira" type="button" title="Tirar a citação">${ICONES.fechar || '×'}</button>`;
+      citaPrev.querySelector('.epm-tira').onclick = () => { MSG.citando = null; pintaCitando(); };
+    }
+    pintaCitando();
     async function desenhaLista() {
       const R = MSG.res || { nao: {}, ultimas: {} }, ult = R.ultimas || {}, nao = R.nao || {};
       const convs = [{ id: 'geral', u: 'geral' }, ...MSG.pessoas.map(p => ({ id: 'p:' + [MSG.eu, p.u].sort().join('|'), u: p.u, p }))];
       for (const c of Object.keys(ult)) if (c !== 'geral' && !convs.some(x => x.id === c)) convs.push({ id: c, u: outroDe(c) });
       const qs = await Promise.all(convs.map(c => c.u === 'geral' ? null : quemU(c.u)));
       convs.forEach((c, i) => c.q = qs[i]);
-      const resto = convs.slice(1).filter(c => c.q?.nome).sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || (!!b.p?.on - !!a.p?.on) || String(a.q.nome).localeCompare(b.q.nome));
+      const resto = convs.slice(1).filter(c => c.q?.nome).sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || (!!b.p?.on - !!a.p?.on) || nomeU(a.u, a.q).localeCompare(nomeU(b.u, b.q)));
       const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, geral = c.id === 'geral', on = c.p?.on;
-        const prev = m ? (m.de === MSG.eu ? 'Você: ' : geral ? '' : '') + m.texto.replace(/\s+/g, ' ').slice(0, 60) : geral ? 'Conversa de toda a equipe' : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
-        return `<button type="button" class="pes${MSG.conv?.id === c.id ? ' sel' : ''}${n ? ' tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">
-          <span class="avw">${geral ? `<span class="av geral">${ICONES.equipe}</span>` : avU(c.q)}${on ? '<i class="on"></i>' : ''}</span>
-          <span class="tx"><b>${geral ? 'Geral' : esc(c.q.nome)}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
-          ${on ? `<em class="onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${n ? `<b class="cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
+        const citaDe = x => { try { return x.cita ? JSON.parse(x.cita) : null; } catch { return null; } }, cm = m && citaDe(m);
+        const prev = m ? (m.de === MSG.eu ? 'Você: ' : '') + ((m.texto || '').replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
+        return `<button type="button" class="epm-pes${MSG.conv?.id === c.id ? ' epm-sel' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">
+          <span class="epm-avw">${geral ? geralAv() : avU(c.q)}${on ? '<i class="epm-on"></i>' : ''}</span>
+          <span class="epm-tx"><b>${geral ? esc(geralNome()) : esc(nomeU(c.u, c.q))}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
+          ${on ? `<em class="epm-onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
       const geralC = convs[0];
-      lista.innerHTML = linha(geralC) + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="nota">Ainda ninguém da equipe por aqui.</p>');
+      lista.innerHTML = linha(geralC) + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="epm-nota">Ainda ninguém da equipe por aqui.</p>');
       lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => abreConv(b.dataset.c, b.dataset.u));
       if (MSG.conv) pintaTitulo();
     }
     async function pintaTitulo() {
       const c = MSG.conv; if (!c) return;
-      if (c.u === 'geral') { tit.innerHTML = `<span class="av geral">${ICONES.equipe}</span><span><b>Geral</b><small>Todo mundo da equipe vê</small></span>`; return; }
+      if (c.u === 'geral') { tit.innerHTML = `${geralAv()}<span style="min-width:0"><b>${esc(geralNome())}</b><small>Conversa geral · todo mundo da equipe vê</small></span>${MSG.res?.adm ? `<button class="epm-bt epm-edg" type="button" title="Só ADM: mudar o nome e a foto da conversa geral">${ICONES.lapis} Editar</button>` : ''}`;
+        tit.querySelector('.epm-edg')?.addEventListener('click', editaGeral); return; }
       const q = await quemU(c.u), on = pessoaDe(c.u)?.on;
-      tit.innerHTML = `<span class="avw">${avU(q)}${on ? '<i class="on"></i>' : ''}</span><span><b>${esc(q?.nome || 'Pessoa')}</b><small>${on ? 'Online agora ' + esc(NOME_PROG_ON[on] || '') : 'Conversa privada · só vocês dois veem'}</small></span>`;
+      tit.innerHTML = `<span class="epm-avw">${avU(q)}${on ? '<i class="epm-on"></i>' : ''}</span><span style="min-width:0"><b>${esc(nomeU(c.u, q))}</b><small>${on ? 'Online agora ' + esc(NOME_PROG_ON[on] || '') : 'Conversa privada · só vocês dois veem'}</small></span><button class="epm-bt epm-edg" type="button" title="Dar um apelido (só você vê, entre parênteses)">${ICONES.lapis} Apelido</button>`;
+      tit.querySelector('.epm-edg').onclick = () => editaApelido(c.u, q);
     }
     async function desenhaConversa() {
       const c = MSG.conv; if (!c) return;
       const perto = fala.scrollHeight - fala.scrollTop - fala.clientHeight < 80;
-      if (!c.msgs.length) { fala.innerHTML = `<div class="vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
+      if (!c.msgs.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
       const autores = [...new Set(c.msgs.map(m => m.de).filter(u => u !== MSG.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
-      let h = '', dia = '', ant = null;
+      let h = '', dia = '', ant = null; const cits = [];
       for (const m of c.msgs) {
-        const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
+        const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="epm-dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
         const meu = m.de === MSG.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
-        h += `<div class="m${meu ? ' meu' : ''}${junto ? ' junto' : ''}">${meu ? '' : (junto ? '<span class="av vazio"></span>' : avU(q))}<div class="b">${!meu && !junto && c.u === 'geral' ? `<b>${esc(q?.nome || 'Alguém')}</b>` : ''}<p>${textoMsg(m.texto)}</p><time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
+        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-vazio"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && c.u === 'geral' ? `<b>${esc(nomeU(m.de, q))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.texto ? `<p>${textoMsg(m.texto)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
         ant = m;
       }
-      fala.innerHTML = h; if (perto || c.primeira) { fala.scrollTop = fala.scrollHeight; c.primeira = false; }
+      fala.innerHTML = h;
+      fala.querySelectorAll('[data-cita]').forEach(el => { const abre = () => abreCitacao(cits[+el.dataset.cita]); el.onclick = abre; el.onkeydown = e => { if (e.key === 'Enter') abre(); }; });
+      fala.querySelectorAll('.epm-cita img').forEach(im => im.addEventListener('load', () => { if (perto || c.primeira) fala.scrollTop = fala.scrollHeight; }, { once: true }));
+      if (perto || c.primeira) { fala.scrollTop = fala.scrollHeight; c.primeira = false; }
     }
     async function abreConv(id, u) {
       MSG.conv = { id, u, msgs: [], primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
-      fala.innerHTML = '<div class="vazio">Carregando…</div>'; pintaTitulo(); desenhaLista();
+      fala.innerHTML = '<div class="epm-vazio">Carregando…</div>'; pintaTitulo(); desenhaLista();
       if (id !== 'geral' && !(MSG.res?.ultimas?.[id])) { desenhaConversa(); ta.focus(); return; }
       try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (MSG.conv?.id !== id) return; MSG.conv.msgs = j.msgs || []; }
-      catch { fala.innerHTML = '<div class="vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
+      catch { fala.innerHTML = '<div class="epm-vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
       desenhaConversa(); marcaLida(id); desenhaLista(); ta.focus();
     }
+    if (o.para) setTimeout(() => abreConv(o.para === 'geral' ? 'geral' : 'p:' + [MSG.eu, o.para].sort().join('|'), o.para), 0);
     const ajusta = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
     ta.oninput = ajusta;
     ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } };
     form.onsubmit = async e => {
-      e.preventDefault(); const texto = ta.value.trim(), c = MSG.conv; if (!texto || !c || form.classList.contains('ind')) return;
+      e.preventDefault(); const texto = ta.value.trim(), c = MSG.conv, ci = MSG.citando; if ((!texto && !ci) || !c || form.classList.contains('ind')) return;
       form.classList.add('ind');
+      const aviso = txt => { let n = fala.querySelector('.epm-enviando'); if (!txt) return n?.remove(); if (!n) { n = document.createElement('div'); n.className = 'epm-enviando'; fala.appendChild(n); } n.textContent = txt; fala.scrollTop = fala.scrollHeight; };
       try {
-        const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: c.u, texto }) });
+        let cita = null;
+        if (ci) {
+          cita = { prog: ci.prog, titulo: ci.titulo, sub: ci.sub, mini: ci.mini, url: ci.url, abrir: ci.abrir, parte: ci.parte };
+          if (ci.arquivo) {
+            aviso('Preparando o arquivo…');
+            const a = await ci.arquivo(); if (!a?.blob) throw new Error('O programa não conseguiu montar o arquivo.');
+            const up = await new Promise((ok, falha) => { const x = new XMLHttpRequest();
+              x.open('POST', '/mensagens/anexo?para=' + encodeURIComponent(c.u) + '&nome=' + encodeURIComponent(a.nome || 'arquivo'));
+              x.upload.onprogress = ev => { if (ev.lengthComputable) aviso(`Enviando ${a.nome || 'o arquivo'}… ${Math.round(ev.loaded / ev.total * 100)}%`); };
+              x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch { } x.status < 300 ? ok(j) : falha(new Error(j.error?.message || 'Não deu para enviar o arquivo.')); };
+              x.onerror = () => falha(new Error('A internet caiu no meio do envio.')); x.send(a.blob); });
+            cita.anexo = { id: up.id };
+          }
+          aviso('');
+        }
+        const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: c.u, texto, cita }) });
         const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu para enviar.');
-        ta.value = ''; ajusta();
+        ta.value = ''; ajusta(); if (ci) { MSG.citando = null; pintaCitando(); }
         if (MSG.conv === c) { c.msgs.push(j.msg); if (c.id !== j.msg.conv) c.id = j.msg.conv; fala.scrollTop = fala.scrollHeight; c.primeira = true; desenhaConversa(); }
         if (MSG.res) { MSG.res.ultimas = { ...(MSG.res.ultimas || {}), [j.msg.conv]: j.msg }; } desenhaLista();
-      } catch (er) { const n = document.createElement('div'); n.className = 'erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }
+      } catch (er) { aviso(''); const n = document.createElement('div'); n.className = 'epm-erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }
       finally { form.classList.remove('ind'); ta.focus(); }
     };
     MSG.janela = { desenhaLista, desenhaConversa };
@@ -728,7 +870,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
-    mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
+    citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
     nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
