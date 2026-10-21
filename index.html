@@ -128,7 +128,7 @@ svg{display:block;flex:none}
 .adm-abas button svg{flex:none;color:var(--tx2)}.adm-abas button b{display:block;font-size:13.5px}.adm-abas button small{display:block;color:var(--tx2);font-size:11.5px}
 .adm-abas button:hover{border-color:var(--bd2)}.adm-abas button[aria-selected=true]{border-color:var(--ac);background:rgba(var(--ac-rgb),.16)}.adm-abas button[aria-selected=true] svg{color:var(--ac)}
 .adm-abas button[hidden]{display:none}
-.adm-pag[hidden]{display:none!important}.adm-desc{color:var(--tx2);margin:8px 0 -10px;font-size:13px}
+.adm-pag[hidden]{display:none!important}.adm-aba-alerta{margin-left:4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff4d5e;color:#fff;font-size:11px;display:inline-grid;place-items:center}.adm-aba-alerta[hidden]{display:none}.adm-desc{color:var(--tx2);margin:8px 0 -10px;font-size:13px}
 .savebar[hidden],.acesso-add[hidden]{display:none!important}
 .acesso-add{display:flex;gap:8px;flex-wrap:wrap}.acesso-add input{flex:1;min-width:220px;height:36px;border-radius:9px;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx);padding:0 12px;font:inherit}
 .acesso-lista{display:grid;gap:8px;margin-top:12px}
@@ -293,6 +293,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <button role="tab" data-aba="fundo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span><b>Fundo</b><small>imagem ou vídeo da tela</small></span></button>
     <button role="tab" data-aba="acesso" id="aba-acesso" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg><span><b>Quem pode entrar</b><small>liberar e tirar e-mails</small></span></button>
     <button role="tab" data-aba="nuvem" id="aba-nuvem" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span><b>Nuvem</b><small>o que está guardado e o espaço</small></span></button>
+    <button role="tab" data-aba="conversas" id="aba-conversas" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/><path d="M12 8v4.5"/><path d="M12 15.6v.1"/></svg><span>Conversas</span><b class="adm-aba-alerta" id="aba-conversas-n" hidden></b></button>
   </nav>
   <div class="adm-pag" data-pag="botoes">
     <p class="adm-desc">Os cartões que aparecem no menu: nome, endereço, ícone, fundo e o jeito de tocar. Arraste para mudar a ordem.</p>
@@ -322,6 +323,10 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
         <div class="hint" id="acesso-st" style="margin:8px 0 2px">Vale na hora para quem entrar (até 1 minuto). Quem for tirado perde o acesso em até 1 minuto, mesmo se estiver com o site aberto. Os e-mails da lista fixa (EMAILS_PERMITIDOS) só mudam na Cloudflare.</div>
         <div class="acesso-lista" id="acesso-lista"></div>
       </div>
+    </section>
+    <section id="conversas-sec" class="adm-pag" data-pag="conversas">
+      <p class="adm-desc">Segurança das Mensagens: as denúncias que a equipe fez e as conversas pela visão de cada pessoa (só leitura).</p>
+      <div id="conversas-adm"></div>
     </section>
     <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
       <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems (Cloudflare): a da equipe e a dos sons. O Firebase só cuida do login e não guarda nada. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
@@ -1035,7 +1040,7 @@ async function renderAcesso() {
       b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'del', id: it.id }) }); stA('Acesso removido.'); carrega(); } catch (e) { stA(e.message, true); b.disabled = false; }
     });
   };
-  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; $('#aba-nuvem').hidden = false; pinta(j.itens || []); }
+  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; $('#aba-nuvem').hidden = false; $('#aba-conversas').hidden = false; pinta(j.itens || []); }
     catch (e) { if (e.status === 403 && /ADMINS do servidor/.test(e.message)) { $('#aba-acesso').hidden = false; lista.innerHTML = ''; $('#acesso-add').hidden = true; stA(e.message); } else $('#aba-acesso').hidden = true; } };
   $('#acesso-add').onsubmit = async ev => {
     ev.preventDefault(); const inp = $('#acesso-add input'), email = inp.value.trim(); if (!email) return;
@@ -1348,13 +1353,16 @@ function abaAdm(n) {
   const abas = $$('.adm-abas [data-aba]'); if (!abas.some(b => b.dataset.aba === n && !b.hidden)) n = 'botoes';
   abas.forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === n)));
   $$('.adm-pag').forEach(p => p.hidden = p.dataset.pag !== n);
-  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem'; // quem pode entrar salva sozinho; a nuvem é só para ver
+  if (n === 'conversas') window.EstudioConta?.adm?.conversas($('#conversas-adm'));
+  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'conversas'; // quem pode entrar salva sozinho; a nuvem é só para ver
   if (n === 'nuvem' && !renderNuvem.feito) { renderNuvem.feito = true; renderNuvem(); }
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
 }
 function showAdm() {
   $$('.adm-abas [data-aba]').forEach(b => b.onclick = () => { abaAdm(b.dataset.aba); window.scrollTo({ top: 0 }); });
   let ultima = 'botoes'; try { ultima = localStorage.getItem('ep-adm-aba') || 'botoes'; } catch { }
+  if (/^#denuncias/.test(location.hash)) ultima = 'conversas'; // veio do alerta de denúncia (foto da conta)
+  addEventListener('hashchange', () => { if (/^#denuncias/.test(location.hash)) abaAdm('conversas'); });
   abaAdm(ultima); renderAcesso().then(() => abaAdm(ultima));
   $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); await renderNuvem(true); b.classList.remove('girando'); b.disabled = false; };
   try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
