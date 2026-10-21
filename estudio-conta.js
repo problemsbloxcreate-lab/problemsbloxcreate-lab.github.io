@@ -46,6 +46,7 @@
     baixar: svg('<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>'),
     lapis: svg('<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>'),
     ok: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+    mais: svg('<path d="M12 5v14M5 12h14"/>'),
     fechar: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
     voltar: svg('<path d="m15 18-6-6 6-6"/>'),
     conta: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
@@ -171,6 +172,16 @@
 .ep-msgs .epm-gbt{display:flex;gap:8px;margin-top:12px}.ep-msgs .epm-bt.epm-pri{background:#3d8bff;border-color:#3d8bff;color:#fff}.ep-msgs .epm-gerr{color:#ff9a9a}
 .ep-msgs .epm-m .epm-b .epm-ctx b{color:#fff;display:block;font-size:13.5px;margin:0}.ep-msgs .epm-m .epm-b .epm-ctx small{display:inline;color:#c4b2ff}.ep-msgs .epm-m.epm-meu .epm-b .epm-ctx small{color:#e3ecff}
 .ep-msgs .epm-gl .epm-av{width:56px;height:56px;font-size:20px}
+.ep-msgs h2 .epm-varias{margin-left:auto;height:28px;padding:0 9px;font-size:12px}.ep-msgs h2 .epm-varias svg{width:14px;height:14px}.ep-msgs h2 .epm-varias.epm-on2{background:rgba(155,123,255,.22);border-color:#9b7bff;color:#e6dcff}
+.ep-msgs h2 .epm-x2{margin-left:6px}
+.ep-msgs .epm-epbt{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.ep-msgs .epm-epbt .epm-bt{height:28px;font-size:12px;padding:0 9px}.ep-msgs .epm-epbt svg{width:14px;height:14px}
+.ep-msgs .epm-lista h3{display:flex;align-items:center;gap:6px}.ep-msgs .epm-novog{margin-left:auto;display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:#9ec5ff;font:inherit;font-size:11px;text-transform:none;letter-spacing:0;cursor:pointer;padding:2px 4px;border-radius:6px}.ep-msgs .epm-novog:hover{background:rgba(61,139,255,.15)}.ep-msgs .epm-novog svg{width:12px;height:12px}
+.ep-msgs .epm-av.epm-grupo{background:linear-gradient(135deg,#ff9a62,#ff5f8f);border-radius:11px}.ep-msgs .epm-av.epm-grupo svg{width:18px;height:18px}
+.ep-msgs .epm-gcx2{width:min(440px,100%);max-height:calc(100% - 20px);display:flex;flex-direction:column}
+.ep-msgs .epm-gmemb-t{display:flex;align-items:center;gap:6px;margin:14px 0 6px;font-size:12.5px;color:#a9adb7}.ep-msgs .epm-gmemb-t .epm-bt{height:26px;font-size:12px}
+.ep-msgs .epm-gmemb{overflow:auto;max-height:240px;border:1px solid #3a3c43;border-radius:10px;padding:4px;background:#26272c}
+.ep-msgs .epm-gmemb label{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;cursor:pointer}.ep-msgs .epm-gmemb label:hover{background:#33353b}.ep-msgs .epm-gmemb .epm-av{width:26px;height:26px;font-size:11px}.ep-msgs .epm-gmemb input{accent-color:#9b7bff;width:16px;height:16px;margin:0}
+.ep-msgs .epm-bt.epm-verm{color:#ff8f8f;border-color:#5a2c33}.ep-msgs .epm-bt.epm-verm:hover{border-color:#ff6b6b}
 .ep-msgs .epm-ck{width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid #6a6d78;display:grid;place-items:center;color:#fff}.ep-msgs .epm-alvo .epm-ck{background:#9b7bff;border-color:#9b7bff}.ep-msgs .epm-ck svg{width:13px;height:13px}
 .ep-msgs .epm-pes.epm-alvo{background:rgba(155,123,255,.16);box-shadow:inset 0 0 0 1px rgba(155,123,255,.6)}
 .ep-msgs .epm-m .epm-b p .epm-ment{display:inline;font-size:inherit;margin:0;color:#9ec5ff;font-weight:700;background:rgba(61,139,255,.16);border-radius:5px;padding:0 3px}.ep-msgs .epm-m .epm-b p .epm-ment.epm-eu{color:#fff;background:#d6394b}
@@ -708,22 +719,56 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       <span class="epm-ctx"><small>${esc(c.prog || 'Estúdio')} · ${c.anexo ? 'arquivo ' + esc(fmtTam(c.anexo.bytes || 0)) : 'na nuvem'}</small><b>${esc(c.titulo)}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ''}
       <em>${c.anexo ? 'Abrir e continuar daqui' : 'Abrir e ir direto para aqui'}</em></span></div>${comBaixar && c.anexo ? `<a class="epm-cbaixa" href="/mensagens/anexo?id=${esc(c.anexo.id)}" download="${esc(c.anexo.nome || 'arquivo')}">${ICONES.baixar} Baixar ${esc(c.anexo.nome || 'arquivo')}</a>` : ''}`;
   async function painelMensagens(o = {}) {
-    if (o.citar) { MSG.citando = { ...o.citar }; MSG.citando.mini = await miniPequena(o.citar.mini); }
+    if (o.citar) { MSG.citando = { ...o.citar }; MSG.citando.mini = await miniPequena(o.citar.mini); MSG.escolha = { alvos: [] }; }
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-msgs')?.remove();
     const d = document.createElement('div'); d.className = 'ep-msgs';
     d.innerHTML = `<div class="cx" role="dialog" aria-label="Mensagens">
-      <aside><h2>${ICONES.msg} <span data-h2>Mensagens</span><button class="epm-bt epm-x2" type="button" data-x>Fechar</button></h2><div class="epm-enviaPara" hidden></div><div class="epm-lista" role="list"><p class="epm-nota">Carregando…</p></div><p class="epm-nota epm-pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
+      <aside><h2>${ICONES.msg} <span data-h2>Mensagens</span><button class="epm-bt epm-varias" type="button" title="Mandar a mesma mensagem para várias conversas">${ICONES.equipe}<span>Várias</span></button><button class="epm-bt epm-x2" type="button" data-x>Fechar</button></h2><div class="epm-enviaPara" hidden></div><div class="epm-lista" role="list"><p class="epm-nota">Carregando…</p></div><p class="epm-nota epm-pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
       <section><header><button class="epm-bt epm-volta" type="button" title="Voltar para a lista">${ICONES.voltar}</button><div class="epm-tit"></div><button class="epm-bt x" type="button" data-x>Fechar</button></header>
         <div class="epm-fala" aria-live="polite"><div class="epm-vazio">Escolha a conversa geral ou uma pessoa ao lado.</div></div>
         <form class="epm-escreve" hidden><div class="epm-citaPrev" hidden></div><div class="epm-linhaE"><textarea rows="1" maxlength="2000" placeholder="Escreva uma mensagem…"></textarea><button class="epm-bt epm-envia" type="submit" title="Enviar (Enter)">${ICONES.enviar}</button></div></form></section></div>`;
     document.body.appendChild(d);
     const cx = d.querySelector('.cx'), lista = d.querySelector('.epm-lista'), fala = d.querySelector('.epm-fala'), tit = d.querySelector('.epm-tit'), form = d.querySelector('.epm-escreve'), ta = form.querySelector('textarea');
-    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); MSG.janela = null; MSG.conv = null; MSG.citando = null; }, esc1 = e => { if (e.key === 'Escape') fechar(); };
+    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); MSG.janela = null; MSG.conv = null; MSG.citando = null; MSG.escolha = null; }, esc1 = e => { if (e.key === 'Escape') fechar(); };
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
     d.querySelectorAll('[data-x]').forEach(b => b.onclick = fechar); d.querySelector('.epm-volta').onclick = () => { cx.classList.remove('so-conv'); MSG.conv = null; desenhaLista(); };
     const pessoaDe = u => MSG.pessoas.find(p => p.u === u);
     const geralNome = () => MSG.res?.geral?.nome || 'Geral';
+    const grupoDe = id => (MSG.res?.grupos || []).find(g => g.id === id) || (MSG.res?.todosGrupos || []).find(g => g.id === id);
+    const grupoAv = g => g?.foto ? `<span class="epm-av epm-grupo"><img src="${esc(g.foto)}" alt=""></span>` : `<span class="epm-av epm-grupo">${ICONES.equipe}</span>`;
+    // ADM: criar / editar / apagar grupo (nome, foto e as pessoas)
+    async function editaGrupo(g) {
+      d.querySelector('.epm-gedit')?.remove();
+      let foto = g?.foto || null; const sel = new Set(g ? g.membros : [MSG.eu]);
+      const gente = [{ u: MSG.eu, q: { nome: (P?.nome || 'Você') + ' (você)', foto: P?.foto } }, ...(await Promise.all(MSG.pessoas.map(async p => ({ u: p.u, q: await quemU(p.u) })))).filter(x => x.q?.nome).sort((a, b) => a.q.nome.localeCompare(b.q.nome))];
+      const w = document.createElement('div'); w.className = 'epm-gedit';
+      w.innerHTML = `<form class="epm-gcx epm-gcx2"><h3>${g ? 'Editar grupo' : 'Novo grupo'}</h3><div class="epm-gl"><button type="button" class="epm-gfoto" title="Escolher a foto do grupo"></button>
+        <label>Nome do grupo<input type="text" maxlength="40" value="${esc(g?.nome || '')}" placeholder="Ex.: Animação"></label></div>
+        <div class="epm-gmemb-t">Quem está no grupo <span data-n></span><span style="flex:1"></span><button type="button" class="epm-bt" data-tds>Todos</button></div>
+        <div class="epm-gmemb">${gente.map(x => `<label><input type="checkbox" value="${esc(x.u)}"${sel.has(x.u) ? ' checked' : ''}>${avU(x.q)}<span>${esc(x.q.nome)}</span></label>`).join('')}</div>
+        <p class="epm-nota">Só ADM cria e muda grupos. Só quem está no grupo vê as conversas dele.</p><p class="epm-gerr epm-nota" hidden></p>
+        <div class="epm-gbt">${g ? '<button type="button" class="epm-bt epm-verm" data-apaga>Apagar grupo</button>' : ''}<span style="flex:1"></span><button type="button" class="epm-bt" data-c>Cancelar</button><button class="epm-bt epm-pri" type="submit">${g ? 'Salvar' : 'Criar grupo'}</button></div></form>`;
+      d.querySelector('.cx').appendChild(w);
+      const gf = w.querySelector('.epm-gfoto'), conta = () => { w.querySelector('[data-n]').textContent = `(${w.querySelectorAll('.epm-gmemb input:checked').length})`; };
+      const pinta = () => { gf.innerHTML = foto ? `<img src="${esc(foto)}" alt="">` : ICONES.equipe; }; pinta(); conta();
+      w.querySelectorAll('.epm-gmemb input').forEach(i => i.onchange = conta);
+      w.querySelector('[data-tds]').onclick = () => { const cks = [...w.querySelectorAll('.epm-gmemb input')], tudo = cks.every(i => i.checked); cks.forEach(i => i.checked = !tudo); conta(); };
+      gf.onclick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { const f = i.files?.[0]; if (!f) return; const u = URL.createObjectURL(f); foto = await fotoQuadrada(u); URL.revokeObjectURL(u); pinta(); }; i.click(); };
+      w.querySelector('[data-c]').onclick = () => w.remove(); w.onclick = e => { if (e.target === w) w.remove(); };
+      const er = w.querySelector('.epm-gerr'), manda = async corpo => {
+        const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'grupo', ...corpo }) });
+        const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não salvou.'); return j; };
+      w.querySelector('[data-apaga]')?.addEventListener('click', async () => {
+        if (!(await pergunta({ titulo: `Apagar o grupo "${g.nome}"?`, texto: 'O grupo e as mensagens dele somem para todo mundo.', ok: 'Apagar' }))) return;
+        try { await manda({ acao: 'apagar', id: g.id }); w.remove(); if (MSG.conv?.id === g.id) { MSG.conv = null; form.hidden = true; tit.innerHTML = ''; fala.innerHTML = '<div class="epm-vazio">Grupo apagado.</div>'; } await puxaMensagens(); desenhaLista(); }
+        catch (x) { er.hidden = false; er.textContent = x.message; } });
+      w.querySelector('form').onsubmit = async e => { e.preventDefault();
+        try { const j = await manda({ acao: g ? 'editar' : 'criar', id: g?.id, nome: w.querySelector('input[type=text]').value, foto, membros: [...w.querySelectorAll('.epm-gmemb input:checked')].map(i => i.value) });
+          w.remove(); await puxaMensagens(); desenhaLista(); if (j.grupo && (j.grupo.membros.includes(MSG.eu))) abreConv(j.grupo.id, j.grupo.id); }
+        catch (x) { er.hidden = false; er.textContent = x.message; } };
+      w.querySelector('input[type=text]').focus();
+    }
     // apelido que VOCÊ deu (só você vê): "Nome (apelido)"
     function editaApelido(u, q) {
       d.querySelector('.epm-gedit')?.remove();
@@ -767,41 +812,55 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     }
     const citaPrev = form.querySelector('.epm-citaPrev'), enviaPara = d.querySelector('.epm-enviaPara');
     function pintaCitando() {
-      const c = MSG.citando; d.querySelector('[data-h2]').textContent = c ? 'Enviar para…' : 'Mensagens';
-      enviaPara.hidden = !c; citaPrev.hidden = !c;
+      const c = MSG.citando, e = MSG.escolha; d.querySelector('[data-h2]').textContent = e ? 'Enviar para…' : 'Mensagens';
+      d.querySelector('.epm-varias').classList.toggle('epm-on2', !!e);
+      enviaPara.hidden = !e; citaPrev.hidden = !c;
+      const cc = c && { ...c, anexo: c.arquivo ? { bytes: c.tamanho || 0, nome: c.nomeArquivo || '' } : null };
+      if (e) {
+        enviaPara.innerHTML = `${cc ? `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div>` : ''}<p class="epm-nota">Escolha uma ou mais conversas${cc ? ' (pode ser a geral também): a citação vai junto e você pode escrever mais.' : ': a mesma mensagem vai para cada uma, separada.'}</p>
+          <div class="epm-epbt"><button type="button" class="epm-bt" data-todas title="Todas as conversas privadas (sem a geral e sem os grupos)">${ICONES.equipe} Todas as pessoas</button><button type="button" class="epm-bt" data-limpa>Limpar</button><span style="flex:1"></span><button type="button" class="epm-bt" data-cancela>Cancelar</button></div>`;
+        enviaPara.querySelector('[data-todas]').onclick = () => { e.alvos = e.alvos.filter(a => !a.id.startsWith('p:')).concat(MSG.pessoas.map(p => ({ id: 'p:' + [MSG.eu, p.u].sort().join('|'), u: p.u }))); escolhaMudou(); };
+        enviaPara.querySelector('[data-limpa]').onclick = () => { e.alvos = []; escolhaMudou(); };
+        enviaPara.querySelector('[data-cancela]').onclick = () => { MSG.escolha = null; MSG.citando = null; MSG.conv = null; form.hidden = true; tit.innerHTML = ''; fala.innerHTML = '<div class="epm-vazio">Escolha a conversa geral ou uma pessoa ao lado.</div>'; pintaCitando(); desenhaLista(); };
+      }
       if (!c) { citaPrev.innerHTML = ''; return; }
-      const cc = { ...c, anexo: c.arquivo ? { bytes: c.tamanho || 0, nome: c.nomeArquivo || '' } : null };
-      enviaPara.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><p class="epm-nota">Escolha uma ou mais conversas (pode ser a geral também): a citação vai junto e você pode escrever mais.</p>`;
       citaPrev.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><button class="epm-bt epm-tira" type="button" title="Tirar a citação">${ICONES.fechar || '×'}</button>`;
       citaPrev.querySelector('.epm-tira').onclick = () => { MSG.citando = null; pintaCitando(); };
     }
+    d.querySelector('.epm-varias').onclick = () => { if (MSG.escolha) { MSG.escolha = null; MSG.citando = null; } else { MSG.escolha = { alvos: MSG.conv && !MSG.conv.multi ? [{ id: MSG.conv.id, u: MSG.conv.u }] : [] }; } pintaCitando(); desenhaLista(); if (MSG.escolha) escolhaMudou(); };
     pintaCitando();
     async function desenhaLista() {
       const R = MSG.res || { nao: {}, ultimas: {} }, ult = R.ultimas || {}, nao = R.nao || {};
       const convs = [{ id: 'geral', u: 'geral' }, ...MSG.pessoas.map(p => ({ id: 'p:' + [MSG.eu, p.u].sort().join('|'), u: p.u, p }))];
-      for (const c of Object.keys(ult)) if (c !== 'geral' && !convs.some(x => x.id === c)) convs.push({ id: c, u: outroDe(c) });
+      for (const c of Object.keys(ult)) if (c.startsWith('p:') && !convs.some(x => x.id === c)) convs.push({ id: c, u: outroDe(c) });
+      const grupos = (R.grupos || []).map(g => ({ id: g.id, u: g.id, g }));
       const qs = await Promise.all(convs.map(c => c.u === 'geral' ? null : quemU(c.u)));
       convs.forEach((c, i) => c.q = qs[i]);
       const cods = [...new Set(Object.values(ult).flatMap(m => codigosMenc(m.texto)))], nomesL = Object.fromEntries(await Promise.all(cods.map(async u => [u, u === MSG.eu ? (P?.nome || 'você') : (await quemU(u))?.nome || 'alguém'])));
       const resto = convs.slice(1).filter(c => c.q?.nome).sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || (!!b.p?.on - !!a.p?.on) || nomeU(a.u, a.q).localeCompare(nomeU(b.u, b.q)));
       const menc = R.mencoes || {};
-      const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, mc = menc[c.id] || 0, geral = c.id === 'geral', on = c.p?.on;
+      const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, mc = menc[c.id] || 0, geral = c.id === 'geral', on = c.p?.on, grupo = c.g;
         const citaDe = x => { try { return x.cita ? JSON.parse(x.cita) : null; } catch { return null; } }, cm = m && citaDe(m);
-        const prev = m ? (m.de === MSG.eu ? 'Você: ' : '') + (semMenc(m.texto, nomesL).replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
-        const alvo = MSG.citando ? (MSG.citando.alvos || []).some(a => a.id === c.id) : false;
-        return `<button type="button" class="epm-pes${!MSG.citando && MSG.conv?.id === c.id ? ' epm-sel' : ''}${alvo ? ' epm-alvo' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">${MSG.citando ? `<span class="epm-ck">${alvo ? ICONES.ok : ''}</span>` : ''}
-          <span class="epm-avw">${geral ? geralAv() : avU(c.q)}${on ? '<i class="epm-on"></i>' : ''}</span>
-          <span class="epm-tx"><b>${geral ? esc(geralNome()) : esc(nomeU(c.u, c.q))}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
+        const prev = m ? (m.de === MSG.eu ? 'Você: ' : '') + (semMenc(m.texto, nomesL).replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : grupo ? `Grupo · ${grupo.membros.length} pessoas` : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
+        const alvo = MSG.escolha ? MSG.escolha.alvos.some(a => a.id === c.id) : false;
+        return `<button type="button" class="epm-pes${!MSG.escolha && MSG.conv?.id === c.id ? ' epm-sel' : ''}${alvo ? ' epm-alvo' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">${MSG.escolha ? `<span class="epm-ck">${alvo ? ICONES.ok : ''}</span>` : ''}
+          <span class="epm-avw">${geral ? geralAv() : grupo ? grupoAv(grupo) : avU(c.q)}${on ? '<i class="epm-on"></i>' : ''}</span>
+          <span class="epm-tx"><b>${geral ? esc(geralNome()) : grupo ? esc(grupo.nome) : esc(nomeU(c.u, c.q))}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
           ${on ? `<em class="epm-onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${mc ? '<b class="epm-cont epm-arroba" title="Citaram você">@</b>' : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
       const geralC = convs[0];
-      lista.innerHTML = linha(geralC) + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="epm-nota">Ainda ninguém da equipe por aqui.</p>');
-      lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => MSG.citando ? marcaAlvo(b.dataset.c, b.dataset.u) : abreConv(b.dataset.c, b.dataset.u));
+      grupos.sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || a.g.nome.localeCompare(b.g.nome));
+      lista.innerHTML = linha(geralC) + (grupos.length || R.adm ? `<h3>Grupos${R.adm ? `<button type="button" class="epm-novog" title="Só ADM: criar um grupo com pessoas escolhidas">${ICONES.mais} Novo grupo</button>` : ''}</h3>` + grupos.map(linha).join('') : '')
+        + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="epm-nota">Ainda ninguém da equipe por aqui.</p>');
+      lista.querySelector('.epm-novog')?.addEventListener('click', () => editaGrupo(null));
+      lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => MSG.escolha ? marcaAlvo(b.dataset.c, b.dataset.u) : abreConv(b.dataset.c, b.dataset.u));
       if (MSG.conv) pintaTitulo();
     }
     async function pintaTitulo() {
       const c = MSG.conv; if (!c) return;
-      if (c.multi) { const nomes = await Promise.all(c.alvos.map(async a => a.u === 'geral' ? geralNome() : nomeU(a.u, await quemU(a.u)))); if (MSG.conv !== c) return;
+      if (c.multi) { const nomes = await Promise.all(c.alvos.map(async a => a.u === 'geral' ? geralNome() : a.u.startsWith('g:') ? (grupoDe(a.u)?.nome || 'Grupo') : nomeU(a.u, await quemU(a.u)))); if (MSG.conv !== c) return;
         tit.innerHTML = `<span class="epm-av epm-geral">${ICONES.msg}</span><span style="min-width:0"><b>Para ${c.alvos.length} conversas</b><small>${esc(nomes.join(', '))}</small></span>`; return; }
+      if (c.u.startsWith('g:')) { const g = grupoDe(c.u); tit.innerHTML = `${grupoAv(g)}<span style="min-width:0"><b>${esc(g?.nome || 'Grupo')}</b><small>Grupo · ${g?.membros.length || 0} pessoas · só quem está nele vê</small></span>${MSG.res?.adm ? `<button class="epm-bt epm-edg" type="button" title="Só ADM: nome, foto e pessoas do grupo">${ICONES.lapis} Editar</button>` : ''}`;
+        tit.querySelector('.epm-edg')?.addEventListener('click', () => editaGrupo(g)); return; }
       if (c.u === 'geral') { tit.innerHTML = `${geralAv()}<span style="min-width:0"><b>${esc(geralNome())}</b><small>Conversa geral · todo mundo da equipe vê</small></span>${MSG.res?.adm ? `<button class="epm-bt epm-edg" type="button" title="Só ADM: mudar o nome e a foto da conversa geral">${ICONES.lapis} Editar</button>` : ''}`;
         tit.querySelector('.epm-edg')?.addEventListener('click', editaGeral); return; }
       const q = await quemU(c.u), on = pessoaDe(c.u)?.on;
@@ -811,7 +870,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     async function desenhaConversa() {
       const c = MSG.conv; if (!c) return;
       const perto = fala.scrollHeight - fala.scrollTop - fala.clientHeight < 80;
-      if (!c.msgs.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
+      if (!c.msgs.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : c.u.startsWith('g:') ? 'Ninguém escreveu neste grupo nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
       const autores = [...new Set([...c.msgs.map(m => m.de), ...c.msgs.flatMap(m => codigosMenc(m.texto))].filter(u => u !== MSG.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
       const nomesM = Object.fromEntries(Object.entries(qs).map(([u, q]) => [u, q?.nome || 'alguém'])); nomesM[MSG.eu] = P?.nome || 'você';
       let h = '', dia = '', ant = null; const cits = [];
@@ -819,7 +878,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="epm-dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
         const meu = m.de === MSG.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
         const prame = !meu && String(m.texto || '').includes('<@' + MSG.eu + '>');
-        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-vazio"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && c.u === 'geral' ? `<b>${esc(nomeU(m.de, q))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
+        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-vazio"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && (c.u === 'geral' || c.u.startsWith('g:')) ? `<b>${esc(nomeU(m.de, q))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
         ant = m;
       }
       fala.innerHTML = h;
@@ -828,18 +887,21 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (perto || c.primeira) { fala.scrollTop = fala.scrollHeight; c.primeira = false; }
     }
     async function marcaAlvo(id, u) {
-      const c = MSG.citando; c.alvos ||= []; const i = c.alvos.findIndex(a => a.id === id); if (i >= 0) c.alvos.splice(i, 1); else c.alvos.push({ id, u });
-      desenhaLista();
+      const c = MSG.escolha; const i = c.alvos.findIndex(a => a.id === id); if (i >= 0) c.alvos.splice(i, 1); else c.alvos.push({ id, u });
+      return escolhaMudou();
+    }
+    async function escolhaMudou() {
+      const c = MSG.escolha; if (!c) return; desenhaLista();
       if (c.alvos.length === 1) return abreConv(c.alvos[0].id, c.alvos[0].u);
-      if (!c.alvos.length) { MSG.conv = null; form.hidden = true; tit.innerHTML = ''; fala.innerHTML = '<div class="epm-vazio">Escolha ao lado uma ou mais conversas para mandar a citação.</div>'; return; }
+      if (!c.alvos.length) { MSG.conv = null; form.hidden = true; tit.innerHTML = ''; fala.innerHTML = `<div class="epm-vazio">Escolha ao lado uma ou mais conversas${MSG.citando ? ' para mandar a citação' : ''}.</div>`; return; }
       MSG.conv = { multi: true, alvos: c.alvos.slice(), msgs: [] }; cx.classList.add('so-conv'); form.hidden = false;
       pintaTitulo();
-      fala.innerHTML = `<div class="epm-vazio">A citação e o que você escrever vão para cada conversa escolhida, separadas.${c.arquivo ? ' O arquivo sobe uma vez só.' : ''}</div>`; ta.focus();
+      fala.innerHTML = `<div class="epm-vazio">${MSG.citando ? 'A citação e o que você escrever vão' : 'O que você escrever vai'} para cada conversa escolhida, separad${MSG.citando ? 'as' : 'o'}.${MSG.citando?.arquivo ? ' O arquivo sobe uma vez só.' : ''}</div>`; ta.focus();
     }
     async function abreConv(id, u) {
       MSG.conv = { id, u, msgs: [], primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
       fala.innerHTML = '<div class="epm-vazio">Carregando…</div>'; pintaTitulo(); desenhaLista();
-      if (id !== 'geral' && !(MSG.res?.ultimas?.[id])) { desenhaConversa(); ta.focus(); return; }
+      if (id.startsWith('p:') && !(MSG.res?.ultimas?.[id])) { desenhaConversa(); ta.focus(); return; }
       try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (MSG.conv?.id !== id) return; MSG.conv.msgs = j.msgs || []; }
       catch { fala.innerHTML = '<div class="epm-vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
       desenhaConversa(); marcaLida(id); desenhaLista(); ta.focus();
@@ -851,7 +913,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const fechaSug = () => { sug?.remove(); sug = null; };
     async function sugere() {
       const ate = ta.value.slice(0, ta.selectionStart), m = ate.match(/(^|\s)@([^\s@]{0,20})$/); if (!m) return fechaSug();
-      const q = m[2].toLowerCase(), todos = await Promise.all(MSG.pessoas.map(async p => ({ u: p.u, q: await quemU(p.u) })));
+      const q = m[2].toLowerCase(), gr = MSG.conv?.u?.startsWith?.('g:') ? grupoDe(MSG.conv.u) : null, todos = await Promise.all(MSG.pessoas.filter(p => !gr || gr.membros.includes(p.u)).map(async p => ({ u: p.u, q: await quemU(p.u) })));
       sugL = todos.filter(x => x.q?.nome && (nomeU(x.u, x.q).toLowerCase().includes(q))).sort((a, b) => a.q.nome.localeCompare(b.q.nome)).slice(0, 8);
       if (!sugL.length) return fechaSug();
       sugI = Math.min(sugI, sugL.length - 1);
@@ -900,7 +962,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu para enviar.');
           feitas.push(j.msg); if (MSG.res) MSG.res.ultimas = { ...(MSG.res.ultimas || {}), [j.msg.conv]: j.msg };
         }
-        aviso(''); ta.value = ''; ajusta(); mencionados.clear(); if (ci) { MSG.citando = null; pintaCitando(); }
+        aviso(''); ta.value = ''; ajusta(); mencionados.clear(); if (ci || c.multi) { MSG.citando = null; MSG.escolha = null; pintaCitando(); }
         if (c.multi) { const n = feitas.length; desenhaLista(); await abreConv(feitas[0].conv, alvos[0].u); aviso(`Enviado para ${n} conversas.`); setTimeout(() => aviso(''), 3500); }
         else if (MSG.conv === c) { c.msgs.push(feitas[0]); if (c.id !== feitas[0].conv) c.id = feitas[0].conv; c.primeira = true; desenhaConversa(); desenhaLista(); }
       } catch (er) { aviso(''); const n = document.createElement('div'); n.className = 'epm-erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }

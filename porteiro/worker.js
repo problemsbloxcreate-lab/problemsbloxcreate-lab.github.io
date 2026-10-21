@@ -349,8 +349,9 @@ export class Presenca { // cada aba conta separado (e-mail|aba); guarda no armaz
 /* ---------- Mensagens: conversa geral + conversas privadas (objeto durável "Conversas", banco SQLite dele) ----------
    As mensagens guardam só o CÓDIGO da pessoa (u…), nunca o e-mail; tudo com mais de 7 dias é apagado sozinho. */
 const SETE_DIAS = 7 * 864e5;
-const convDe = (eu, para) => para === 'geral' ? 'geral' : 'p:' + [eu, para].sort().join('|');
-const minhaConv = (u, c) => c === 'geral' || (c.startsWith('p:') && c.slice(2).split('|').includes(u));
+const convDe = (eu, para) => para === 'geral' ? 'geral' : /^g:[a-z0-9]{10}$/.test(para) ? para : 'p:' + [eu, para].sort().join('|'); // g:… = grupo criado por um ADM
+const minhaConv = (u, c) => c === 'geral' || (c.startsWith('p:') && c.slice(2).split('|').includes(u)); // grupos: o objeto confere (this.minha)
+const paraValido = (u, p) => p === 'geral' || /^g:[a-z0-9]{10}$/.test(p) || (/^u[0-9a-f]{16}$/.test(p) && p !== u);
 export class Conversas {
   constructor(state) {
     this.st = state.storage; this.sql = state.storage.sql; this.limpo = 0;
@@ -360,11 +361,14 @@ export class Conversas {
       CREATE TABLE IF NOT EXISTS lidas(u TEXT, conv TEXT, ate INTEGER, PRIMARY KEY(u, conv));`);
     this.sql.exec('CREATE TABLE IF NOT EXISTS cfg(k TEXT PRIMARY KEY, v TEXT)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS apelidos(u TEXT, alvo TEXT, nick TEXT, PRIMARY KEY(u, alvo))'); // apelido que CADA pessoa dá às outras (só ela vê) // nome e foto da conversa geral (ADM muda)
+    this.sql.exec('CREATE TABLE IF NOT EXISTS grupos(id TEXT PRIMARY KEY, nome TEXT, foto TEXT, membros TEXT, por TEXT, em INTEGER)'); // grupos que um ADM cria (membros: JSON com os códigos)
     try { this.sql.exec('ALTER TABLE msgs ADD COLUMN cita TEXT'); } catch { } // citação (programa, item, parte, arquivo anexo)
     this.ritmo = new Map();
   }
   limpa() { const t = Date.now(); if (t - this.limpo < 36e5) return; this.limpo = t; this.sql.exec('DELETE FROM msgs WHERE em < ?', t - SETE_DIAS); }
-  minhas(u) { return `(conv = 'geral' OR conv LIKE 'p:' || '${u}' || '|%' OR conv LIKE 'p:%|' || '${u}')`; } // u já conferido: u + 16 hex
+  minhas(u) { return `(conv = 'geral' OR conv LIKE 'p:' || '${u}' || '|%' OR conv LIKE 'p:%|' || '${u}' OR conv IN (SELECT 'g:' || id FROM grupos WHERE membros LIKE '%"${u}"%'))`; } // u já conferido: u + 16 hex
+  minha(u, c) { if (minhaConv(u, c)) return true; const m = /^g:([a-z0-9]{10})$/.exec(c); return !!m && this.sql.exec('SELECT 1 FROM grupos WHERE id = ? AND membros LIKE ?', m[1], '%"' + u + '"%').toArray().length > 0; }
+  grupo(g) { let membros = []; try { membros = JSON.parse(g.membros || '[]'); } catch { } return { id: 'g:' + g.id, nome: g.nome, foto: g.foto || null, membros }; }
   async fetch(req) {
     const b = await req.json(), agora = Date.now(); this.limpa();
     const u = /^u[0-9a-f]{16}$/.test(b.u || '') ? b.u : null;
@@ -385,14 +389,16 @@ export class Conversas {
       const ultimo = this.sql.exec('SELECT MAX(id) AS m FROM msgs').toArray()[0]?.m || 0;
       let geral = null; try { geral = JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'geral'").toArray()[0]?.v || 'null'); } catch { }
       const apelidos = Object.fromEntries(this.sql.exec('SELECT alvo, nick FROM apelidos WHERE u = ?', u).toArray().map(r => [r.alvo, r.nick]));
-      return Response.json({ nao, mencoes, mencaoId, ultimas, novas, ultimo, geral, apelidos });
+      const grupos = this.sql.exec('SELECT * FROM grupos WHERE membros LIKE ? ORDER BY nome', '%"' + u + '"%').toArray().map(g => this.grupo(g));
+      const todosGrupos = b.adm ? this.sql.exec('SELECT * FROM grupos ORDER BY nome').toArray().map(g => this.grupo(g)) : undefined;
+      return Response.json({ nao, mencoes, mencaoId, ultimas, novas, ultimo, geral, apelidos, grupos, todosGrupos });
     }
     if (b.op === 'conversa') {
-      const conv = String(b.conv || ''); if (!minhaConv(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
+      const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
       return Response.json({ msgs: this.sql.exec('SELECT * FROM (SELECT * FROM msgs WHERE conv = ? ORDER BY id DESC LIMIT 300) ORDER BY id', conv).toArray() });
     }
     if (b.op === 'lida') {
-      const conv = String(b.conv || ''); if (!minhaConv(u, conv)) return Response.json({ ok: false });
+      const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ ok: false });
       this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, +b.ate || 0);
       return Response.json({ ok: true });
     }
@@ -401,12 +407,27 @@ export class Conversas {
       if (nick) this.sql.exec('INSERT INTO apelidos(u,alvo,nick) VALUES(?,?,?) ON CONFLICT(u,alvo) DO UPDATE SET nick=excluded.nick', u, alvo, nick); else this.sql.exec('DELETE FROM apelidos WHERE u = ? AND alvo = ?', u, alvo);
       return Response.json({ ok: true, alvo, nick });
     }
+    if (b.op === 'pode') return Response.json({ pode: (b.convs || []).some(c => this.minha(u, String(c))) }); // arquivo anexado: está numa conversa desta pessoa?
+    if (b.op === 'grupo') { // o porteiro já conferiu que é ADM
+      const id = /^g:([a-z0-9]{10})$/.exec(String(b.id || ''))?.[1];
+      if (b.acao === 'apagar') { if (id) { this.sql.exec('DELETE FROM grupos WHERE id = ?', id); this.sql.exec('DELETE FROM msgs WHERE conv = ?', 'g:' + id); this.sql.exec('DELETE FROM lidas WHERE conv = ?', 'g:' + id); } return Response.json({ ok: true }); }
+      const nome = String(b.nome || '').replace(/\s+/g, ' ').trim().slice(0, 40); if (!nome) return Response.json({ erro: 'Dê um nome ao grupo.' }, { status: 400 });
+      const conhecidos = new Set(this.sql.exec('SELECT u FROM pessoas').toArray().map(r => r.u));
+      const membros = [...new Set((Array.isArray(b.membros) ? b.membros : []).map(String).filter(x => conhecidos.has(x)))].slice(0, 200);
+      if (membros.length < 2) return Response.json({ erro: 'Escolha pelo menos 2 pessoas para o grupo.' }, { status: 400 });
+      const foto = typeof b.foto === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(b.foto) && b.foto.length < 70000 ? b.foto : null;
+      const novoId = id || [...crypto.getRandomValues(new Uint8Array(10))].map(x => 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]).join('');
+      this.sql.exec('INSERT INTO grupos(id,nome,foto,membros,por,em) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET nome=excluded.nome, foto=excluded.foto, membros=excluded.membros', novoId, nome, foto, JSON.stringify(membros), u, agora);
+      return Response.json({ grupo: this.grupo(this.sql.exec('SELECT * FROM grupos WHERE id = ?', novoId).toArray()[0]) });
+    }
     if (b.op === 'geral') { // o porteiro já conferiu que é ADM
       const g = { nome: String(b.nome || '').trim().slice(0, 40) || null, foto: typeof b.foto === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(b.foto) && b.foto.length < 70000 ? b.foto : null, por: u, em: agora };
       this.sql.exec('INSERT INTO cfg(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v', 'geral', JSON.stringify(g)); return Response.json({ geral: g });
     }
     if (b.op === 'enviar') {
-      const para = String(b.para || ''); if (para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u || !this.sql.exec('SELECT 1 FROM pessoas WHERE u = ?', para).toArray().length)) return Response.json({ erro: 'Pessoa não encontrada.' }, { status: 400 });
+      const para = String(b.para || '');
+      if (para.startsWith('g:')) { if (!this.minha(u, para)) return Response.json({ erro: 'Você não está neste grupo.' }, { status: 403 }); }
+      else if (para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u || !this.sql.exec('SELECT 1 FROM pessoas WHERE u = ?', para).toArray().length)) return Response.json({ erro: 'Pessoa não encontrada.' }, { status: 400 });
       const texto = String(b.texto || '').replace(/\r\n?/g, '\n').trim().slice(0, 2000), cita = typeof b.cita === 'string' && b.cita.length <= 80000 ? b.cita : null; if (!texto && !cita) return Response.json({ erro: 'Mensagem vazia.' }, { status: 400 });
       const rt = (this.ritmo.get(u) || []).filter(t => agora - t < 60e3); if (rt.length >= 20) return Response.json({ erro: 'Muitas mensagens seguidas: espere um pouquinho.' }, { status: 429 });
       rt.push(agora); this.ritmo.set(u, rt);
@@ -442,7 +463,7 @@ async function anexo(req, env, url, s) {
   if (req.method === 'POST') {
     if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
     const paras = [...new Set((url.searchParams.get('para') || '').split(',').filter(Boolean))].slice(0, 40); // pode ir para várias conversas (o mesmo arquivo)
-    if (!paras.length || paras.some(para => para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u))) return json({ error: { message: 'Para quem?' } }, 400);
+    if (!paras.length || paras.some(para => !paraValido(u, para))) return json({ error: { message: 'Para quem?' } }, 400);
     const tam = +req.headers.get('content-length') || 0; if (tam > ANEXO_MAX) return json({ error: { message: 'Arquivo grande demais para mandar por mensagem (máximo 95 MB).' } }, 413);
     const nome = (url.searchParams.get('nome') || 'arquivo').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').slice(0, 120);
     const id = [...crypto.getRandomValues(new Uint8Array(20))].map(x => 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]).join(''), ttl = { expirationTtl: 7 * 86400 };
@@ -460,7 +481,7 @@ async function anexo(req, env, url, s) {
   const id = url.searchParams.get('id') || ''; if (!/^[a-z0-9]{20}$/.test(id)) return json({ error: { message: 'Arquivo inválido.' } }, 400);
   const meta = await env.PERFIS.get('ax:' + id, { type: 'json' }).catch(() => null);
   if (!meta) return json({ error: { message: 'Este arquivo não existe mais (as mensagens e os arquivos somem depois de 7 dias).' } }, 404);
-  if (!(meta.convs || [meta.conv]).some(c => minhaConv(u, c))) return json({ error: { message: 'Este arquivo é de outra conversa.' } }, 403);
+  if (!(meta.convs || [meta.conv]).some(c => minhaConv(u, c)) && !(await conversas(env, { op: 'pode', u, convs: meta.convs || [meta.conv] })).j.pode) return json({ error: { message: 'Este arquivo é de outra conversa.' } }, 403);
   const { readable, writable } = new FixedLengthStream(meta.bytes);
   (async () => { const w = writable.getWriter(); try { for (let i = 0; i < meta.n; i++) { const p = await env.PERFIS.get('ax:' + id + ':' + i, { type: 'arrayBuffer' }); if (!p) throw new Error('pedaço sumiu'); await w.write(new Uint8Array(p)); } await w.close(); } catch (er) { await w.abort(er).catch(() => { }); } })();
   return new Response(readable, { headers: { 'content-type': 'application/octet-stream', 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(meta.nome)}`, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff', 'x-porteiro': '1' } });
@@ -476,6 +497,8 @@ async function mensagens(req, env, url) {
     if (b.op === 'geral') { if (!s.a) return json({ error: { message: 'Só um ADM muda o nome e a foto da conversa geral.' } }, 403);
       if (b.foto && (typeof b.foto !== 'string' || !/^data:image\/(png|jpeg|webp);base64,/.test(b.foto) || b.foto.length >= 70000)) return json({ error: { message: 'Foto grande demais.' } }, 400);
       const r = await conversas(env, { op: 'geral', u, e, nome: b.nome, foto: b.foto }); return json(r.j); }
+    if (b.op === 'grupo') { if (!s.a) return json({ error: { message: 'Só um ADM cria e muda grupos.' } }, 403);
+      const r = await conversas(env, { op: 'grupo', u, e, acao: b.acao, id: b.id, nome: b.nome, foto: b.foto, membros: b.membros }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op === 'apelido') { const r = await conversas(env, { op: 'apelido', u, e, alvo: b.alvo, nick: b.nick }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op !== 'enviar' && b.op !== 'lida') return json({ error: { message: 'Pedido desconhecido.' } }, 400);
     let cita = null;
@@ -488,7 +511,7 @@ async function mensagens(req, env, url) {
     return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j);
   }
   if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e, conv: url.searchParams.get('conv') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
-  const r = await conversas(env, { op: 'resumo', u, e, desde: url.searchParams.get('desde') });
+  const r = await conversas(env, { op: 'resumo', u, e, adm: !!s.a, desde: url.searchParams.get('desde') });
   const out = { eu: u, adm: !!s.a, ...r.j };
   if (url.searchParams.get('pessoas') === '1') {
     let lista = (await conversas(env, { op: 'pessoas' })).j;
