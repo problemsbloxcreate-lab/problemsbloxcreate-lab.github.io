@@ -163,6 +163,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
      A função pode devolver false ou dar erro se não conseguiu salvar: aí a pessoa escolhe "Sair sem salvar" ou cancela. */
   const salvadores = () => (Array.isArray(window.ESTUDIO_AO_SAIR) ? window.ESTUDIO_AO_SAIR : []).filter(f => typeof f === 'function');
   const aoSair = fn => { (window.ESTUDIO_AO_SAIR ||= []).push(fn); };
+  /* VOLTAR/AVANÇAR do navegador: a página pode voltar "congelada" da memória do navegador (versão antiga, sem passar pela tela
+     de carregamento). Aí salva o que estiver aberto e recarrega de verdade — com a tela de carregamento e as páginas novas. */
+  addEventListener('pageshow', async e => {
+    if (!e.persisted) return;
+    try { document.documentElement.style.transition = 'opacity .15s'; document.documentElement.style.opacity = '0'; } catch { }
+    try { await Promise.race([Promise.allSettled(salvadores().map(f => Promise.resolve().then(f))), new Promise(r => setTimeout(r, 3000))]); } catch { }
+    location.reload();
+  });
   async function salvarAntesDeSair() {
     const limite = (pr, ms) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error('demorou demais')), ms))]);
     const rs = await Promise.allSettled(salvadores().map(f => limite(Promise.resolve().then(f), 15000)));
