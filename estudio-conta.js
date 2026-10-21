@@ -66,7 +66,7 @@
 .ep-conta .ep-conta-btn{width:34px;height:34px;flex:none;line-height:1;text-decoration:none;font-size:14px;border-radius:50%;border:0;padding:0;cursor:pointer;overflow:hidden;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0);box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .ep-conta-btn:hover,.ep-conta-btn:focus-visible{filter:brightness(1.1);outline:2px solid rgba(61,139,255,.6);outline-offset:2px}
 .ep-conta-btn img{width:100%;height:100%;object-fit:cover;display:block}
-.ep-conta-fw{position:relative;display:inline-grid;flex:none}.ep-conta-fw>i{display:none}
+.ep-conta-fw{position:relative;display:inline-grid;flex:none;isolation:isolate}.ep-conta-fw>.ep-conta-btn{position:relative;z-index:1}.ep-conta-fw::before{z-index:0}.ep-conta-fw>i{z-index:2}.ep-conta-fw>i{display:none}
 .ep-conta-fw::before{content:'';position:absolute;inset:-3px;border-radius:50%;display:none;pointer-events:none}
 .ep-conta.ep-novo .ep-conta-fw::before{display:block;background:#b46cff;box-shadow:0 0 12px rgba(180,108,255,.55)}
 .ep-conta.ep-msg .ep-conta-fw::before{display:block;background:#ffcc33;box-shadow:0 0 12px rgba(255,204,51,.5)}
