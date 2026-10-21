@@ -24,7 +24,8 @@
   (Minha conta, Voltar ao menu, Atualizar todos os sites, itens do projeto, Sair). Não crie botões próprios de voltar ao menu nem de conta.
 - Ícones de linha iguais aos do menu (SVG, `stroke="currentColor"`, 1.9), sem emoji nas telas novas.
 - Tela inicial com atalhos e projetos/abertos recentemente.
-- O que o projeto guarda no navegador aparece no círculo de espaço: banco em `BANCOS` (estudio-conta.js) + `EstudioConta.espaco.registrar(...)` com "Baixar" o arquivo do projeto (.toon, .edicao.json…). Quem passar a guardar algo novo, registra junto.
+- O que o projeto guarda no navegador aparece no círculo de espaço: banco em `BANCOS` (estudio-conta.js) + `EstudioConta.espaco.registrar(...)` com "Baixar" o arquivo do projeto (.animador, .editor…). Quem passar a guardar algo novo, registra junto.
+- Arquivo de projeto de cada programa tem o nome dele como extensão: `.animador`, `.editor`… (os antigos `.toon`/`.edicao.json` continuam abrindo). Formatos de fora (ex.: `.bbmodel` do Blockbench) ficam como são.
 - Projeto novo: comece do `modelo-projeto/` do repositório `problemsbloxcreate-lab.github.io` (login do Google/Firebase pelo menu, porteiro, cabeçalho e ícones prontos).
 
 ## Servidor turma-ia e quem pode entrar (decisão do dono, 20/10/2026)
