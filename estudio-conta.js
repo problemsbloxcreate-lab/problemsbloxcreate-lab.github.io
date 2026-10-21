@@ -17,6 +17,7 @@
        autoMontar: false,                   // só monta quando o projeto chamar EstudioConta.montar()
        conta: () => {...},                  // o que "Minha conta" faz (padrão: abre a Minha conta do menu)
        sair: () => {...},                   // o que "Sair da conta" faz (padrão: sai e volta para o menu)
+     Salvar ao sair: (window.ESTUDIO_AO_SAIR ||= []).push(async () => salvarAgora())  — roda antes de sair (ver salvarAntesDeSair).
        extras: () => [{ texto, icone, acao }, '-'],  // itens do projeto no balão (icone = <svg> ou nome de ícone daqui)
        selecao: true,                       // deixa a página toda selecionável (padrão: só campos, textos editáveis e .selecionavel)
      };
@@ -79,7 +80,7 @@
 .ep-pg .quem b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem small{display:block;color:#a9adb7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem>span:last-child{min-width:0}
 .ep-pg .acts{display:flex;gap:8px;justify-content:flex-end;width:100%;margin-top:6px}
 .ep-pg button{height:32px;padding:0 14px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:13px}.ep-pg button:hover{background:#3a3c43}
-.ep-pg button.sim{background:#d63a52;border-color:#d63a52;color:#fff;font-weight:600}.ep-pg button.sim:hover{background:#e84a62}
+.ep-pg button:disabled{opacity:.75;cursor:default}.ep-pg button.sim{background:#d63a52;border-color:#d63a52;color:#fff;font-weight:600}.ep-pg button.sim:hover{background:#e84a62}
 .ep-pg button:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
 @keyframes epPgF{from{opacity:0}}@keyframes epPgE{from{opacity:0;transform:scale(.97)}}
 @media (prefers-reduced-motion:reduce){.ep-pg,.ep-pg .cx{animation:none}}
@@ -121,7 +122,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     .then(r => r.ok && r.headers.get('x-porteiro') ? r.json() : null).catch(() => null));
 
   // janela de confirmação no visual do Estúdio Problems (no lugar do confirm() do navegador); resolve true/false
-  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null }) {
+  // trabalho: async () => {...} roda ao confirmar, com o botão em "Salvando…"; se der erro, mostra e oferece seguir mesmo assim
+  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim' }) {
     return new Promise(fim => {
       const d = document.createElement('div'); d.className = 'ep-pg';
       d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}"><div class="ic">${ICONES.sair}</div><div class="t">${esc(titulo)}</div>
@@ -129,12 +131,34 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <p class="x">${esc(texto)}</p><div class="acts"><button type="button" data-n>Cancelar</button><button type="button" class="sim" data-s>${esc(ok)}</button></div></div>`;
       document.body.appendChild(d);
       const sai = v => { d.remove(); document.removeEventListener('keydown', tecla, true); fim(v); };
-      const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); sai(false); } };
+      const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); if (!ocupado) sai(false); } };
       document.addEventListener('keydown', tecla, true);
-      d.onclick = e => { if (e.target === d) sai(false); };
-      d.querySelector('[data-n]').onclick = () => sai(false); d.querySelector('[data-s]').onclick = () => sai(true);
-      d.querySelector('[data-n]').focus(); // o botão seguro fica selecionado
+      const bS = d.querySelector('[data-s]'), bN = d.querySelector('[data-n]'), px = d.querySelector('.x');
+      let falhou = false, ocupado = false;
+      bN.onclick = () => { if (!ocupado) sai(false); };
+      bS.onclick = async () => {
+        if (!trabalho || falhou) return sai(true);
+        ocupado = true; bS.disabled = bN.disabled = true; bS.textContent = okTrabalho;
+        try { await trabalho(); sai(true); }
+        catch (e) { ocupado = false; falhou = true; bS.disabled = bN.disabled = false; bS.textContent = okErro; px.innerHTML = `<span style="color:#ff8a9a">${esc(e?.message || e)}</span>`; }
+      };
+      d.onclick = e => { if (e.target === d && !ocupado) sai(false); };
+      bN.focus(); // o botão seguro fica selecionado
     });
+  }
+
+  /* salvar antes de sair: cada programa diz como salva o que está aberto. Pode registrar antes ou depois deste arquivo carregar:
+       (window.ESTUDIO_AO_SAIR ||= []).push(async () => { await salvarAgora(); });   // ou EstudioConta.aoSair(fn)
+     A função pode devolver false ou dar erro se não conseguiu salvar: aí a pessoa escolhe "Sair sem salvar" ou cancela. */
+  const salvadores = () => (Array.isArray(window.ESTUDIO_AO_SAIR) ? window.ESTUDIO_AO_SAIR : []).filter(f => typeof f === 'function');
+  const aoSair = fn => { (window.ESTUDIO_AO_SAIR ||= []).push(fn); };
+  async function salvarAntesDeSair() {
+    const limite = (pr, ms) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error('demorou demais')), ms))]);
+    const rs = await Promise.allSettled(salvadores().map(f => limite(Promise.resolve().then(f), 15000)));
+    if (rs.some(r => r.status === 'rejected' || r.value === false)) {
+      const e = rs.find(r => r.status === 'rejected')?.reason;
+      throw new Error('Não consegui salvar o projeto aberto' + (e?.message ? ' (' + e.message + ')' : '') + '. Cancele para tentar de novo, ou saia sem salvar.');
+    }
   }
 
   function caixa(p) {
@@ -159,7 +183,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else location.href = '/?conta=1'; };
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
-        if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu. Seus projetos salvos aqui continuam.', ok: 'Sair', perfil: p }))) return;
+        const temQueSalvar = salvadores().length > 0;
+        if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu.' + (temQueSalvar ? ' O projeto aberto é salvo antes de sair.' : '') + ' Seus projetos salvos aqui continuam.',
+          ok: 'Sair', perfil: p, trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Sair sem salvar' }))) return;
         if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
       pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
@@ -361,6 +387,6 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
     if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
 
-  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta };
+  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();
