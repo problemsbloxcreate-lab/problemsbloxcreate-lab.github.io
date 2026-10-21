@@ -323,11 +323,10 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
       </div>
     </section>
     <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
-      <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems: a da equipe e a dos sons (Cloudflare) e o Firebase. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
+      <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems (Cloudflare): a da equipe e a dos sons. O Firebase só cuida do login e não guarda nada. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
       <div class="nv-fontes" id="nuvem-fontes" role="tablist" aria-label="Qual nuvem">
         <button type="button" role="tab" data-fonte="equipe"><b>Equipe</b><small>Cloudflare · personagens, cenários, menu</small></button>
         <button type="button" role="tab" data-fonte="sons"><b>Sons</b><small>Cloudflare antiga · sons, vozes, Shorts</small></button>
-        <button type="button" role="tab" data-fonte="firebase"><b>Firebase</b><small>Google · arquivos e dados</small></button>
       </div>
       <h2>Nuvem<span class="sp"></span><button class="btn sm" type="button" id="nuvem-atu" title="Medir de novo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Atualizar</button></h2>
       <div class="box" id="nuvem-box"><div class="hint">Abra esta aba para medir.</div></div>
@@ -1039,11 +1038,11 @@ async function renderAcesso() {
   clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 30e3); // online/offline ao vivo
   return carrega();
 }
-// ADM › Nuvem: as três nuvens do Estúdio Problems — a da equipe (Cloudflare, KV), a dos sons (Cloudflare antiga, worker sons-problems)
-// e o Firebase. Para cada uma: quanto ocupa, os arquivos por grupo, abrir (player de som/vídeo, imagem grande, texto), baixar
+// ADM › Nuvem: as nuvens do Estúdio Problems — a da equipe (Cloudflare, KV) e a dos sons (Cloudflare antiga, worker sons-problems);
+// o Firebase só faz o login (não guarda nada). Para cada uma: quanto ocupa, os arquivos por grupo, abrir (player de som/vídeo, imagem grande, texto), baixar
 // (um, um grupo ou tudo em .zip) e apagar (sempre com a janela de confirmação). Quem enviou sai com nome e foto, nunca o e-mail.
 const NV = { fonte: 'equipe', cache: {} };
-const NV_FONTES = [['equipe', 'Equipe', 'Cloudflare'], ['sons', 'Sons', 'Cloudflare antiga'], ['firebase', 'Firebase', 'Google']];
+const NV_FONTES = [['equipe', 'Equipe', 'Cloudflare'], ['sons', 'Sons', 'Cloudflare antiga']];
 const nvFmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
 const nvTempo = s => { s = Math.max(0, s || 0); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); };
 const NVI = { // ícones de linha (iguais aos do menu)
@@ -1132,59 +1131,6 @@ const NV_FONTE = {
     return { total, limite: j.limite || 1073741824, projetos: [{ nome: 'Servidor dos sons', bytes: total, grupos }],
       apagar: async refs => { await nvBusca('/nuvem-sons/apagar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ks: refs }) }); },
       nota: 'Espaço grátis da Cloudflare (KV) da conta antiga, que guarda os sons, as gravações das vozes e o que o Shorts e o Editor usam.' };
-  },
-  async firebase() {
-    // pela API REST do Google com o login de quem está na tela: responde na hora (o SDK ficava esperando quando a parte não existe)
-    const cfg = MENU_CONFIG.firebase, tk = await token(), avisos = [], grupos = [], info = [];
-    const pede = async (u, opt = {}, tipoAuth = 'Bearer') => { const r = await fetch(u, { ...opt, headers: { authorization: tipoAuth + ' ' + tk, ...(opt.headers || {}) } }); return r; };
-    const motivo = async r => { const j = await r.json().catch(() => ({})), m = String(j.error?.message || j.error?.status || ''); return { st: /has not been used|is disabled|SERVICE_DISABLED|not enabled|does not exist|bucket/i.test(m + ' ' + (j.error?.status || '')) ? 404 : r.status, m }; }; // API desligada ou banco inexistente = "não está ligado"
-    // Storage (arquivos)
-    const ST = `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(cfg.storageBucket)}/o`;
-    try {
-      const arqs = []; let pg = '';
-      do { const r = await pede(ST + '?maxResults=1000' + (pg ? '&pageToken=' + encodeURIComponent(pg) : ''), {}, 'Firebase');
-        if (!r.ok) { const e = await motivo(r); throw Object.assign(new Error(e.m), { st: e.st }); }
-        const j = await r.json(); arqs.push(...(j.items || [])); pg = j.nextPageToken || ''; } while (pg && arqs.length < 5000);
-      const G = {};
-      for (const o of arqs) {
-        const pasta = o.name.includes('/') ? o.name.split('/')[0] : 'Arquivos soltos', g = G[pasta] || (G[pasta] = { nome: 'Storage · ' + pasta, bytes: 0, n: 0, itens: [] }), url = ST + '/' + encodeURIComponent(o.name);
-        g.itens.push({ nome: o.name.split('/').slice(1).join('/') || o.name, bytes: +o.size || 0, tipo: o.contentType || '', em: o.timeCreated ? Date.parse(o.timeCreated) : null, ref: 's:' + o.name,
-          abrir: async () => { const r = await pede(url + '?alt=media', {}, 'Firebase'); if (!r.ok) throw new Error('O Firebase não entregou o arquivo (' + r.status + ').'); return r.blob(); } });
-        g.bytes += +o.size || 0; g.n++;
-      }
-      grupos.push(...Object.values(G));
-      if (!arqs.length) info.push('Arquivos (Storage): ligado, mas vazio.');
-    } catch (e) {
-      // sem o Storage ligado, o Google nem responde ao navegador (o pedido falha como "Failed to fetch"): é o mesmo que não estar ligado
-      if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(e.message || '')) e.st = 404;
-      info.push('Arquivos (Storage): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : e.st === 403 || e.st === 401 ? 'as regras do Firebase não deixam esta conta ver.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
-    // Firestore (dados): as coleções que os programas já usaram
-    const FS = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(cfg.projectId)}/databases/(default)/documents`;
-    const valor = v => v == null ? null : 'stringValue' in v ? v.stringValue : 'integerValue' in v ? +v.integerValue : 'doubleValue' in v ? v.doubleValue : 'booleanValue' in v ? v.booleanValue : 'nullValue' in v ? null
-      : 'timestampValue' in v ? v.timestampValue : 'mapValue' in v ? Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, valor(x)])) : 'arrayValue' in v ? (v.arrayValue.values || []).map(valor)
-      : 'referenceValue' in v ? v.referenceValue : 'bytesValue' in v ? '(bytes)' : 'geoPointValue' in v ? v.geoPointValue : v;
-    try {
-      const COLS = ['edits', 'dub', 'pedidos', 'diag', 'insertimgs', 'modelos', 'skinsup', 'personagens', 'cenarios', 'menu', 'equipe', 'projetos', 'usuarios', 'users'];
-      let semPerm = 0, achou = 0;
-      for (const c of COLS) {
-        const r = await pede(FS + '/' + c + '?pageSize=300');
-        if (!r.ok) { const e = await motivo(r); if (e.st === 404 || /does not exist|NOT_FOUND/i.test(e.m)) throw Object.assign(new Error(e.m), { st: 404 }); if (e.st === 403 || e.st === 401) { semPerm++; continue; } throw Object.assign(new Error(e.m), { st: e.st }); }
-        const j = await r.json(), docs = j.documents || []; if (!docs.length) continue; achou++;
-        const g = { nome: 'Firestore · ' + c, bytes: 0, n: 0, itens: [] };
-        for (const d of docs) { const id = d.name.split('/').pop(), txt = JSON.stringify(Object.fromEntries(Object.entries(d.fields || {}).map(([k, x]) => [k, valor(x)])), null, 2), b = new Blob([txt], { type: 'application/json' });
-          g.itens.push({ nome: id + '.json', bytes: b.size, tipo: 'application/json', em: d.updateTime ? Date.parse(d.updateTime) : null, ref: 'd:' + d.name.split('/documents/')[1], abrir: async () => b }); g.bytes += b.size; g.n++; }
-        grupos.push(g);
-      }
-      if (!achou) info.push(semPerm === COLS.length ? 'Dados (Firestore): as regras do Firebase não deixam esta conta ver.' : 'Dados (Firestore): ligado, mas sem nada guardado.');
-    } catch (e) { if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(e.message || '')) e.st = 404; info.push('Dados (Firestore): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
-    const total = grupos.reduce((t, g) => t + g.bytes, 0);
-    return { total, limite: 5 * 1073741824, projetos: grupos.length ? [{ nome: 'Firebase (' + cfg.projectId + ')', bytes: total, grupos: grupos.sort((a, b) => b.bytes - a.bytes) }] : [],
-      vazio: 'Nada guardado no Firebase, e está tudo certo assim: ele só cuida do login com o Google. Os arquivos da equipe ficam na Cloudflare (abas Equipe e Sons).',
-      info, apagar: async refs => {
-        for (const r of refs) { const u = r.startsWith('s:') ? ST + '/' + encodeURIComponent(r.slice(2)) : FS + '/' + r.slice(2).split('/').map(encodeURIComponent).join('/');
-          const x = await pede(u, { method: 'DELETE' }, r.startsWith('s:') ? 'Firebase' : 'Bearer'); if (!x.ok && x.status !== 404) throw new Error('O Firebase não deixou apagar (' + x.status + ').'); }
-      },
-      nota: 'Plano grátis do Firebase: 5 GB de arquivos (Storage) e 1 GB de dados (Firestore).' };
   },
 };
 async function nvApagaEquipe(refs) {
