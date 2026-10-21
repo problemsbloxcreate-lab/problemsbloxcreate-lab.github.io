@@ -356,7 +356,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const tokenNuvem = async () => { try {
     if (CFG.token) { const t = await CFG.token(); return t && !/^Bearer /.test(t) ? 'Bearer ' + t : t; }
     if (window.EstudioLogin?.token) return await window.EstudioLogin.token();
-    if (window.TurmaAuth?.token) { const t = await window.TurmaAuth.token(); return t ? 'Bearer ' + t : null; }
+    // o Animador declara o login como const TurmaAuth (não fica em window): procura pelo nome também
+    const ta = typeof TurmaAuth !== 'undefined' ? TurmaAuth : window.TurmaAuth; // eslint-disable-line no-undef
+    if (ta?.token) { const t = await ta.token(); return t ? (/^Bearer /.test(t) ? t : 'Bearer ' + t) : null; }
   } catch { } return null; };
   async function usoNuvem(novo) {
     const K = 'ep-nuvem-uso'; // guardado 3 min (cada medida lista a nuvem inteira)
@@ -371,7 +373,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const bs = document.querySelectorAll('.ep-conta-nuvem'); if (!bs.length) return;
     try { const j = await usoNuvem(novo), pct = j.total / j.limite * 100;
       bs.forEach(b => { b.innerHTML = anelNuvem(pct); b.title = `Nuvem da equipe: ${fmt(j.total)} usados de ${fmt(j.limite)} · ${fmt(Math.max(0, j.limite - j.total))} livres (clique para ver o que ocupa)`; });
-    } catch (e) { bs.forEach(b => { b.title = 'Nuvem da equipe: ' + (e.message || 'não respondeu'); }); }
+    } catch (e) { bs.forEach(b => { b.title = 'Nuvem da equipe: ' + (e.message || 'não respondeu'); });
+      // o programa ainda está terminando de entrar com o Google: tenta de novo daqui a pouco
+      if ((atualizaNuvem.tentativas = (atualizaNuvem.tentativas || 0) + 1) <= 6) setTimeout(() => atualizaNuvem(novo), 2500); return; }
+    atualizaNuvem.tentativas = 0;
   }
   setInterval(() => { if (document.visibilityState === 'visible' && document.querySelector('.ep-conta-nuvem')) atualizaNuvem(); }, 180000);
   const pedeAdm = nome => pergunta({ titulo: 'Só um ADM pode apagar da nuvem', icone: ICONES.nuvem, aviso: true, ok: 'Entendi',
