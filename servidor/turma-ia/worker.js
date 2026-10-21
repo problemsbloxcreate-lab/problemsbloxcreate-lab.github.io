@@ -157,8 +157,16 @@ export default {
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
-        if (KD.test(k)) { const todos = await listar(k); for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
+        // APAGAR DA NUVEM: só ADM (decisão do dono). Quem não é ADM só pode tirar imagens que o personagem salvo já não usa
+        // (é a limpeza automática do "Salvar na nuvem"); apagar o personagem inteiro, peça a um ADM.
+        const adm = ehAdmin(env, login.email), semAdm = () => json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors);
+        if (KD.test(k)) { if (!adm) return semAdm(); const todos = await listar(k); for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
         if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        if (!adm) {
+          if (k.endsWith('personagem.json')) return semAdm();
+          const def = await env.EQUIPE.get(k.replace(/\/img\/.*$/, '/personagem.json'), { type: 'json' }).catch(() => null);
+          if (def && JSON.stringify(def).includes(k)) return semAdm(); // a imagem ainda é usada pelo personagem
+        }
         await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors);
       }
       return json({ error: { message: 'Método não aceito.' } }, 405, cors);
@@ -209,10 +217,10 @@ export default {
         await env.EQUIPE.put(k, buf, { metadata: { nome, tipo, ia, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
         return json({ ok: true, k }, 200, cors);
       }
-      if (req.method === 'DELETE') { await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors); }
+      if (req.method === 'DELETE') { if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors); await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors); } // apagar da nuvem: só ADM
       return json({ error: { message: 'Método não aceito.' } }, 405, cors);
     }
-    // USO DA NUVEM (tela ADM › Nuvem, pelo porteiro): tudo o que está guardado no KV da equipe e o limite. Só ADMINS.
+    // USO DA NUVEM (tela ADM › Nuvem e o círculo da nuvem nos programas, pelo porteiro): tudo o que está no KV da equipe e o limite. Ver: conta liberada; apagar: só ADMINS.
     // ADM › Nuvem: abrir/baixar um item da nuvem da equipe (para ouvir, ver ou baixar no computador)
     if (p0 === '/nuvem-uso/arq' && req.method === 'GET') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
@@ -226,7 +234,8 @@ export default {
     }
     if (p0 === '/nuvem-uso') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
-      if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só quem é ADM vê o uso da nuvem.' } }, 403, cors);
+      // VER o uso (o círculo da nuvem nos programas): qualquer conta liberada. APAGAR: só ADM.
+      if (req.method !== 'GET' && !ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       // ADM apaga itens da nuvem: chaves inteiras ou a pasta de um personagem ("personagens/<id>/"). A lista de acesso e os links do menu têm tela própria.
       if (req.method === 'POST') {

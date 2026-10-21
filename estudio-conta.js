@@ -36,6 +36,7 @@
   const svg = d => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   // mesmos ícones de linha do menu
   const ICONES = {
+    nuvem: svg('<path d="M7 18h10.5a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18z"/>'),
     adm: svg('<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>'),
     inicio: svg('<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z"/>'),
     conta: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
@@ -80,6 +81,13 @@
 .ep-pg .quem b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem small{display:block;color:#a9adb7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem>span:last-child{min-width:0}
 .ep-pg .acts{display:flex;gap:8px;justify-content:flex-end;width:100%;margin-top:6px}
 .ep-pg button{height:32px;padding:0 14px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:13px}.ep-pg button:hover{background:#3a3c43}
+.ep-pg .ic.azul{background:rgba(155,123,255,.16);color:#c6b4ff}.ep-pg button.sim.azul{background:#3d8bff;border-color:#3d8bff}.ep-pg button.sim.azul:hover{background:#5598ff}
+.ep-conta .ep-conta-nuvem{width:34px;height:34px;flex:none;border-radius:50%;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center;color:inherit}
+.ep-conta-nuvem:hover,.ep-conta-nuvem:focus-visible{background:color-mix(in srgb,#9b7bff 16%,transparent);outline:none}
+.ep-esp.nuvem .linha.aqui{border-color:#9b7bff}.ep-esp.nuvem .barra i{background:linear-gradient(90deg,#9b7bff,#c58bff)}.ep-esp details{border:1px solid #3a3c43;border-radius:10px;margin-bottom:6px;background:#26272c}
+.ep-esp details>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 10px}.ep-esp details>summary::-webkit-details-marker{display:none}.ep-esp details>summary b{flex:1;font-size:13.5px}
+.ep-esp details .linha{margin:0 8px 6px}.ep-esp .bt.vermelho{color:#ff8f8f;border-color:#5a2c33}.ep-esp .bt.vermelho:hover{border-color:#ff6b6b;color:#ffb3b3}
+.ep-esp .quem{display:inline-flex;align-items:center;gap:5px;color:#a9adb7;font-size:12px}.ep-esp .quem i{width:16px;height:16px;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:#3d8bff;color:#fff;font-style:normal;font-size:9px;font-weight:700}.ep-esp .quem i img{width:100%;height:100%;object-fit:cover}
 .ep-pg button:disabled{opacity:.75;cursor:default}.ep-pg button.sim{background:#d63a52;border-color:#d63a52;color:#fff;font-weight:600}.ep-pg button.sim:hover{background:#e84a62}
 .ep-pg button:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
 @keyframes epPgF{from{opacity:0}}@keyframes epPgE{from{opacity:0;transform:scale(.97)}}
@@ -123,27 +131,27 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
 
   // janela de confirmação no visual do Estúdio Problems (no lugar do confirm() do navegador); resolve true/false
   // trabalho: async () => {...} roda ao confirmar, com o botão em "Salvando…"; se der erro, mostra e oferece seguir mesmo assim
-  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim' }) {
+  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim', aviso = false, icone = null }) {
     return new Promise(fim => {
       const d = document.createElement('div'); d.className = 'ep-pg';
-      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}"><div class="ic">${ICONES.sair}</div><div class="t">${esc(titulo)}</div>
+      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}"><div class="ic${aviso ? ' azul' : ''}">${icone || ICONES.sair}</div><div class="t">${esc(titulo)}</div>
         ${pp ? `<div class="quem"><span class="av">${av(pp)}</span><span><b>${esc(pp.nome)}</b><small>${esc(pp.email)}</small></span></div>` : ''}
-        <p class="x">${esc(texto)}</p><div class="acts"><button type="button" data-n>Cancelar</button><button type="button" class="sim" data-s>${esc(ok)}</button></div></div>`;
+        <p class="x">${esc(texto)}</p><div class="acts">${aviso ? '' : '<button type="button" data-n>Cancelar</button>'}<button type="button" class="sim${aviso ? ' azul' : ''}" data-s>${esc(ok)}</button></div></div>`;
       document.body.appendChild(d);
       const sai = v => { d.remove(); document.removeEventListener('keydown', tecla, true); fim(v); };
       const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); if (!ocupado) sai(false); } };
       document.addEventListener('keydown', tecla, true);
       const bS = d.querySelector('[data-s]'), bN = d.querySelector('[data-n]'), px = d.querySelector('.x');
       let falhou = false, ocupado = false;
-      bN.onclick = () => { if (!ocupado) sai(false); };
+      if (bN) bN.onclick = () => { if (!ocupado) sai(false); };
       bS.onclick = async () => {
         if (!trabalho || falhou) return sai(true);
-        ocupado = true; bS.disabled = bN.disabled = true; bS.textContent = okTrabalho;
+        ocupado = true; bS.disabled = true; if (bN) bN.disabled = true; bS.textContent = okTrabalho;
         try { await trabalho(); sai(true); }
-        catch (e) { ocupado = false; falhou = true; bS.disabled = bN.disabled = false; bS.textContent = okErro; px.innerHTML = `<span style="color:#ff8a9a">${esc(e?.message || e)}</span>`; }
+        catch (e) { ocupado = false; falhou = true; bS.disabled = false; if (bN) bN.disabled = false; bS.textContent = okErro; px.innerHTML = `<span style="color:#ff8a9a">${esc(e?.message || e)}</span>`; }
       };
       d.onclick = e => { if (e.target === d && !ocupado) sai(false); };
-      bN.focus(); // o botão seguro fica selecionado
+      (bN || bS).focus(); // o botão seguro fica selecionado
     });
   }
 
@@ -164,7 +172,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   function caixa(p) {
     const box = document.createElement('div'); box.className = 'ep-conta';
     const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems">${ICONES.inicio}<span>Menu</span></a>`;
-    box.innerHTML = `<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button>
+    const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
+    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
     const fecha = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
@@ -192,6 +201,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     };
     btn.onclick = e => { e.stopPropagation(); pop.hidden ? abre() : fecha(); };
     box.querySelector('.ep-conta-espaco').onclick = () => { fecha(); painelEspaco(); };
+    const nb = box.querySelector('.ep-conta-nuvem'); if (nb) { nb.onclick = () => { fecha(); painelNuvem(); }; setTimeout(() => atualizaNuvem(), 0); }
     atualizaAneis();
     document.addEventListener('click', e => { if (!box.contains(e.target)) fecha(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') fecha(); });
@@ -333,6 +343,74 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       return out.sort((a, b) => b.bytes - a.bytes);
     } };
   }
+  /* ---------------- espaço na NUVEM da equipe (Cloudflare) — círculo roxo, só nos programas que salvam na nuvem (CFG.nuvem) ----------------
+     Mostra quanto a equipe já usou e quanto falta, e o que ocupa. Apagar da nuvem: só ADM (o servidor confere); quem não é ADM
+     recebe o aviso para pedir a um ADM. O que está só neste computador se apaga pelo círculo do espaço no navegador. */
+  function anelNuvem(pct) {
+    const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : '#9b7bff', r = 13, L = 2 * Math.PI * r;
+    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct > 0 ? 3 : 0, Math.min(100, pct)) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><path d="M11.6 19.4h8.6a2.9 2.9 0 0 0 .3-5.78 3.9 3.9 0 0 0-7.6.73 2.6 2.6 0 0 0-1.3 5.05z" fill="${c}"/></svg>`;
+  }
+  const tokenNuvem = async () => { try {
+    if (CFG.token) { const t = await CFG.token(); return t && !/^Bearer /.test(t) ? 'Bearer ' + t : t; }
+    if (window.EstudioLogin?.token) return await window.EstudioLogin.token();
+    if (window.TurmaAuth?.token) { const t = await window.TurmaAuth.token(); return t ? 'Bearer ' + t : null; }
+  } catch { } return null; };
+  async function usoNuvem(novo) {
+    const K = 'ep-nuvem-uso'; // guardado 3 min (cada medida lista a nuvem inteira)
+    if (!novo) { try { const c = JSON.parse(sessionStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 180e3) return c.j; } catch { } }
+    const tk = await tokenNuvem(); if (!tk) throw new Error('Entre pelo menu para ver a nuvem.');
+    const r = await fetch('/nuvem-uso', { credentials: 'same-origin', cache: 'no-store', headers: { authorization: tk } }), j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error?.message || 'A nuvem não respondeu.');
+    try { sessionStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { }
+    return j;
+  }
+  async function atualizaNuvem(novo) {
+    const bs = document.querySelectorAll('.ep-conta-nuvem'); if (!bs.length) return;
+    try { const j = await usoNuvem(novo), pct = j.total / j.limite * 100;
+      bs.forEach(b => { b.innerHTML = anelNuvem(pct); b.title = `Nuvem da equipe: ${fmt(j.total)} usados de ${fmt(j.limite)} · ${fmt(Math.max(0, j.limite - j.total))} livres (clique para ver o que ocupa)`; });
+    } catch (e) { bs.forEach(b => { b.title = 'Nuvem da equipe: ' + (e.message || 'não respondeu'); }); }
+  }
+  setInterval(() => { if (document.visibilityState === 'visible' && document.querySelector('.ep-conta-nuvem')) atualizaNuvem(); }, 180000);
+  const pedeAdm = nome => pergunta({ titulo: 'Só um ADM pode apagar da nuvem', icone: ICONES.nuvem, aviso: true, ok: 'Entendi',
+    texto: `Peça para um ADM apagar ${nome ? '"' + nome + '"' : 'isso'} da nuvem da equipe (no menu, ADM › Nuvem). Você pode apagar o que está só neste computador pelo círculo do espaço no navegador.` });
+  async function painelNuvem() {
+    if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
+    document.querySelector('.ep-esp')?.remove();
+    const d = document.createElement('div'); d.className = 'ep-esp nuvem'; d.innerHTML = '<div class="cx" role="dialog" aria-label="Espaço na nuvem"><h2>Espaço na nuvem</h2><p class="nota">Medindo a nuvem da equipe…</p></div>';
+    document.body.appendChild(d);
+    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); }, esc1 = e => { if (e.key === 'Escape' && !document.querySelector('.ep-pg')) fechar(); };
+    d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
+    const cx = d.querySelector('.cx');
+    const pinta = async novo => {
+      let j; try { j = await usoNuvem(novo); } catch (e) { cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2><p class="nota">${esc(e.message)}</p>`; cx.querySelector('[data-x]').onclick = fechar; return; }
+      atualizaNuvem();
+      const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui(), its = [];
+      const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
+      cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
+        <div class="topo"><span style="flex:none">${anelNuvem(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>
+          <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
+          <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
+        <h3>Por programa</h3>
+        ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}"><div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || '<div class="vazio">A nuvem está vazia.</div>'}
+        <h3>O que ocupa</h3>
+        ${P.flatMap(pr => pr.grupos).sort((a, b) => b.bytes - a.bytes).map(g => `<details${g.projeto === atual ? ' open' : ''}><summary><b>${esc(g.nome)}</b><span class="tam">${g.n} · ${fmt(g.bytes)}</span></summary>
+          ${g.itens.slice(0, 200).map(it => `<div class="linha"><div class="n"><b>${esc(it.nome)}</b><small>${[it.info, it.em ? dataTxt(Date.parse(it.em) || it.em) : ''].filter(Boolean).map(esc).join(' · ')}</small></div>${quemHtml(it)}<span class="tam">${fmt(it.bytes)}</span>
+            ${it.ref && !it.protegido ? `<button class="bt vermelho" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem'}">${ICONES.lixo || ''}Apagar</button>` : ''}</div>`).join('')}
+          ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
+        <div class="pe"><span class="nota">${j.adm ? 'Para ouvir, ver e baixar tudo, abra o menu › ADM › Nuvem.' : 'O que está só neste computador fica no círculo do espaço no navegador.'}</span><span class="sp"></span>${j.adm ? '<a class="bt" href="/adm">Abrir ADM › Nuvem</a>' : ''}<button class="bt" data-atu>Medir de novo</button></div>`;
+      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true);
+      cx.querySelectorAll('[data-ap]').forEach(b => b.onclick = async () => {
+        const it = its[+b.dataset.ap];
+        if (!j.adm) return pedeAdm(it.nome);
+        if (!(await pergunta({ titulo: 'Apagar da nuvem?', ok: 'Apagar', texto: `"${it.nome}" (${fmt(it.bytes)}) sai da nuvem da equipe para todo mundo. Não dá para desfazer.`, icone: ICONES.lixo,
+          trabalho: async () => { const r = await fetch('/nuvem-uso', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: await tokenNuvem() }, body: JSON.stringify({ refs: [it.ref] }) });
+            const x = await r.json().catch(() => ({})); if (!r.ok) throw new Error(x.error?.message || 'Não apagou.'); }, okTrabalho: 'Apagando…', okErro: 'Fechar' }))) return;
+        try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } pinta(true); CFG.aoMudarNuvem?.();
+      });
+    };
+    pinta();
+  }
+
   async function painelEspaco() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
@@ -387,6 +465,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
     if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
 
-  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair };
+  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
+    nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();

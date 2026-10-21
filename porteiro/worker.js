@@ -223,10 +223,12 @@ async function nuvemUso(req, env, url) {
     } cur = l.list_complete ? null : l.cursor; } while (cur);
   }
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
-  await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
-  await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
+  if (s.a) { // a marca de ADM (para apagar fotos de perfil) só para quem é ADM; os outros só veem
+    await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
+    await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
+  }
   const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;
-  return json({ limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes) });
+  return json({ adm: !!s.a, limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes) });
 }
 
 /* ---------- ADM › Acesso: quem pode entrar (lista do servidor turma-ia) com nome e foto da conta de cada um ----------
