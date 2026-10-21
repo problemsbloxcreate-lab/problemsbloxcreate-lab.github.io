@@ -211,7 +211,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   /* ---------------- espaço no navegador (o mesmo para todos os programas do endereço único) ---------------- */
   // bancos do navegador (IndexedDB) de cada programa: nome do banco → programa e endereço
   const BANCOS = {
-    'turma-studios': ['Animador', '/animador/'], 'ep-edicao': ['Editor', '/editor/'], 'ep-whisper-edicao': ['Editor', '/editor/', 'transcrição guardada'],
+    'animador-v2': ['Animador', '/animador/'], 'turma-studios': ['Animador antigo', '/animador/', 'animações da versão antiga'], 'ep-edicao': ['Editor', '/editor/'], 'ep-whisper-edicao': ['Editor', '/editor/', 'transcrição guardada'],
     'estudio-problems': ['Shorts', '/shorts/'], 'ep-gravacao': ['Shorts', '/shorts/gravacao/'], 'ep-menu': ['Menu', '/', 'fundo próprio'],
   };
   const PROGRAMAS = { '/animador/': 'Animador', '/editor/': 'Editor', '/shorts/': 'Shorts', '/modelador/': 'Modelador' };
