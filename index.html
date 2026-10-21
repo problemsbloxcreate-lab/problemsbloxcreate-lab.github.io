@@ -1154,7 +1154,10 @@ const NV_FONTE = {
       }
       grupos.push(...Object.values(G));
       if (!arqs.length) info.push('Arquivos (Storage): ligado, mas vazio.');
-    } catch (e) { info.push('Arquivos (Storage): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : e.st === 403 || e.st === 401 ? 'as regras do Firebase não deixam esta conta ver.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
+    } catch (e) {
+      // sem o Storage ligado, o Google nem responde ao navegador (o pedido falha como "Failed to fetch"): é o mesmo que não estar ligado
+      if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(e.message || '')) e.st = 404;
+      info.push('Arquivos (Storage): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : e.st === 403 || e.st === 401 ? 'as regras do Firebase não deixam esta conta ver.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
     // Firestore (dados): as coleções que os programas já usaram
     const FS = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(cfg.projectId)}/databases/(default)/documents`;
     const valor = v => v == null ? null : 'stringValue' in v ? v.stringValue : 'integerValue' in v ? +v.integerValue : 'doubleValue' in v ? v.doubleValue : 'booleanValue' in v ? v.booleanValue : 'nullValue' in v ? null
@@ -1173,10 +1176,10 @@ const NV_FONTE = {
         grupos.push(g);
       }
       if (!achou) info.push(semPerm === COLS.length ? 'Dados (Firestore): as regras do Firebase não deixam esta conta ver.' : 'Dados (Firestore): ligado, mas sem nada guardado.');
-    } catch (e) { info.push('Dados (Firestore): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
+    } catch (e) { if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(e.message || '')) e.st = 404; info.push('Dados (Firestore): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
     const total = grupos.reduce((t, g) => t + g.bytes, 0);
     return { total, limite: 5 * 1073741824, projetos: grupos.length ? [{ nome: 'Firebase (' + cfg.projectId + ')', bytes: total, grupos: grupos.sort((a, b) => b.bytes - a.bytes) }] : [],
-      vazio: 'Nada guardado no Firebase. Hoje ele só cuida do login com o Google; os arquivos da equipe ficam na Cloudflare (abas Equipe e Sons).',
+      vazio: 'Nada guardado no Firebase, e está tudo certo assim: ele só cuida do login com o Google. Os arquivos da equipe ficam na Cloudflare (abas Equipe e Sons).',
       info, apagar: async refs => {
         for (const r of refs) { const u = r.startsWith('s:') ? ST + '/' + encodeURIComponent(r.slice(2)) : FS + '/' + r.slice(2).split('/').map(encodeURIComponent).join('/');
           const x = await pede(u, { method: 'DELETE' }, r.startsWith('s:') ? 'Firebase' : 'Bearer'); if (!x.ok && x.status !== 404) throw new Error('O Firebase não deixou apagar (' + x.status + ').'); }
