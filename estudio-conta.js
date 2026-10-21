@@ -107,7 +107,10 @@
 .ep-esp .tam{font-variant-numeric:tabular-nums;color:#c9ccd3;font-size:12.5px;white-space:nowrap}
 .ep-esp img.th{width:56px;height:32px;object-fit:cover;border-radius:5px;background:#000;flex:none}
 .ep-esp .bt{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap;text-decoration:none}
-.ep-esp .bt:hover{border-color:#3d8bff}.ep-esp .bt.perigo:hover{border-color:#ff6b6b;color:#ff9a9a}.ep-esp .bt.pri{background:#3d8bff;border-color:#3d8bff;color:#fff}
+.ep-esp .bt:hover{border-color:#3d8bff}
+/* apagar do COMPUTADOR: destacado (pode clicar); apagar da NUVEM sem ser ADM: discreto (abre o aviso para pedir a um ADM) */
+.ep-esp .bt.perigo{color:#fff;background:#b8324a;border-color:#d63a52;font-weight:600}.ep-esp .bt.perigo:hover{background:#d63a52;border-color:#ff6b6b;color:#fff}
+.ep-esp .bt.so-adm{color:#8a8e98;background:transparent;border-color:#3a3c43;opacity:.7}.ep-esp .bt.so-adm:hover{opacity:1;border-color:#4a4c55;color:#a9adb7}.ep-esp .bt.pri{background:#3d8bff;border-color:#3d8bff;color:#fff}
 .ep-esp .bt svg{width:15px;height:15px}
 .ep-esp .vazio{padding:14px;text-align:center;color:#a9adb7;border:1px dashed #4a4c55;border-radius:10px}
 .ep-esp .pe{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}.ep-esp .pe .sp{flex:1}
@@ -395,7 +398,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <h3>O que ocupa</h3>
         ${P.flatMap(pr => pr.grupos).sort((a, b) => b.bytes - a.bytes).map(g => `<details${g.projeto === atual ? ' open' : ''}><summary><b>${esc(g.nome)}</b><span class="tam">${g.n} · ${fmt(g.bytes)}</span></summary>
           ${g.itens.slice(0, 200).map(it => `<div class="linha"><div class="n"><b>${esc(it.nome)}</b><small>${[it.info, it.em ? dataTxt(Date.parse(it.em) || it.em) : ''].filter(Boolean).map(esc).join(' · ')}</small></div>${quemHtml(it)}<span class="tam">${fmt(it.bytes)}</span>
-            ${it.ref && !it.protegido ? `<button class="bt vermelho" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem'}">${ICONES.lixo || ''}Apagar</button>` : ''}</div>`).join('')}
+            ${it.ref && !it.protegido ? `<button class="bt ${j.adm ? 'vermelho' : 'so-adm'}" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem (clique para saber mais)'}">${j.adm ? ICONES.lixo || '' : ICONES.sair}Apagar</button>` : ''}</div>`).join('')}
           ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
         <div class="pe"><span class="nota">${j.adm ? 'Para ouvir, ver e baixar tudo, abra o menu › ADM › Nuvem.' : 'O que está só neste computador fica no círculo do espaço no navegador.'}</span><span class="sp"></span>${j.adm ? '<a class="bt" href="/adm">Abrir ADM › Nuvem</a>' : ''}<button class="bt" data-atu>Medir de novo</button></div>`;
       cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true);
