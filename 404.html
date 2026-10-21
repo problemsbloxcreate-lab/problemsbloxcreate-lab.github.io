@@ -192,6 +192,34 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-x{width:26px;height:26px;color:var(--tx2);flex:none;border:0;background:none;border-radius:6px;display:inline-grid;place-items:center;cursor:pointer}.nv-x:hover{color:#ff6b6b;background:rgba(255,80,80,.12)}.nv-lock{width:26px;display:inline-grid;place-items:center;color:var(--tx3);flex:none}
 .nv-limpa{margin-left:8px;display:inline-flex;align-items:center;gap:5px;color:#ff8f8f}.nv-limpa:hover{background:rgba(255,80,80,.14)}.nv-erro{color:#ff8f8f;margin-bottom:10px}
 .nv-ia{font-size:10.5px;padding:1px 6px;border-radius:6px;color:#bff4ff;background:linear-gradient(90deg,#1a6dff,#19d3f0);margin-left:6px}
+/* ADM › Nuvem: as três nuvens, abrir (player de som/vídeo, imagem, texto), baixar e apagar */
+.nv-fontes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:20px 0 14px;position:relative;clear:both}
+.nv-fontes button{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(48,48,48,.85);color:var(--tx);cursor:pointer;font:inherit}
+.nv-fontes button b{font-size:13.5px}.nv-fontes button small{color:var(--tx2);font-size:11.5px}.nv-fontes button:hover{border-color:var(--bd2)}
+.nv-fontes button[aria-selected=true]{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);box-shadow:inset 0 0 0 1px var(--ac)}
+.nv-i.abre{cursor:pointer}.nv-i.abre:hover,.nv-i.abre:focus-visible{background:rgba(255,255,255,.04);outline:none}.nv-ti{display:inline-grid;place-items:center;width:18px;color:var(--tx2);flex:none}
+.nv-b{width:26px;height:26px;color:var(--tx2);flex:none;border:0;background:none;border-radius:6px;display:inline-grid;place-items:center;cursor:pointer}.nv-b:hover{color:var(--tx);background:rgba(255,255,255,.08)}
+.nv-x{color:#ff8f8f!important}.nv-x:hover{color:#ffb3b3!important;background:rgba(255,80,80,.16)!important}
+.nv-bg{margin-left:8px;display:inline-flex;align-items:center;gap:5px}.nv-limpa{margin-left:6px}.nv-aviso{color:#ffcf7a;margin-bottom:8px}
+#nv-tudo{display:inline-flex;align-items:center;gap:6px}
+.nv-ver .mc.nv-vc{width:min(620px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;gap:12px}.nv-ver .mc.nv-vc.largo{width:min(980px,100%)}
+.nv-vh{display:flex;align-items:center;gap:10px}.nv-vh [data-fecha]{width:32px;height:32px;border-radius:8px;border:0;background:none;color:var(--tx2);cursor:pointer;display:grid;place-items:center;flex:none}.nv-vh [data-fecha]:hover{background:rgba(255,255,255,.08);color:var(--tx)}.nv-vn{flex:1;min-width:0}.nv-vn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nv-vn small{color:var(--tx2);font-size:12px}
+.nv-vb{min-height:60px;overflow:auto}.nv-ver .acts{display:flex;gap:8px;align-items:center}.nv-ver .acts .btn{display:inline-flex;align-items:center;gap:6px}
+.nv-tela{position:relative;background:#000;border-radius:10px;overflow:hidden;display:grid;place-items:center}.nv-tela video{display:block;max-width:100%;max-height:62vh;cursor:pointer}
+.nv-big{position:absolute;width:64px;height:64px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;cursor:pointer}.nv-big svg{width:30px;height:30px}.nv-big:hover{background:rgba(25,211,240,.75)}
+.nv-onda{background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:10px;padding:8px}.nv-onda canvas{display:block;width:100%;height:90px;cursor:pointer}
+.nv-pl{display:flex;align-items:center;gap:10px;margin-top:10px}.nv-pl button{border:0;background:none;color:var(--tx);cursor:pointer;display:grid;place-items:center;border-radius:8px;width:32px;height:32px}.nv-pl button:hover{background:rgba(255,255,255,.08)}
+.nv-pl .nv-pp{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--cy));color:#fff}.nv-pl .nv-pp:hover{filter:brightness(1.1);background:linear-gradient(135deg,var(--ac),var(--cy))}
+.nv-t{font-variant-numeric:tabular-nums;color:var(--tx2);font-size:12.5px;min-width:38px}
+.nv-barra2{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.12);position:relative;cursor:pointer;touch-action:none}.nv-barra2:focus-visible{outline:2px solid var(--ac);outline-offset:4px}
+.nv-barra2 i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}.nv-buf{background:rgba(255,255,255,.14)}.nv-pos{background:linear-gradient(90deg,var(--ac),var(--cy))}
+.nv-bol{position:absolute;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.nv-vol{width:80px}
+.nv-img{display:grid;place-items:center;background:repeating-conic-gradient(#2a2b30 0 25%,#232428 0 50%) 0 0/20px 20px;border-radius:10px;overflow:auto;max-height:68vh}.nv-img img{max-width:100%;max-height:66vh;cursor:zoom-in;display:block}.nv-img img.real{max-width:none;max-height:none;cursor:zoom-out}
+.nv-txt{margin:0;padding:12px;background:var(--bg0);border:1px solid var(--bd);border-radius:10px;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow:auto}
+.nv-galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}.nv-gi{aspect-ratio:1;border-radius:10px;border:1px solid var(--bd);background:repeating-conic-gradient(#2a2b30 0 25%,#232428 0 50%) 0 0/16px 16px;padding:4px;cursor:pointer;display:grid;place-items:center}.nv-gi img{max-width:100%;max-height:100%}.nv-gi:hover{border-color:var(--ac)}
+.nv-lista div{padding:4px 0;border-bottom:1px solid var(--bd);font-size:13px}.nv-lista small{color:var(--tx2)}
+@media (max-width:560px){.nv-i .por,.nv-i .qd{display:none}.nv-vol{display:none}}
 #nuvem-atu{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0}#nuvem-atu.girando svg{animation:giraAtu .8s linear infinite}
 @media (max-width:640px){.nv-i .por,.nv-i .qd{display:none}}
 
@@ -295,8 +323,13 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
       </div>
     </section>
     <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
-      <p class="adm-desc">Tudo o que a equipe guardou na nuvem do Estúdio Problems (personagens, cenários, fundos do menu, fotos de perfil) e quanto espaço ainda sobra.</p>
-      <h2>Nuvem da equipe<span class="sp"></span><button class="btn sm" type="button" id="nuvem-atu" title="Medir de novo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Atualizar</button></h2>
+      <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems: a da equipe e a dos sons (Cloudflare) e o Firebase. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
+      <div class="nv-fontes" id="nuvem-fontes" role="tablist" aria-label="Qual nuvem">
+        <button type="button" role="tab" data-fonte="equipe"><b>Equipe</b><small>Cloudflare · personagens, cenários, menu</small></button>
+        <button type="button" role="tab" data-fonte="sons"><b>Sons</b><small>Cloudflare antiga · sons, vozes, Shorts</small></button>
+        <button type="button" role="tab" data-fonte="firebase"><b>Firebase</b><small>Google · arquivos e dados</small></button>
+      </div>
+      <h2>Nuvem<span class="sp"></span><button class="btn sm" type="button" id="nuvem-atu" title="Medir de novo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Atualizar</button></h2>
       <div class="box" id="nuvem-box"><div class="hint">Abra esta aba para medir.</div></div>
     </section>
   </div>
@@ -1006,41 +1039,292 @@ async function renderAcesso() {
   clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 30e3); // online/offline ao vivo
   return carrega();
 }
-// ADM › Nuvem: o que está guardado na nuvem da equipe e quanto sobra (o porteiro troca os e-mails por nome e foto)
-async function renderNuvem() {
-  const box = $('#nuvem-box'), CORES = ['#19d3f0', '#3d8bff', '#9b7bff', '#ff7ab6', '#ffb84d', '#3ddc84', '#ff6b6b', '#aaaaaa'];
-  const fmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
+// ADM › Nuvem: as três nuvens do Estúdio Problems — a da equipe (Cloudflare, KV), a dos sons (Cloudflare antiga, worker sons-problems)
+// e o Firebase. Para cada uma: quanto ocupa, os arquivos por grupo, abrir (player de som/vídeo, imagem grande, texto), baixar
+// (um, um grupo ou tudo em .zip) e apagar (sempre com a janela de confirmação). Quem enviou sai com nome e foto, nunca o e-mail.
+const NV = { fonte: 'equipe', cache: {} };
+const NV_FONTES = [['equipe', 'Equipe', 'Cloudflare'], ['sons', 'Sons', 'Cloudflare antiga'], ['firebase', 'Firebase', 'Google']];
+const nvFmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
+const nvTempo = s => { s = Math.max(0, s || 0); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); };
+const NVI = { // ícones de linha (iguais aos do menu)
+  lixo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+  baixar: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  cadeado: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  som: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+  video: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="m15.5 10.2 5-3v9.6l-5-3z"/></svg>',
+  imagem: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>',
+  texto: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+  pasta: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  play: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>',
+  pausa: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>',
+  vol: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  mudo: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>',
+  tela: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+};
+const nvTipo = it => { const t = String(it.tipo || ''), n = String(it.nome || '').toLowerCase();
+  if (it.arqs) return 'pasta';
+  if (/^audio\//.test(t) || /\.(wav|mp3|ogg|oga|flac|m4a|opus|weba)$/.test(n)) return 'som';
+  if (/^video\//.test(t) || /\.(mp4|webm|mov|m4v)$/.test(n)) return 'video';
+  if (/^image/.test(t) || /\.(png|jpe?g|gif|webp|svg|avif)$/.test(n)) return 'imagem';
+  if (/json|text|xml/.test(t) || /\.(json|txt|md|csv)$/.test(n)) return 'texto';
+  return '';
+};
+const NV_EXT = { 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/mpeg': 'mp3', 'audio/ogg': 'ogg', 'audio/flac': 'flac', 'audio/mp4': 'm4a', 'audio/webm': 'weba', 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg', 'application/json': 'json', 'text/plain': 'txt' };
+function nvNomeArquivo(nome, tipo) {
+  let n = String(nome || 'arquivo').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').replace(/^\.+/, '').slice(0, 120) || 'arquivo';
+  const ext = NV_EXT[String(tipo || '').split(';')[0].trim()];
+  if (ext && !/\.[a-z0-9]{2,5}$/i.test(n)) n += '.' + ext;
+  return n;
+}
+function nvSalvar(blob, nome) { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60e3); }
+
+/* .zip simples (sem compressão: sons, vídeos e imagens já vêm comprimidos) — monta no navegador, sem biblioteca de fora */
+const nvCrc = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return b => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = t[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }; })();
+async function nvZip(arquivos) { // [{ nome, blob }]
+  const enc = new TextEncoder(), partes = [], centro = []; let pos = 0; const usados = new Set();
+  const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)), dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate());
+  for (const f of arquivos) {
+    let nome = f.nome, i = 2; while (usados.has(nome)) nome = f.nome.replace(/(\.[^.\/]+)?$/, ` (${i++})$1`); usados.add(nome);
+    const dados = new Uint8Array(await f.blob.arrayBuffer()), nb = enc.encode(nome), crc = nvCrc(dados);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, dt, true); h.setUint16(12, dd, true);
+    h.setUint32(14, crc, true); h.setUint32(18, dados.length, true); h.setUint32(22, dados.length, true); h.setUint16(26, nb.length, true); h.setUint16(28, 0, true);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true); c.setUint16(12, dt, true); c.setUint16(14, dd, true);
+    c.setUint32(16, crc, true); c.setUint32(20, dados.length, true); c.setUint32(24, dados.length, true); c.setUint16(28, nb.length, true); c.setUint32(42, pos, true);
+    partes.push(h.buffer, nb, dados); centro.push(c.buffer, nb); pos += 30 + nb.length + dados.length;
+  }
+  const tc = centro.reduce((t, x) => t + (x.byteLength ?? x.length), 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, arquivos.length, true); e.setUint16(10, arquivos.length, true); e.setUint32(12, tc, true); e.setUint32(16, pos, true);
+  return new Blob([...partes, ...centro, e.buffer], { type: 'application/zip' });
+}
+
+/* ---------- as três fontes: cada uma devolve { total, limite, nota, projetos:[{ nome, bytes, grupos:[{ nome, bytes, n, itens }] }] } ----------
+   item: { nome, bytes, tipo, em, porNome, porFoto, info, ia, protegido, apagar (ref), abrir() → Blob | { url }, arqs (pasta) } */
+async function nvBusca(caminho, opt = {}) {
+  const r = await fetch(caminho, { credentials: 'same-origin', cache: 'no-store', ...opt, headers: { authorization: 'Bearer ' + await token(), ...(opt.headers || {}) } });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error?.message || j.erro || 'Não deu certo (' + r.status + ').'); }
+  return r;
+}
+const NV_FONTE = {
+  async equipe() {
+    const j = await (await nvBusca('/nuvem-uso')).json();
+    const arq = k => async () => (await nvBusca('/nuvem-uso/arq?k=' + encodeURIComponent(k))).blob();
+    const P = j.projetos || [{ nome: 'Nuvem', bytes: j.total, grupos: j.grupos }];
+    for (const pr of P) for (const g of pr.grupos) for (const it of g.itens) {
+      if (it.ref?.startsWith('k:') && !it.ref.endsWith('/')) it.abrir = arq(it.ref.slice(2));
+      if (it.ref?.startsWith('f:')) { const [, id, v] = it.ref.split(':'); it.abrir = async () => (await nvBusca('/acesso/foto?id=' + encodeURIComponent(id) + '&v=' + encodeURIComponent(v))).blob(); }
+      if (it.arqs) it.arqs = it.arqs.map(a => ({ nome: a.k.split('/').slice(2).join('/') || a.k, bytes: a.tam, tipo: a.tipo, abrir: arq(a.k) }));
+    }
+    return { total: j.total, limite: j.limite, projetos: P, apagar: refs => nvApagaEquipe(refs),
+      nota: 'Espaço grátis da Cloudflare (KV) da conta nova, dividido entre tudo o que está aqui.' };
+  },
+  async sons() {
+    const j = await (await nvBusca('/nuvem-sons/uso')).json();
+    const G = {};
+    for (const x of j.itens || []) {
+      const g = G[x.grupo] || (G[x.grupo] = { nome: x.grupo, bytes: 0, n: 0, itens: [] });
+      const curto = x.k.replace(/^[a-z]{1,3}:/, '');
+      g.itens.push({ nome: x.nome && x.nome !== curto ? x.nome : curto, info: x.nome && x.nome !== curto ? curto : '', bytes: +x.tam || 0, tipo: x.tipo || '', em: x.quando || null, ref: x.k,
+        abrir: async () => (await nvBusca('/nuvem-sons/arq?k=' + encodeURIComponent(x.k))).blob() });
+      g.bytes += +x.tam || 0; g.n++;
+    }
+    const grupos = Object.values(G).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes), total = grupos.reduce((t, g) => t + g.bytes, 0);
+    return { total, limite: j.limite || 1073741824, projetos: [{ nome: 'Servidor dos sons', bytes: total, grupos }],
+      apagar: async refs => { await nvBusca('/nuvem-sons/apagar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ks: refs }) }); },
+      nota: 'Espaço grátis da Cloudflare (KV) da conta antiga, que guarda os sons, as gravações das vozes e o que o Shorts e o Editor usam.' };
+  },
+  async firebase() {
+    for (const f of ['firebase-storage-compat.js', 'firebase-firestore-compat.js']) if (!document.querySelector(`script[data-nv="${f}"]`)) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = SDK + f; s.dataset.nv = f; s.onload = ok; s.onerror = () => no(new Error('Não consegui carregar o Firebase.')); document.head.appendChild(s); });
+    const avisos = [], grupos = [];
+    // Storage (arquivos)
+    try {
+      const st = firebase.storage(), arqs = [];
+      const anda = async (ref, d) => { const l = await Promise.race([ref.listAll(), new Promise((_, no) => setTimeout(() => no(new Error('O Storage não respondeu.')), 12000))]); arqs.push(...l.items); if (d < 6) for (const p of l.prefixes) await anda(p, d + 1); };
+      await anda(st.ref(), 0);
+      const G = {};
+      for (const r of arqs.slice(0, 800)) {
+        const m = await r.getMetadata().catch(() => ({})), pasta = r.fullPath.includes('/') ? r.fullPath.split('/')[0] : 'Arquivos soltos';
+        const g = G[pasta] || (G[pasta] = { nome: 'Storage · ' + pasta, bytes: 0, n: 0, itens: [] });
+        g.itens.push({ nome: r.fullPath.split('/').slice(1).join('/') || r.name, bytes: +m.size || 0, tipo: m.contentType || '', em: m.timeCreated ? Date.parse(m.timeCreated) : null, ref: 's:' + r.fullPath,
+          abrir: async () => { const url = await r.getDownloadURL(); try { const x = await fetch(url); if (x.ok) return await x.blob(); } catch { } return { url }; } });
+        g.bytes += +m.size || 0; g.n++;
+      }
+      grupos.push(...Object.values(G));
+    } catch (e) { avisos.push('Storage: ' + nvErroFb(e)); }
+    // Firestore (dados): as coleções que os programas já usaram
+    try {
+      const db = firebase.firestore(), COLS = ['edits', 'dub', 'pedidos', 'diag', 'insertimgs', 'modelos', 'skinsup', 'personagens', 'cenarios', 'menu', 'equipe', 'projetos'];
+      for (const c of COLS) {
+        let q; try { q = await Promise.race([db.collection(c).limit(500).get(), new Promise((_, no) => setTimeout(() => no(Object.assign(new Error('O Firestore não respondeu (não está ativado ou está fora do ar).'), { code: 'timeout' })), 9000))]); } catch (e) { if (/permission|insufficient/i.test(e.code + e.message)) { avisos.push(`Firestore (${c}): sem permissão para ler.`); continue; } throw e; }
+        if (q.empty) continue;
+        const g = { nome: 'Firestore · ' + c, bytes: 0, n: 0, itens: [] };
+        q.forEach(d => { const txt = JSON.stringify(d.data(), null, 2), b = new Blob([txt], { type: 'application/json' });
+          g.itens.push({ nome: d.id + '.json', bytes: b.size, tipo: 'application/json', ref: 'd:' + c + '/' + d.id, abrir: async () => b }); g.bytes += b.size; g.n++; });
+        grupos.push(g);
+      }
+    } catch (e) { avisos.push('Firestore: ' + nvErroFb(e)); }
+    const total = grupos.reduce((t, g) => t + g.bytes, 0);
+    return { total, limite: 5 * 1073741824, projetos: grupos.length ? [{ nome: 'Firebase (problems-estudios)', bytes: total, grupos: grupos.sort((a, b) => b.bytes - a.bytes) }] : [],
+      vazio: 'Nada guardado no Firebase. Hoje ele só cuida do login com o Google; os arquivos da equipe ficam na Cloudflare.',
+      avisos, apagar: async refs => {
+        for (const r of refs) { if (r.startsWith('s:')) await firebase.storage().ref(r.slice(2)).delete(); else if (r.startsWith('d:')) await firebase.firestore().doc(r.slice(2)).delete(); }
+      },
+      nota: 'Plano grátis do Firebase: 5 GB de arquivos (Storage) e 1 GB de dados (Firestore).' };
+  },
+};
+const nvErroFb = e => { const c = String(e?.code || ''), m = String(e?.message || e);
+  if (/permission|unauthorized|insufficient/i.test(c + m)) return 'as regras do Firebase não deixam esta conta ler.';
+  if (/not-found|does not exist|NOT_FOUND|no default bucket|bucket/i.test(c + m)) return 'não está ativado neste projeto (nada guardado).';
+  return m.slice(0, 160); };
+async function nvApagaEquipe(refs) {
+  const r = await fetch('/nuvem-uso', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + await token() }, body: JSON.stringify({ refs }) });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.');
+}
+
+/* ---------- tela ---------- */
+async function renderNuvem(manter) {
+  const box = $('#nuvem-box'), CORES = ['#19d3f0', '#3d8bff', '#9b7bff', '#ff7ab6', '#ffb84d', '#3ddc84', '#ff6b6b', '#aaaaaa'], fonte = NV.fonte;
+  $$('#nuvem-fontes [data-fonte]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.fonte === fonte)));
   const quando = t => t ? new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
   const mini = (f, n) => `<span class="mini">${f ? `<img src="${esc(f)}" alt="" referrerpolicy="no-referrer">` : esc((n || '?')[0].toUpperCase())}</span>`;
+  const abertas = manter ? new Set($$('#nuvem-box details[open] > summary b').map(b => b.textContent)) : new Set();
   box.innerHTML = '<div class="hint" style="text-align:center;padding:18px 0"><span class="spin"></span>Medindo a nuvem…</div>';
-  let j; try { const r = await fetch('/nuvem-uso', { credentials: 'same-origin', cache: 'no-store', headers: { authorization: 'Bearer ' + await token() } }); j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.'); }
-  catch (e) { box.innerHTML = `<div class="hint">Não consegui medir: ${esc(e.message)}</div>`; return; }
-  const pct = j.total / j.limite * 100, livre = Math.max(0, j.limite - j.total);
-  const P = j.projetos || [{ nome: 'Nuvem', bytes: j.total, grupos: j.grupos }], ITENS = [], GRUPOS = [];
-  const LIXO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
-  const CADEADO = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-  const btItem = it => it.ref ? `<button class="ibtn nv-x" type="button" data-i="${ITENS.push(it) - 1}" title="Apagar da nuvem">${LIXO}</button>` : it.protegido ? `<span class="nv-lock" title="${esc(it.protegido)}">${CADEADO}</span>` : '<span class="nv-lock"></span>';
-  const btGrupo = g => g.itens.some(it => it.ref) ? `<button class="btn sm nv-limpa" type="button" data-g="${GRUPOS.push(g) - 1}" title="Apagar tudo deste grupo (o que é protegido fica)">${LIXO}Limpar</button>` : '';
-  box.innerHTML = `<div class="nv-top"><div><b>${fmt(j.total)}</b> <small>usados de ${fmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${fmt(livre)}</b> <small>livres</small></div></div>
-    <div class="nv-barra">${P.map((pr, i) => `<i style="width:${pr.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(pr.nome)}: ${fmt(pr.bytes)}"></i>`).join('')}</div>
-    <div class="nv-leg">${P.map((pr, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(pr.nome)} · ${fmt(pr.bytes)}</span>`).join('')}</div>
-    ${P.map((pr, i) => `<div class="nv-p"><div class="nv-pt"><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(pr.nome)}</b><span class="sp"></span><small>${fmt(pr.bytes)}</small></div>
-    ${pr.grupos.map(g => `<details class="nv-g"><summary><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${fmt(g.bytes)}</small>${btGrupo(g)}</summary>
-      ${g.itens.slice(0, 300).map(it => `<div class="nv-i"><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.ia ? '<span class="nv-ia">IA</span>' : ''}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
-        ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${fmt(it.bytes)}</span>${btItem(it)}</div>`).join('')}
-      ${g.itens.length > 300 ? `<div class="nv-i hint">… e mais ${g.itens.length - 300}</div>` : ''}</details>`).join('')}</div>`).join('') || '<div class="hint">A nuvem está vazia.</div>'}
-    <div class="hint" style="margin-top:10px">Espaço grátis da Cloudflare (KV), dividido entre tudo o que está aqui. Os sons ficam num espaço separado e não entram nesta conta.</div>`;
-  const apaga = async (refs, titulo, texto, bt) => {
-    if (!refs.length || !(await pergunta({ titulo, texto, ok: 'Apagar', perigo: true }))) return;
+  let j; try { j = await NV_FONTE[fonte](); } catch (e) { if (NV.fonte === fonte) box.innerHTML = `<div class="hint">Não consegui medir: ${esc(e.message)}</div>`; return; }
+  if (NV.fonte !== fonte) return; // trocou de nuvem enquanto media
+  NV.atual = j;
+  const P = j.projetos, ITENS = [], GRUPOS = [], pct = j.total / j.limite * 100, livre = Math.max(0, j.limite - j.total);
+  const todos = P.flatMap(pr => pr.grupos.flatMap(g => g.itens)), baixaveis = todos.filter(it => it.abrir || it.arqs?.length);
+  const btApaga = it => it.ref && !it.protegido ? `<button class="ibtn nv-x" type="button" data-x="${ITENS.push(it) - 1}" title="Apagar da nuvem">${NVI.lixo}</button>` : it.protegido ? `<span class="nv-lock" title="${esc(it.protegido)}">${NVI.cadeado}</span>` : '<span class="nv-lock"></span>';
+  const btBaixa = it => it.abrir || it.arqs?.length ? `<button class="ibtn nv-b" type="button" data-b="${ITENS.push(it) - 1}" title="Baixar no computador">${NVI.baixar}</button>` : '<span class="nv-lock"></span>';
+  const linha = it => { const t = nvTipo(it), k = ITENS.push(it) - 1, abre = it.abrir || it.arqs?.length;
+    return `<div class="nv-i${abre ? ' abre' : ''}" ${abre ? `data-v="${k}" tabindex="0" role="button" title="Abrir"` : ''}><span class="nv-ti">${NVI[t] || NVI.texto}</span><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.ia ? '<span class="nv-ia">IA</span>' : ''}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
+      ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${nvFmt(it.bytes)}</span>${btBaixa(it)}${btApaga(it)}</div>`; };
+  const btGrupo = g => (g.itens.some(it => it.abrir || it.arqs?.length) ? `<button class="btn sm nv-bg" type="button" data-bg="${GRUPOS.push(g) - 1}" title="Baixar tudo deste grupo num .zip">${NVI.baixar}Baixar</button>` : '')
+    + (g.itens.some(it => it.ref && !it.protegido) ? `<button class="btn sm nv-limpa" type="button" data-g="${GRUPOS.push(g) - 1}" title="Apagar tudo deste grupo (o que é protegido fica)">${NVI.lixo}Limpar</button>` : '');
+  box.innerHTML = `${(j.avisos || []).map(a => `<div class="hint nv-aviso">${esc(a)}</div>`).join('')}
+    <div class="nv-top"><div><b>${nvFmt(j.total)}</b> <small>usados de ${nvFmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${nvFmt(livre)}</b> <small>livres</small></div>
+      ${baixaveis.length ? `<button class="btn sm" type="button" id="nv-tudo" title="Baixar tudo desta nuvem num .zip">${NVI.baixar}Baixar tudo</button>` : ''}</div>
+    <div class="nv-barra">${P.map((pr, i) => `<i style="width:${pr.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(pr.nome)}: ${nvFmt(pr.bytes)}"></i>`).join('')}</div>
+    <div class="nv-leg">${P.map((pr, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(pr.nome)} · ${nvFmt(pr.bytes)}</span>`).join('')}</div>
+    ${P.map((pr, i) => `<div class="nv-p"><div class="nv-pt"><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(pr.nome)}</b><span class="sp"></span><small>${nvFmt(pr.bytes)}</small></div>
+    ${pr.grupos.map(g => `<details class="nv-g"${abertas.has(g.nome) ? ' open' : ''}><summary><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${nvFmt(g.bytes)}</small>${btGrupo(g)}</summary>
+      ${g.itens.slice(0, 400).map(linha).join('')}
+      ${g.itens.length > 400 ? `<div class="nv-i hint">… e mais ${g.itens.length - 400} (aparecem no .zip do grupo)</div>` : ''}</details>`).join('')}</div>`).join('') || `<div class="hint">${esc(j.vazio || 'A nuvem está vazia.')}</div>`}
+    <div class="hint" style="margin-top:10px">${esc(j.nota || '')}</div>`;
+  const alerta = (m, ok) => { const h = $('#nuvem-box .nv-erro') || box.insertAdjacentElement('afterbegin', Object.assign(document.createElement('div'), { className: 'hint nv-erro' })); h.style.color = ok ? 'var(--tx2)' : ''; h.textContent = m; };
+  const apaga = async (its, titulo, texto, bt) => {
+    const refs = its.filter(it => it.ref && !it.protegido).map(it => it.ref);
+    if (!refs.length || !(await pergunta({ titulo, texto, ok: 'Apagar', perigo: true }))) return false;
     if (bt) bt.disabled = true;
-    try { const r = await fetch('/nuvem-uso', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + await token() }, body: JSON.stringify({ refs }) }); const jj = await r.json().catch(() => ({})); if (!r.ok) throw new Error(jj.error?.message || 'Não deu certo.'); }
-    catch (e) { if (bt) bt.disabled = false; return alerta(e.message); }
-    const abertas = new Set($$('#nuvem-box details[open] > summary b').map(b => b.textContent)); await renderNuvem(); $$('#nuvem-box details > summary b').forEach(b => { if (abertas.has(b.textContent)) b.closest('details').open = true; });
+    try { await j.apagar(refs); } catch (e) { if (bt) bt.disabled = false; alerta('Não apagou: ' + (e.message || e)); return false; }
+    await renderNuvem(true); return true;
   };
-  const alerta = m => { const h = $('#nuvem-box .nv-erro') || box.insertAdjacentElement('afterbegin', Object.assign(document.createElement('div'), { className: 'hint nv-erro' })); h.textContent = 'Não apagou: ' + m; };
-  $$('#nuvem-box [data-i]').forEach(b => b.onclick = () => { const it = ITENS[+b.dataset.i]; apaga([it.ref], 'Apagar da nuvem?', `"${it.nome}" (${fmt(it.bytes)}) sai da nuvem da equipe para todo mundo. Não dá para desfazer.${/^k:menu\/midia/.test(it.ref) ? ' Se for um fundo em uso no menu, ele some do menu.' : ''}`, b); });
-  $$('#nuvem-box [data-g]').forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); const g = GRUPOS[+b.dataset.g], refs = g.itens.filter(it => it.ref).map(it => it.ref);
-    apaga(refs, `Limpar "${g.nome}"?`, `${refs.length} ${refs.length === 1 ? 'item sai' : 'itens saem'} da nuvem da equipe (${fmt(g.itens.filter(it => it.ref).reduce((t, it) => t + it.bytes, 0))}). O que é protegido fica. Não dá para desfazer.`, b); });
+  NV.apaga = it => apaga([it], 'Apagar da nuvem?', `"${it.nome}" (${nvFmt(it.bytes)}) sai da nuvem para todo mundo. Não dá para desfazer.${/^k:menu\/midia/.test(it.ref || '') ? ' Se for um fundo em uso no menu, ele some do menu.' : ''}`);
+  const baixaVarios = async (its, nomeZip, bt) => {
+    const lista = its.flatMap(it => it.arqs?.length ? it.arqs.map(a => ({ ...a, nome: it.nome + '/' + a.nome })) : it.abrir ? [it] : []);
+    if (!lista.length) return;
+    const txt0 = bt?.innerHTML; if (bt) bt.disabled = true; const arquivos = [], falhas = [];
+    for (let i = 0; i < lista.length; i++) {
+      if (bt) bt.textContent = `Baixando ${i + 1}/${lista.length}…`;
+      try { const b = await lista[i].abrir(); if (b instanceof Blob) arquivos.push({ nome: nvNomeArquivo(lista[i].nome, b.type || lista[i].tipo), blob: b }); else falhas.push(lista[i].nome); } catch { falhas.push(lista[i].nome); }
+    }
+    if (bt) bt.textContent = 'Montando o .zip…';
+    if (arquivos.length) nvSalvar(await nvZip(arquivos), nvNomeArquivo(nomeZip, 'application/zip').replace(/(\.zip)?$/, '.zip'));
+    if (bt) { bt.disabled = false; bt.innerHTML = txt0; }
+    if (falhas.length) alerta(`Baixou ${arquivos.length}; não deu para baixar ${falhas.length}: ${falhas.slice(0, 5).join(', ')}${falhas.length > 5 ? '…' : ''}`);
+  };
+  NV.baixa = async it => { if (it.arqs?.length) return baixaVarios([it], it.nome); const b = await it.abrir(); if (b instanceof Blob) nvSalvar(b, nvNomeArquivo(it.nome, b.type || it.tipo)); else if (b?.url) window.open(b.url, '_blank', 'noopener'); };
+  $$('#nuvem-box [data-x]').forEach(b => b.onclick = ev => { ev.stopPropagation(); NV.apaga(ITENS[+b.dataset.x]); });
+  $$('#nuvem-box [data-b]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); b.disabled = true; try { await NV.baixa(ITENS[+b.dataset.b]); } catch (e) { alerta('Não baixou: ' + e.message); } b.disabled = false; });
+  $$('#nuvem-box [data-v]').forEach(el => { el.onclick = () => nvVer(ITENS[+el.dataset.v]); el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nvVer(ITENS[+el.dataset.v]); } }; });
+  $$('#nuvem-box [data-bg]').forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); const g = GRUPOS[+b.dataset.bg]; baixaVarios(g.itens, NV_FONTES.find(f => f[0] === fonte)[1] + ' - ' + g.nome, b); });
+  $$('#nuvem-box [data-g]').forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); const g = GRUPOS[+b.dataset.g], its = g.itens.filter(it => it.ref && !it.protegido);
+    apaga(its, `Limpar "${g.nome}"?`, `${its.length} ${its.length === 1 ? 'item sai' : 'itens saem'} da nuvem (${nvFmt(its.reduce((t, it) => t + it.bytes, 0))}). O que é protegido fica. Não dá para desfazer.`, b); });
+  const bt = $('#nv-tudo'); if (bt) bt.onclick = () => baixaVarios(todos, 'Nuvem ' + NV_FONTES.find(f => f[0] === fonte)[1], bt);
+}
+function nvTrocaFonte(f) { if (!NV_FONTE[f]) return; NV.fonte = f; try { localStorage.setItem('ep-nuvem-fonte', f); } catch { } renderNuvem(); }
+
+/* ---------- abrir um item: player de som, player de vídeo, imagem grande, texto ou a pasta (personagem) ---------- */
+async function nvVer(it) {
+  const t = nvTipo(it), d = document.createElement('div'); d.className = 'modal nv-ver'; d.style.zIndex = 30;
+  d.innerHTML = `<div class="mc nv-vc${t === 'video' || t === 'imagem' || t === 'pasta' ? ' largo' : ''}" role="dialog" aria-modal="true" aria-label="${esc(it.nome)}">
+    <div class="nv-vh"><span class="nv-ti">${NVI[t] || NVI.texto}</span><div class="nv-vn"><b title="${esc(it.nome)}">${esc(it.nome)}</b><small>${nvFmt(it.bytes)}${it.tipo ? ' · ' + esc(it.tipo) : ''}${it.porNome ? ' · enviado por ' + esc(it.porNome) : ''}</small></div>
+      <button class="ibtn" type="button" data-fecha title="Fechar (Esc)">${NVI.x}</button></div>
+    <div class="nv-vb"><div class="hint" style="text-align:center;padding:30px 0"><span class="spin"></span>Abrindo…</div></div>
+    <div class="acts"><span class="sp"></span>${it.ref && !it.protegido ? `<button class="btn sm danger" type="button" data-apaga>${NVI.lixo}Apagar</button>` : ''}<button class="btn sm primary" type="button" data-baixa>${NVI.baixar}Baixar</button></div></div>`;
+  document.body.appendChild(d);
+  const corpo = d.querySelector('.nv-vb'), urls = [];
+  const fecha = () => { d.querySelectorAll('audio,video').forEach(m => m.pause()); urls.forEach(u => URL.revokeObjectURL(u)); d.remove(); document.removeEventListener('keydown', tecla); };
+  let midia = null;
+  const tecla = e => { if (document.querySelector('.modal .pergunta')) return; // a janela de confirmação está aberta por cima
+    if (e.key === 'Escape') fecha();
+    else if (midia && e.key === ' ' && !/INPUT|BUTTON/.test(document.activeElement?.tagName)) { e.preventDefault(); midia.paused ? midia.play() : midia.pause(); }
+    else if (midia && e.key === 'ArrowRight') midia.currentTime = Math.min(midia.duration || 0, midia.currentTime + 5);
+    else if (midia && e.key === 'ArrowLeft') midia.currentTime = Math.max(0, midia.currentTime - 5); };
+  document.addEventListener('keydown', tecla);
+  d.onclick = e => { if (e.target === d) fecha(); };
+  d.querySelector('[data-fecha]').onclick = fecha;
+  d.querySelector('[data-baixa]').onclick = async e => { const b = e.currentTarget; b.disabled = true; try { await NV.baixa(it); } catch (er) { corpo.insertAdjacentHTML('afterbegin', `<div class="hint nv-erro">Não baixou: ${esc(er.message)}</div>`); } b.disabled = false; };
+  const ap = d.querySelector('[data-apaga]'); if (ap) ap.onclick = async () => { if (await NV.apaga(it)) fecha(); };
+  const url = blob => { const u = URL.createObjectURL(blob); urls.push(u); return u; };
+  try {
+    if (t === 'pasta') {
+      const imgs = it.arqs.filter(a => nvTipo(a) === 'imagem' || /\/img\//.test(a.nome)).slice(0, 60);
+      corpo.innerHTML = `<div class="hint" style="margin-bottom:8px">${it.arqs.length} arquivos${it.info ? ' · ' + esc(it.info) : ''}. O "Baixar" leva todos num .zip.</div><div class="nv-galeria"></div>`;
+      const gal = corpo.querySelector('.nv-galeria');
+      for (const a of imgs) { const fig = document.createElement('button'); fig.type = 'button'; fig.className = 'nv-gi'; fig.title = a.nome; gal.appendChild(fig);
+        a.abrir().then(b => { if (b instanceof Blob) { fig.innerHTML = `<img src="${url(b)}" alt="">`; fig.onclick = () => nvVer({ ...a, nome: it.nome + ' / ' + a.nome }); } }).catch(() => fig.remove()); }
+      if (!imgs.length) gal.outerHTML = `<div class="nv-lista">${it.arqs.map(a => `<div>${esc(a.nome)} <small>${nvFmt(a.bytes)}</small></div>`).join('')}</div>`;
+      return;
+    }
+    const b = await it.abrir(), src = b instanceof Blob ? url(b) : b?.url;
+    if (!src) throw new Error('Arquivo vazio.');
+    const tipo = b instanceof Blob && b.type ? b.type : it.tipo, tt = nvTipo({ ...it, tipo });
+    if (tt === 'som' || tt === 'video') {
+      corpo.innerHTML = tt === 'video' ? `<div class="nv-tela"><video playsinline preload="metadata"></video><button class="nv-big" type="button" title="Tocar">${NVI.play}</button></div>` : `<div class="nv-onda"><canvas width="640" height="90"></canvas></div><audio preload="metadata"></audio>`;
+      corpo.insertAdjacentHTML('beforeend', `<div class="nv-pl"><button class="nv-pp" type="button" title="Tocar / pausar (espaço)">${NVI.play}</button><span class="nv-t">0:00</span>
+        <div class="nv-barra2" role="slider" tabindex="0" aria-label="Posição"><i class="nv-buf"></i><i class="nv-pos"></i><b class="nv-bol"></b></div><span class="nv-t nv-dur">0:00</span>
+        <button class="nv-mu" type="button" title="Som">${NVI.vol}</button><input class="nv-vol" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume">
+        ${tt === 'video' ? `<button class="nv-fs" type="button" title="Tela cheia">${NVI.tela}</button>` : ''}</div>`);
+      const m = midia = corpo.querySelector(tt === 'video' ? 'video' : 'audio'); m.src = src;
+      const pp = corpo.querySelector('.nv-pp'), barra = corpo.querySelector('.nv-barra2'), pos = corpo.querySelector('.nv-pos'), bol = corpo.querySelector('.nv-bol'), buf = corpo.querySelector('.nv-buf'), tcur = corpo.querySelector('.nv-t'), tdur = corpo.querySelector('.nv-dur'), big = corpo.querySelector('.nv-big');
+      const pinta = () => { const f = m.duration ? m.currentTime / m.duration : 0; pos.style.width = f * 100 + '%'; bol.style.left = f * 100 + '%'; tcur.textContent = nvTempo(m.currentTime); pp.innerHTML = m.paused ? NVI.play : NVI.pausa; if (big) big.hidden = !m.paused;
+        try { if (m.buffered.length && m.duration) buf.style.width = m.buffered.end(m.buffered.length - 1) / m.duration * 100 + '%'; } catch { } };
+      ['timeupdate', 'play', 'pause', 'progress', 'seeked', 'ended'].forEach(ev => m.addEventListener(ev, pinta));
+      m.addEventListener('loadedmetadata', () => { tdur.textContent = nvTempo(m.duration); pinta(); });
+      pp.onclick = () => m.paused ? m.play() : m.pause(); if (big) { big.onclick = () => m.play(); m.onclick = () => m.paused ? m.play() : m.pause(); }
+      const vai = e => { const r = barra.getBoundingClientRect(); if (m.duration) m.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * m.duration; };
+      barra.onpointerdown = e => { barra.setPointerCapture(e.pointerId); vai(e); barra.onpointermove = vai; };
+      barra.onpointerup = () => { barra.onpointermove = null; };
+      barra.onkeydown = e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); m.currentTime = Math.max(0, Math.min(m.duration || 0, m.currentTime + (e.key === 'ArrowRight' ? 5 : -5))); } };
+      const vol = corpo.querySelector('.nv-vol'), mu = corpo.querySelector('.nv-mu');
+      vol.oninput = () => { m.volume = +vol.value; m.muted = !+vol.value; mu.innerHTML = m.muted ? NVI.mudo : NVI.vol; };
+      mu.onclick = () => { m.muted = !m.muted; mu.innerHTML = m.muted ? NVI.mudo : NVI.vol; };
+      const fs = corpo.querySelector('.nv-fs'); if (fs) fs.onclick = () => corpo.querySelector('.nv-tela').requestFullscreen?.();
+      if (tt === 'som' && b instanceof Blob) nvOnda(b, corpo.querySelector('canvas'), m).catch(() => corpo.querySelector('.nv-onda')?.remove());
+      m.play().catch(() => { });
+      pp.focus();
+    } else if (tt === 'imagem') {
+      corpo.innerHTML = `<div class="nv-img"><img src="${src}" alt="${esc(it.nome)}"></div>`;
+      const im = corpo.querySelector('img'); im.onload = () => { corpo.insertAdjacentHTML('beforeend', `<div class="hint" style="text-align:center;margin-top:6px">${im.naturalWidth} × ${im.naturalHeight} px · clique para ver no tamanho real</div>`); };
+      im.onclick = () => im.classList.toggle('real');
+    } else if (tt === 'texto' && b instanceof Blob) {
+      let txt = await b.slice(0, 400000).text(); try { txt = JSON.stringify(JSON.parse(txt), null, 2); } catch { }
+      corpo.innerHTML = `<pre class="nv-txt selecionavel"></pre>`; corpo.querySelector('pre').textContent = txt + (b.size > 400000 ? '\n\n… (o arquivo continua; baixe para ver tudo)' : '');
+    } else corpo.innerHTML = `<div class="hint" style="text-align:center;padding:24px 0">Este tipo de arquivo não tem prévia. Use o Baixar para abrir no computador.</div>`;
+  } catch (e) { corpo.innerHTML = `<div class="hint nv-erro">Não abriu: ${esc(e.message || e)}</div>`; }
+}
+// desenho da onda do som (o player mostra onde está tocando por cima)
+async function nvOnda(blob, cv, m) {
+  if (blob.size > 40 * 1048576) throw new Error('grande');
+  const ac = new (window.AudioContext || window.webkitAudioContext)(), buf = await ac.decodeAudioData(await blob.arrayBuffer()); ac.close();
+  const d = buf.getChannelData(0), W = cv.width, H = cv.height, g = cv.getContext('2d'), passo = Math.max(1, Math.floor(d.length / W)), picos = [];
+  for (let x = 0; x < W; x++) { let mx = 0; for (let i = x * passo, f = Math.min(d.length, i + passo); i < f; i += 4) mx = Math.max(mx, Math.abs(d[i])); picos.push(mx); }
+  const top = Math.max(0.01, ...picos);
+  const pinta = () => { const f = m.duration ? m.currentTime / m.duration : 0; g.clearRect(0, 0, W, H);
+    picos.forEach((p, x) => { const h = Math.max(1.5, p / top * (H - 6)); g.fillStyle = x / W <= f ? '#19d3f0' : 'rgba(255,255,255,.28)'; g.fillRect(x, (H - h) / 2, 1, h); }); };
+  pinta(); ['timeupdate', 'seeked'].forEach(ev => m.addEventListener(ev, pinta));
+  cv.onclick = e => { const r = cv.getBoundingClientRect(); if (m.duration) m.currentTime = (e.clientX - r.left) / r.width * m.duration; };
 }
 function abaAdm(n) {
   const abas = $$('.adm-abas [data-aba]'); if (!abas.some(b => b.dataset.aba === n && !b.hidden)) n = 'botoes';
@@ -1054,7 +1338,9 @@ function showAdm() {
   $$('.adm-abas [data-aba]').forEach(b => b.onclick = () => { abaAdm(b.dataset.aba); window.scrollTo({ top: 0 }); });
   let ultima = 'botoes'; try { ultima = localStorage.getItem('ep-adm-aba') || 'botoes'; } catch { }
   abaAdm(ultima); renderAcesso().then(() => abaAdm(ultima));
-  $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); await renderNuvem(); b.classList.remove('girando'); b.disabled = false; };
+  $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); await renderNuvem(true); b.classList.remove('girando'); b.disabled = false; };
+  try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
+  $$('#nuvem-fontes [data-fonte]').forEach(b => b.onclick = () => nvTrocaFonte(b.dataset.fonte));
   $('#adm').hidden = false; $('#badge-adm').hidden = false;
   const ver = $('#btn-ver'); ver.hidden = false; ver.href = BASE;
   document.title = 'ADM — Estúdio Problems';

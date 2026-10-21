@@ -213,6 +213,17 @@ export default {
       return json({ error: { message: 'Método não aceito.' } }, 405, cors);
     }
     // USO DA NUVEM (tela ADM › Nuvem, pelo porteiro): tudo o que está guardado no KV da equipe e o limite. Só ADMINS.
+    // ADM › Nuvem: abrir/baixar um item da nuvem da equipe (para ouvir, ver ou baixar no computador)
+    if (p0 === '/nuvem-uso/arq' && req.method === 'GET') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só quem é ADM abre os arquivos da nuvem.' } }, 403, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const k = new URL(req.url).searchParams.get('k') || '';
+      if (!k || k.length > 300 || k.includes('..') || k.endsWith('/')) return json({ error: { message: 'Arquivo inválido.' } }, 400, cors);
+      const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado.' } }, 404, cors);
+      // nosniff + CSP sandbox: nada guardado na nuvem roda como página
+      return new Response(r.value, { status: 200, headers: { ...cors, 'content-type': r.metadata?.tipo || (/\.json$|\/(links|extras|.*\.json)$/.test(k) ? 'application/json' : 'application/octet-stream'), 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; sandbox" } });
+    }
     if (p0 === '/nuvem-uso') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só quem é ADM vê o uso da nuvem.' } }, 403, cors);

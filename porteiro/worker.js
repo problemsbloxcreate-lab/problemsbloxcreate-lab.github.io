@@ -88,9 +88,9 @@ async function chavesAssinatura(env) {
   chaves = { priv: await crypto.subtle.importKey('jwk', priv, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']), pub };
   return chaves;
 }
-async function passe(env, email, host) {
+async function passe(env, email, host, extra = {}) { // extra: { a: 1 } só nas rotas de ADM (ex.: nuvem dos sons)
   const k = await chavesAssinatura(env); if (!k) return null;
-  const dados = b64u(enc.encode(JSON.stringify({ e: email, h: host, x: Math.floor(Date.now() / 1000) + 120 })));
+  const dados = b64u(enc.encode(JSON.stringify({ e: email, h: host, x: Math.floor(Date.now() / 1000) + 120, ...extra })));
   return dados + '.' + b64u(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, k.priv, enc.encode(dados)));
 }
 
@@ -139,6 +139,30 @@ function contaPublica(email, p) {
   return { email, nome: p.nome || nomeG, foto: p.fotoV ? '/conta/foto?v=' + p.fotoV : fotoG, nomeGoogle: nomeG, fotoGoogle: fotoG,
     nomeProprio: !!p.nome, fotoPropria: !!p.fotoV, fundo: p.fundo === 'cor' ? 'cor' : 'padrao', cor: /^#[0-9a-f]{6}$/i.test(p.cor || '') ? p.cor : '#262626' };
 }
+/* ---------- ADM › Nuvem: abrir/baixar um arquivo da nuvem da equipe (o servidor turma-ia confere se é ADM) ---------- */
+async function nuvemArq(req, env, url) {
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  const auth = req.headers.get('authorization') || ''; if (!/^Bearer \S+/.test(auth)) return json({ error: { message: 'Faltou o login do Google.' } }, 401);
+  const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso/arq' + url.search, { headers: { authorization: auth, origin: url.origin } });
+  let r; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  const h = new Headers(r.headers); h.set('cache-control', 'no-store'); h.delete('set-cookie'); for (const k of [...h.keys()]) if (k.startsWith('access-control-')) h.delete(k);
+  return new Response(r.body, { status: r.status, headers: h });
+}
+/* ---------- ADM › Nuvem dos sons (Cloudflare antiga, worker sons-problems): ver, ouvir, baixar e apagar ----------
+   Só para quem é ADM (marca da sessão). O passe vai assinado com a: 1 — o servidor dos sons só abre /adm/ com ele. */
+async function nuvemSons(req, env, url, caminho) {
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  if (!s.a) return json({ error: { message: 'Só quem é ADM vê a nuvem dos sons.' } }, 403);
+  if (req.method !== 'GET' && (req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+  const rota = caminho.slice('/nuvem-sons/'.length); if (!['uso', 'arq', 'apagar'].includes(rota)) return json({ error: { message: 'Caminho desconhecido.' } }, 404);
+  const o = projetos(env)['/nuvem/'], origem = typeof o === 'string' ? o : o?.origem; if (!origem) return json({ error: { message: 'Falta o /nuvem/ em PROJETOS.' } }, 501);
+  const alvo = new URL('adm/' + rota + url.search, origem.replace(/\/?$/, '/')), ps = await passe(env, s.e, alvo.host, { a: 1 });
+  if (!ps) return json({ error: { message: 'O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.' } }, 503);
+  let r; try { r = await fetch(new Request(alvo, { method: req.method, headers: { 'x-porteiro-passe': ps, 'content-type': req.headers.get('content-type') || 'application/json' }, body: req.method === 'POST' ? await req.text() : undefined })); }
+  catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor dos sons.' } }, 502); }
+  const h = new Headers(r.headers); h.set('cache-control', 'no-store'); h.delete('set-cookie'); for (const k of [...h.keys()]) if (k.startsWith('access-control-')) h.delete(k);
+  return new Response(r.body, { status: r.status, headers: h });
+}
 /* ---------- ADM › Nuvem: o que está guardado na nuvem da equipe (KV da Cloudflare) e quanto sobra ----------
    Quem pode: só os e-mails da variável ADMINS do turma-ia (ele confere). Quem enviou sai com nome e foto, nunca o e-mail. */
 const humano = slug => { const t = String(slug).replace(/-[a-z0-9]{4}$/, '').replace(/-/g, ' ').trim(); return t ? t[0].toUpperCase() + t.slice(1) : slug; };
@@ -183,12 +207,12 @@ async function nuvemUso(req, env, url) {
     const tam = +it.tam || 0, raiz = it.k.split('/')[0];
     if (raiz === 'personagens') {
       const slug = it.k.split('/')[1] || '?', g = grupo('personagens', 'Personagens'), c = pers[slug] || (pers[slug] = { nome: humano(slug), bytes: 0, n: 0, em: null, por: null, imagens: 0 });
-      c.ref = 'k:personagens/' + slug + '/'; c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
+      c.ref = 'k:personagens/' + slug + '/'; (c.arqs || (c.arqs = [])).push({ k: it.k, tam, tipo: it.tipo || '' }); c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
     }
     const g = grupo(NOMES[raiz] ? raiz : 'outros', NOMES[raiz] || 'Outros'); g.bytes += tam; g.n++;
     g.itens.push({ nome: it.nome || it.k.split('/').pop().replace(/^\d{10,}_/, ''), bytes: tam, tipo: it.tipo || '', em: it.em || null, ia: !!it.ia, ...(['acesso/extras', 'menu/links'].includes(it.k) ? { protegido: raiz === 'acesso' ? 'Mude na aba Quem pode entrar' : 'Mude na aba Botões' } : { ref: 'k:' + it.k }), ...(await quem(it.por)) });
   }
-  for (const c of Object.values(pers)) { const g = G.personagens; g.n++; g.itens.push({ nome: c.nome, bytes: c.bytes, tipo: 'personagem', ref: c.ref, info: `${c.imagens} imagens`, em: c.em, ...(await quem(c.por)) }); }
+  for (const c of Object.values(pers)) { const g = G.personagens; g.n++; g.itens.push({ nome: c.nome, bytes: c.bytes, tipo: 'personagem', ref: c.ref, arqs: c.arqs || [], info: `${c.imagens} imagens`, em: c.em, ...(await quem(c.por)) }); }
   // fotos de perfil (KV PERFIS, mesma conta da Cloudflare: o 1 GB grátis é dividido entre todos)
   if (env.PERFIS) {
     const g = grupo('fotos', 'Fotos de perfil'); let cur, k = 0;
@@ -402,6 +426,8 @@ export default {
     }
     if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url);
     if (caminho === '/nuvem-uso') return nuvemUso(req, env, url);
+    if (caminho === '/nuvem-uso/arq') return nuvemArq(req, env, url);
+    if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
     if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
