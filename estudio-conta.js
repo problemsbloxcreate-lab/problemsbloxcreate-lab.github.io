@@ -68,6 +68,21 @@
 .ep-conta-pop .it svg{flex:none;width:16px;height:16px;color:#a9adb7}
 .ep-conta-head b{display:flex;align-items:center;gap:6px}.ep-selo{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff;font-style:normal}.ep-selo svg{width:12px;height:12px}
 .ep-conta-pop .sep{height:1px;background:#1f2024;margin:4px 0}
+.ep-conta-pop .it.sair,.ep-conta-pop .it.sair svg{color:#ff8a9a}.ep-conta-pop .it.sair:hover,.ep-conta-pop .it.sair:focus-visible{background:rgba(214,58,82,.16)}
+.ep-pg{position:fixed;inset:0;z-index:2147483003;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef;animation:epPgF .16s ease-out both}
+.ep-pg *,.ep-pg *::before{box-sizing:border-box}
+.ep-pg .cx{width:min(400px,100%);box-sizing:border-box;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:22px 20px 18px;display:grid;justify-items:center;gap:8px;text-align:center;animation:epPgE .18s ease-out both}
+.ep-pg .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(214,58,82,.16);color:#ff8a9a}.ep-pg .ic svg{width:22px;height:22px}
+.ep-pg .t{font-size:17px;font-weight:700}.ep-pg .x{margin:0 0 4px;color:#a9adb7;font-size:13.5px}
+.ep-pg .quem{display:flex;align-items:center;gap:10px;text-align:left;padding:8px 12px;border:1px solid #3a3c43;border-radius:12px;width:100%}
+.ep-pg .quem .av{width:36px;height:36px;border-radius:50%;overflow:hidden;flex:none;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff}.ep-pg .quem .av img{width:100%;height:100%;object-fit:cover}
+.ep-pg .quem b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem small{display:block;color:#a9adb7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem>span:last-child{min-width:0}
+.ep-pg .acts{display:flex;gap:8px;justify-content:flex-end;width:100%;margin-top:6px}
+.ep-pg button{height:32px;padding:0 14px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:13px}.ep-pg button:hover{background:#3a3c43}
+.ep-pg button.sim{background:#d63a52;border-color:#d63a52;color:#fff;font-weight:600}.ep-pg button.sim:hover{background:#e84a62}
+.ep-pg button:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
+@keyframes epPgF{from{opacity:0}}@keyframes epPgE{from{opacity:0;transform:scale(.97)}}
+@media (prefers-reduced-motion:reduce){.ep-pg,.ep-pg .cx{animation:none}}
 .ep-conta-aviso{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483001;background:#2b2c31;color:#e9ebef;border:1px solid #4a4c55;border-radius:10px;padding:10px 16px;font:13.5px/1.4 'Segoe UI',system-ui,sans-serif;box-shadow:0 12px 30px rgba(0,0,0,.4)}
 .ep-conta .ep-conta-espaco{width:34px;height:34px;flex:none;border-radius:50%;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center;color:inherit}
 .ep-conta-espaco:hover,.ep-conta-espaco:focus-visible{background:color-mix(in srgb,currentColor 10%,transparent);outline:none}
@@ -105,6 +120,23 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const perfil = (novo) => (!novo && perfilP) || (perfilP = fetch('/conta', { credentials: 'same-origin', cache: 'no-store' })
     .then(r => r.ok && r.headers.get('x-porteiro') ? r.json() : null).catch(() => null));
 
+  // janela de confirmação no visual do Estúdio Problems (no lugar do confirm() do navegador); resolve true/false
+  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null }) {
+    return new Promise(fim => {
+      const d = document.createElement('div'); d.className = 'ep-pg';
+      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}"><div class="ic">${ICONES.sair}</div><div class="t">${esc(titulo)}</div>
+        ${pp ? `<div class="quem"><span class="av">${av(pp)}</span><span><b>${esc(pp.nome)}</b><small>${esc(pp.email)}</small></span></div>` : ''}
+        <p class="x">${esc(texto)}</p><div class="acts"><button type="button" data-n>Cancelar</button><button type="button" class="sim" data-s>${esc(ok)}</button></div></div>`;
+      document.body.appendChild(d);
+      const sai = v => { d.remove(); document.removeEventListener('keydown', tecla, true); fim(v); };
+      const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); sai(false); } };
+      document.addEventListener('keydown', tecla, true);
+      d.onclick = e => { if (e.target === d) sai(false); };
+      d.querySelector('[data-n]').onclick = () => sai(false); d.querySelector('[data-s]').onclick = () => sai(true);
+      d.querySelector('[data-n]').focus(); // o botão seguro fica selecionado
+    });
+  }
+
   function caixa(p) {
     const box = document.createElement('div'); box.className = 'ep-conta';
     const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems">${ICONES.inicio}<span>Menu</span></a>`;
@@ -123,10 +155,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <button class="it" type="button" role="menuitem" data-a="atualizar" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}Atualizar todos os sites</button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
-        <button class="it" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
+        <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
       pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else location.href = '/?conta=1'; };
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
-      pop.querySelector('[data-a=sair]').onclick = async () => { fecha(); if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
+      pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
+        if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu. Seus projetos salvos aqui continuam.', ok: 'Sair', perfil: p }))) return;
+        if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
       pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
     };
@@ -327,6 +361,6 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
     if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
 
-  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe };
+  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();
