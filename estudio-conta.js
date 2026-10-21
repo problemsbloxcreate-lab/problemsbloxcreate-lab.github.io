@@ -663,8 +663,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   function mensagensLiga() {
     if (MSG.ligado) return; MSG.ligado = true;
     puxaMensagens();
-    setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: não confere
-      const t = Date.now(), passo = document.visibilityState !== 'visible' ? 60000 : MSG.janela ? 4000 : 40000; // escondida: confere devagar (para o @ tocar em qualquer site) if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
+    setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: a cada 60 s
+      const t = Date.now(), passo = document.visibilityState !== 'visible' ? 60000 : MSG.janela ? 4000 : 40000; // escondida: confere devagar (para o @ tocar em qualquer site)
+      if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
       puxaMensagens(!!MSG.janela && t - MSG.abertoEm > 60000 && (MSG.abertoEm = t));
     }, 2000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { MSG.ultimaVolta = Date.now(); puxaMensagens(); } });
