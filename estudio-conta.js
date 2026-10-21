@@ -1145,7 +1145,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     return [...new Set(l)].slice(0, 30);
   };
   async function digital(u, modo) {
-    const r = await fetch(u, { cache: modo, credentials: 'same-origin', redirect: 'follow' });
+    const r = await fetch(u, { cache: modo, credentials: 'same-origin', redirect: 'follow', epFundo: 1 }); // epFundo: a tela de carregamento não espera esta conferência
     if (!r.ok) return null;
     const b = await r.arrayBuffer();
     try { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', b))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join(''); }

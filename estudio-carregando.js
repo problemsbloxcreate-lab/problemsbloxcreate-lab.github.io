@@ -15,7 +15,87 @@
 
    O visual é o MESMO do estudio-login.js: mudou lá, muda aqui também. */
 'use strict';
+/* ---------- motor do progresso (porcentagem + o que está carregando) ----------
+   Conta o que a página baixa enquanto a tela de carregamento está na frente: arquivos da página (scripts, estilos,
+   imagens), fetch e XHR. Mostra em qualquer tela que tenha [data-ep-pct], [data-ep-arq] e [data-ep-barra].
+   EstudioProgresso.esperarTudo(ms) = espera tudo baixar (imagens inclusive), no máximo ms; as telas usam antes de sumir.
+   Quem tem tela própria (menu, Animador, login) carrega este arquivo com  data-so-progresso  (só o motor, sem a tela). */
 (() => {
+  if (window.EstudioProgresso || window.top !== window) return;
+  const IGNORA = /\/(presenca|mensagens|sessao)(\/|\?|$)|^(data|blob|about|chrome-extension):/i;
+  const feitos = new Set(), pend = new Map(), pendEls = new Set(), vistos = new WeakSet(); let ativo = true, ultimo = '', etapa = '', mostrado = 0, alvo = 0, nId = 0, imgsTotal = 0, imgsOk = 0;
+  const abs = u => { try { return new URL(u, location.href).href.split('#')[0]; } catch { return String(u || ''); } };
+  const curto = u => { try { const x = new URL(u, location.href); let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
+  const muda = () => { if (ativo) agenda(); };
+  try { new PerformanceObserver(l => { for (const e of l.getEntries()) { if (IGNORA.test(e.name)) continue; feitos.add(abs(e.name)); if (!ultimo || pend.size === 0) ultimo = curto(e.name); } muda(); }).observe({ type: 'resource', buffered: true }); } catch { }
+  const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); muda(); return id; };
+  const acaba = id => { if (id == null) return; const u = pend.get(id); pend.delete(id); if (u) feitos.add(abs(u)); muda(); };
+  const f0 = window.fetch;
+  if (f0) window.fetch = function (i, o) { let u = ''; try { u = abs(typeof i === 'string' ? i : i?.url || String(i)); } catch { } const id = o?.epFundo ? null : comeca(u); const p = f0.apply(this, arguments); if (id != null) p.then(() => acaba(id), () => acaba(id)); return p; };
+  try { const X = XMLHttpRequest.prototype, op = X.open, se = X.send;
+    X.open = function (m, u) { this.__epU = abs(u); return op.apply(this, arguments); };
+    X.send = function () { const id = comeca(this.__epU || ''); if (id != null) this.addEventListener('loadend', () => acaba(id), { once: true }); return se.apply(this, arguments); }; } catch { }
+  // elementos que baixam algo: scripts, estilos e imagens (os de "lazy" só baixam quando aparecem: não esperam)
+  const olha = el => {
+    if (!ativo || !el || el.nodeType !== 1) return;
+    const t = el.tagName, u = t === 'IMG' ? (el.currentSrc || el.src) : t === 'SCRIPT' ? el.src : t === 'LINK' && /stylesheet/i.test(el.rel) ? el.href : '';
+    if (!u || IGNORA.test(u) || vistos.has(el)) return; vistos.add(el);
+    if (t === 'IMG') { if (el.loading === 'lazy') return; imgsTotal++; if (el.complete) { imgsOk++; return; } }
+    else if (feitos.has(abs(u))) return;
+    pendEls.add(el); ultimo = curto(u);
+    const fim = () => { if (pendEls.delete(el)) { if (t === 'IMG') imgsOk++; feitos.add(abs(u)); muda(); } };
+    el.addEventListener('load', fim, { once: true }); el.addEventListener('error', fim, { once: true });
+    if (t !== 'IMG') setTimeout(fim, 20000); // segurança
+  };
+  const mo = new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) { if (n.nodeType !== 1) continue; olha(n); if (n.querySelectorAll) n.querySelectorAll('img,script[src],link[rel~="stylesheet"]').forEach(olha); } muda(); });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+  document.querySelectorAll('img').forEach(olha);
+  const restante = () => { for (const el of pendEls) { if (!el.isConnected) pendEls.delete(el); else if (el.tagName === 'IMG' && el.complete) { pendEls.delete(el); imgsOk++; } } return pend.size + pendEls.size; };
+  const calcula = () => {
+    const falta = restante(), tot = feitos.size + falta, raw = tot ? feitos.size / tot : 0;
+    const cap = document.readyState === 'loading' ? 60 : document.readyState === 'interactive' ? 85 : 97;
+    alvo = Math.max(alvo, Math.min(cap, Math.round(4 + raw * (cap - 4))));
+  };
+  const texto = () => {
+    if (etapa) return etapa;
+    const imgsF = [...pendEls].filter(e => e.tagName === 'IMG').length;
+    if (pend.size) return 'Baixando ' + curto([...pend.values()].pop());
+    if (imgsF) return `Carregando imagens (${imgsOk} de ${imgsOk + imgsF})`;
+    if (pendEls.size) return 'Carregando ' + curto([...pendEls].pop().src || [...pendEls].pop().href || '');
+    return ultimo ? 'Pronto: ' + ultimo : 'Abrindo…';
+  };
+  const pinta = () => {
+    const t = texto();
+    document.querySelectorAll('[data-ep-pct]').forEach(e => e.textContent = Math.round(mostrado) + '%');
+    document.querySelectorAll('[data-ep-arq]').forEach(e => { if (e.textContent !== t) e.textContent = t; });
+    document.querySelectorAll('[data-ep-barra]').forEach(e => e.style.width = mostrado.toFixed(1) + '%');
+  };
+  let rodando = false;
+  let semTela = 0;
+  const passo = () => { if (document.readyState === 'complete' && !document.querySelector('[data-ep-pct]')) { if (++semTela > 90) { ativo = false; mo.disconnect(); rodando = false; return; } } else semTela = 0; // nenhuma tela mostrando: para de contar
+    calcula(); mostrado += Math.max(.4, (alvo - mostrado) * .18); if (mostrado > alvo) mostrado = alvo; pinta(); if (ativo && mostrado < 100) requestAnimationFrame(passo); else rodando = false; };
+  const agenda = () => { if (!rodando) { rodando = true; requestAnimationFrame(passo); } };
+  agenda(); document.addEventListener('readystatechange', muda);
+  let esperando = null;
+  window.EstudioProgresso = {
+    get pct() { return Math.round(mostrado); }, get texto() { return texto(); },
+    etapa(t) { etapa = String(t || ''); muda(); },
+    // espera os arquivos e imagens que a página ainda está baixando (no máximo ms); termina em 100%
+    esperarTudo(ms = 12000) {
+      if (!ativo) { ativo = true; mo.observe(document.documentElement, { childList: true, subtree: true }); document.querySelectorAll('img,script[src],link[rel~="stylesheet"]').forEach(olha); alvo = Math.min(alvo, 90); mostrado = Math.min(mostrado, 90); agenda(); } // tela que volta (ex.: menu depois do login)
+      return esperando || (esperando = new Promise(ok => {
+        const ini = Date.now(); let quieto = 0;
+        const fim = () => { clearInterval(t); alvo = 100; mostrado = 100; pinta(); etapa = ''; esperando = null; setTimeout(() => { if (!esperando) { ativo = false; mo.disconnect(); } }, 500); ok(); };
+        const t = setInterval(() => { calcula(); muda();
+          const livre = document.readyState === 'complete' && restante() === 0;
+          quieto = livre ? quieto + 100 : 0; if (quieto >= 300 || Date.now() - ini > ms) fim(); }, 100);
+      }));
+    },
+  };
+})();
+
+(() => {
+  if (document.currentScript?.hasAttribute('data-so-progresso')) return; // a página tem tela própria: só o motor acima
   if (window.EstudioCarregando || window.EstudioLogin || window.top !== window) return; // já tem tela, ou está dentro de um quadro
   const NOME_PROG = ((p => [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/shorts/', 'SHORTS']].find(([k]) => p.startsWith(k))?.[1] || 'ESTÚDIO PROBLEMS')(location.pathname));
   const root = document.documentElement, inicio = performance.now();
@@ -30,7 +110,9 @@
 #estudio-porta .ep-nm{font:800 26px/1.05 'Segoe UI',system-ui,sans-serif;letter-spacing:1.5px}
 #estudio-porta .ep-sb{color:#9aa0ab;font-size:12.5px;letter-spacing:.4px}
 #estudio-porta .ep-br{width:180px;height:4px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;margin:18px 0 8px;position:relative}
-#estudio-porta .ep-br::after{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);animation:epBarra 1.1s ease-in-out infinite}
+#estudio-porta .ep-br>i{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);transition:width .2s linear}
+#estudio-porta .ep-br::after{content:'';position:absolute;top:0;bottom:0;left:0;width:30%;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:epBarra 1.3s ease-in-out infinite}
+#estudio-porta .ep-pc{display:flex;gap:8px;justify-content:center;align-items:baseline;font-size:11.5px;color:#8d929c;min-height:17px;max-width:340px;margin:-4px 0 4px}#estudio-porta .ep-pc b{color:#cfd3da;font-weight:700;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}#estudio-porta .ep-pc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;text-align:left}
 #estudio-porta .ep-m{color:#b9bdc6;font-size:13px;min-height:20px;max-width:340px}
 #estudio-porta .ep-lg.ep-prog{background:none;box-shadow:0 14px 40px rgba(0,0,0,.45)}#estudio-porta .ep-lg .ep-img{width:68px;height:68px;display:block;image-rendering:pixelated}#estudio-porta .ep-lg.ep-prog .ep-cam,#estudio-porta .ep-lg:not(.ep-prog) .ep-img,#estudio-porta.ep-erro .ep-lg .ep-img{display:none}#estudio-porta.ep-erro .ep-lg .ep-cam{display:block}
 @keyframes epBarra{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}@keyframes epPulso{50%{transform:scale(1.05)}}@keyframes epEntra{from{opacity:0}}
@@ -39,7 +121,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = document.createElement('div');
   el.id = 'estudio-porta'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
-  el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(NOME_PROG)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"></div><div class="ep-m" data-m>Abrindo…</div></div>`;
+  el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(NOME_PROG)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m>Abrindo…</div></div>`;
   // entra já, antes do <body> existir; quando o <body> chega, a tela passa para dentro dele (fica por cima de tudo)
   root.appendChild(el);
   const paraBody = () => { if (document.body && el.parentNode !== document.body) document.body.appendChild(el); };
@@ -51,7 +133,7 @@
     const espera = Math.max(0, 350 - (performance.now() - inicio)); // não pisca nas páginas que abrem num instante
     setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('ep-saindo'); setTimeout(() => el.remove(), 380); })), espera); // 2 quadros: o programa já desenhou por baixo
   };
-  const talvez = () => { if (carregou && seguros <= 0) fecha(); };
+  const talvez = () => { if (carregou && seguros <= 0) (window.EstudioProgresso?.esperarTudo(12000) || Promise.resolve()).then(() => { if (seguros <= 0) fecha(); }); }; // espera imagens e arquivos que ainda estão baixando
   window.EstudioCarregando = {
     segurar() { seguros++; },
     pronto() { seguros = Math.max(0, seguros - 1); talvez(); },
@@ -60,5 +142,5 @@
   };
   const aoCarregar = () => { carregou = true; talvez(); };
   if (document.readyState === 'complete') aoCarregar(); else addEventListener('load', aoCarregar, { once: true });
-  setTimeout(fecha, 20000); // segurança: a tela nunca prende o programa
+  setTimeout(fecha, 25000); // segurança: a tela nunca prende o programa
 })();

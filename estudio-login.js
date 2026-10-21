@@ -52,7 +52,9 @@
 #estudio-porta .ep-nm{font:800 26px/1.05 'Segoe UI',system-ui,sans-serif;letter-spacing:1.5px}
 #estudio-porta .ep-sb{color:#9aa0ab;font-size:12.5px;letter-spacing:.4px}
 #estudio-porta .ep-br{width:180px;height:4px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;margin:18px 0 8px;position:relative}
-#estudio-porta .ep-br::after{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);animation:epBarra 1.1s ease-in-out infinite}
+#estudio-porta .ep-br>i{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);transition:width .2s linear}
+#estudio-porta .ep-br::after{content:'';position:absolute;top:0;bottom:0;left:0;width:30%;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:epBarra 1.3s ease-in-out infinite}
+#estudio-porta .ep-pc{display:flex;gap:8px;justify-content:center;align-items:baseline;font-size:11.5px;color:#8d929c;min-height:17px;max-width:340px;margin:-4px 0 4px}#estudio-porta .ep-pc b{color:#cfd3da;font-weight:700;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}#estudio-porta .ep-pc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;text-align:left}#estudio-porta.ep-erro .ep-pc{display:none}
 #estudio-porta.ep-erro .ep-br{display:none}#estudio-porta.ep-erro .ep-lg{animation:none;background:linear-gradient(135deg,#ff6b6b,#ff9a62)}
 #estudio-porta .ep-m{color:#b9bdc6;font-size:13px;min-height:20px;max-width:340px}#estudio-porta .ep-m .e,#estudio-porta .ep-m.err{color:#ff8a9a}
 #estudio-porta [hidden]{display:none!important}#estudio-porta a.ep-bt{display:inline-flex;margin-top:12px;padding:9px 18px;border-radius:10px;background:#3d8bff;color:#fff;text-decoration:none;font-weight:600}#estudio-porta a.ep-bt:hover{filter:brightness(1.08)}
@@ -64,7 +66,7 @@
   const menuUrl = volta => { const u = new URL(CFG.menu, location.href); if (volta) u.searchParams.set('volta', location.href); return u.href; };
   const porta = () => {
     let el = document.getElementById('estudio-porta');
-    if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(NOME_PROG)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"></div><div class="ep-m" data-m></div></div>`; (document.body || root).appendChild(el); if (!document.body) addEventListener('DOMContentLoaded', () => { if (el.isConnected && el.parentNode !== document.body) document.body.appendChild(el); }, { once: true }); }
+    if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(NOME_PROG)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m></div></div>`; (document.body || root).appendChild(el); if (!document.body) addEventListener('DOMContentLoaded', () => { if (el.isConnected && el.parentNode !== document.body) document.body.appendChild(el); }, { once: true }); }
     return el;
   };
   let aberto = false; // depois de liberar, nenhuma mensagem atrasada recria a tela de espera por cima da página
@@ -109,7 +111,9 @@
       // a página aparece por baixo e a tela de carregamento some com fade (só visual: o acesso já foi conferido acima)
       const abre = () => { aberto = true; const pt = document.getElementById('estudio-porta'); root.classList.remove('estudio-trancado'); if (pt) requestAnimationFrame(() => requestAnimationFrame(() => { pt.classList.add('ep-saindo'); setTimeout(() => pt.remove(), 380); })); // espera o programa desenhar por baixo document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
         API.perfil().then(p => document.dispatchEvent(new CustomEvent('estudio-perfil', { detail: p }))); };
-      document.body ? abre() : addEventListener('DOMContentLoaded', abre, { once: true });
+      // espera também as imagens e arquivos que ainda estão baixando (porcentagem na tela; no máximo 12 s)
+      const abreTudo = async () => { try { await window.EstudioProgresso?.esperarTudo(12000); } catch { } abre(); };
+      document.body ? abreTudo() : addEventListener('DOMContentLoaded', abreTudo, { once: true });
       return j.email;
     } catch (e) {
       mostra(`<div class="e">${esc(e.message || e)}</div><a class="ep-bt" href="${esc(menuUrl(false))}">Ir para o menu</a>`);
