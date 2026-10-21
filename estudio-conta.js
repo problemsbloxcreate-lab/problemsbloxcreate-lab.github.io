@@ -58,6 +58,12 @@
 .ep-conta .ep-conta-btn{width:34px;height:34px;flex:none;line-height:1;text-decoration:none;font-size:14px;border-radius:50%;border:0;padding:0;cursor:pointer;overflow:hidden;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0);box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .ep-conta-btn:hover,.ep-conta-btn:focus-visible{filter:brightness(1.1);outline:2px solid rgba(61,139,255,.6);outline-offset:2px}
 .ep-conta-btn img{width:100%;height:100%;object-fit:cover;display:block}
+.ep-conta-fw{position:relative;display:inline-grid;flex:none}.ep-conta-fw>i{display:none}
+.ep-conta.ep-novo .ep-conta-btn{box-shadow:0 0 0 2px #b46cff,0 2px 12px rgba(180,108,255,.55)}
+.ep-conta.ep-novo .ep-conta-fw>i{display:block;position:absolute;right:-2px;top:-2px;width:11px;height:11px;border-radius:50%;background:#b46cff;border:2px solid #1b1c21;pointer-events:none;animation:epNovo 1.8s ease-in-out infinite}
+@keyframes epNovo{50%{box-shadow:0 0 0 4px rgba(180,108,255,.25)}}
+.ep-conta-pop .it.novo,.ep-conta-pop .it.novo svg{color:#d3a8ff}.ep-conta-pop .it.novo{background:rgba(160,90,255,.16);box-shadow:inset 0 0 0 1px rgba(180,108,255,.45)}.ep-conta-pop .it.novo:hover,.ep-conta-pop .it.novo:focus-visible{background:rgba(160,90,255,.28)}
+.ep-conta-pop .it.novo small{display:block;font-size:11px;color:#b98cf0;font-weight:500}
 .ep-conta-pop{box-sizing:border-box;line-height:1.4;position:absolute;right:0;top:42px;width:270px;background:#2b2c31;color:#e9ebef;border:1px solid #4a4c55;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:6px;text-align:left}
 .ep-conta-pop[hidden]{display:none}
 .ep-conta-head{display:flex;align-items:center;gap:10px;padding:8px 8px 10px;border-bottom:1px solid #1f2024;margin-bottom:4px}
@@ -181,10 +187,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   function caixa(p) {
-    const box = document.createElement('div'); box.className = 'ep-conta';
+    const box = document.createElement('div'); box.className = 'ep-conta' + (VERSAO.nova ? ' ep-novo' : '');
     const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems">${ICONES.inicio}<span>Menu</span></a>`;
     const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
-    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button>
+    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i title="Tem versão nova: atualize os sites"></i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
     const fecha = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
@@ -196,7 +202,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : `<a class="it" href="/adm" role="menuitem">${ICONES.adm}ADM</a>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
-        <button class="it" type="button" role="menuitem" data-a="atualizar" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}Atualizar todos os sites</button>
+        <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
         <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
@@ -481,7 +487,72 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
     if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
 
+  /* ---------- versão nova: confere de vez em quando se algum site mudou ----------
+     Guarda uma "impressão digital" (SHA-256) desta página, dos scripts/estilos dela e da página de cada programa.
+     - Logo ao abrir: compara o que o navegador usou com o que está no servidor. Se a tela de carregamento ainda estiver
+       na frente, recarrega na hora (a pessoa nunca vê a versão velha); se já passou, acende o aviso.
+     - Depois, a cada ~4 min com a aba à vista (e quando a aba volta a aparecer), confere de novo.
+     Aviso = círculo roxo na foto da conta e "Atualizar todos os sites" roxo no menu da conta. */
+  const VERSAO = { nova: false, base: new Map(), instavel: new Set(), ultima: 0 };
+  const SITES = ['/', '/animador/', '/shorts/', '/editor/', '/modelador/'];
+  const mesmaOrigem = u => { try { const x = new URL(u, location.href); return x.origin === location.origin ? x.pathname + x.search : null; } catch { return null; } };
+  const recursosDaPagina = () => {
+    const l = [location.pathname + location.search, '/estudio-conta.js', '/estudio-login.js', '/estudio-carregando.js'];
+    document.querySelectorAll('script[src],link[rel~="stylesheet"][href]').forEach(e => { const u = mesmaOrigem(e.src || e.href); if (u) l.push(u); });
+    return [...new Set(l)].slice(0, 30);
+  };
+  async function digital(u, modo) {
+    const r = await fetch(u, { cache: modo, credentials: 'same-origin', redirect: 'follow' });
+    if (!r.ok) return null;
+    const b = await r.arrayBuffer();
+    try { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', b))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join(''); }
+    catch { let h = 2166136261; const v = new Uint8Array(b); for (let i = 0; i < v.length; i++) h = Math.imul(h ^ v[i], 16777619); return v.length + ':' + (h >>> 0); }
+  }
+  const telaDeCarregamento = () => [...document.querySelectorAll('#estudio-porta,#turma-login')].some(e => !e.classList.contains('ep-saindo') && !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).opacity !== '0');
+  function marcaNova(onde) {
+    if (VERSAO.nova) return; VERSAO.nova = true; VERSAO.onde = onde;
+    document.querySelectorAll('.ep-conta').forEach(b => b.classList.add('ep-novo'));
+    try { dispatchEvent(new CustomEvent('estudio-versao-nova', { detail: { onde } })); } catch { }
+  }
+  async function recarregaJa() {
+    const k = 'ep-recarregou:' + location.pathname; let t = 0; try { t = +sessionStorage.getItem(k) || 0; } catch { }
+    if (Date.now() - t < 60000) return false; // já recarregou agora há pouco: não entra em laço
+    try { sessionStorage.setItem(k, String(Date.now())); } catch { }
+    try { const regs = await navigator.serviceWorker?.getRegistrations?.() || []; await Promise.all(regs.map(r => r.update().catch(() => { }))); } catch { }
+    try { if (self.caches) for (const n of await caches.keys()) await caches.delete(n); } catch { }
+    location.reload(); return true;
+  }
+  async function confereVersao(primeira) {
+    if (VERSAO.nova || VERSAO.rodando) return; VERSAO.rodando = true; VERSAO.ultima = Date.now();
+    try {
+      const lista = [...new Set([...recursosDaPagina(), ...SITES])];
+      for (const u of lista) {
+        if (VERSAO.instavel.has(u) || VERSAO.nova) continue;
+        let agora; try { agora = await digital(u, 'no-cache'); } catch { continue; }
+        if (!agora) continue;
+        if (!VERSAO.base.has(u)) {
+          // primeira vez: o que este navegador está usando (cópia guardada) é a base
+          let usado = agora; if (primeira && !SITES.includes(u) || u === location.pathname + location.search) { try { usado = (await digital(u, 'force-cache')) || agora; } catch { } }
+          VERSAO.base.set(u, usado);
+          if (usado === agora) continue;
+        } else if (VERSAO.base.get(u) === agora) continue;
+        // mudou: confere mais uma vez (página que muda sozinha a cada pedido não conta)
+        let de_novo; try { de_novo = await digital(u, 'no-cache'); } catch { }
+        if (de_novo !== agora) { VERSAO.instavel.add(u); continue; }
+        if (telaDeCarregamento() && (await recarregaJa())) return;
+        marcaNova(u);
+      }
+    } finally { VERSAO.rodando = false; }
+  }
+  if (window.top === window && /^https?:$/.test(location.protocol)) {
+    const comeca = () => { confereVersao(true).catch(() => { }); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comeca, { once: true }); else comeca();
+    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 3.5 * 60000) confereVersao().catch(() => { }); }, 30000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); });
+  }
+
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
+    versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
     nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();
