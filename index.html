@@ -200,7 +200,7 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-i.abre{cursor:pointer}.nv-i.abre:hover,.nv-i.abre:focus-visible{background:rgba(255,255,255,.04);outline:none}.nv-ti{display:inline-grid;place-items:center;width:18px;color:var(--tx2);flex:none}
 .nv-b{width:26px;height:26px;color:var(--tx2);flex:none;border:0;background:none;border-radius:6px;display:inline-grid;place-items:center;cursor:pointer}.nv-b:hover{color:var(--tx);background:rgba(255,255,255,.08)}
 .nv-x{color:#ff8f8f!important}.nv-x:hover{color:#ffb3b3!important;background:rgba(255,80,80,.16)!important}
-.nv-bg{margin-left:8px;display:inline-flex;align-items:center;gap:5px}.nv-limpa{margin-left:6px}.nv-aviso{color:#ffcf7a;margin-bottom:8px}
+.nv-bg{margin-left:8px;display:inline-flex;align-items:center;gap:5px}.nv-limpa{margin-left:6px}.nv-aviso{color:#ffcf7a;margin-bottom:8px}.nv-info{border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--tx2);display:grid;gap:4px}
 #nv-tudo{display:inline-flex;align-items:center;gap:6px}
 .nv-ver .mc.nv-vc{width:min(620px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;gap:12px}.nv-ver .mc.nv-vc.largo{width:min(980px,100%)}
 .nv-vh{display:flex;align-items:center;gap:10px}.nv-vh [data-fecha]{width:32px;height:32px;border-radius:8px;border:0;background:none;color:var(--tx2);cursor:pointer;display:grid;place-items:center;flex:none}.nv-vh [data-fecha]:hover{background:rgba(255,255,255,.08);color:var(--tx)}.nv-vn{flex:1;min-width:0}.nv-vn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nv-vn small{color:var(--tx2);font-size:12px}
@@ -1134,48 +1134,56 @@ const NV_FONTE = {
       nota: 'Espaço grátis da Cloudflare (KV) da conta antiga, que guarda os sons, as gravações das vozes e o que o Shorts e o Editor usam.' };
   },
   async firebase() {
-    for (const f of ['firebase-storage-compat.js', 'firebase-firestore-compat.js']) if (!document.querySelector(`script[data-nv="${f}"]`)) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = SDK + f; s.dataset.nv = f; s.onload = ok; s.onerror = () => no(new Error('Não consegui carregar o Firebase.')); document.head.appendChild(s); });
-    const avisos = [], grupos = [];
+    // pela API REST do Google com o login de quem está na tela: responde na hora (o SDK ficava esperando quando a parte não existe)
+    const cfg = MENU_CONFIG.firebase, tk = await token(), avisos = [], grupos = [], info = [];
+    const pede = async (u, opt = {}, tipoAuth = 'Bearer') => { const r = await fetch(u, { ...opt, headers: { authorization: tipoAuth + ' ' + tk, ...(opt.headers || {}) } }); return r; };
+    const motivo = async r => { const j = await r.json().catch(() => ({})), m = String(j.error?.message || j.error?.status || ''); return { st: /has not been used|is disabled|SERVICE_DISABLED|not enabled|does not exist|bucket/i.test(m + ' ' + (j.error?.status || '')) ? 404 : r.status, m }; }; // API desligada ou banco inexistente = "não está ligado"
     // Storage (arquivos)
+    const ST = `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(cfg.storageBucket)}/o`;
     try {
-      const st = firebase.storage(), arqs = [];
-      const anda = async (ref, d) => { const l = await Promise.race([ref.listAll(), new Promise((_, no) => setTimeout(() => no(new Error('O Storage não respondeu.')), 12000))]); arqs.push(...l.items); if (d < 6) for (const p of l.prefixes) await anda(p, d + 1); };
-      await anda(st.ref(), 0);
+      const arqs = []; let pg = '';
+      do { const r = await pede(ST + '?maxResults=1000' + (pg ? '&pageToken=' + encodeURIComponent(pg) : ''), {}, 'Firebase');
+        if (!r.ok) { const e = await motivo(r); throw Object.assign(new Error(e.m), { st: e.st }); }
+        const j = await r.json(); arqs.push(...(j.items || [])); pg = j.nextPageToken || ''; } while (pg && arqs.length < 5000);
       const G = {};
-      for (const r of arqs.slice(0, 800)) {
-        const m = await r.getMetadata().catch(() => ({})), pasta = r.fullPath.includes('/') ? r.fullPath.split('/')[0] : 'Arquivos soltos';
-        const g = G[pasta] || (G[pasta] = { nome: 'Storage · ' + pasta, bytes: 0, n: 0, itens: [] });
-        g.itens.push({ nome: r.fullPath.split('/').slice(1).join('/') || r.name, bytes: +m.size || 0, tipo: m.contentType || '', em: m.timeCreated ? Date.parse(m.timeCreated) : null, ref: 's:' + r.fullPath,
-          abrir: async () => { const url = await r.getDownloadURL(); try { const x = await fetch(url); if (x.ok) return await x.blob(); } catch { } return { url }; } });
-        g.bytes += +m.size || 0; g.n++;
+      for (const o of arqs) {
+        const pasta = o.name.includes('/') ? o.name.split('/')[0] : 'Arquivos soltos', g = G[pasta] || (G[pasta] = { nome: 'Storage · ' + pasta, bytes: 0, n: 0, itens: [] }), url = ST + '/' + encodeURIComponent(o.name);
+        g.itens.push({ nome: o.name.split('/').slice(1).join('/') || o.name, bytes: +o.size || 0, tipo: o.contentType || '', em: o.timeCreated ? Date.parse(o.timeCreated) : null, ref: 's:' + o.name,
+          abrir: async () => { const r = await pede(url + '?alt=media', {}, 'Firebase'); if (!r.ok) throw new Error('O Firebase não entregou o arquivo (' + r.status + ').'); return r.blob(); } });
+        g.bytes += +o.size || 0; g.n++;
       }
       grupos.push(...Object.values(G));
-    } catch (e) { avisos.push('Storage: ' + nvErroFb(e)); }
+      if (!arqs.length) info.push('Arquivos (Storage): ligado, mas vazio.');
+    } catch (e) { info.push('Arquivos (Storage): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : e.st === 403 || e.st === 401 ? 'as regras do Firebase não deixam esta conta ver.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
     // Firestore (dados): as coleções que os programas já usaram
+    const FS = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(cfg.projectId)}/databases/(default)/documents`;
+    const valor = v => v == null ? null : 'stringValue' in v ? v.stringValue : 'integerValue' in v ? +v.integerValue : 'doubleValue' in v ? v.doubleValue : 'booleanValue' in v ? v.booleanValue : 'nullValue' in v ? null
+      : 'timestampValue' in v ? v.timestampValue : 'mapValue' in v ? Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, valor(x)])) : 'arrayValue' in v ? (v.arrayValue.values || []).map(valor)
+      : 'referenceValue' in v ? v.referenceValue : 'bytesValue' in v ? '(bytes)' : 'geoPointValue' in v ? v.geoPointValue : v;
     try {
-      const db = firebase.firestore(), COLS = ['edits', 'dub', 'pedidos', 'diag', 'insertimgs', 'modelos', 'skinsup', 'personagens', 'cenarios', 'menu', 'equipe', 'projetos'];
+      const COLS = ['edits', 'dub', 'pedidos', 'diag', 'insertimgs', 'modelos', 'skinsup', 'personagens', 'cenarios', 'menu', 'equipe', 'projetos', 'usuarios', 'users'];
+      let semPerm = 0, achou = 0;
       for (const c of COLS) {
-        let q; try { q = await Promise.race([db.collection(c).limit(500).get(), new Promise((_, no) => setTimeout(() => no(Object.assign(new Error('O Firestore não respondeu (não está ativado ou está fora do ar).'), { code: 'timeout' })), 9000))]); } catch (e) { if (/permission|insufficient/i.test(e.code + e.message)) { avisos.push(`Firestore (${c}): sem permissão para ler.`); continue; } throw e; }
-        if (q.empty) continue;
+        const r = await pede(FS + '/' + c + '?pageSize=300');
+        if (!r.ok) { const e = await motivo(r); if (e.st === 404 || /does not exist|NOT_FOUND/i.test(e.m)) throw Object.assign(new Error(e.m), { st: 404 }); if (e.st === 403 || e.st === 401) { semPerm++; continue; } throw Object.assign(new Error(e.m), { st: e.st }); }
+        const j = await r.json(), docs = j.documents || []; if (!docs.length) continue; achou++;
         const g = { nome: 'Firestore · ' + c, bytes: 0, n: 0, itens: [] };
-        q.forEach(d => { const txt = JSON.stringify(d.data(), null, 2), b = new Blob([txt], { type: 'application/json' });
-          g.itens.push({ nome: d.id + '.json', bytes: b.size, tipo: 'application/json', ref: 'd:' + c + '/' + d.id, abrir: async () => b }); g.bytes += b.size; g.n++; });
+        for (const d of docs) { const id = d.name.split('/').pop(), txt = JSON.stringify(Object.fromEntries(Object.entries(d.fields || {}).map(([k, x]) => [k, valor(x)])), null, 2), b = new Blob([txt], { type: 'application/json' });
+          g.itens.push({ nome: id + '.json', bytes: b.size, tipo: 'application/json', em: d.updateTime ? Date.parse(d.updateTime) : null, ref: 'd:' + d.name.split('/documents/')[1], abrir: async () => b }); g.bytes += b.size; g.n++; }
         grupos.push(g);
       }
-    } catch (e) { avisos.push('Firestore: ' + nvErroFb(e)); }
+      if (!achou) info.push(semPerm === COLS.length ? 'Dados (Firestore): as regras do Firebase não deixam esta conta ver.' : 'Dados (Firestore): ligado, mas sem nada guardado.');
+    } catch (e) { info.push('Dados (Firestore): ' + (e.st === 404 ? 'não está ligado neste projeto, então não guarda nada.' : 'não respondeu (' + (e.message || e.st || 'sem conexão') + ').')); }
     const total = grupos.reduce((t, g) => t + g.bytes, 0);
-    return { total, limite: 5 * 1073741824, projetos: grupos.length ? [{ nome: 'Firebase (problems-estudios)', bytes: total, grupos: grupos.sort((a, b) => b.bytes - a.bytes) }] : [],
-      vazio: 'Nada guardado no Firebase. Hoje ele só cuida do login com o Google; os arquivos da equipe ficam na Cloudflare.',
-      avisos, apagar: async refs => {
-        for (const r of refs) { if (r.startsWith('s:')) await firebase.storage().ref(r.slice(2)).delete(); else if (r.startsWith('d:')) await firebase.firestore().doc(r.slice(2)).delete(); }
+    return { total, limite: 5 * 1073741824, projetos: grupos.length ? [{ nome: 'Firebase (' + cfg.projectId + ')', bytes: total, grupos: grupos.sort((a, b) => b.bytes - a.bytes) }] : [],
+      vazio: 'Nada guardado no Firebase. Hoje ele só cuida do login com o Google; os arquivos da equipe ficam na Cloudflare (abas Equipe e Sons).',
+      info, apagar: async refs => {
+        for (const r of refs) { const u = r.startsWith('s:') ? ST + '/' + encodeURIComponent(r.slice(2)) : FS + '/' + r.slice(2).split('/').map(encodeURIComponent).join('/');
+          const x = await pede(u, { method: 'DELETE' }, r.startsWith('s:') ? 'Firebase' : 'Bearer'); if (!x.ok && x.status !== 404) throw new Error('O Firebase não deixou apagar (' + x.status + ').'); }
       },
       nota: 'Plano grátis do Firebase: 5 GB de arquivos (Storage) e 1 GB de dados (Firestore).' };
   },
 };
-const nvErroFb = e => { const c = String(e?.code || ''), m = String(e?.message || e);
-  if (/permission|unauthorized|insufficient/i.test(c + m)) return 'as regras do Firebase não deixam esta conta ler.';
-  if (/not-found|does not exist|NOT_FOUND|no default bucket|bucket/i.test(c + m)) return 'não está ativado neste projeto (nada guardado).';
-  return m.slice(0, 160); };
 async function nvApagaEquipe(refs) {
   const r = await fetch('/nuvem-uso', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + await token() }, body: JSON.stringify({ refs }) });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.');
@@ -1201,7 +1209,7 @@ async function renderNuvem(manter) {
       ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${nvFmt(it.bytes)}</span>${btBaixa(it)}${btApaga(it)}</div>`; };
   const btGrupo = g => (g.itens.some(it => it.abrir || it.arqs?.length) ? `<button class="btn sm nv-bg" type="button" data-bg="${GRUPOS.push(g) - 1}" title="Baixar tudo deste grupo num .zip">${NVI.baixar}Baixar</button>` : '')
     + (g.itens.some(it => it.ref && !it.protegido) ? `<button class="btn sm nv-limpa" type="button" data-g="${GRUPOS.push(g) - 1}" title="Apagar tudo deste grupo (o que é protegido fica)">${NVI.lixo}Limpar</button>` : '');
-  box.innerHTML = `${(j.avisos || []).map(a => `<div class="hint nv-aviso">${esc(a)}</div>`).join('')}
+  box.innerHTML = `${(j.avisos || []).map(a => `<div class="hint nv-aviso">${esc(a)}</div>`).join('')}${(j.info || []).length ? `<div class="nv-info">${j.info.map(a => `<div>${esc(a)}</div>`).join('')}</div>` : ''}
     <div class="nv-top"><div><b>${nvFmt(j.total)}</b> <small>usados de ${nvFmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${nvFmt(livre)}</b> <small>livres</small></div>
       ${baixaveis.length ? `<button class="btn sm" type="button" id="nv-tudo" title="Baixar tudo desta nuvem num .zip">${NVI.baixar}Baixar tudo</button>` : ''}</div>
     <div class="nv-barra">${P.map((pr, i) => `<i style="width:${pr.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(pr.nome)}: ${nvFmt(pr.bytes)}"></i>`).join('')}</div>
