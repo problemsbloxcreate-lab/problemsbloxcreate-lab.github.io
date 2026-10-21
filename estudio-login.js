@@ -39,10 +39,12 @@
   const root = document.documentElement;
   root.classList.add('estudio-trancado');
   const st = document.createElement('style');
-  // tela de carregamento padrão de todos os programas (logo, NOME do programa, barra andando e a mensagem)
+  // tela de carregamento padrão de todos os programas (logo, NOME do programa, barra andando e a mensagem); entra e sai com fade.
+  // O mesmo visual está no estudio-carregando.js (Shorts, Editor) e no js/auth.js do Animador: mudou aqui, muda lá.
   st.textContent = `html.estudio-trancado body>*:not(#estudio-porta){display:none!important}
-#estudio-porta{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);font:14px/1.5 'Segoe UI',system-ui,-apple-system,sans-serif;color:#e9ebef;padding:16px;-webkit-user-select:none;user-select:none}
-#estudio-porta .ep-c{width:min(380px,100%);text-align:center;display:grid;justify-items:center;gap:4px}
+#estudio-porta{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);font:14px/1.5 'Segoe UI',system-ui,-apple-system,sans-serif;color:#e9ebef;padding:16px;-webkit-user-select:none;user-select:none;transition:opacity .3s ease}
+#estudio-porta.ep-saindo{opacity:0;pointer-events:none}
+#estudio-porta .ep-c{width:min(380px,100%);text-align:center;display:grid;justify-items:center;gap:4px;animation:epEntra .32s ease both}
 #estudio-porta .ep-lg{width:68px;height:68px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,#3d8bff,#19d3f0);box-shadow:0 14px 40px rgba(61,139,255,.35);margin-bottom:12px;animation:epPulso 1.6s ease-in-out infinite}
 #estudio-porta .ep-nm{font:800 26px/1.05 'Segoe UI',system-ui,sans-serif;letter-spacing:1.5px}
 #estudio-porta .ep-sb{color:#9aa0ab;font-size:12.5px;letter-spacing:.4px}
@@ -51,8 +53,8 @@
 #estudio-porta.ep-erro .ep-br{display:none}#estudio-porta.ep-erro .ep-lg{animation:none;background:linear-gradient(135deg,#ff6b6b,#ff9a62)}
 #estudio-porta .ep-m{color:#b9bdc6;font-size:13px;min-height:20px;max-width:340px}#estudio-porta .ep-m .e,#estudio-porta .ep-m.err{color:#ff8a9a}
 #estudio-porta [hidden]{display:none!important}#estudio-porta a.ep-bt{display:inline-flex;margin-top:12px;padding:9px 18px;border-radius:10px;background:#3d8bff;color:#fff;text-decoration:none;font-weight:600}#estudio-porta a.ep-bt:hover{filter:brightness(1.08)}
-@keyframes epBarra{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}@keyframes epPulso{50%{transform:scale(1.05)}}
-@media (prefers-reduced-motion:reduce){#estudio-porta .ep-lg,#estudio-porta .ep-br::after{animation:none}}`;
+@keyframes epBarra{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}@keyframes epPulso{50%{transform:scale(1.05)}}@keyframes epEntra{from{opacity:0;transform:translateY(6px)}}
+@media (prefers-reduced-motion:reduce){#estudio-porta .ep-lg,#estudio-porta .ep-br::after,#estudio-porta .ep-c{animation:none}#estudio-porta{transition:none}}`;
   (document.head || root).appendChild(st);
 
   const menuUrl = volta => { const u = new URL(CFG.menu, location.href); if (volta) u.searchParams.set('volta', location.href); return u.href; };
@@ -100,7 +102,8 @@
         throw new Error(j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.');
       }
       API.email = j.email;
-      const abre = () => { aberto = true; document.getElementById('estudio-porta')?.remove(); root.classList.remove('estudio-trancado'); document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
+      // a página aparece por baixo e a tela de carregamento some com fade (só visual: o acesso já foi conferido acima)
+      const abre = () => { aberto = true; const pt = document.getElementById('estudio-porta'); root.classList.remove('estudio-trancado'); if (pt) { pt.classList.add('ep-saindo'); setTimeout(() => pt.remove(), 330); } document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
         API.perfil().then(p => document.dispatchEvent(new CustomEvent('estudio-perfil', { detail: p }))); };
       document.body ? abre() : addEventListener('DOMContentLoaded', abre, { once: true });
       return j.email;

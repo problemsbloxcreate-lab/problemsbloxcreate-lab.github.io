@@ -41,6 +41,11 @@ svg{display:block;flex:none}
 #pagebg .layer.on{opacity:1}
 #pagebg::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,var(--esc,.55))}
 .view{position:relative;z-index:1}
+.view:not([hidden]){animation:vEntra .35s ease both}@keyframes vEntra{from{opacity:0}}
+/* transições com fade: o login some, e ao abrir um programa a tela escurece até a tela de carregamento dele (mesmo fundo) */
+.login{transition:opacity .3s ease}.login.saindo{opacity:0;pointer-events:none}
+#saida{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);opacity:0;pointer-events:none;transition:opacity .26s ease}#saida.on{opacity:1;pointer-events:auto}
+@media (prefers-reduced-motion:reduce){.view:not([hidden]){animation:none}.login,#saida{transition:none}}
 
 /* ---------- topo ---------- */
 .top{display:flex;align-items:center;gap:10px;padding:16px 24px;max-width:1100px;width:100%;margin:0 auto}
@@ -205,6 +210,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 </head>
 <body>
 <div id="pagebg" hidden></div>
+<div id="saida" aria-hidden="true"></div>
 
 <!-- 1) LOGIN — único lugar onde se entra com o Google -->
 <section class="login" id="login">
@@ -701,6 +707,18 @@ function abrirConta() {
 }
 
 /* ======================= telas ======================= */
+// abrir um programa: a tela escurece com fade e só então troca de página (a tela de carregamento do programa tem o mesmo fundo)
+function irCom(url, trocar) {
+  const s = $('#saida'); s.classList.add('on');
+  setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 270);
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('a.card[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
+  let u; try { u = new URL(a.href, location.href); } catch { return; }
+  if (u.origin !== location.origin || u.href === location.href) return; // só os programas deste endereço
+  e.preventDefault(); irCom(u.href);
+});
+addEventListener('pageshow', e => { if (e.persisted) $('#saida')?.classList.remove('on'); }); // voltou pelo botão Voltar: tira o escuro
 function topo(email) {
   $('#top').hidden = false; aplicaConta();
   window.EstudioConta?.montar(); // [foto] com Minha conta, Atualizar todos os sites e Sair — igual em todos os projetos
@@ -1032,10 +1050,10 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
         if (!DADOS.servidor) throw Object.assign(new Error(DADOS.erro?.type === 'sem_kv' || DADOS.erro?.status === 404 ? 'O servidor ainda não tem a parte do menu. Atualize o worker na Cloudflare (veja o LEIA-ME).' : (DADOS.erro?.message || 'Não consegui ler o menu no servidor.')), { soAviso: true });
         if (!DADOS.adm) return location.replace(BASE); // quem não é ADM volta direto para o menu, sem aviso
       }
-      if (!MODO_ADM) { const v = destinoVolta(); if (v?.url) { msg('Abrindo o site…', false, true); return location.replace(v.url); }
+      if (!MODO_ADM) { const v = destinoVolta(); if (v?.url) { msg('Abrindo o site…', false, true); return irCom(v.url, true); }
         if (v?.bloqueado) setTimeout(() => toast('Esse site não reconheceu o login. Abra pelo botão do menu ou avise o ADM.'), 600); }
       limparVolta();
-      $('#login').hidden = true; topo(email);
+      { const lg = $('#login'); lg.classList.add('saindo'); setTimeout(() => { lg.hidden = true; lg.classList.remove('saindo'); }, 320); } topo(email);
       MODO_ADM ? showAdm() : showMenu();
       if (QS.has('conta') && CONTA) abrirConta();
     } catch (e) {
