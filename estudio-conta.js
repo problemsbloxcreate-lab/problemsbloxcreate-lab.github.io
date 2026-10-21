@@ -392,7 +392,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const pinta = async novo => {
       let j; try { j = await usoNuvem(novo); } catch (e) { cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2><p class="nota">${esc(e.message)}</p>`; cx.querySelector('[data-x]').onclick = fechar; return; }
       atualizaNuvem();
-      const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui(), its = [];
+      const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
       cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
         <div class="topo"><span style="flex:none">${anelNuvem(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>

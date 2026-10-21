@@ -248,7 +248,8 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   if (/^#[0-9a-f]{6}$/i.test(c.cor || '')) { const n = parseInt(c.cor.slice(1), 16), s = document.documentElement.style;
     s.setProperty('--ac', c.cor); s.setProperty('--ac-rgb', [n >> 16, n >> 8 & 255, n & 255].join(',')); } } catch { } })();
 </script>
-<script>window.ESTUDIO_CONTA = { semMenu: true, autoMontar: false, conta: () => abrirConta(), sair: () => signOut(), extras: () => [] };</script>
+<script>window.ESTUDIO_CONTA = { semMenu: true, autoMontar: false, conta: () => abrirConta(), sair: () => signOut(), extras: () => [],
+  nuvem: true, token: () => fb?.currentUser ? token() : null }; // círculo roxo da nuvem da equipe também no menu</script>
 <script src="/estudio-conta.js"></script>
 </head>
 <body>
