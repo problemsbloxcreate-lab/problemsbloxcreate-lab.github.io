@@ -114,7 +114,7 @@ async function repassa(req, url, p, env, s) {
   if ((p.nuvem || p.conta) && r.ok && (out.get('content-type') || '').includes('text/html')) {
     let h = await r.text(); const m = h.match(/<head[^>]*>/i);
     const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
-    // ícone da aba: o mesmo logo do menu em todos os projetos (só nas páginas que não escolheram um)
+    // ícone da aba: cada programa usa o próprio logo; o do menu só entra nas páginas que não têm ícone nenhum
     const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
     const extra = carregando + icone + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
     h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h;
