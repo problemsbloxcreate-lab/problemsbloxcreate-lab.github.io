@@ -364,6 +364,7 @@ export class Conversas {
     this.sql.exec('CREATE TABLE IF NOT EXISTS grupos(id TEXT PRIMARY KEY, nome TEXT, foto TEXT, membros TEXT, por TEXT, em INTEGER)'); // grupos que um ADM cria (membros: JSON com os códigos)
     // denúncias: cópia da mensagem e da conversa em volta (não some com a limpeza de 7 dias)
     this.sql.exec('CREATE TABLE IF NOT EXISTS denuncias(id INTEGER PRIMARY KEY AUTOINCREMENT, msg INTEGER, conv TEXT, de TEXT, por TEXT, motivo TEXT, copia TEXT, contexto TEXT, em INTEGER, estado TEXT, nota TEXT, mexeu TEXT, mexeuEm INTEGER)');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS entregas(u TEXT PRIMARY KEY, ate INTEGER)'); // até qual mensagem cada pessoa já recebeu (✓✓ cinza)
     try { this.sql.exec('ALTER TABLE msgs ADD COLUMN cita TEXT'); } catch { }
     try { this.sql.exec('ALTER TABLE msgs ADD COLUMN apagada INTEGER'); } catch { } // apagada para todos: some para a equipe, o ADM ainda vê // citação (programa, item, parte, arquivo anexo)
     this.ritmo = new Map();
@@ -391,6 +392,7 @@ export class Conversas {
       const desde = Math.max(0, +b.desde || 0);
       const novas = desde ? this.sql.exec(`SELECT * FROM msgs WHERE (id > ? OR apagada > ?) AND ${M} ORDER BY id LIMIT 300`, desde, agora - 120000).toArray().map(r => this.vis(r, b.ver)) : []; // apagadas há pouco voltam para a tela trocar
       const ultimo = this.sql.exec('SELECT MAX(id) AS m FROM msgs').toArray()[0]?.m || 0;
+      if (!b.ver && ultimo) this.sql.exec('INSERT INTO entregas(u,ate) VALUES(?,?) ON CONFLICT(u) DO UPDATE SET ate=excluded.ate WHERE excluded.ate > entregas.ate', u, ultimo); // recebeu tudo até aqui
       let geral = null; try { geral = JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'geral'").toArray()[0]?.v || 'null'); } catch { }
       const apelidos = Object.fromEntries(this.sql.exec('SELECT alvo, nick FROM apelidos WHERE u = ?', u).toArray().map(r => [r.alvo, r.nick]));
       const grupos = this.sql.exec('SELECT * FROM grupos WHERE membros LIKE ? ORDER BY nome', '%"' + u + '"%').toArray().map(g => this.grupo(g));
@@ -398,9 +400,22 @@ export class Conversas {
       const denuncias = b.adm ? this.sql.exec("SELECT COUNT(*) AS n FROM denuncias WHERE estado = 'aberta'").toArray()[0]?.n || 0 : undefined;
       return Response.json({ nao, mencoes, mencaoId, ultimas, novas, ultimo, geral, apelidos, grupos, todosGrupos, denuncias });
     }
+    if (b.op === 'vistos' || b.op === 'conversa') { // ✓ enviada · ✓✓ recebida · ✓✓ azul lida (por quem está na conversa)
+      const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
+      let part = [];
+      if (conv === 'geral') part = this.sql.exec('SELECT u FROM pessoas').toArray().map(r => r.u);
+      else if (conv.startsWith('g:')) { try { part = JSON.parse(this.sql.exec('SELECT membros FROM grupos WHERE id = ?', conv.slice(2)).toArray()[0]?.membros || '[]'); } catch { } }
+      else part = conv.slice(2).split('|');
+      part = part.filter(x => x !== u);
+      const lidas = {}, entregues = {};
+      for (const r of this.sql.exec('SELECT u, ate FROM lidas WHERE conv = ?', conv).toArray()) if (part.includes(r.u)) lidas[r.u] = r.ate;
+      for (const r of this.sql.exec('SELECT u, ate FROM entregas').toArray()) if (part.includes(r.u)) entregues[r.u] = r.ate;
+      b.vistos = { part, lidas, entregues };
+      if (b.op === 'vistos') return Response.json(b.vistos);
+    }
     if (b.op === 'conversa') {
       const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
-      return Response.json({ msgs: this.sql.exec('SELECT * FROM (SELECT * FROM msgs WHERE conv = ? ORDER BY id DESC LIMIT 300) ORDER BY id', conv).toArray().map(r => this.vis(r, b.ver)) });
+      return Response.json({ vistos: b.vistos, msgs: this.sql.exec('SELECT * FROM (SELECT * FROM msgs WHERE conv = ? ORDER BY id DESC LIMIT 300) ORDER BY id', conv).toArray().map(r => this.vis(r, b.ver)) });
     }
     if (b.op === 'lida') {
       const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ ok: false });
@@ -436,6 +451,16 @@ export class Conversas {
       const est = ['aberta', 'vista', 'resolvida'].includes(b.estado) ? b.estado : null; if (!est) return Response.json({ erro: 'Estado?' }, { status: 400 });
       this.sql.exec('UPDATE denuncias SET estado = ?, nota = COALESCE(?, nota), mexeu = ?, mexeuEm = ? WHERE id = ?', est, b.nota == null ? null : String(b.nota).slice(0, 2000), u, agora, +b.id || 0);
       return Response.json({ ok: true });
+    }
+    if (b.op === 'limpar') { // ADM: apaga as mensagens agora (uma conversa ou todas); as cópias das denúncias ficam
+      const alvo = String(b.alvo || '');
+      if (alvo === 'todas') { this.sql.exec('DELETE FROM msgs'); this.sql.exec('DELETE FROM lidas'); }
+      else if (alvo === 'geral' || /^g:[a-z0-9]{10}$/.test(alvo) || /^p:u[0-9a-f]{16}\|u[0-9a-f]{16}$/.test(alvo)) { this.sql.exec('DELETE FROM msgs WHERE conv = ?', alvo); this.sql.exec('DELETE FROM lidas WHERE conv = ?', alvo); }
+      else return Response.json({ erro: 'Qual conversa?' }, { status: 400 });
+      return Response.json({ ok: true });
+    }
+    if (b.op === 'conversas-todas') { // ADM: lista das conversas que têm mensagens (para escolher qual limpar)
+      return Response.json({ convs: this.sql.exec('SELECT conv, COUNT(*) AS n, MAX(em) AS em FROM msgs GROUP BY conv ORDER BY em DESC').toArray() });
     }
     if (b.op === 'pode') return Response.json({ pode: (b.convs || []).some(c => this.minha(u, String(c))) }); // arquivo anexado: está numa conversa desta pessoa?
     if (b.op === 'grupo') { // o porteiro já conferiu que é ADM
@@ -530,6 +555,7 @@ async function mensagens(req, env, url) {
     if (b.op === 'geral') { if (!s.a) return json({ error: { message: 'Só um ADM muda o nome e a foto da conversa geral.' } }, 403);
       if (b.foto && (typeof b.foto !== 'string' || !/^data:image\/(png|jpeg|webp);base64,/.test(b.foto) || b.foto.length >= 70000)) return json({ error: { message: 'Foto grande demais.' } }, 400);
       const r = await conversas(env, { op: 'geral', u, e, nome: b.nome, foto: b.foto }); return json(r.j); }
+    if (b.op === 'limpar') { if (!s.a) return json({ error: { message: 'Só ADM limpa as mensagens.' } }, 403); const r = await conversas(env, { op: 'limpar', u, e, alvo: b.alvo }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op === 'apagar') { const r = await conversas(env, { op: 'apagar', u, e, id: b.id, adm: !!s.a }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op === 'denunciar') { const r = await conversas(env, { op: 'denunciar', u, e, id: b.id, motivo: b.motivo }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op === 'denuncia-estado') { if (!s.a) return json({ error: { message: 'Só ADM.' } }, 403); const r = await conversas(env, { op: 'denuncia-estado', u, e, id: b.id, estado: b.estado, nota: b.nota }); return json(r.j, r.status); }
@@ -546,6 +572,8 @@ async function mensagens(req, env, url) {
     const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.op === 'enviar' ? undefined : b.conv, ate: b.ate, cita: cita ? JSON.stringify(cita) : null });
     return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j);
   }
+  if (url.searchParams.has('vistos')) { const r = await conversas(env, { op: 'vistos', u, conv: url.searchParams.get('conv') }); return json(r.j, r.status); }
+  if (url.searchParams.has('todasConversas')) { if (!s.a || como) return json({ error: { message: 'Só ADM.' } }, 403); return json((await conversas(env, { op: 'conversas-todas', u })).j); }
   if (url.searchParams.has('denuncias')) { // ADM: a lista de denúncias, com nomes e e-mails censurados (nunca o e-mail inteiro)
     if (!s.a) return json({ error: { message: 'Só ADM vê as denúncias.' } }, 403);
     const r = (await conversas(env, { op: 'denuncias', u, e })).j, quem = {};

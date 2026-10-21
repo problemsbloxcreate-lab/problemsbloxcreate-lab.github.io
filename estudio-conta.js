@@ -46,6 +46,8 @@
     baixar: svg('<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>'),
     lapis: svg('<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>'),
     ok: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+    tk1: '<svg viewBox="0 0 16 11" width="15" height="11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 6 6.3 8.8 12.5 2.2"/></svg>',
+    tk2: '<svg viewBox="0 0 16 11" width="15" height="11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6 3.8 8.8 10 2.2"/><path d="M7 7.6 8.3 8.8 14.5 2.2"/></svg>',
     mais: svg('<path d="M12 5v14M5 12h14"/>'),
     bandeira: svg('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
     alerta: svg('<path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17v.1"/>'),
@@ -151,6 +153,7 @@
 .ep-msgs .epm-bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 11px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap}.ep-msgs .epm-bt:hover{border-color:#3d8bff}
 .ep-msgs .epm-volta{display:none;padding:0 7px}.ep-msgs h2 .epm-x2{display:none;margin-left:auto}
 .ep-msgs .epm-fala{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.ep-msgs .epm-m .epm-av.epm-avvz{background:none}
 .ep-msgs .epm-fala .epm-vazio{margin:auto;color:#8d919b;text-align:center;max-width:300px}
 .ep-msgs .epm-dia{text-align:center;margin:12px 0 8px}.ep-msgs .epm-dia span{font-size:11.5px;color:#a9adb7;background:#33353b;border-radius:999px;padding:3px 10px;text-transform:capitalize}
 .ep-msgs .epm-m{display:flex;align-items:flex-end;gap:8px;max-width:78%;margin-top:6px}.ep-msgs .epm-m.epm-junto{margin-top:0}.ep-msgs .epm-m .epm-av{width:28px;height:28px;font-size:12px}.ep-msgs .epm-m .epm-av.epm-vazio{background:none}
@@ -196,6 +199,10 @@
 .ep-msgs .epm-apg{display:flex;align-items:center;gap:5px;font-size:12px;font-style:italic;color:#a9adb7}.ep-msgs .epm-apg svg{width:13px;height:13px}
 .ep-msgs .epm-apagada .epm-b{background:transparent!important;border:1px dashed #4a4c55}.ep-msgs .epm-apagada time{color:#8d919b!important}
 .ep-msgs .epm-apagadaAdm .epm-b{background:rgba(255,154,60,.14)!important;border:1px dashed #ff9a3c}.ep-msgs .epm-apagadaAdm .epm-apg{color:#ffb36b;font-style:normal;font-weight:600}
+.ep-msgs .epm-tk{display:inline-flex;vertical-align:-1px;margin-left:4px}.ep-msgs .epm-tk svg{display:block}.ep-msgs .epm-meu .epm-tk-enviada,.ep-msgs .epm-meu .epm-tk-recebida{color:#cfe0ff;opacity:.75}.ep-msgs .epm-meu .epm-tk-lida{color:#7ff0ff}
+.ep-msgs .epm-carr,.epa-carr{margin:auto;display:grid;justify-items:center;gap:6px;padding:22px 10px;color:#a9adb7;font-size:12px}.ep-msgs .epm-lista .epm-carr{margin:20px auto}
+.ep-msgs .epm-cb{width:160px;height:4px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}.ep-msgs .epm-cb i{position:absolute;top:0;bottom:0;left:0;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);transition:width .2s linear}
+.ep-msgs .epm-ct2{display:flex;gap:7px;align-items:baseline;max-width:240px}.ep-msgs .epm-ct2 b{color:#cfd3da;font-variant-numeric:tabular-nums}.ep-msgs .epm-ct2 span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-msgs .epm-ck{width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid #6a6d78;display:grid;place-items:center;color:#fff}.ep-msgs .epm-alvo .epm-ck{background:#9b7bff;border-color:#9b7bff}.ep-msgs .epm-ck svg{width:13px;height:13px}
 .ep-msgs .epm-pes.epm-alvo{background:rgba(155,123,255,.16);box-shadow:inset 0 0 0 1px rgba(155,123,255,.6)}
 .ep-msgs .epm-m .epm-b p .epm-ment{display:inline;font-size:inherit;margin:0;color:#9ec5ff;font-weight:700;background:rgba(61,139,255,.16);border-radius:5px;padding:0 3px}.ep-msgs .epm-m .epm-b p .epm-ment.epm-eu{color:#fff;background:#d6394b}
@@ -219,6 +226,8 @@
 .epa-motivo{margin:8px 0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04)}.epa-motivo p{margin:0;white-space:pre-wrap}
 .epa-conv{display:grid;gap:6px;margin:8px 0}.epa-msg{border:1px solid #3a3c43;border-radius:10px;padding:7px 10px;background:#26272c}.epa-msg.epa-alvo{border-color:#ff4d5e;background:rgba(255,77,94,.1)}.epa-msg.epa-apg{border:1px dashed #ff9a3c;background:rgba(255,154,60,.12)}
 .epa-mh{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#a9adb7}.epa-mh b{color:#e9ebef}.epa-mh em{font-style:normal;color:#ffb36b;font-weight:600}.epa-mh em.epa-den{color:#ff8a96}.epa-msg p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}.epa-cita{font-size:12px;color:#c4b2ff;margin-top:3px}
+.epa-lrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #3a3c43;border-radius:10px;margin-bottom:6px;flex-wrap:wrap}.epa-lrow small{color:#a9adb7}
+.btn.epa-verm{color:#ff8f8f;border-color:#5a2c33}.btn.epa-verm:hover{border-color:#ff6b6b}.btn.epa-verm svg,.epa-lrow svg{width:14px;height:14px}
 .epa-notaf{display:grid;gap:6px;margin-top:10px}.epa-notaf textarea{border-radius:8px;border:1px solid #4a4c55;background:#1f2025;color:#e9ebef;font:inherit;padding:8px 10px;resize:vertical}
 .epa-pess{display:flex;flex-wrap:wrap;gap:8px}.epa-p{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;border:1px solid #4a4c55;background:#2b2c31;color:#e9ebef;font:inherit;cursor:pointer}.epa-p:hover{border-color:#ff4d5e}
 .ep-esp{position:fixed;inset:0;z-index:2147483002;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef}
@@ -642,7 +651,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const MSG = { mencoes: 0, nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, ligado: false, ultimaVolta: 0, abertoEm: 0 };
   const NOME_PROG_ON = { MENU: 'no menu', ADM: 'na tela ADM', ANIMADOR: 'no Animador', EDITOR: 'no Editor', SHORTS: 'nos Shorts', MODELADOR: 'no Modelador', BLOCKBENCH: 'no Blockbench' };
   const QUEMU = new Map();
-  const quemU = u => { if (!QUEMU.has(u)) QUEMU.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEMU.get(u); };
+  const NOMES = new Map(); // código → nome (para achar @Nome escrito à mão)
+  const quemU = u => { if (!QUEMU.has(u)) QUEMU.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).then(q => { if (q?.nome) NOMES.set(u, q.nome); return q; }).catch(() => null)); return QUEMU.get(u); };
   const outroDe = (c, eu = MSG.eu) => c === 'geral' || c.startsWith('g:') ? c : c.slice(2).split('|').find(x => x !== eu) || '';
   const novoEstado = como => ({ mencoes: 0, nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, como });
   const pintaAvisoMsg = () => {
@@ -664,6 +674,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       M.ultimo = j.ultimo || M.ultimo;
       M.nao = Object.values(j.nao || {}).reduce((a, b) => a + b, 0); M.mencoes = Object.values(j.mencoes || {}).reduce((a, b) => a + b, 0); M.denuncias = +j.denuncias || 0;
       if (M === MSG) { pintaAvisoMsg(); tocaMencao(j.mencaoId); } M.janela?.desenhaLista();
+      const cv = M.conv; if (M.janela && cv?.id && !cv.multi && cv.msgs?.some(m => m.de === M.eu)) fetch('/mensagens?vistos=1&conv=' + encodeURIComponent(cv.id) + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v?.part && M.conv === cv) { cv.vistos = v; M.janela?.pintaTicks(); } }).catch(() => { });
     } catch { } finally { M.puxando = false; }
   }
   function marcaLida(conv, M = MSG) {
@@ -748,6 +759,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       <span class="epm-cmini">${c.mini ? `<img src="${esc(c.mini)}" alt="">` : ICONES.arquivo}</span>
       <span class="epm-ctx"><small>${esc(c.prog || 'Estúdio')} · ${c.anexo ? 'arquivo ' + esc(fmtTam(c.anexo.bytes || 0)) : 'na nuvem'}</small><b>${esc(c.titulo)}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ''}
       <em>${c.anexo ? 'Abrir e continuar daqui' : 'Abrir e ir direto para aqui'}</em></span></div>${comBaixar && c.anexo ? `<a class="epm-cbaixa" href="/mensagens/anexo?id=${esc(c.anexo.id)}" download="${esc(c.anexo.nome || 'arquivo')}">${ICONES.baixar} Baixar ${esc(c.anexo.nome || 'arquivo')}</a>` : ''}`;
+  // "carregando" com porcentagem e o que está sendo carregado (o mesmo jeito das telas de carregamento)
+  const carregandoHtml = (txt, pct = 5) => `<div class="epm-carr" data-carr><div class="epm-cb"><i style="width:${pct}%"></i></div><div class="epm-ct2"><b>${Math.round(pct)}%</b><span>${esc(txt)}</span></div></div>`;
+  function progresso(onde, pct, txt) { const c = onde?.querySelector?.('[data-carr]'); if (!c) return; c.querySelector('i').style.width = pct + '%'; c.querySelector('b').textContent = Math.round(pct) + '%'; c.querySelector('span').textContent = txt; }
   async function painelMensagens(o = {}) {
     const M = o.como ? novoEstado(o.como) : MSG; // o.como = ADM vendo as conversas pela visão de outra pessoa (só leitura)
     if (o.como) { o.citar = null; M.comoNome = (await quemU(o.como))?.nome || 'esta pessoa'; }
@@ -757,7 +771,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     document.querySelector('.ep-msgs')?.remove(); MSG.janela = null;
     const d = document.createElement('div'); d.className = 'ep-msgs' + (o.como ? ' epm-como' : '');
     d.innerHTML = `<div class="cx" role="dialog" aria-label="Mensagens">
-      <aside><h2>${ICONES.msg} <span data-h2>Mensagens</span><button class="epm-bt epm-varias" type="button" title="Mandar a mesma mensagem para várias conversas">${ICONES.equipe}<span>Várias</span></button><button class="epm-bt epm-x2" type="button" data-x>Fechar</button></h2>${o.como ? `<div class="epm-comoAviso">${ICONES.adm} Vendo como <b>${esc(M.comoNome)}</b> · só leitura (nada é marcado como lido)</div>` : ''}<div class="epm-enviaPara" hidden></div><div class="epm-lista" role="list"><p class="epm-nota">Carregando…</p></div><p class="epm-nota epm-pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
+      <aside><h2>${ICONES.msg} <span data-h2>Mensagens</span><button class="epm-bt epm-varias" type="button" title="Mandar a mesma mensagem para várias conversas">${ICONES.equipe}<span>Várias</span></button><button class="epm-bt epm-x2" type="button" data-x>Fechar</button></h2>${o.como ? `<div class="epm-comoAviso">${ICONES.adm} Vendo como <b>${esc(M.comoNome)}</b> · só leitura (nada é marcado como lido)</div>` : ''}<div class="epm-enviaPara" hidden></div><div class="epm-lista" role="list">${carregandoHtml('Buscando as conversas…')}</div><p class="epm-nota epm-pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
       <section><header><button class="epm-bt epm-volta" type="button" title="Voltar para a lista">${ICONES.voltar}</button><div class="epm-tit"></div><button class="epm-bt x" type="button" data-x>Fechar</button></header>
         <div class="epm-fala" aria-live="polite"><div class="epm-vazio">Escolha a conversa geral ou uma pessoa ao lado.</div></div>
         <form class="epm-escreve" hidden><div class="epm-citaPrev" hidden></div><div class="epm-linhaE"><textarea rows="1" maxlength="2000" placeholder="Escreva uma mensagem…"></textarea><button class="epm-bt epm-envia" type="submit" title="Enviar (Enter)">${ICONES.enviar}</button></div></form></section></div>`;
@@ -831,7 +845,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     function editaApelido(u, q) {
       d.querySelector('.epm-gedit')?.remove();
       const atual = M.res?.apelidos?.[u] || '', g = document.createElement('div'); g.className = 'epm-gedit';
-      g.innerHTML = `<form class="epm-gcx"><h3>Apelido</h3><div class="epm-gl">${avU(q)}<label>Apelido para ${esc(q?.nome || 'esta pessoa')}<input type="text" maxlength="30" value="${esc(atual)}" placeholder="Ex.: ${esc(String(q?.nome || 'Fulano').split(' ')[0])}zinho"></label></div>
+      g.innerHTML = `<form class="epm-gcx"><h3>Apelido</h3><div class="epm-gl">${avU(q)}<label>Apelido para ${esc(q?.nome || 'esta pessoa')}<input type="text" maxlength="30" value="${esc(atual)}" placeholder="Como você chama essa pessoa"></label></div>
         <p class="epm-nota">Só você vê. Aparece entre parênteses depois do nome, em todas as conversas.</p><p class="epm-gerr epm-nota" hidden></p>
         <div class="epm-gbt">${atual ? '<button type="button" class="epm-bt" data-tira>Tirar o apelido</button>' : ''}<span style="flex:1"></span><button type="button" class="epm-bt" data-c>Cancelar</button><button class="epm-bt epm-pri" type="submit">Salvar</button></div></form>`;
       d.querySelector('.cx').appendChild(g);
@@ -936,10 +950,11 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="epm-dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
         const meu = m.de === M.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
         const prame = !meu && String(m.texto || '').includes('<@' + M.eu + '>');
-        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}${m.apagada ? (M.como ? ' epm-apagadaAdm' : ' epm-apagada') : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-vazio"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && (c.u === 'geral' || c.u.startsWith('g:')) ? `<b>${esc(nomeU(m.de, q, M))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.apagada ? `<div class="epm-apg">${ICONES.lixo} ${M.como ? 'Apagada para todos · ' + esc(new Date(m.apagada).toLocaleString('pt-BR')) : 'Mensagem apagada'}</div>` : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM, M.eu)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div>${m.apagada && !M.como ? '' : meu ? `<button type="button" class="epm-denuncia" data-apaga="${m.id}" title="Apagar para todos">${ICONES.lixo}</button>` : `<button type="button" class="epm-denuncia" data-den="${m.id}" title="Denunciar esta mensagem para os ADMs">${ICONES.bandeira}</button>`}</div>`;
+        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}${m.apagada ? (M.como ? ' epm-apagadaAdm' : ' epm-apagada') : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-avvz"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && (c.u === 'geral' || c.u.startsWith('g:')) ? `<b>${esc(nomeU(m.de, q, M))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.apagada ? `<div class="epm-apg">${ICONES.lixo} ${M.como ? 'Apagada para todos · ' + esc(new Date(m.apagada).toLocaleString('pt-BR')) : 'Mensagem apagada'}</div>` : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM, M.eu)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}${meu && !m.apagada ? `<span class="epm-tk" data-tk="${m.id}"></span>` : ''}</time></div>${m.apagada && !M.como ? '' : meu ? `<button type="button" class="epm-denuncia" data-apaga="${m.id}" title="Apagar para todos">${ICONES.lixo}</button>` : `<button type="button" class="epm-denuncia" data-den="${m.id}" title="Denunciar esta mensagem para os ADMs">${ICONES.bandeira}</button>`}</div>`;
         ant = m;
       }
       fala.innerHTML = h;
+      pintaTicks();
       fala.querySelectorAll('[data-den]').forEach(b => b.onclick = () => denunciar(+b.dataset.den));
       fala.querySelectorAll('[data-apaga]').forEach(b => b.onclick = () => apagarParaTodos(+b.dataset.apaga));
       fala.querySelectorAll('[data-cita]').forEach(el => { const abre = () => abreCitacao(cits[+el.dataset.cita]); el.onclick = abre; el.onkeydown = e => { if (e.key === 'Enter') abre(); }; });
@@ -958,12 +973,26 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pintaTitulo();
       fala.innerHTML = `<div class="epm-vazio">${M.citando ? 'A citação e o que você escrever vão' : 'O que você escrever vai'} para cada conversa escolhida, separad${M.citando ? 'as' : 'o'}.${M.citando?.arquivo ? ' O arquivo sobe uma vez só.' : ''}</div>`; ta.focus();
     }
+    // ✓ enviada · ✓✓ cinza recebida por todos da conversa · ✓✓ azul lida por todos (como no WhatsApp)
+    function pintaTicks() {
+      const v = M.conv?.vistos; if (!v) return; const n = v.part.length;
+      fala.querySelectorAll('[data-tk]').forEach(el => {
+        const id = +el.dataset.tk, leram = v.part.filter(u => (v.lidas[u] || 0) >= id).length, receb = v.part.filter(u => Math.max(v.entregues[u] || 0, v.lidas[u] || 0) >= id).length;
+        const est = n && leram === n ? 'lida' : n && receb === n ? 'recebida' : 'enviada';
+        if (el.dataset.est === est && el.dataset.n === String(leram)) return; el.dataset.est = est; el.dataset.n = String(leram);
+        el.className = 'epm-tk epm-tk-' + est; el.innerHTML = est === 'enviada' ? ICONES.tk1 : ICONES.tk2;
+        el.title = est === 'lida' ? (n > 1 ? 'Lida por todos' : 'Lida') : est === 'recebida' ? (n > 1 ? `Recebida por todos · lida por ${leram} de ${n}` : 'Recebida') : (n > 1 ? `Enviada · recebida por ${receb} de ${n} · lida por ${leram}` : 'Enviada');
+      });
+    }
     async function abreConv(id, u) {
       M.conv = { id, u, msgs: [], primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
-      fala.innerHTML = '<div class="epm-vazio">Carregando…</div>'; pintaTitulo(); desenhaLista();
+      fala.innerHTML = carregandoHtml('Baixando as mensagens…', 12); pintaTitulo(); desenhaLista();
       if (id.startsWith('p:') && !(M.res?.ultimas?.[id])) { desenhaConversa(); ta.focus(); return; }
-      try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id) + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (M.conv?.id !== id) return; M.conv.msgs = j.msgs || []; }
+      try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id) + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (M.conv?.id !== id) return; M.conv.msgs = j.msgs || []; M.conv.vistos = j.vistos || null; }
       catch { fala.innerHTML = '<div class="epm-vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
+      { const quem = [...new Set([...M.conv.msgs.map(m => m.de), ...M.conv.msgs.flatMap(m => codigosMenc(m.texto))].filter(x => x !== M.eu))]; let k = 0; // nomes e fotos de quem escreveu
+        progresso(fala, 55, `Carregando nomes e fotos (0 de ${quem.length})`);
+        await Promise.all(quem.map(x => quemU(x).then(() => { k++; if (M.conv?.id === id) progresso(fala, 55 + k / quem.length * 40, `Carregando nomes e fotos (${k} de ${quem.length})`); }))); if (M.conv?.id !== id) return; progresso(fala, 100, 'Pronto'); }
       desenhaConversa(); marcaLida(id, M); desenhaLista(); ta.focus();
     }
     if (o.para) setTimeout(() => abreConv(o.para === 'geral' ? 'geral' : 'p:' + [M.eu, o.para].sort().join('|'), o.para), 0);
@@ -986,7 +1015,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const novo = ate.replace(/@([^\s@]{0,20})$/, '@' + nome + ' '); ta.value = novo + depois; ta.selectionStart = ta.selectionEnd = novo.length;
       mencionados.set(nome, x.u); fechaSug(); ajusta(); ta.focus();
     }
-    const comMencoes = t => { let r = t; for (const [nome, u] of [...mencionados].sort((a, b) => b[0].length - a[0].length)) r = r.split('@' + nome).join('<@' + u + '>'); return r; };
+    const comMencoes = t => {
+      // escolhidos na lista + quem foi escrito à mão (@Nome completo, ou só o primeiro nome se for de uma pessoa só)
+      const cand = new Map(mencionados), prim = new Map();
+      for (const p of M.pessoas) { const n = NOMES.get(p.u); if (!n) continue; if (!cand.has(n)) cand.set(n, p.u); const f = n.split(/\s+/)[0]; prim.set(f, prim.has(f) ? null : p.u); }
+      for (const [f, u] of prim) if (u && !cand.has(f)) cand.set(f, u);
+      let r = t; const escRe = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      for (const [nome, u] of [...cand].sort((a, b) => b[0].length - a[0].length)) r = r.replace(new RegExp('@' + escRe(nome) + '(?![\\p{L}\\p{N}_])', 'giu'), '<@' + u + '>');
+      return r; };
     ta.oninput = () => { ajusta(); sugI = 0; sugere(); };
     ta.onblur = () => setTimeout(fechaSug, 150);
     ta.onkeydown = e => {
@@ -1028,10 +1064,15 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       } catch (er) { aviso(''); const n = document.createElement('div'); n.className = 'epm-erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }
       finally { form.classList.remove('ind'); ta.focus(); }
     };
-    M.janela = { desenhaLista, desenhaConversa };
+    M.janela = { desenhaLista, desenhaConversa, pintaTicks };
     const tComo = o.como ? setInterval(() => { if (document.visibilityState === 'visible') puxaMensagens(false, M); }, 8000) : 0;
     M.abertoEm = Date.now(); M.ultimaVolta = Date.now();
-    await puxaMensagens(true, M); desenhaLista();
+    progresso(lista, 15, 'Buscando as conversas…');
+    await puxaMensagens(true, M);
+    { const quem = M.pessoas.map(p => p.u); let k = 0; progresso(lista, 45, `Carregando nomes e fotos (0 de ${quem.length})`);
+      await Promise.all(quem.map(x => quemU(x).then(() => { k++; progresso(lista, 45 + k / Math.max(1, quem.length) * 50, `Carregando nomes e fotos (${k} de ${quem.length})`); })));
+      progresso(lista, 100, 'Pronto'); }
+    desenhaLista();
   }
 
   /* ---------- ADM › Conversas: denúncias + ver as conversas pela visão de cada pessoa (só leitura) ----------
@@ -1072,8 +1113,22 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       </div>`).join('') : '<div class="box hint">Nenhuma denúncia. Quando alguém denunciar uma mensagem, ela aparece aqui e na foto da conta dos ADMs.</div>'}</div>
       <h2>Ver as conversas como…</h2>
       <div class="box"><div class="hint" style="margin-bottom:10px">Abre as Mensagens exatamente como a pessoa vê (só leitura, nada é marcado como lido). Mensagens apagadas para todos aparecem em laranja.</div>
-        <div class="epa-pess">${qs.filter(p => p.q?.nome).map(p => `<button class="epa-p" data-como="${esc(p.u)}">${avU(p.q, 'epa-av')}<span>${esc(p.q.nome)}${p.u === pessoas[0]?.u ? ' (você)' : ''}</span></button>`).join('')}</div></div>`;
+        <div class="epa-pess">${qs.filter(p => p.q?.nome).map(p => `<button class="epa-p" data-como="${esc(p.u)}">${avU(p.q, 'epa-av')}<span>${esc(p.q.nome)}${p.u === pessoas[0]?.u ? ' (você)' : ''}</span></button>`).join('')}</div></div>
+      <h2>Limpar mensagens agora<span class="sp"></span><button class="btn sm epa-verm" type="button" data-limpa="todas">${ICONES.lixo} Limpar todas</button></h2>
+      <div class="box"><div class="hint" style="margin-bottom:10px">Apaga já, sem esperar os 7 dias (bom para testes). Some para todo mundo; as cópias guardadas das denúncias continuam.</div><div class="epa-limpa"><span class="spin"></span></div></div>`;
     el.querySelector('[data-atu]').onclick = () => admConversas(el);
+    const limpa = async (alvo, nome) => {
+      if (!(await pergunta({ titulo: alvo === 'todas' ? 'Limpar TODAS as mensagens?' : `Limpar "${nome}"?`, texto: 'As mensagens somem agora para todo mundo. Não dá para desfazer. As cópias das denúncias continuam.', ok: 'Limpar' }))) return;
+      const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'limpar', alvo }) });
+      if (!r.ok) { const j2 = await r.json().catch(() => ({})); alert(j2.error?.message || 'Não limpou.'); return; }
+      MSG.ultimo = 0; await puxaMensagens(); admConversas(el); };
+    el.querySelector('[data-limpa="todas"]').onclick = () => limpa('todas');
+    fetch('/mensagens?todasConversas=1', { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(k => {
+      const box = el.querySelector('.epa-limpa'); if (!box) return;
+      const L = k.convs || []; if (!L.length) { box.innerHTML = '<div class="hint">Nenhuma mensagem guardada agora.</div>'; return; }
+      box.innerHTML = L.map((c, i) => `<div class="epa-lrow"><b>${esc(convNome(c.conv, j))}</b><small>${c.n} mensage${c.n === 1 ? 'm' : 'ns'} · última ${esc(new Date(c.em).toLocaleString('pt-BR'))}</small><span style="flex:1"></span><button class="btn sm epa-verm" data-l="${i}">${ICONES.lixo} Limpar</button></div>`).join('');
+      box.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { const c = L[+b.dataset.l]; limpa(c.conv, convNome(c.conv, j)); });
+    }).catch(() => { });
     el.querySelectorAll('[data-como]').forEach(b => b.onclick = () => painelMensagens({ como: b.dataset.como }));
     el.querySelectorAll('.epa-den-c').forEach(c => { const x = j.denuncias[+c.dataset.i];
       const muda = async (estado, nota) => { await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'denuncia-estado', id: x.id, estado, nota }) }); await puxaMensagens(); admConversas(el); };
