@@ -212,18 +212,6 @@ export default {
       if (req.method === 'DELETE') { await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors); }
       return json({ error: { message: 'Método não aceito.' } }, 405, cors);
     }
-    // IMAGEM pela IA (Workers AI da Cloudflare, cota grátis dela): devolve a imagem; NÃO guarda nada (salvar é outro passo)
-    if (p0 === '/imagem') {
-      if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
-      if (!env.AI) return json({ error: { type: 'sem_ia', message: 'Falta o binding Workers AI (nome AI) no worker.' } }, 501, cors);
-      let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
-      const prompt = String(b.prompt || '').trim().slice(0, 2000); if (!prompt) return json({ error: { message: 'Diga o que desenhar.' } }, 400, cors);
-      try {
-        const r = await env.AI.run('@cf/black-forest-labs/flux-1-schnell', { prompt, steps: 6, ...(Number.isInteger(b.seed) && b.seed > 0 ? { seed: b.seed } : {}) });
-        if (!r?.image) return json({ error: { message: 'A IA não devolveu a imagem.' } }, 502, cors);
-        return json({ image: r.image, tipo: 'image/jpeg' }, 200, { ...cors, 'cache-control': 'no-store' });
-      } catch (e) { return json({ error: { message: 'A imagem falhou: ' + (e.message || e) } }, 502, cors); }
-    }
     // USO DA NUVEM (tela ADM › Nuvem, pelo porteiro): tudo o que está guardado no KV da equipe e o limite. Só ADMINS.
     if (p0 === '/nuvem-uso') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
