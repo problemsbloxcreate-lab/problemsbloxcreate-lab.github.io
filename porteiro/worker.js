@@ -1,6 +1,6 @@
 /* ===================== Porteiro do Estúdio Problems (Cloudflare Worker "estudio") =====================
    Um endereço só para todos os projetos. Ele:
-   1. serve o MENU (index.html, 404.html, estudio-login.js) — a tela de login do Google fica nele;
+   1. serve o MENU (index.html, 404.html, estudio-login.js, estudio-conta.js, estudio-carregando.js) — a tela de login do Google fica nele;
    2. recebe do menu o login do Google (POST /entrar), confere no servidor do Estúdio Problems (/quem, que olha a lista
       EMAILS_PERMITIDOS na Cloudflare) e guarda na pessoa um COOKIE DE SESSÃO assinado (HttpOnly: o JavaScript
       da página não lê);
@@ -60,7 +60,8 @@ const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), { 
 
 // PROJETOS: { "/caminho/": "https://origem/"  ou  { "origem": "https://...", "assinar": true, "servico": "...", "nuvem": true }
 //            ou { "para": "/outro/caminho/" }  (só redireciona) }
-// "conta": as páginas do projeto ganham o botão da conta (/estudio-conta.js) se ainda não carregarem ele.
+// "conta": as páginas do projeto ganham o botão da conta (/estudio-conta.js) se ainda não carregarem ele, e a tela de
+//          carregamento padrão (/estudio-carregando.js, só visual) se não tiverem a do estudio-login.js — todos iguais.
 // "nuvem": o projeto fala com o servidor de sons da equipe: o porteiro entrega o sons-url.json apontando para /nuvem/
 //          (que leva o passe) e deixa a "senha da equipe" do navegador preenchida com um aviso — ninguém digita senha.
 function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch { return {}; } }
@@ -111,7 +112,8 @@ async function repassa(req, url, p, env, s) {
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
   if ((p.nuvem || p.conta) && r.ok && (out.get('content-type') || '').includes('text/html')) {
     let h = await r.text(); const m = h.match(/<head[^>]*>/i);
-    const extra = (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
+    const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
+    const extra = carregando + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
     h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h;
     out.delete('content-length'); out.delete('content-encoding'); out.delete('etag');
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
@@ -360,7 +362,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url);
-    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) return r; } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
+    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) return r; } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url);
     return menu(env, url, 404);
   },
