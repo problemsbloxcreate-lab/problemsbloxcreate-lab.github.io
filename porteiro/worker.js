@@ -99,6 +99,8 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
 async function repassa(req, url, p, env, s) {
   if (p.nuvem && /(^|\/)dados\/sons-url\.json$/.test(p.resto)) return json({ url: url.origin + '/nuvem' }); // servidor de sons pelo porteiro
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
+  // GitHub Pages guarda cada arquivo por 10 min no cache dele: um número que muda a cada 30 s faz a atualização chegar logo para todo mundo
+  if (!p.servico && req.method === 'GET' && /\.github\.io$/.test(alvo.hostname)) alvo.searchParams.set('_at', String(Math.floor(Date.now() / 30000)));
   const h = new Headers(req.headers); h.delete('cookie'); h.delete('host'); h.delete('x-porteiro-passe');
   if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
   const pedido = new Request(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
