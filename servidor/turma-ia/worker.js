@@ -121,6 +121,40 @@ export default {
         return json({ ok: true, k }, 200, cors);
       }
     }
+    // PERSONAGENS do Animador (KV EQUIPE, prefixo "personagens/"): cada personagem é uma pasta com personagem.json + imagens.
+    // Toda a equipe liberada lê e salva (é a biblioteca comum); só com login.
+    //   GET    /personagens                     → lista { itens: [{ k, tam, tipo, por, em }] } (todas as chaves da pasta)
+    //   GET    /personagens/arquivo?k=…         → o arquivo
+    //   PUT    /personagens/arquivo?k=…         → salva (corpo = arquivo; até 10 MB)
+    //   DELETE /personagens/arquivo?k=…         → apaga  (k terminado em "/" apaga a pasta do personagem inteira)
+    if (p0 === '/personagens' || p0 === '/personagens/arquivo') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const q = new URL(req.url).searchParams, k = q.get('k') || '';
+      const KP = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/(personagem\.json|img\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|gif|jpg|jpeg))$/;
+      const KD = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/;
+      const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
+      if (p0 === '/personagens') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors); return json({ itens: await listar('personagens/') }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') {
+        if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        return new Response(r.value, { status: 200, headers: { ...cors, 'content-type': r.metadata?.tipo || 'application/octet-stream', 'cache-control': k.endsWith('.json') ? 'no-store' : 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff' } });
+      }
+      if (req.method === 'PUT' || req.method === 'POST') {
+        if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const tipo = k.endsWith('.json') ? 'application/json' : { png: 'image/png', webp: 'image/webp', gif: 'image/gif', jpg: 'image/jpeg', jpeg: 'image/jpeg' }[k.split('.').pop()];
+        const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
+        return json({ ok: true, k }, 200, cors);
+      }
+      if (req.method === 'DELETE') {
+        if (KD.test(k)) { const todos = await listar(k); for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
+        if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors);
+      }
+      return json({ error: { message: 'Método não aceito.' } }, 405, cors);
+    }
     // ACESSO (tela ADM › Acesso, pelo porteiro): ver, adicionar e tirar e-mails liberados.
     // SEGURANÇA (não remover): só os e-mails da variável ADMINS (precisa existir); a base EMAILS_PERMITIDOS não muda por aqui.
     if (p0 === '/acesso') {
