@@ -39,6 +39,10 @@
     nuvem: svg('<path d="M7 18h10.5a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18z"/>'),
     adm: svg('<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>'),
     inicio: svg('<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z"/>'),
+    msg: svg('<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/>'),
+    equipe: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2a5 5 0 0 1 5.5 5.3"/>'),
+    enviar: svg('<path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/>'),
+    voltar: svg('<path d="m15 18-6-6 6-6"/>'),
     conta: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     atualizar: svg('<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>'),
     sair: svg('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
@@ -59,11 +63,19 @@
 .ep-conta-btn:hover,.ep-conta-btn:focus-visible{filter:brightness(1.1);outline:2px solid rgba(61,139,255,.6);outline-offset:2px}
 .ep-conta-btn img{width:100%;height:100%;object-fit:cover;display:block}
 .ep-conta-fw{position:relative;display:inline-grid;flex:none}.ep-conta-fw>i{display:none}
-.ep-conta.ep-novo .ep-conta-btn{box-shadow:0 0 0 2px #b46cff,0 2px 12px rgba(180,108,255,.55)}
-.ep-conta.ep-novo .ep-conta-fw>i{display:block;position:absolute;right:-2px;top:-2px;width:11px;height:11px;border-radius:50%;background:#b46cff;border:2px solid #1b1c21;pointer-events:none;animation:epNovo 1.8s ease-in-out infinite}
+.ep-conta-fw::before{content:'';position:absolute;inset:-3px;border-radius:50%;display:none;pointer-events:none}
+.ep-conta.ep-novo .ep-conta-fw::before{display:block;background:#b46cff;box-shadow:0 0 12px rgba(180,108,255,.55)}
+.ep-conta.ep-msg .ep-conta-fw::before{display:block;background:#ffcc33;box-shadow:0 0 12px rgba(255,204,51,.5)}
+.ep-conta.ep-novo.ep-msg .ep-conta-fw::before{background:conic-gradient(#b46cff 0 50%,#ffcc33 0 100%);box-shadow:0 0 12px rgba(220,160,140,.5)}
+.ep-conta-fw>i{position:absolute;right:-3px;width:11px;height:11px;border-radius:50%;border:2px solid #1b1c21;pointer-events:none;animation:epNovo 1.8s ease-in-out infinite;box-sizing:content-box}
+.ep-conta-fw>i.v{top:-3px;background:#b46cff}.ep-conta-fw>i.m{bottom:-3px;background:#ffcc33}
+.ep-conta.ep-novo .ep-conta-fw>i.v,.ep-conta.ep-msg .ep-conta-fw>i.m{display:block}
+.ep-conta.ep-msg:not(.ep-novo) .ep-conta-fw>i.m{top:-3px;bottom:auto}
 @keyframes epNovo{50%{box-shadow:0 0 0 4px rgba(180,108,255,.25)}}
 .ep-conta-pop .it.novo,.ep-conta-pop .it.novo svg{color:#d3a8ff}.ep-conta-pop .it.novo{background:rgba(160,90,255,.16);box-shadow:inset 0 0 0 1px rgba(180,108,255,.45)}.ep-conta-pop .it.novo:hover,.ep-conta-pop .it.novo:focus-visible{background:rgba(160,90,255,.28)}
 .ep-conta-pop .it.novo small{display:block;font-size:11px;color:#b98cf0;font-weight:500}
+.ep-conta-pop .it.msgnova,.ep-conta-pop .it.msgnova svg{color:#ffd966}.ep-conta-pop .it.msgnova{background:rgba(255,204,51,.12);box-shadow:inset 0 0 0 1px rgba(255,204,51,.4)}.ep-conta-pop .it.msgnova:hover,.ep-conta-pop .it.msgnova:focus-visible{background:rgba(255,204,51,.22)}
+.ep-conta-pop .it .cont{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ffcc33;color:#1b1c21;font-size:11.5px;font-weight:800;display:inline-grid;place-items:center;box-sizing:border-box}
 .ep-conta-pop{box-sizing:border-box;line-height:1.4;position:absolute;right:0;top:42px;width:270px;background:#2b2c31;color:#e9ebef;border:1px solid #4a4c55;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:6px;text-align:left}
 .ep-conta-pop[hidden]{display:none}
 .ep-conta-head{display:flex;align-items:center;gap:10px;padding:8px 8px 10px;border-bottom:1px solid #1f2024;margin-bottom:4px}
@@ -101,6 +113,38 @@
 .ep-conta-aviso{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483001;background:#2b2c31;color:#e9ebef;border:1px solid #4a4c55;border-radius:10px;padding:10px 16px;font:13.5px/1.4 'Segoe UI',system-ui,sans-serif;box-shadow:0 12px 30px rgba(0,0,0,.4)}
 .ep-conta .ep-conta-espaco{width:34px;height:34px;flex:none;border-radius:50%;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center;color:inherit}
 .ep-conta-espaco:hover,.ep-conta-espaco:focus-visible{background:color-mix(in srgb,currentColor 10%,transparent);outline:none}
+.ep-msgs{position:fixed;inset:0;z-index:2147483002;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef}
+.ep-msgs .cx{width:min(880px,100%);height:min(620px,calc(100vh - 32px));display:grid;grid-template-columns:280px 1fr;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);overflow:hidden}
+.ep-msgs aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid #3a3c43;background:#26272c}
+.ep-msgs h2{font-size:16px;margin:0;padding:16px 16px 10px;display:flex;align-items:center;gap:9px}
+.ep-msgs h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8d919b;margin:12px 8px 6px;font-weight:600}
+.ep-msgs .lista{flex:1;overflow:auto;padding:0 8px 8px}.ep-msgs .nota{color:#a9adb7;font-size:12.5px;margin:6px 8px}.ep-msgs .pe{border-top:1px solid #3a3c43;margin:0;padding:10px 16px;font-size:11.5px}
+.ep-msgs .pes{width:100%;display:flex;align-items:center;gap:10px;padding:8px;border:0;border-radius:10px;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ep-msgs .pes:hover{background:#33353b}.ep-msgs .pes.sel{background:#353a4a;box-shadow:inset 0 0 0 1px #3d8bff}
+.ep-msgs .pes .tx{flex:1;min-width:0}.ep-msgs .pes .tx b,.ep-msgs .pes .tx small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs .pes .tx b{font-size:13.5px}.ep-msgs .pes .tx small{color:#a9adb7;font-size:12px}
+.ep-msgs .pes.tem .tx b{color:#ffd966}.ep-msgs .pes.tem .tx small{color:#e9ebef}
+.ep-msgs .cont{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ffcc33;color:#1b1c21;font-size:11.5px;font-weight:800;display:inline-grid;place-items:center;box-sizing:border-box;flex:none}
+.ep-msgs .onde{flex:none;font-style:normal;font-size:10.5px;font-weight:600;color:#7ee0a1;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.3);border-radius:999px;padding:1px 7px;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep-msgs .avw{position:relative;flex:none;display:inline-grid}.ep-msgs .avw .on{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#2ecc71;border:2px solid #26272c}
+.ep-msgs .av{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:none;display:inline-grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#3d8bff,#19d3f0);font-size:14px}
+.ep-msgs .av img{width:100%;height:100%;object-fit:cover;display:block}.ep-msgs .av.geral{background:linear-gradient(135deg,#9b7bff,#3d8bff)}.ep-msgs .av.geral svg{width:18px;height:18px}
+.ep-msgs section{display:flex;flex-direction:column;min-width:0;min-height:0}
+.ep-msgs header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #3a3c43;min-height:62px;box-sizing:border-box}
+.ep-msgs header .tit{flex:1;min-width:0;display:flex;align-items:center;gap:10px}.ep-msgs header .tit b,.ep-msgs header .tit small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-msgs header .tit small{color:#a9adb7;font-size:12px}
+.ep-msgs .bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 11px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap}.ep-msgs .bt:hover{border-color:#3d8bff}
+.ep-msgs .volta{display:none;padding:0 7px}.ep-msgs h2 .x2{display:none;margin-left:auto}
+.ep-msgs .fala{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.ep-msgs .fala .vazio{margin:auto;color:#8d919b;text-align:center;max-width:300px}
+.ep-msgs .dia{text-align:center;margin:12px 0 8px}.ep-msgs .dia span{font-size:11.5px;color:#a9adb7;background:#33353b;border-radius:999px;padding:3px 10px;text-transform:capitalize}
+.ep-msgs .m{display:flex;align-items:flex-end;gap:8px;max-width:78%;margin-top:6px}.ep-msgs .m.junto{margin-top:0}.ep-msgs .m .av{width:28px;height:28px;font-size:12px}.ep-msgs .m .av.vazio{background:none}
+.ep-msgs .m .b{background:#3a3c43;border-radius:14px 14px 14px 4px;padding:7px 11px 5px;min-width:0}.ep-msgs .m .b b{display:block;font-size:12px;color:#8cc4ff;margin-bottom:1px}
+.ep-msgs .m .b p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.ep-msgs .m .b a{color:#8cc4ff}.ep-msgs .m time{display:block;text-align:right;font-size:10.5px;color:#a9adb7;margin-top:1px}
+.ep-msgs .m.meu{align-self:flex-end}.ep-msgs .m.meu .b{background:#2f6fe0;border-radius:14px 14px 4px 14px}.ep-msgs .m.meu time{color:#cfe0ff}.ep-msgs .m.meu .b a{color:#fff}
+.ep-msgs .erro{align-self:center;color:#ff9a9a;font-size:12.5px;margin-top:8px}
+.ep-msgs .escreve{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;border-top:1px solid #3a3c43}.ep-msgs .escreve[hidden]{display:none}
+.ep-msgs .escreve textarea{flex:1;resize:none;min-height:38px;max-height:140px;box-sizing:border-box;border-radius:10px;border:1px solid #4a4c55;background:#1f2025;color:#e9ebef;font:inherit;padding:8px 11px;outline:none}.ep-msgs .escreve textarea:focus{border-color:#3d8bff}
+.ep-msgs .envia{height:38px;width:42px;padding:0;background:#3d8bff;border-color:#3d8bff;color:#fff}.ep-msgs .escreve.ind .envia{opacity:.5}
+@media (max-width:680px){.ep-msgs{padding:0}.ep-msgs .cx{grid-template-columns:1fr;height:100%;border-radius:0;border:0}.ep-msgs .cx section{display:none}.ep-msgs .cx.so-conv aside{display:none}.ep-msgs .cx.so-conv section{display:flex}.ep-msgs .volta{display:inline-flex}.ep-msgs h2 .x2{display:inline-flex}.ep-msgs .m{max-width:88%}}
 .ep-esp{position:fixed;inset:0;z-index:2147483002;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef}
 .ep-esp .cx{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:20px}
 .ep-esp h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:10px}.ep-esp h2 .x{margin-left:auto}
@@ -187,10 +231,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   function caixa(p) {
-    const box = document.createElement('div'); box.className = 'ep-conta' + (VERSAO.nova ? ' ep-novo' : '');
+    const box = document.createElement('div'); box.className = 'ep-conta' + (VERSAO.nova ? ' ep-novo' : '') + (MSG.nao ? ' ep-msg' : '');
     const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems">${ICONES.inicio}<span>Menu</span></a>`;
     const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
-    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i title="Tem versão nova: atualize os sites"></i></span>
+    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
     const fecha = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
@@ -200,6 +244,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
       pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.adm}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
+        <button class="it${MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens</span>${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : `<a class="it" href="/adm" role="menuitem">${ICONES.adm}ADM</a>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
@@ -207,6 +252,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <div class="sep"></div>
         <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
       pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else location.href = '/?conta=1'; };
+      pop.querySelector('[data-a=msgs]').onclick = () => { fecha(); painelMensagens(); };
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
         const temQueSalvar = salvadores().length > 0;
@@ -241,6 +287,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   async function montar(alvo) {
     P = await perfil(); if (!P) return; // fora do porteiro ou sem sessão: não mostra nada
+    if (window.top === window) mensagensLiga();
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     if (alvo) poe(typeof alvo === 'string' ? document.querySelector(alvo) : alvo); else procura();
     online();
@@ -487,6 +534,135 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
     if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
 
+  /* ---------- Mensagens: conversa geral da equipe + conversas privadas ----------
+     Menu da conta › Mensagens abre a janela. Mensagem nova = bolinha AMARELA na foto da conta (com a roxa da versão nova,
+     o anel fica metade roxo, metade amarelo). Sem som. O porteiro apaga sozinho o que tem mais de 7 dias.
+     Ninguém recebe e-mail de ninguém: as pessoas vão pelo código (u…) e o nome/foto vêm de /pessoa?u=. */
+  const MSG = { nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, ligado: false, ultimaVolta: 0, abertoEm: 0 };
+  const NOME_PROG_ON = { MENU: 'no menu', ADM: 'na tela ADM', ANIMADOR: 'no Animador', EDITOR: 'no Editor', SHORTS: 'nos Shorts', MODELADOR: 'no Modelador', BLOCKBENCH: 'no Blockbench' };
+  const QUEMU = new Map();
+  const quemU = u => { if (!QUEMU.has(u)) QUEMU.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEMU.get(u); };
+  const outroDe = c => c === 'geral' ? 'geral' : c.slice(2).split('|').find(x => x !== MSG.eu) || '';
+  const pintaAvisoMsg = () => {
+    document.querySelectorAll('.ep-conta').forEach(b => b.classList.toggle('ep-msg', MSG.nao > 0));
+    try { dispatchEvent(new CustomEvent('estudio-mensagens', { detail: { naoLidas: MSG.nao } })); } catch { }
+  };
+  async function puxaMensagens(comPessoas) {
+    if (MSG.puxando) return; MSG.puxando = true;
+    try {
+      const r = await fetch('/mensagens?desde=' + MSG.ultimo + (comPessoas ? '&pessoas=1' : ''), { credentials: 'same-origin', cache: 'no-store' });
+      if (!r.ok) return; const j = await r.json();
+      const primeira = !MSG.res; MSG.eu = j.eu; MSG.res = j; if (j.pessoas) MSG.pessoas = j.pessoas;
+      if (!primeira && MSG.conv && j.novas?.length) {
+        const daqui = j.novas.filter(m => m.conv === MSG.conv.id);
+        if (daqui.length) { MSG.conv.msgs.push(...daqui.filter(m => !MSG.conv.msgs.some(x => x.id === m.id))); if (MSG.janela) { MSG.janela.desenhaConversa(); marcaLida(MSG.conv.id); delete j.nao[MSG.conv.id]; } }
+      }
+      MSG.ultimo = j.ultimo || MSG.ultimo;
+      MSG.nao = Object.values(j.nao || {}).reduce((a, b) => a + b, 0);
+      pintaAvisoMsg(); MSG.janela?.desenhaLista();
+    } catch { } finally { MSG.puxando = false; }
+  }
+  function marcaLida(conv) {
+    const ult = MSG.conv?.id === conv ? MSG.conv.msgs.at(-1)?.id : MSG.res?.ultimas?.[conv]?.id; if (!ult) return;
+    if (MSG.res?.nao?.[conv]) { delete MSG.res.nao[conv]; MSG.nao = Object.values(MSG.res.nao).reduce((a, b) => a + b, 0); pintaAvisoMsg(); }
+    fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'lida', conv, ate: ult }) }).catch(() => { });
+  }
+  function mensagensLiga() {
+    if (MSG.ligado) return; MSG.ligado = true;
+    puxaMensagens();
+    setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: não confere
+      if (document.visibilityState !== 'visible') return;
+      const t = Date.now(), passo = MSG.janela ? 4000 : 40000; if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
+      puxaMensagens(!!MSG.janela && t - MSG.abertoEm > 60000 && (MSG.abertoEm = t));
+    }, 2000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { MSG.ultimaVolta = Date.now(); puxaMensagens(); } });
+  }
+  const horaTxt = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const diaTxt = t => { const d = new Date(t), h = new Date(); const um = 864e5, ini = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const dif = Math.round((ini(h) - ini(d)) / um); return dif === 0 ? 'Hoje' : dif === 1 ? 'Ontem' : d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }); };
+  const textoMsg = t => esc(t).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+  const avU = (q, cls = 'av') => `<span class="${cls}">${q?.foto ? `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer">` : esc(((q?.nome || '?')[0] || '?').toUpperCase())}</span>`;
+  async function painelMensagens() {
+    if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
+    document.querySelector('.ep-msgs')?.remove();
+    const d = document.createElement('div'); d.className = 'ep-msgs';
+    d.innerHTML = `<div class="cx" role="dialog" aria-label="Mensagens">
+      <aside><h2>${ICONES.msg} Mensagens<button class="bt x2" type="button" data-x>Fechar</button></h2><div class="lista" role="list"><p class="nota">Carregando…</p></div><p class="nota pe">As mensagens somem sozinhas depois de 7 dias.</p></aside>
+      <section><header><button class="bt volta" type="button" title="Voltar para a lista">${ICONES.voltar}</button><div class="tit"></div><button class="bt x" type="button" data-x>Fechar</button></header>
+        <div class="fala" aria-live="polite"><div class="vazio">Escolha a conversa geral ou uma pessoa ao lado.</div></div>
+        <form class="escreve" hidden><textarea rows="1" maxlength="2000" placeholder="Escreva uma mensagem…"></textarea><button class="bt envia" type="submit" title="Enviar (Enter)">${ICONES.enviar}</button></form></section></div>`;
+    document.body.appendChild(d);
+    const cx = d.querySelector('.cx'), lista = d.querySelector('.lista'), fala = d.querySelector('.fala'), tit = d.querySelector('.tit'), form = d.querySelector('.escreve'), ta = form.querySelector('textarea');
+    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); MSG.janela = null; MSG.conv = null; }, esc1 = e => { if (e.key === 'Escape') fechar(); };
+    d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
+    d.querySelectorAll('[data-x]').forEach(b => b.onclick = fechar); d.querySelector('.volta').onclick = () => { cx.classList.remove('so-conv'); MSG.conv = null; desenhaLista(); };
+    const pessoaDe = u => MSG.pessoas.find(p => p.u === u);
+    async function desenhaLista() {
+      const R = MSG.res || { nao: {}, ultimas: {} }, ult = R.ultimas || {}, nao = R.nao || {};
+      const convs = [{ id: 'geral', u: 'geral' }, ...MSG.pessoas.map(p => ({ id: 'p:' + [MSG.eu, p.u].sort().join('|'), u: p.u, p }))];
+      for (const c of Object.keys(ult)) if (c !== 'geral' && !convs.some(x => x.id === c)) convs.push({ id: c, u: outroDe(c) });
+      const qs = await Promise.all(convs.map(c => c.u === 'geral' ? null : quemU(c.u)));
+      convs.forEach((c, i) => c.q = qs[i]);
+      const resto = convs.slice(1).filter(c => c.q?.nome).sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || (!!b.p?.on - !!a.p?.on) || String(a.q.nome).localeCompare(b.q.nome));
+      const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, geral = c.id === 'geral', on = c.p?.on;
+        const prev = m ? (m.de === MSG.eu ? 'Você: ' : geral ? '' : '') + m.texto.replace(/\s+/g, ' ').slice(0, 60) : geral ? 'Conversa de toda a equipe' : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
+        return `<button type="button" class="pes${MSG.conv?.id === c.id ? ' sel' : ''}${n ? ' tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">
+          <span class="avw">${geral ? `<span class="av geral">${ICONES.equipe}</span>` : avU(c.q)}${on ? '<i class="on"></i>' : ''}</span>
+          <span class="tx"><b>${geral ? 'Geral' : esc(c.q.nome)}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
+          ${on ? `<em class="onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${n ? `<b class="cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
+      const geralC = convs[0];
+      lista.innerHTML = linha(geralC) + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="nota">Ainda ninguém da equipe por aqui.</p>');
+      lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => abreConv(b.dataset.c, b.dataset.u));
+      if (MSG.conv) pintaTitulo();
+    }
+    async function pintaTitulo() {
+      const c = MSG.conv; if (!c) return;
+      if (c.u === 'geral') { tit.innerHTML = `<span class="av geral">${ICONES.equipe}</span><span><b>Geral</b><small>Todo mundo da equipe vê</small></span>`; return; }
+      const q = await quemU(c.u), on = pessoaDe(c.u)?.on;
+      tit.innerHTML = `<span class="avw">${avU(q)}${on ? '<i class="on"></i>' : ''}</span><span><b>${esc(q?.nome || 'Pessoa')}</b><small>${on ? 'Online agora ' + esc(NOME_PROG_ON[on] || '') : 'Conversa privada · só vocês dois veem'}</small></span>`;
+    }
+    async function desenhaConversa() {
+      const c = MSG.conv; if (!c) return;
+      const perto = fala.scrollHeight - fala.scrollTop - fala.clientHeight < 80;
+      if (!c.msgs.length) { fala.innerHTML = `<div class="vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
+      const autores = [...new Set(c.msgs.map(m => m.de).filter(u => u !== MSG.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
+      let h = '', dia = '', ant = null;
+      for (const m of c.msgs) {
+        const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
+        const meu = m.de === MSG.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
+        h += `<div class="m${meu ? ' meu' : ''}${junto ? ' junto' : ''}">${meu ? '' : (junto ? '<span class="av vazio"></span>' : avU(q))}<div class="b">${!meu && !junto && c.u === 'geral' ? `<b>${esc(q?.nome || 'Alguém')}</b>` : ''}<p>${textoMsg(m.texto)}</p><time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
+        ant = m;
+      }
+      fala.innerHTML = h; if (perto || c.primeira) { fala.scrollTop = fala.scrollHeight; c.primeira = false; }
+    }
+    async function abreConv(id, u) {
+      MSG.conv = { id, u, msgs: [], primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
+      fala.innerHTML = '<div class="vazio">Carregando…</div>'; pintaTitulo(); desenhaLista();
+      if (id !== 'geral' && !(MSG.res?.ultimas?.[id])) { desenhaConversa(); ta.focus(); return; }
+      try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (MSG.conv?.id !== id) return; MSG.conv.msgs = j.msgs || []; }
+      catch { fala.innerHTML = '<div class="vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
+      desenhaConversa(); marcaLida(id); desenhaLista(); ta.focus();
+    }
+    const ajusta = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
+    ta.oninput = ajusta;
+    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } };
+    form.onsubmit = async e => {
+      e.preventDefault(); const texto = ta.value.trim(), c = MSG.conv; if (!texto || !c || form.classList.contains('ind')) return;
+      form.classList.add('ind');
+      try {
+        const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: c.u, texto }) });
+        const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu para enviar.');
+        ta.value = ''; ajusta();
+        if (MSG.conv === c) { c.msgs.push(j.msg); if (c.id !== j.msg.conv) c.id = j.msg.conv; fala.scrollTop = fala.scrollHeight; c.primeira = true; desenhaConversa(); }
+        if (MSG.res) { MSG.res.ultimas = { ...(MSG.res.ultimas || {}), [j.msg.conv]: j.msg }; } desenhaLista();
+      } catch (er) { const n = document.createElement('div'); n.className = 'erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }
+      finally { form.classList.remove('ind'); ta.focus(); }
+    };
+    MSG.janela = { desenhaLista, desenhaConversa };
+    MSG.abertoEm = Date.now(); MSG.ultimaVolta = Date.now();
+    await puxaMensagens(true); desenhaLista();
+  }
+
   /* ---------- versão nova: confere de vez em quando se algum site mudou ----------
      Guarda uma "impressão digital" (SHA-256) desta página, dos scripts/estilos dela e da página de cada programa.
      - Logo ao abrir: compara o que o navegador usou com o que está no servidor. Se a tela de carregamento ainda estiver
@@ -552,6 +728,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
+    mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
     nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }

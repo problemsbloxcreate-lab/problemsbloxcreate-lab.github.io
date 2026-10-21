@@ -346,6 +346,94 @@ export class Presenca { // cada aba conta separado (e-mail|aba); guarda no armaz
     return Response.json(porEmail);
   }
 }
+/* ---------- Mensagens: conversa geral + conversas privadas (objeto durável "Conversas", banco SQLite dele) ----------
+   As mensagens guardam só o CÓDIGO da pessoa (u…), nunca o e-mail; tudo com mais de 7 dias é apagado sozinho. */
+const SETE_DIAS = 7 * 864e5;
+const convDe = (eu, para) => para === 'geral' ? 'geral' : 'p:' + [eu, para].sort().join('|');
+const minhaConv = (u, c) => c === 'geral' || (c.startsWith('p:') && c.slice(2).split('|').includes(u));
+export class Conversas {
+  constructor(state) {
+    this.st = state.storage; this.sql = state.storage.sql; this.limpo = 0;
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS pessoas(u TEXT PRIMARY KEY, e TEXT, v INTEGER);
+      CREATE TABLE IF NOT EXISTS msgs(id INTEGER PRIMARY KEY AUTOINCREMENT, conv TEXT, de TEXT, texto TEXT, em INTEGER);
+      CREATE INDEX IF NOT EXISTS msgs_conv ON msgs(conv, id);
+      CREATE TABLE IF NOT EXISTS lidas(u TEXT, conv TEXT, ate INTEGER, PRIMARY KEY(u, conv));`);
+    this.ritmo = new Map();
+  }
+  limpa() { const t = Date.now(); if (t - this.limpo < 36e5) return; this.limpo = t; this.sql.exec('DELETE FROM msgs WHERE em < ?', t - SETE_DIAS); }
+  minhas(u) { return `(conv = 'geral' OR conv LIKE 'p:' || '${u}' || '|%' OR conv LIKE 'p:%|' || '${u}')`; } // u já conferido: u + 16 hex
+  async fetch(req) {
+    const b = await req.json(), agora = Date.now(); this.limpa();
+    const u = /^u[0-9a-f]{16}$/.test(b.u || '') ? b.u : null;
+    if (b.op === 'pessoa') { if (u && b.e) this.sql.exec('INSERT INTO pessoas(u,e,v) VALUES(?,?,?) ON CONFLICT(u) DO UPDATE SET e=excluded.e, v=excluded.v', u, b.e, agora); return Response.json({ ok: true }); }
+    if (b.op === 'semear') { for (const p of b.lista || []) if (/^u[0-9a-f]{16}$/.test(p.u)) this.sql.exec('INSERT OR IGNORE INTO pessoas(u,e,v) VALUES(?,?,?)', p.u, p.e, +p.v || 0); return Response.json({ ok: true }); }
+    if (b.op === 'pessoas') return Response.json(this.sql.exec('SELECT u, e, v FROM pessoas').toArray());
+    if (!u) return Response.json({ erro: 'sem pessoa' }, { status: 400 });
+    if (b.e) { const r = this.sql.exec('SELECT v FROM pessoas WHERE u = ?', u).toArray()[0]; if (!r || agora - r.v > 6e5) this.sql.exec('INSERT INTO pessoas(u,e,v) VALUES(?,?,?) ON CONFLICT(u) DO UPDATE SET e=excluded.e, v=excluded.v', u, b.e, agora); }
+    const M = this.minhas(u);
+    if (b.op === 'resumo') {
+      const lidas = Object.fromEntries(this.sql.exec('SELECT conv, ate FROM lidas WHERE u = ?', u).toArray().map(r => [r.conv, r.ate]));
+      const nao = {}; for (const r of this.sql.exec(`SELECT conv, id, de FROM msgs WHERE ${M}`).toArray()) if (r.de !== u && r.id > (lidas[r.conv] || 0)) nao[r.conv] = (nao[r.conv] || 0) + 1;
+      const ultimas = {}; for (const r of this.sql.exec(`SELECT * FROM msgs WHERE id IN (SELECT MAX(id) FROM msgs WHERE ${M} GROUP BY conv)`).toArray()) ultimas[r.conv] = r;
+      const desde = Math.max(0, +b.desde || 0);
+      const novas = desde ? this.sql.exec(`SELECT * FROM msgs WHERE id > ? AND ${M} ORDER BY id LIMIT 300`, desde).toArray() : [];
+      const ultimo = this.sql.exec('SELECT MAX(id) AS m FROM msgs').toArray()[0]?.m || 0;
+      return Response.json({ nao, ultimas, novas, ultimo });
+    }
+    if (b.op === 'conversa') {
+      const conv = String(b.conv || ''); if (!minhaConv(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
+      return Response.json({ msgs: this.sql.exec('SELECT * FROM (SELECT * FROM msgs WHERE conv = ? ORDER BY id DESC LIMIT 300) ORDER BY id', conv).toArray() });
+    }
+    if (b.op === 'lida') {
+      const conv = String(b.conv || ''); if (!minhaConv(u, conv)) return Response.json({ ok: false });
+      this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, +b.ate || 0);
+      return Response.json({ ok: true });
+    }
+    if (b.op === 'enviar') {
+      const para = String(b.para || ''); if (para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u || !this.sql.exec('SELECT 1 FROM pessoas WHERE u = ?', para).toArray().length)) return Response.json({ erro: 'Pessoa não encontrada.' }, { status: 400 });
+      const texto = String(b.texto || '').replace(/\r\n?/g, '\n').trim().slice(0, 2000); if (!texto) return Response.json({ erro: 'Mensagem vazia.' }, { status: 400 });
+      const rt = (this.ritmo.get(u) || []).filter(t => agora - t < 60e3); if (rt.length >= 20) return Response.json({ erro: 'Muitas mensagens seguidas: espere um pouquinho.' }, { status: 429 });
+      rt.push(agora); this.ritmo.set(u, rt);
+      const conv = convDe(u, para);
+      const m = this.sql.exec('INSERT INTO msgs(conv,de,texto,em) VALUES(?,?,?,?) RETURNING *', conv, u, texto, agora).toArray()[0];
+      this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, m.id);
+      return Response.json({ msg: m });
+    }
+    return Response.json({ erro: 'op?' }, { status: 400 });
+  }
+}
+const conversas = async (env, corpo) => { const o = env.CONVERSAS.get(env.CONVERSAS.idFromName('estudio')); const r = await o.fetch('https://conversas/', { method: 'POST', body: JSON.stringify(corpo) }); return { status: r.status, j: await r.json() }; };
+async function mensagens(req, env, url) {
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  if (!env.CONVERSAS) return json({ error: { message: 'As mensagens ainda não estão ligadas. Rode a Action de publicação de novo.' } }, 503);
+  const e = String(s.e).toLowerCase(), u = await codigoU(e);
+  if (req.method === 'POST') {
+    if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    let b = {}; try { b = await req.json(); } catch { }
+    if (b.op !== 'enviar' && b.op !== 'lida') return json({ error: { message: 'Pedido desconhecido.' } }, 400);
+    const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.conv, ate: b.ate });
+    return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j);
+  }
+  if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e, conv: url.searchParams.get('conv') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
+  const r = await conversas(env, { op: 'resumo', u, e, desde: url.searchParams.get('desde') });
+  const out = { eu: u, ...r.j };
+  if (url.searchParams.get('pessoas') === '1') {
+    let lista = (await conversas(env, { op: 'pessoas' })).j;
+    if (lista.length < 2 && env.PERFIS) { // primeira vez: quem já entrou no Estúdio alguma vez
+      const sem = []; let cur; do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); sem.push({ u: await codigoU(em), e: em, v: 0 }); } cur = l.list_complete ? null : l.cursor; } while (cur);
+      await conversas(env, { op: 'semear', lista: sem }); lista = (await conversas(env, { op: 'pessoas' })).j;
+    }
+    const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {};
+    const pessoas = [];
+    for (const p of lista) {
+      if (p.u === u) continue;
+      const tirado = await foiTirado(env, p.e); if (tirado && +tirado > (p.v || 0)) continue; // tirado pela tela ADM e não entrou de novo
+      pessoas.push({ u: p.u, on: on[p.e]?.prog || null, visto: p.v || 0 });
+    }
+    out.pessoas = pessoas;
+  }
+  return json(out);
+}
 async function conta(req, env, url, s) {
   if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS. Rode a Action de publicação de novo.' } }, 503);
   const mesmoSite = (req.headers.get('origin') || '') === url.origin, p = await lePerfil(env, s.e);
@@ -418,7 +506,7 @@ export default {
       if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
       if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor do Estúdio Problems (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
       // nome e foto do Google (vêm no próprio token, que o servidor do Estúdio Problems acabou de conferir): viram o padrão da conta
-      try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { }
+      try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { } if (env.CONVERSAS) { try { const em = String(j.email).toLowerCase(); await conversas(env, { op: 'pessoa', u: await codigoU(em), e: em }); } catch { } }
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email, j.adm === true), DURACAO) });
     }
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
@@ -446,6 +534,7 @@ export default {
     if (caminho === '/nuvem-uso/arq') return nuvemArq(req, env, url);
     if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
+    if (caminho === '/mensagens') return mensagens(req, env, url);
     if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);

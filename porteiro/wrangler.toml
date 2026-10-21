@@ -56,3 +56,12 @@ class_name = "Presenca"
 [[migrations]]
 tag = "presenca-v1"
 new_sqlite_classes = ["Presenca"]
+
+# mensagens (conversa geral + privadas): banco SQLite deste objeto; o que tem mais de 7 dias é apagado sozinho
+[[durable_objects.bindings]]
+name = "CONVERSAS"
+class_name = "Conversas"
+
+[[migrations]]
+tag = "conversas-v1"
+new_sqlite_classes = ["Conversas"]
