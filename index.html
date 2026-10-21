@@ -44,7 +44,7 @@ svg{display:block;flex:none}
 .view:not([hidden]){animation:vEntra .35s ease both}@keyframes vEntra{from{opacity:0}}
 /* transições com fade: o login some, e ao abrir um programa a tela escurece até a tela de carregamento dele (mesmo fundo) */
 .login{transition:opacity .3s ease}.login.saindo{opacity:0;pointer-events:none}
-#saida{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);opacity:0;pointer-events:none;transition:opacity .26s ease}#saida.on{opacity:1;pointer-events:auto}
+#saida{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);opacity:0;pointer-events:none;transition:opacity .16s ease-out}#saida.on{opacity:1;pointer-events:auto}
 @media (prefers-reduced-motion:reduce){.view:not([hidden]){animation:none}.login,#saida{transition:none}}
 
 /* ---------- topo ---------- */
@@ -710,7 +710,7 @@ function abrirConta() {
 // abrir um programa: a tela escurece com fade e só então troca de página (a tela de carregamento do programa tem o mesmo fundo)
 function irCom(url, trocar) {
   const s = $('#saida'); s.classList.add('on');
-  setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 270);
+  setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
 }
 document.addEventListener('click', e => {
   const a = e.target.closest?.('a.card[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
