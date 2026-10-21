@@ -105,7 +105,9 @@ async function repassa(req, url, p, env, s) {
   if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
   const pedido = new Request(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
   // worker da mesma conta: só dá para chamar pela ligação direta (Service Binding); os outros, pela internet
-  let r = p.servico && env[p.servico] ? await env[p.servico].fetch(pedido) : await fetch(pedido);
+  // sem cópia guardada no meio do caminho (cache da Cloudflare): senão o "Atualizar todos os sites" recebia de volta a versão
+  // antiga dos scripts por até 10 minutos. O navegador continua guardando e confere com o ETag (no-cache), então não fica mais lento.
+  let r = p.servico && env[p.servico] ? await env[p.servico].fetch(pedido) : await fetch(pedido, { cf: { cacheTtl: -1, cacheEverything: false } });
   if ([301, 302, 307, 308].includes(r.status)) { // a origem pediu outro endereço (ex.: faltou a barra no fim): traduz para o nosso
     const loc = new URL(r.headers.get('location'), alvo), raiz = new URL(p.origem.replace(/\/?$/, '/'));
     if (loc.origin === raiz.origin && loc.pathname.startsWith(raiz.pathname)) return Response.redirect(new URL(p.pref.replace(/\/?$/, '/') + loc.pathname.slice(raiz.pathname.length) + loc.search, url).href, 302);
