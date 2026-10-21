@@ -45,6 +45,7 @@
     arquivo: svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'),
     baixar: svg('<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>'),
     lapis: svg('<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>'),
+    ok: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
     fechar: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
     voltar: svg('<path d="m15 18-6-6 6-6"/>'),
     conta: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
@@ -70,6 +71,10 @@
 .ep-conta-fw::before{content:'';position:absolute;inset:-3px;border-radius:50%;display:none;pointer-events:none}
 .ep-conta.ep-novo .ep-conta-fw::before{display:block;background:#b46cff;box-shadow:0 0 12px rgba(180,108,255,.55)}
 .ep-conta.ep-msg .ep-conta-fw::before{display:block;background:#ffcc33;box-shadow:0 0 12px rgba(255,204,51,.5)}
+.ep-conta.ep-mencao .ep-conta-fw::before{display:block;background:#ff4d5e;box-shadow:0 0 12px rgba(255,77,94,.55)}
+.ep-conta.ep-novo.ep-mencao .ep-conta-fw::before{background:conic-gradient(#b46cff 0 50%,#ff4d5e 0 100%)}
+.ep-conta-fw>i.a{display:none;bottom:-4px;right:-5px;width:auto;min-width:12px;height:14px;padding:0 2px;border-radius:8px;background:#ff4d5e;color:#fff;font:800 10px/14px 'Segoe UI',system-ui,sans-serif;font-style:normal;text-align:center}
+.ep-conta.ep-mencao .ep-conta-fw>i.a{display:block}.ep-conta.ep-mencao:not(.ep-novo) .ep-conta-fw>i.a{top:-4px;bottom:auto}
 .ep-conta.ep-novo.ep-msg .ep-conta-fw::before{background:conic-gradient(#b46cff 0 50%,#ffcc33 0 100%);box-shadow:0 0 12px rgba(220,160,140,.5)}
 .ep-conta-fw>i{position:absolute;right:-3px;width:11px;height:11px;border-radius:50%;border:2px solid #1b1c21;pointer-events:none;animation:epNovo 1.8s ease-in-out infinite;box-sizing:content-box}
 .ep-conta-fw>i.v{top:-3px;background:#b46cff}.ep-conta-fw>i.m{bottom:-3px;background:#ffcc33}
@@ -79,6 +84,8 @@
 .ep-conta-pop .it.novo,.ep-conta-pop .it.novo svg{color:#d3a8ff}.ep-conta-pop .it.novo{background:rgba(160,90,255,.16);box-shadow:inset 0 0 0 1px rgba(180,108,255,.45)}.ep-conta-pop .it.novo:hover,.ep-conta-pop .it.novo:focus-visible{background:rgba(160,90,255,.28)}
 .ep-conta-pop .it.novo small{display:block;font-size:11px;color:#b98cf0;font-weight:500}
 .ep-conta-pop .it.msgnova,.ep-conta-pop .it.msgnova svg{color:#ffd966}.ep-conta-pop .it.msgnova{background:rgba(255,204,51,.12);box-shadow:inset 0 0 0 1px rgba(255,204,51,.4)}.ep-conta-pop .it.msgnova:hover,.ep-conta-pop .it.msgnova:focus-visible{background:rgba(255,204,51,.22)}
+.ep-conta-pop .it.msgmenc,.ep-conta-pop .it.msgmenc svg{color:#ff8a96}.ep-conta-pop .it.msgmenc{background:rgba(255,77,94,.14);box-shadow:inset 0 0 0 1px rgba(255,77,94,.45)}.ep-conta-pop .it.msgmenc small{display:block;font-size:11px;color:#ff9aa4;font-weight:500}
+.ep-conta-pop .it .cont.arroba{background:#ff4d5e;color:#fff;margin-left:auto}.ep-conta-pop .it .cont.arroba+.cont{margin-left:4px}
 .ep-conta-pop .it .cont{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ffcc33;color:#1b1c21;font-size:11.5px;font-weight:800;display:inline-grid;place-items:center;box-sizing:border-box}
 .ep-conta-pop{box-sizing:border-box;line-height:1.4;position:absolute;right:0;top:42px;width:270px;background:#2b2c31;color:#e9ebef;border:1px solid #4a4c55;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:6px;text-align:left}
 .ep-conta-pop[hidden]{display:none}
@@ -164,6 +171,15 @@
 .ep-msgs .epm-gbt{display:flex;gap:8px;margin-top:12px}.ep-msgs .epm-bt.epm-pri{background:#3d8bff;border-color:#3d8bff;color:#fff}.ep-msgs .epm-gerr{color:#ff9a9a}
 .ep-msgs .epm-m .epm-b .epm-ctx b{color:#fff;display:block;font-size:13.5px;margin:0}.ep-msgs .epm-m .epm-b .epm-ctx small{display:inline;color:#c4b2ff}.ep-msgs .epm-m.epm-meu .epm-b .epm-ctx small{color:#e3ecff}
 .ep-msgs .epm-gl .epm-av{width:56px;height:56px;font-size:20px}
+.ep-msgs .epm-ck{width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid #6a6d78;display:grid;place-items:center;color:#fff}.ep-msgs .epm-alvo .epm-ck{background:#9b7bff;border-color:#9b7bff}.ep-msgs .epm-ck svg{width:13px;height:13px}
+.ep-msgs .epm-pes.epm-alvo{background:rgba(155,123,255,.16);box-shadow:inset 0 0 0 1px rgba(155,123,255,.6)}
+.ep-msgs .epm-m .epm-b p .epm-ment{display:inline;font-size:inherit;margin:0;color:#9ec5ff;font-weight:700;background:rgba(61,139,255,.16);border-radius:5px;padding:0 3px}.ep-msgs .epm-m .epm-b p .epm-ment.epm-eu{color:#fff;background:#d6394b}
+.ep-msgs .epm-m.epm-meu .epm-b p .epm-ment{color:#fff;background:rgba(255,255,255,.2)}
+.ep-msgs .epm-prame .epm-b{box-shadow:inset 3px 0 0 #ff4d5e}
+.ep-msgs .epm-cont.epm-arroba{background:#ff4d5e;color:#fff}
+.ep-msgs .epm-sugere{position:absolute;left:12px;right:12px;bottom:calc(100% + 4px);max-height:220px;overflow:auto;background:#2b2c31;border:1px solid #4a4c55;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:4px;z-index:3}
+.ep-msgs .epm-sugere button{width:100%;display:flex;align-items:center;gap:8px;padding:6px 8px;border:0;border-radius:8px;background:none;color:#e9ebef;font:inherit;font-size:13px;cursor:pointer;text-align:left}.ep-msgs .epm-sugere button.epm-sel,.ep-msgs .epm-sugere button:hover{background:#353a4a}
+.ep-msgs .epm-sugere .epm-av{width:24px;height:24px;font-size:11px}.ep-msgs .epm-escreve{position:relative}
 .ep-msgs .epm-erro{align-self:center;color:#ff9a9a;font-size:12.5px;margin-top:8px}
 .ep-msgs .epm-escreve{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;border-top:1px solid #3a3c43}.ep-msgs .epm-escreve[hidden]{display:none}
 .ep-msgs .epm-escreve textarea{flex:1;resize:none;min-height:38px;max-height:140px;box-sizing:border-box;border-radius:10px;border:1px solid #4a4c55;background:#1f2025;color:#e9ebef;font:inherit;padding:8px 11px;outline:none}.ep-msgs .epm-escreve textarea:focus{border-color:#3d8bff}
@@ -255,10 +271,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   function caixa(p) {
-    const box = document.createElement('div'); box.className = 'ep-conta' + (VERSAO.nova ? ' ep-novo' : '') + (MSG.nao ? ' ep-msg' : '');
+    const box = document.createElement('div'); box.className = 'ep-conta' + (VERSAO.nova ? ' ep-novo' : '') + (MSG.mencoes ? ' ep-mencao' : MSG.nao ? ' ep-msg' : '');
     const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems">${ICONES.inicio}<span>Menu</span></a>`;
     const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
-    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i></span>
+    box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i><i class="a" title="Citaram você com @">@</i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
     const fecha = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
@@ -268,7 +284,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
       pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.adm}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
-        <button class="it${MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens</span>${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
+        <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : `<a class="it" href="/adm" role="menuitem">${ICONES.adm}ADM</a>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
@@ -312,6 +328,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function montar(alvo) {
     P = await perfil(); if (!P) return; // fora do porteiro ou sem sessão: não mostra nada
     if (window.top === window) mensagensLiga();
+    if (window.top === window) vigiaSessao();
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     if (alvo) poe(typeof alvo === 'string' ? document.querySelector(alvo) : alvo); else procura();
     online();
@@ -509,7 +526,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     document.querySelector('.ep-esp')?.remove();
     const d = document.createElement('div'); d.className = 'ep-esp'; d.innerHTML = '<div class="cx" role="dialog" aria-label="Espaço no navegador"><h2>Espaço no navegador</h2><p class="nota">Medindo o que cada programa guarda…</p></div>';
     document.body.appendChild(d);
-    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); }, esc1 = e => { if (e.key === 'Escape') fechar(); };
+    const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); }, esc1 = e => { if (e.key === 'Escape' && !d.querySelector('.epm-sugere')) fechar(); };
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
     const e = await estimativa(), pct = e.quota ? e.usage / e.quota * 100 : 0;
     // por programa: cada banco do navegador + a memória pequena (localStorage) + cópias offline
@@ -558,45 +575,85 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const liga = () => { procuraQuem(); new MutationObserver(() => { if (document.querySelector('[data-quem]:not([data-quem-ok])')) procuraQuem(); }).observe(document.body, { childList: true, subtree: true }); };
     if (document.body) liga(); else addEventListener('DOMContentLoaded', liga, { once: true }); })();
 
+  /* ---------- sessão: saiu da conta (em outra aba), foi tirado pelo ADM ou entrou com outra conta ----------
+     Confere a cada minuto (aba à vista) e quando a aba volta a aparecer. Sem sessão: salva o que está aberto e volta
+     para o login do menu (e depois volta para cá). Outra conta: salva e recarrega já com a conta nova. */
+  let vigiando = false, ultimaSessao = 0;
+  async function confereSessao() {
+    if (!P || confereSessao.indo) return; ultimaSessao = Date.now();
+    let j; try { const r = await fetch('/sessao', { credentials: 'same-origin', cache: 'no-store' }); if (!r.ok) return; j = await r.json(); } catch { return; } // sem internet: não faz nada
+    const agora = String(j?.email || '').toLowerCase(), antes = String(P.email || '').toLowerCase();
+    if (agora && agora === antes) return;
+    confereSessao.indo = true;
+    const aviso = document.createElement('div'); aviso.className = 'ep-esp';
+    aviso.innerHTML = `<div class="cx" role="alertdialog" style="width:min(380px,100%);text-align:center"><h2 style="justify-content:center">${agora ? 'Você entrou com outra conta' : 'Sua sessão terminou'}</h2><p class="nota">${agora ? 'Salvando o que está aberto e atualizando a página com a conta nova…' : 'Salvando o que está aberto e voltando para o login do menu…'}</p></div>`;
+    document.body.appendChild(aviso);
+    try { await Promise.race([Promise.allSettled(salvadores().map(f => Promise.resolve().then(f))), new Promise(r => setTimeout(r, 4000))]); } catch { }
+    if (agora || location.pathname === '/' || /^\/adm\/?$/i.test(location.pathname)) location.reload();
+    else location.href = '/?volta=' + encodeURIComponent(location.pathname + location.search);
+  }
+  function vigiaSessao() {
+    if (vigiando) return; vigiando = true;
+    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 60000) confereSessao(); }, 15000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 10000) confereSessao(); });
+  }
+
   /* ---------- Mensagens: conversa geral da equipe + conversas privadas ----------
      Menu da conta › Mensagens abre a janela. Mensagem nova = bolinha AMARELA na foto da conta (com a roxa da versão nova,
      o anel fica metade roxo, metade amarelo). Sem som. O porteiro apaga sozinho o que tem mais de 7 dias.
      Ninguém recebe e-mail de ninguém: as pessoas vão pelo código (u…) e o nome/foto vêm de /pessoa?u=. */
-  const MSG = { nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, ligado: false, ultimaVolta: 0, abertoEm: 0 };
+  const MSG = { mencoes: 0, nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, ligado: false, ultimaVolta: 0, abertoEm: 0 };
   const NOME_PROG_ON = { MENU: 'no menu', ADM: 'na tela ADM', ANIMADOR: 'no Animador', EDITOR: 'no Editor', SHORTS: 'nos Shorts', MODELADOR: 'no Modelador', BLOCKBENCH: 'no Blockbench' };
   const QUEMU = new Map();
   const quemU = u => { if (!QUEMU.has(u)) QUEMU.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEMU.get(u); };
   const outroDe = c => c === 'geral' ? 'geral' : c.slice(2).split('|').find(x => x !== MSG.eu) || '';
   const pintaAvisoMsg = () => {
-    document.querySelectorAll('.ep-conta').forEach(b => b.classList.toggle('ep-msg', MSG.nao > 0));
+    document.querySelectorAll('.ep-conta').forEach(b => { b.classList.toggle('ep-msg', MSG.nao > 0 && !MSG.mencoes); b.classList.toggle('ep-mencao', MSG.mencoes > 0); });
     try { dispatchEvent(new CustomEvent('estudio-mensagens', { detail: { naoLidas: MSG.nao } })); } catch { }
   };
   async function puxaMensagens(comPessoas) {
     if (MSG.puxando) return; MSG.puxando = true;
     try {
       const r = await fetch('/mensagens?desde=' + MSG.ultimo + (comPessoas ? '&pessoas=1' : ''), { credentials: 'same-origin', cache: 'no-store' });
+      if (r.status === 401) { confereSessao(); return; }
       if (!r.ok) return; const j = await r.json();
       const primeira = !MSG.res; MSG.eu = j.eu; MSG.res = j; if (j.pessoas) MSG.pessoas = j.pessoas;
       if (!primeira && MSG.conv && j.novas?.length) {
         const daqui = j.novas.filter(m => m.conv === MSG.conv.id);
-        if (daqui.length) { MSG.conv.msgs.push(...daqui.filter(m => !MSG.conv.msgs.some(x => x.id === m.id))); if (MSG.janela) { MSG.janela.desenhaConversa(); marcaLida(MSG.conv.id); delete j.nao[MSG.conv.id]; } }
+        if (daqui.length) { MSG.conv.msgs.push(...daqui.filter(m => !MSG.conv.msgs.some(x => x.id === m.id))); if (MSG.janela) { MSG.janela.desenhaConversa(); marcaLida(MSG.conv.id); delete j.nao[MSG.conv.id]; if (j.mencoes) delete j.mencoes[MSG.conv.id]; } }
       }
       MSG.ultimo = j.ultimo || MSG.ultimo;
-      MSG.nao = Object.values(j.nao || {}).reduce((a, b) => a + b, 0);
-      pintaAvisoMsg(); MSG.janela?.desenhaLista();
+      MSG.nao = Object.values(j.nao || {}).reduce((a, b) => a + b, 0); MSG.mencoes = Object.values(j.mencoes || {}).reduce((a, b) => a + b, 0);
+      pintaAvisoMsg(); MSG.janela?.desenhaLista(); tocaMencao(j.mencaoId);
     } catch { } finally { MSG.puxando = false; }
   }
   function marcaLida(conv) {
     const ult = MSG.conv?.id === conv ? MSG.conv.msgs.at(-1)?.id : MSG.res?.ultimas?.[conv]?.id; if (!ult) return;
-    if (MSG.res?.nao?.[conv]) { delete MSG.res.nao[conv]; MSG.nao = Object.values(MSG.res.nao).reduce((a, b) => a + b, 0); pintaAvisoMsg(); }
+    if (MSG.res?.nao?.[conv] || MSG.res?.mencoes?.[conv]) { delete MSG.res.nao[conv]; if (MSG.res.mencoes) delete MSG.res.mencoes[conv]; MSG.nao = Object.values(MSG.res.nao).reduce((a, b) => a + b, 0); MSG.mencoes = Object.values(MSG.res.mencoes || {}).reduce((a, b) => a + b, 0); pintaAvisoMsg(); }
     fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'lida', conv, ate: ult }) }).catch(() => { });
+  }
+  // barulhinho de @menção (sem arquivo de som: dois "plins" suaves). Só toca uma vez por menção, mesmo com várias abas abertas.
+  let audio = null;
+  const liberaAudio = () => { try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch { } };
+  addEventListener('pointerdown', liberaAudio, { capture: true, passive: true }); addEventListener('keydown', liberaAudio, { capture: true, passive: true });
+  function plim() {
+    try { liberaAudio(); if (!audio || audio.state !== 'running') return false;
+      const t0 = audio.currentTime + .02;
+      [[880, 0], [1318.5, .13]].forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0, t0 + d); g.gain.linearRampToValueAtTime(.09, t0 + d + .015); g.gain.exponentialRampToValueAtTime(.0001, t0 + d + .35);
+        o.connect(g).connect(audio.destination); o.start(t0 + d); o.stop(t0 + d + .4); });
+      return true; } catch { return false; }
+  }
+  function tocaMencao(id) {
+    id = +id || 0; if (!id) return; let ja = 0; try { ja = +localStorage.getItem('ep-mencao-tocada') || 0; } catch { }
+    if (id <= ja) return;
+    if (plim()) { try { localStorage.setItem('ep-mencao-tocada', String(id)); } catch { } }
   }
   function mensagensLiga() {
     if (MSG.ligado) return; MSG.ligado = true;
     puxaMensagens();
     setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: não confere
-      if (document.visibilityState !== 'visible') return;
-      const t = Date.now(), passo = MSG.janela ? 4000 : 40000; if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
+      const t = Date.now(), passo = document.visibilityState !== 'visible' ? 60000 : MSG.janela ? 4000 : 40000; // escondida: confere devagar (para o @ tocar em qualquer site) if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
       puxaMensagens(!!MSG.janela && t - MSG.abertoEm > 60000 && (MSG.abertoEm = t));
     }, 2000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { MSG.ultimaVolta = Date.now(); puxaMensagens(); } });
@@ -604,7 +661,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const horaTxt = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const diaTxt = t => { const d = new Date(t), h = new Date(); const um = 864e5, ini = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
     const dif = Math.round((ini(h) - ini(d)) / um); return dif === 0 ? 'Hoje' : dif === 1 ? 'Ontem' : d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }); };
-  const textoMsg = t => esc(t).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+  const MENC = /<@(u[0-9a-f]{16})>/g;
+  const codigosMenc = t => [...String(t || '').matchAll(MENC)].map(m => m[1]);
+  const semMenc = (t, nomes = {}) => String(t || '').replace(MENC, (_, u) => '@' + (nomes[u] || 'alguém'));
+  const textoMsg = (t, nomes = {}) => esc(t).replace(/&lt;@(u[0-9a-f]{16})&gt;/g, (_, u) => `\u0001${u}\u0001`).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`).replace(/\u0001(u[0-9a-f]{16})\u0001/g, (_, u) => `<b class="epm-ment${u === MSG.eu ? ' epm-eu' : ''}">@${esc(nomes[u] || 'alguém')}</b>`);
   const nomeU = (u, q) => { const n = q?.nome || 'Alguém', a = MSG.res?.apelidos?.[u]; return a ? `${n} (${a})` : n; };
   const avU = (q, cls = 'epm-av') => `<span class="${cls}">${q?.foto ? `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer">` : esc(((q?.nome || '?')[0] || '?').toUpperCase())}</span>`;
   // citação: o programa chama EstudioConta.citar({ prog, titulo, sub, mini, url | abrir + arquivo, parte }) → escolhe para quem → escreve → envia
@@ -711,7 +771,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       enviaPara.hidden = !c; citaPrev.hidden = !c;
       if (!c) { citaPrev.innerHTML = ''; return; }
       const cc = { ...c, anexo: c.arquivo ? { bytes: c.tamanho || 0, nome: c.nomeArquivo || '' } : null };
-      enviaPara.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><p class="epm-nota">Escolha a conversa: a citação vai junto e você pode escrever mais.</p>`;
+      enviaPara.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><p class="epm-nota">Escolha uma ou mais conversas (pode ser a geral também): a citação vai junto e você pode escrever mais.</p>`;
       citaPrev.innerHTML = `<div class="epm-cita epm-mini">${citaHtml(cc, -1).replace(/<em>.*?<\/em>/, '')}</div><button class="epm-bt epm-tira" type="button" title="Tirar a citação">${ICONES.fechar || '×'}</button>`;
       citaPrev.querySelector('.epm-tira').onclick = () => { MSG.citando = null; pintaCitando(); };
     }
@@ -722,21 +782,26 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       for (const c of Object.keys(ult)) if (c !== 'geral' && !convs.some(x => x.id === c)) convs.push({ id: c, u: outroDe(c) });
       const qs = await Promise.all(convs.map(c => c.u === 'geral' ? null : quemU(c.u)));
       convs.forEach((c, i) => c.q = qs[i]);
+      const cods = [...new Set(Object.values(ult).flatMap(m => codigosMenc(m.texto)))], nomesL = Object.fromEntries(await Promise.all(cods.map(async u => [u, u === MSG.eu ? (P?.nome || 'você') : (await quemU(u))?.nome || 'alguém'])));
       const resto = convs.slice(1).filter(c => c.q?.nome).sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || (!!b.p?.on - !!a.p?.on) || nomeU(a.u, a.q).localeCompare(nomeU(b.u, b.q)));
-      const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, geral = c.id === 'geral', on = c.p?.on;
+      const menc = R.mencoes || {};
+      const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, mc = menc[c.id] || 0, geral = c.id === 'geral', on = c.p?.on;
         const citaDe = x => { try { return x.cita ? JSON.parse(x.cita) : null; } catch { return null; } }, cm = m && citaDe(m);
-        const prev = m ? (m.de === MSG.eu ? 'Você: ' : '') + ((m.texto || '').replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
-        return `<button type="button" class="epm-pes${MSG.conv?.id === c.id ? ' epm-sel' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">
+        const prev = m ? (m.de === MSG.eu ? 'Você: ' : '') + (semMenc(m.texto, nomesL).replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
+        const alvo = MSG.citando ? (MSG.citando.alvos || []).some(a => a.id === c.id) : false;
+        return `<button type="button" class="epm-pes${!MSG.citando && MSG.conv?.id === c.id ? ' epm-sel' : ''}${alvo ? ' epm-alvo' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">${MSG.citando ? `<span class="epm-ck">${alvo ? ICONES.ok : ''}</span>` : ''}
           <span class="epm-avw">${geral ? geralAv() : avU(c.q)}${on ? '<i class="epm-on"></i>' : ''}</span>
           <span class="epm-tx"><b>${geral ? esc(geralNome()) : esc(nomeU(c.u, c.q))}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
-          ${on ? `<em class="epm-onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
+          ${on ? `<em class="epm-onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${mc ? '<b class="epm-cont epm-arroba" title="Citaram você">@</b>' : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
       const geralC = convs[0];
       lista.innerHTML = linha(geralC) + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="epm-nota">Ainda ninguém da equipe por aqui.</p>');
-      lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => abreConv(b.dataset.c, b.dataset.u));
+      lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => MSG.citando ? marcaAlvo(b.dataset.c, b.dataset.u) : abreConv(b.dataset.c, b.dataset.u));
       if (MSG.conv) pintaTitulo();
     }
     async function pintaTitulo() {
       const c = MSG.conv; if (!c) return;
+      if (c.multi) { const nomes = await Promise.all(c.alvos.map(async a => a.u === 'geral' ? geralNome() : nomeU(a.u, await quemU(a.u)))); if (MSG.conv !== c) return;
+        tit.innerHTML = `<span class="epm-av epm-geral">${ICONES.msg}</span><span style="min-width:0"><b>Para ${c.alvos.length} conversas</b><small>${esc(nomes.join(', '))}</small></span>`; return; }
       if (c.u === 'geral') { tit.innerHTML = `${geralAv()}<span style="min-width:0"><b>${esc(geralNome())}</b><small>Conversa geral · todo mundo da equipe vê</small></span>${MSG.res?.adm ? `<button class="epm-bt epm-edg" type="button" title="Só ADM: mudar o nome e a foto da conversa geral">${ICONES.lapis} Editar</button>` : ''}`;
         tit.querySelector('.epm-edg')?.addEventListener('click', editaGeral); return; }
       const q = await quemU(c.u), on = pessoaDe(c.u)?.on;
@@ -747,18 +812,29 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const c = MSG.conv; if (!c) return;
       const perto = fala.scrollHeight - fala.scrollTop - fala.clientHeight < 80;
       if (!c.msgs.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
-      const autores = [...new Set(c.msgs.map(m => m.de).filter(u => u !== MSG.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
+      const autores = [...new Set([...c.msgs.map(m => m.de), ...c.msgs.flatMap(m => codigosMenc(m.texto))].filter(u => u !== MSG.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
+      const nomesM = Object.fromEntries(Object.entries(qs).map(([u, q]) => [u, q?.nome || 'alguém'])); nomesM[MSG.eu] = P?.nome || 'você';
       let h = '', dia = '', ant = null; const cits = [];
       for (const m of c.msgs) {
         const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="epm-dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
         const meu = m.de === MSG.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
-        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-vazio"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && c.u === 'geral' ? `<b>${esc(nomeU(m.de, q))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.texto ? `<p>${textoMsg(m.texto)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
+        const prame = !meu && String(m.texto || '').includes('<@' + MSG.eu + '>');
+        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-vazio"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && c.u === 'geral' ? `<b>${esc(nomeU(m.de, q))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}</time></div></div>`;
         ant = m;
       }
       fala.innerHTML = h;
       fala.querySelectorAll('[data-cita]').forEach(el => { const abre = () => abreCitacao(cits[+el.dataset.cita]); el.onclick = abre; el.onkeydown = e => { if (e.key === 'Enter') abre(); }; });
       fala.querySelectorAll('.epm-cita img').forEach(im => im.addEventListener('load', () => { if (perto || c.primeira) fala.scrollTop = fala.scrollHeight; }, { once: true }));
       if (perto || c.primeira) { fala.scrollTop = fala.scrollHeight; c.primeira = false; }
+    }
+    async function marcaAlvo(id, u) {
+      const c = MSG.citando; c.alvos ||= []; const i = c.alvos.findIndex(a => a.id === id); if (i >= 0) c.alvos.splice(i, 1); else c.alvos.push({ id, u });
+      desenhaLista();
+      if (c.alvos.length === 1) return abreConv(c.alvos[0].id, c.alvos[0].u);
+      if (!c.alvos.length) { MSG.conv = null; form.hidden = true; tit.innerHTML = ''; fala.innerHTML = '<div class="epm-vazio">Escolha ao lado uma ou mais conversas para mandar a citação.</div>'; return; }
+      MSG.conv = { multi: true, alvos: c.alvos.slice(), msgs: [] }; cx.classList.add('so-conv'); form.hidden = false;
+      pintaTitulo();
+      fala.innerHTML = `<div class="epm-vazio">A citação e o que você escrever vão para cada conversa escolhida, separadas.${c.arquivo ? ' O arquivo sobe uma vez só.' : ''}</div>`; ta.focus();
     }
     async function abreConv(id, u) {
       MSG.conv = { id, u, msgs: [], primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
@@ -770,21 +846,46 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     }
     if (o.para) setTimeout(() => abreConv(o.para === 'geral' ? 'geral' : 'p:' + [MSG.eu, o.para].sort().join('|'), o.para), 0);
     const ajusta = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
-    ta.oninput = ajusta;
-    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } };
+    // @: sugere as pessoas; no envio "@Nome" vira <@código> (o nome de agora aparece para todo mundo)
+    const mencionados = new Map(); let sug = null, sugI = 0, sugL = [];
+    const fechaSug = () => { sug?.remove(); sug = null; };
+    async function sugere() {
+      const ate = ta.value.slice(0, ta.selectionStart), m = ate.match(/(^|\s)@([^\s@]{0,20})$/); if (!m) return fechaSug();
+      const q = m[2].toLowerCase(), todos = await Promise.all(MSG.pessoas.map(async p => ({ u: p.u, q: await quemU(p.u) })));
+      sugL = todos.filter(x => x.q?.nome && (nomeU(x.u, x.q).toLowerCase().includes(q))).sort((a, b) => a.q.nome.localeCompare(b.q.nome)).slice(0, 8);
+      if (!sugL.length) return fechaSug();
+      sugI = Math.min(sugI, sugL.length - 1);
+      if (!sug) { sug = document.createElement('div'); sug.className = 'epm-sugere'; form.appendChild(sug); }
+      sug.innerHTML = sugL.map((x, i) => `<button type="button" class="${i === sugI ? 'epm-sel' : ''}" data-i="${i}">${avU(x.q)}<span>${esc(nomeU(x.u, x.q))}</span></button>`).join('');
+      sug.querySelectorAll('[data-i]').forEach(b => b.onmousedown = e => { e.preventDefault(); escolheSug(+b.dataset.i); });
+    }
+    function escolheSug(i) {
+      const x = sugL[i]; if (!x) return; const nome = x.q.nome, ate = ta.value.slice(0, ta.selectionStart), depois = ta.value.slice(ta.selectionStart);
+      const novo = ate.replace(/@([^\s@]{0,20})$/, '@' + nome + ' '); ta.value = novo + depois; ta.selectionStart = ta.selectionEnd = novo.length;
+      mencionados.set(nome, x.u); fechaSug(); ajusta(); ta.focus();
+    }
+    const comMencoes = t => { let r = t; for (const [nome, u] of [...mencionados].sort((a, b) => b[0].length - a[0].length)) r = r.split('@' + nome).join('<@' + u + '>'); return r; };
+    ta.oninput = () => { ajusta(); sugI = 0; sugere(); };
+    ta.onblur = () => setTimeout(fechaSug, 150);
+    ta.onkeydown = e => {
+      if (sug && ['ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); sugI = (sugI + (e.key === 'ArrowDown' ? 1 : -1) + sugL.length) % sugL.length; sugere(); return; }
+      if (sug && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); escolheSug(sugI); return; }
+      if (sug && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fechaSug(); return; }
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } };
     form.onsubmit = async e => {
-      e.preventDefault(); const texto = ta.value.trim(), c = MSG.conv, ci = MSG.citando; if ((!texto && !ci) || !c || form.classList.contains('ind')) return;
+      e.preventDefault(); const texto = comMencoes(ta.value.trim()), c = MSG.conv, ci = MSG.citando; if ((!texto && !ci) || !c || form.classList.contains('ind')) return;
+      const alvos = c.multi ? c.alvos : [{ id: c.id, u: c.u }];
       form.classList.add('ind');
       const aviso = txt => { let n = fala.querySelector('.epm-enviando'); if (!txt) return n?.remove(); if (!n) { n = document.createElement('div'); n.className = 'epm-enviando'; fala.appendChild(n); } n.textContent = txt; fala.scrollTop = fala.scrollHeight; };
       try {
         let cita = null;
         if (ci) {
           cita = { prog: ci.prog, titulo: ci.titulo, sub: ci.sub, mini: ci.mini, url: ci.url, abrir: ci.abrir, parte: ci.parte };
-          if (ci.arquivo) {
+          if (ci.arquivo) { // o arquivo sobe uma vez só e vale para todas as conversas escolhidas
             aviso('Preparando o arquivo…');
             const a = await ci.arquivo(); if (!a?.blob) throw new Error('O programa não conseguiu montar o arquivo.');
             const up = await new Promise((ok, falha) => { const x = new XMLHttpRequest();
-              x.open('POST', '/mensagens/anexo?para=' + encodeURIComponent(c.u) + '&nome=' + encodeURIComponent(a.nome || 'arquivo'));
+              x.open('POST', '/mensagens/anexo?para=' + encodeURIComponent(alvos.map(a2 => a2.u).join(',')) + '&nome=' + encodeURIComponent(a.nome || 'arquivo'));
               x.upload.onprogress = ev => { if (ev.lengthComputable) aviso(`Enviando ${a.nome || 'o arquivo'}… ${Math.round(ev.loaded / ev.total * 100)}%`); };
               x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch { } x.status < 300 ? ok(j) : falha(new Error(j.error?.message || 'Não deu para enviar o arquivo.')); };
               x.onerror = () => falha(new Error('A internet caiu no meio do envio.')); x.send(a.blob); });
@@ -792,11 +893,16 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           }
           aviso('');
         }
-        const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: c.u, texto, cita }) });
-        const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu para enviar.');
-        ta.value = ''; ajusta(); if (ci) { MSG.citando = null; pintaCitando(); }
-        if (MSG.conv === c) { c.msgs.push(j.msg); if (c.id !== j.msg.conv) c.id = j.msg.conv; fala.scrollTop = fala.scrollHeight; c.primeira = true; desenhaConversa(); }
-        if (MSG.res) { MSG.res.ultimas = { ...(MSG.res.ultimas || {}), [j.msg.conv]: j.msg }; } desenhaLista();
+        const feitas = [];
+        for (const al of alvos) {
+          if (alvos.length > 1) aviso(`Enviando ${feitas.length + 1} de ${alvos.length}…`);
+          const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: al.u, texto, cita }) });
+          const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu para enviar.');
+          feitas.push(j.msg); if (MSG.res) MSG.res.ultimas = { ...(MSG.res.ultimas || {}), [j.msg.conv]: j.msg };
+        }
+        aviso(''); ta.value = ''; ajusta(); mencionados.clear(); if (ci) { MSG.citando = null; pintaCitando(); }
+        if (c.multi) { const n = feitas.length; desenhaLista(); await abreConv(feitas[0].conv, alvos[0].u); aviso(`Enviado para ${n} conversas.`); setTimeout(() => aviso(''), 3500); }
+        else if (MSG.conv === c) { c.msgs.push(feitas[0]); if (c.id !== feitas[0].conv) c.id = feitas[0].conv; c.primeira = true; desenhaConversa(); desenhaLista(); }
       } catch (er) { aviso(''); const n = document.createElement('div'); n.className = 'epm-erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }
       finally { form.classList.remove('ind'); ta.focus(); }
     };
@@ -870,7 +976,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
-    citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
+    sessao: { conferir: () => confereSessao() }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
     nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }

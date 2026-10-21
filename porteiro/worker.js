@@ -376,14 +376,16 @@ export class Conversas {
     const M = this.minhas(u);
     if (b.op === 'resumo') {
       const lidas = Object.fromEntries(this.sql.exec('SELECT conv, ate FROM lidas WHERE u = ?', u).toArray().map(r => [r.conv, r.ate]));
-      const nao = {}; for (const r of this.sql.exec(`SELECT conv, id, de FROM msgs WHERE ${M}`).toArray()) if (r.de !== u && r.id > (lidas[r.conv] || 0)) nao[r.conv] = (nao[r.conv] || 0) + 1;
+      const nao = {}, mencoes = {}, marca = '<@' + u + '>'; let mencaoId = 0; // @menção: o texto guarda <@código>
+      for (const r of this.sql.exec(`SELECT conv, id, de, instr(texto, ?) > 0 AS men FROM msgs WHERE ${M}`, marca).toArray()) if (r.de !== u && r.id > (lidas[r.conv] || 0)) {
+        nao[r.conv] = (nao[r.conv] || 0) + 1; if (r.men) { mencoes[r.conv] = (mencoes[r.conv] || 0) + 1; mencaoId = Math.max(mencaoId, r.id); } }
       const ultimas = {}; for (const r of this.sql.exec(`SELECT * FROM msgs WHERE id IN (SELECT MAX(id) FROM msgs WHERE ${M} GROUP BY conv)`).toArray()) ultimas[r.conv] = r;
       const desde = Math.max(0, +b.desde || 0);
       const novas = desde ? this.sql.exec(`SELECT * FROM msgs WHERE id > ? AND ${M} ORDER BY id LIMIT 300`, desde).toArray() : [];
       const ultimo = this.sql.exec('SELECT MAX(id) AS m FROM msgs').toArray()[0]?.m || 0;
       let geral = null; try { geral = JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'geral'").toArray()[0]?.v || 'null'); } catch { }
       const apelidos = Object.fromEntries(this.sql.exec('SELECT alvo, nick FROM apelidos WHERE u = ?', u).toArray().map(r => [r.alvo, r.nick]));
-      return Response.json({ nao, ultimas, novas, ultimo, geral, apelidos });
+      return Response.json({ nao, mencoes, mencaoId, ultimas, novas, ultimo, geral, apelidos });
     }
     if (b.op === 'conversa') {
       const conv = String(b.conv || ''); if (!minhaConv(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
@@ -439,7 +441,8 @@ async function anexo(req, env, url, s) {
   const e = String(s.e).toLowerCase(), u = await codigoU(e);
   if (req.method === 'POST') {
     if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
-    const para = url.searchParams.get('para') || ''; if (para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u)) return json({ error: { message: 'Para quem?' } }, 400);
+    const paras = [...new Set((url.searchParams.get('para') || '').split(',').filter(Boolean))].slice(0, 40); // pode ir para várias conversas (o mesmo arquivo)
+    if (!paras.length || paras.some(para => para !== 'geral' && (!/^u[0-9a-f]{16}$/.test(para) || para === u))) return json({ error: { message: 'Para quem?' } }, 400);
     const tam = +req.headers.get('content-length') || 0; if (tam > ANEXO_MAX) return json({ error: { message: 'Arquivo grande demais para mandar por mensagem (máximo 95 MB).' } }, 413);
     const nome = (url.searchParams.get('nome') || 'arquivo').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').slice(0, 120);
     const id = [...crypto.getRandomValues(new Uint8Array(20))].map(x => 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]).join(''), ttl = { expirationTtl: 7 * 86400 };
@@ -451,13 +454,13 @@ async function anexo(req, env, url, s) {
       total += value.length; if (total > ANEXO_MAX) { for (let i = 0; i < n; i++) await env.PERFIS.delete('ax:' + id + ':' + i).catch(() => { }); return json({ error: { message: 'Arquivo grande demais (máximo 95 MB).' } }, 413); }
       let o = 0; while (o < value.length) { const k = Math.min(PEDACO - cheio, value.length - o); buf.set(value.subarray(o, o + k), cheio); cheio += k; o += k; if (cheio === PEDACO) await guarda(); } }
     await guarda(); if (!total) return json({ error: { message: 'Arquivo vazio.' } }, 400);
-    await env.PERFIS.put('ax:' + id, JSON.stringify({ nome, bytes: total, n, conv: convDe(u, para), de: u, em: Date.now() }), ttl);
+    await env.PERFIS.put('ax:' + id, JSON.stringify({ nome, bytes: total, n, convs: paras.map(p => convDe(u, p)), de: u, em: Date.now() }), ttl);
     return json({ id, nome, bytes: total });
   }
   const id = url.searchParams.get('id') || ''; if (!/^[a-z0-9]{20}$/.test(id)) return json({ error: { message: 'Arquivo inválido.' } }, 400);
   const meta = await env.PERFIS.get('ax:' + id, { type: 'json' }).catch(() => null);
   if (!meta) return json({ error: { message: 'Este arquivo não existe mais (as mensagens e os arquivos somem depois de 7 dias).' } }, 404);
-  if (!minhaConv(u, meta.conv)) return json({ error: { message: 'Este arquivo é de outra conversa.' } }, 403);
+  if (!(meta.convs || [meta.conv]).some(c => minhaConv(u, c))) return json({ error: { message: 'Este arquivo é de outra conversa.' } }, 403);
   const { readable, writable } = new FixedLengthStream(meta.bytes);
   (async () => { const w = writable.getWriter(); try { for (let i = 0; i < meta.n; i++) { const p = await env.PERFIS.get('ax:' + id + ':' + i, { type: 'arrayBuffer' }); if (!p) throw new Error('pedaço sumiu'); await w.write(new Uint8Array(p)); } await w.close(); } catch (er) { await w.abort(er).catch(() => { }); } })();
   return new Response(readable, { headers: { 'content-type': 'application/octet-stream', 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(meta.nome)}`, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff', 'x-porteiro': '1' } });
@@ -475,12 +478,13 @@ async function mensagens(req, env, url) {
       const r = await conversas(env, { op: 'geral', u, e, nome: b.nome, foto: b.foto }); return json(r.j); }
     if (b.op === 'apelido') { const r = await conversas(env, { op: 'apelido', u, e, alvo: b.alvo, nick: b.nick }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
     if (b.op !== 'enviar' && b.op !== 'lida') return json({ error: { message: 'Pedido desconhecido.' } }, 400);
-    let cita = null, convAnexo;
+    let cita = null;
     if (b.op === 'enviar' && b.cita) { const c = limpaCita(b.cita); if (c.erro) return json({ error: { message: c.erro } }, 400); cita = c.cita;
       if (cita.anexo) { const meta = await env.PERFIS.get('ax:' + cita.anexo.id, { type: 'json' }).catch(() => null);
         if (!meta || meta.de !== u) return json({ error: { message: 'O arquivo anexado não foi encontrado. Tente de novo.' } }, 400);
-        convAnexo = meta.conv; cita.anexo = { id: cita.anexo.id, nome: meta.nome, bytes: meta.bytes }; } }
-    const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.op === 'enviar' ? convAnexo : b.conv, ate: b.ate, cita: cita ? JSON.stringify(cita) : null });
+        if (!(meta.convs || [meta.conv]).includes(convDe(u, String(b.para || '')))) return json({ error: { message: 'O arquivo foi preparado para outra conversa.' } }, 400);
+        cita.anexo = { id: cita.anexo.id, nome: meta.nome, bytes: meta.bytes }; } }
+    const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.op === 'enviar' ? undefined : b.conv, ate: b.ate, cita: cita ? JSON.stringify(cita) : null });
     return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j);
   }
   if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e, conv: url.searchParams.get('conv') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
