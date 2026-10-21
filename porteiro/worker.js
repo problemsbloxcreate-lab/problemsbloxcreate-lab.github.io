@@ -148,13 +148,14 @@ async function nuvemUso(req, env, url) {
   const eu = s.e.toLowerCase(), mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + eu).catch(() => '{}') || '{}'), perfis = new Map();
   const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (!perfis.has(email)) { const p = await lePerfil(env, email), id = await idDe(email); mapa[id] = email;
     perfis.set(email, { porNome: p.nome || p.google?.nome || mascara(email), porFoto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); };
-  const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, bytes: 0, n: 0, itens: [] });
-  const NOMES = { cenarios: 'Cenários', menu: 'Menu (fundos e links)', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento da IA', acesso: 'Lista de quem entra' };
+  const PROJ = { personagens: 'Animador', cenarios: 'Animador', menu: 'Menu do Estúdio', fotos: 'Menu do Estúdio', acesso: 'Menu do Estúdio', conhecimento: 'Shorts', equipe: 'Geral', outros: 'Geral' };
+  const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, projeto: PROJ[id] || 'Geral', bytes: 0, n: 0, itens: [] });
+  const NOMES = { cenarios: 'Cenários', menu: 'Fundos e links do menu', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento da IA', acesso: 'Lista de quem entra' };
   const pers = {};
   for (const it of j.itens || []) {
     const tam = +it.tam || 0, raiz = it.k.split('/')[0];
     if (raiz === 'personagens') {
-      const slug = it.k.split('/')[1] || '?', g = grupo('personagens', 'Personagens do Animador'), c = pers[slug] || (pers[slug] = { nome: humano(slug), bytes: 0, n: 0, em: null, por: null, imagens: 0 });
+      const slug = it.k.split('/')[1] || '?', g = grupo('personagens', 'Personagens'), c = pers[slug] || (pers[slug] = { nome: humano(slug), bytes: 0, n: 0, em: null, por: null, imagens: 0 });
       c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
     }
     const g = grupo(NOMES[raiz] ? raiz : 'outros', NOMES[raiz] || 'Outros'); g.bytes += tam; g.n++;
@@ -172,7 +173,8 @@ async function nuvemUso(req, env, url) {
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
   await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
   await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
-  return json({ limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos });
+  const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;
+  return json({ limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes) });
 }
 
 /* ---------- ADM › Acesso: quem pode entrar (lista do servidor turma-ia) com nome e foto da conta de cada um ----------

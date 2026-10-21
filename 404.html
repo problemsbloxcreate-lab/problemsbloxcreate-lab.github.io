@@ -183,7 +183,8 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}.nv-top b{font-size:22px}.nv-top small{color:var(--tx2)}
 .nv-barra{height:12px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;display:flex;margin:6px 0 4px}.nv-barra i{display:block;height:100%;min-width:3px}
 .nv-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--tx2);margin-bottom:14px}.nv-leg span{display:inline-flex;align-items:center;gap:6px}.nv-leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
-.nv-g{border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden}.nv-g>summary{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;list-style:none}.nv-g>summary::-webkit-details-marker{display:none}
+.nv-p{margin-bottom:14px}.nv-pt{display:flex;align-items:center;gap:8px;margin:0 2px 6px}.nv-pt i{width:10px;height:10px;border-radius:3px}.nv-pt b{font-size:14px}.nv-pt small{color:var(--tx2);font-variant-numeric:tabular-nums}
+.nv-g{border:1px solid var(--bd);border-radius:12px;margin-bottom:6px;overflow:hidden}.nv-g>summary{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;list-style:none}.nv-g>summary::-webkit-details-marker{display:none}
 .nv-g>summary i{width:10px;height:10px;border-radius:3px;flex:none}.nv-g>summary b{flex:1}.nv-g>summary small{color:var(--tx2);font-variant-numeric:tabular-nums}
 .nv-i{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--bd);font-size:13px}.nv-i .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nv-i .tm{color:var(--tx2);font-variant-numeric:tabular-nums;width:76px;text-align:right}
 .nv-i .por{display:inline-flex;align-items:center;gap:6px;color:var(--tx2);font-size:12px;max-width:180px;overflow:hidden;white-space:nowrap}.nv-i .mini{width:18px;height:18px;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:var(--bg3,#3a3a3a);font-size:10px;flex:none}.nv-i .mini img{width:100%;height:100%;object-fit:cover}
@@ -1012,13 +1013,15 @@ async function renderNuvem() {
   let j; try { const r = await fetch('/nuvem-uso', { credentials: 'same-origin', cache: 'no-store', headers: { authorization: 'Bearer ' + await token() } }); j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.'); }
   catch (e) { box.innerHTML = `<div class="hint">Não consegui medir: ${esc(e.message)}</div>`; return; }
   const pct = j.total / j.limite * 100, livre = Math.max(0, j.limite - j.total);
+  const P = j.projetos || [{ nome: 'Nuvem', bytes: j.total, grupos: j.grupos }];
   box.innerHTML = `<div class="nv-top"><div><b>${fmt(j.total)}</b> <small>usados de ${fmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${fmt(livre)}</b> <small>livres</small></div></div>
-    <div class="nv-barra">${j.grupos.map((g, i) => `<i style="width:${g.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(g.nome)}: ${fmt(g.bytes)}"></i>`).join('')}</div>
-    <div class="nv-leg">${j.grupos.map((g, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(g.nome)} · ${fmt(g.bytes)}</span>`).join('')}</div>
-    ${j.grupos.map((g, i) => `<details class="nv-g"><summary><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${fmt(g.bytes)}</small></summary>
+    <div class="nv-barra">${P.map((pr, i) => `<i style="width:${pr.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(pr.nome)}: ${fmt(pr.bytes)}"></i>`).join('')}</div>
+    <div class="nv-leg">${P.map((pr, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(pr.nome)} · ${fmt(pr.bytes)}</span>`).join('')}</div>
+    ${P.map((pr, i) => `<div class="nv-p"><div class="nv-pt"><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(pr.nome)}</b><span class="sp"></span><small>${fmt(pr.bytes)}</small></div>
+    ${pr.grupos.map(g => `<details class="nv-g"><summary><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${fmt(g.bytes)}</small></summary>
       ${g.itens.slice(0, 300).map(it => `<div class="nv-i"><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.ia ? '<span class="nv-ia">IA</span>' : ''}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
         ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${fmt(it.bytes)}</span></div>`).join('')}
-      ${g.itens.length > 300 ? `<div class="nv-i hint">… e mais ${g.itens.length - 300}</div>` : ''}</details>`).join('') || '<div class="hint">A nuvem está vazia.</div>'}
+      ${g.itens.length > 300 ? `<div class="nv-i hint">… e mais ${g.itens.length - 300}</div>` : ''}</details>`).join('')}</div>`).join('') || '<div class="hint">A nuvem está vazia.</div>'}
     <div class="hint" style="margin-top:10px">Espaço grátis da Cloudflare (KV), dividido entre tudo o que está aqui. Os sons ficam num espaço separado e não entram nesta conta.</div>`;
 }
 function abaAdm(n) {
