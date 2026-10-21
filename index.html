@@ -729,7 +729,8 @@ function abrirConta() {
     $('[data-a=foto]', d).onclick = async () => {
       const f = await pedirArquivo('image/png,image/jpeg,image/webp,image/gif'); if (!f) return;
       if (f.size > 40 * 1048576) return m('Essa imagem é grande demais (até 40 MB).');
-      const pronta = await cortarFoto(f); if (!pronta) return; // a pessoa ajusta zoom, giro e posição antes de aplicar
+      let pronta = await cortarFoto(f); if (!pronta) return; // a pessoa ajusta zoom, giro e posição antes de aplicar
+      pronta = await paraWebp(pronta); // na nuvem vai em WEBP quando fica menor
       m('Enviando a foto…'); try { CONTA = await contaApi('/conta/foto', { method: 'PUT', body: pronta, headers: { 'content-type': pronta.type } }); aplicaConta(); pinta(); } catch (e) { m(e.message); }
     };
     const sf = $('[data-a=semfoto]', d); if (sf) sf.onclick = async () => { try { CONTA = await contaApi('/conta/foto', { method: 'DELETE' }); aplicaConta(); pinta(); } catch (e) { m(e.message); } };
@@ -823,7 +824,7 @@ async function novaMidia(como) {
   const f = await pedirArquivo(); if (!f) return null;
   if (!/^(image|video)\//.test(f.type)) { toast('Escolha uma imagem, GIF ou vídeo.'); return null; }
   if (f.size > 25 * 1048576) { toast('Arquivo maior que 25 MB. Para vídeos grandes, use "Colar link".'); return null; }
-  st(`Enviando ${f.name}…`);
+  f = await paraWebp(f); st(`Enviando ${f.name}…`);
   try {
     const j = await api(`/menu-midia?nome=${encodeURIComponent(f.name)}&tipo=${encodeURIComponent(f.type)}`, { method: 'POST', body: f, headers: { 'content-type': f.type } });
     blobs.set('kv:' + j.k, Promise.resolve(URL.createObjectURL(f)));
@@ -831,8 +832,15 @@ async function novaMidia(como) {
     return { tipo: tipoDe(f.type), src: 'kv:' + j.k, x: 50, y: 50, zoom: 1 };
   } catch (e) { st(e.message, 'err'); return null; }
 }
+// imagens que vão para a nuvem vão em WEBP quando fica menor (PNG/JPG; GIF animado, vídeo e WebP ficam como estão)
+async function paraWebp(f) {
+  if (!/^image\/(png|jpeg)$/.test(f?.type || '')) return f;
+  try { const bm = await createImageBitmap(f), c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d').drawImage(bm, 0, 0);
+    const w = await new Promise(ok => c.toBlob(ok, 'image/webp', .92)); if (!w || w.type !== 'image/webp' || w.size >= f.size * .95) return f;
+    return new File([w], String(f.name || 'imagem').replace(/\.(png|jpe?g)$/i, '') + '.webp', { type: 'image/webp' }); } catch { return f; }
+}
 async function enviarMidia(f) {
-  st(`Enviando ${f.name}…`);
+  f = await paraWebp(f); st(`Enviando ${f.name}…`);
   try {
     const j = await api(`/menu-midia?nome=${encodeURIComponent(f.name)}&tipo=${encodeURIComponent(f.type)}`, { method: 'POST', body: f, headers: { 'content-type': f.type } });
     blobs.set('kv:' + j.k, Promise.resolve(URL.createObjectURL(f))); st('Arquivo enviado. Lembre de salvar.', 'ok'); return 'kv:' + j.k;
@@ -1161,7 +1169,8 @@ async function renderNuvem(manter) {
     + (g.itens.some(it => it.ref && !it.protegido) ? `<button class="btn sm nv-limpa" type="button" data-g="${GRUPOS.push(g) - 1}" title="Apagar tudo deste grupo (o que é protegido fica)">${NVI.lixo}Limpar</button>` : '');
   box.innerHTML = `${(j.avisos || []).map(a => `<div class="hint nv-aviso">${esc(a)}</div>`).join('')}${(j.info || []).length ? `<div class="nv-info">${j.info.map(a => `<div>${esc(a)}</div>`).join('')}</div>` : ''}
     <div class="nv-top"><div><b>${nvFmt(j.total)}</b> <small>usados de ${nvFmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${nvFmt(livre)}</b> <small>livres</small></div>
-      ${baixaveis.length ? `<button class="btn sm" type="button" id="nv-tudo" title="Baixar tudo desta nuvem num .zip">${NVI.baixar}Baixar tudo</button>` : ''}</div>
+      ${baixaveis.length ? `<button class="btn sm" type="button" id="nv-tudo" title="Baixar tudo desta nuvem num .zip">${NVI.baixar}Baixar tudo</button>` : ''}
+      ${fonte === 'equipe' && nvPendentesWebp(j) ? `<button class="btn sm" type="button" id="nv-webp" title="Converte as imagens PNG/JPG dos personagens e cenários para WEBP (só as que ficam menores) e apaga as antigas">${NVI.imagem}Converter ${nvPendentesWebp(j)} para WebP</button>` : ''}</div>
     <div class="nv-barra">${P.map((pr, i) => `<i style="width:${pr.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(pr.nome)}: ${nvFmt(pr.bytes)}"></i>`).join('')}</div>
     <div class="nv-leg">${P.map((pr, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(pr.nome)} · ${nvFmt(pr.bytes)}</span>`).join('')}</div>
     ${P.map((pr, i) => `<div class="nv-p"><div class="nv-pt"><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(pr.nome)}</b><span class="sp"></span><small>${nvFmt(pr.bytes)}</small></div>
@@ -1199,6 +1208,57 @@ async function renderNuvem(manter) {
   $$('#nuvem-box [data-g]').forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); const g = GRUPOS[+b.dataset.g], its = g.itens.filter(it => it.ref && !it.protegido);
     apaga(its, `Limpar "${g.nome}"?`, `${its.length} ${its.length === 1 ? 'item sai' : 'itens saem'} da nuvem (${nvFmt(its.reduce((t, it) => t + it.bytes, 0))}). O que é protegido fica. Não dá para desfazer.`, b); });
   const bt = $('#nv-tudo'); if (bt) bt.onclick = () => baixaVarios(todos, 'Nuvem ' + NV_FONTES.find(f => f[0] === fonte)[1], bt);
+  const bw = $('#nv-webp'); if (bw) bw.onclick = async () => {
+    if (!(await pergunta({ titulo: 'Converter para WebP?', texto: `As imagens PNG/JPG dos personagens e cenários na nuvem viram WEBP (só as que ficam menores), e as antigas são apagadas. Quem enviou continua o mesmo. As animações antigas continuam abrindo. Pode levar alguns minutos.`, ok: 'Converter' }))) return;
+    bw.disabled = true; let r; try { r = await nvConverteWebp(t => { bw.textContent = t; }); } catch (e) { r = { erro: e.message }; }
+    alerta(r.erro ? `Parou: ${r.erro}${r.n ? ` (antes disso converteu ${r.n} e liberou ${nvFmt(r.salvo)}). Clique de novo depois para continuar.` : ''}` : r.n ? `Pronto: ${r.n} imagens convertidas, ${nvFmt(r.salvo)} a menos na nuvem.` : 'Nada para converter (as que restam não ficam menores em WebP).', !r.erro);
+    try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } setTimeout(() => renderNuvem(true), 1800);
+  };
+}
+// quantas imagens PNG/JPG ainda tem nos personagens e cenários da nuvem da equipe
+function nvPendentesWebp(j) {
+  let n = 0; for (const pr of j.projetos || []) for (const g of pr.grupos) for (const it of g.itens) {
+    if (it.arqs) n += it.arqs.filter(a => /\/img\/[^/]+\.(png|jpe?g)$/i.test(a.nome) || /\.(png|jpe?g)$/i.test(a.nome)).length;
+    else if (/^k:cenarios\/.*\.(png|jpe?g)$/i.test(it.ref || '')) n++; }
+  return n;
+}
+// converte de verdade: baixa, faz o WEBP, sobe com o mesmo autor (de=), troca no personagem e apaga a antiga
+async function nvConverteWebp(diz) {
+  const tk = 'Bearer ' + await token(), pega = async (c, o = {}) => { const r = await fetch(SRV + c, { cache: 'no-store', ...o, headers: { authorization: tk, ...(o.headers || {}) } }); if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error?.message || 'o servidor respondeu ' + r.status); } return r; };
+  const webp = async b => { const bm = await createImageBitmap(b), c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d').drawImage(bm, 0, 0); const w = await new Promise(ok => c.toBlob(ok, 'image/webp', .92)); return w && w.type === 'image/webp' && w.size < b.size * .95 ? w : null; };
+  const ext = /\.(png|jpe?g)$/i; let n = 0, salvo = 0;
+  try {
+    // personagens: cada um é uma pasta com personagem.json + img/
+    const it = (await (await pega('/personagens')).json()).itens || [], pastas = {};
+    for (const x of it) { const m = x.k.match(/^personagens\/([^/]+)\//); if (m) (pastas[m[1]] ||= []).push(x); }
+    const ids = Object.keys(pastas).filter(id => pastas[id].some(x => ext.test(x.k)));
+    for (let a = 0; a < ids.length; a++) {
+      const id = ids[a], kj = `personagens/${id}/personagem.json`; if (!pastas[id].some(x => x.k === kj)) continue;
+      let txt = await (await pega('/personagens/arquivo?k=' + encodeURIComponent(kj))).text(); const def = JSON.parse(txt), troca = {};
+      const usadas = [...new Set([...(def.partes || []).flatMap(p => (p.imgs || []).map(i => i.k)), def.vis?.fantasma?.k].filter(k => k && ext.test(k)))];
+      for (const k of usadas) {
+        diz(`Personagem ${a + 1}/${ids.length} (${def.nome || id}) · ${n} convertidas…`);
+        const b = await (await pega('/personagens/arquivo?k=' + encodeURIComponent(k))).blob().catch(() => null); if (!b) continue;
+        const w = await webp(b).catch(() => null); if (!w) continue;
+        const nk = k.replace(ext, '.webp'); await pega(`/personagens/arquivo?k=${encodeURIComponent(nk)}&de=${encodeURIComponent(k)}`, { method: 'POST', body: w, headers: { 'content-type': 'image/webp' } });
+        troca[k] = nk; salvo += b.size - w.size; n++;
+      }
+      if (!Object.keys(troca).length) continue;
+      for (const [k, nk] of Object.entries(troca)) txt = txt.split(JSON.stringify(k)).join(JSON.stringify(nk));
+      await pega(`/personagens/arquivo?k=${encodeURIComponent(kj)}&de=${encodeURIComponent(kj)}&nome=${encodeURIComponent(def.nome || '')}`, { method: 'POST', body: txt, headers: { 'content-type': 'application/json' } });
+      for (const k of Object.keys(troca)) await pega('/personagens/arquivo?k=' + encodeURIComponent(k), { method: 'DELETE' }).catch(() => { });
+    }
+    // cenários
+    const cs = ((await (await pega('/cenarios')).json()).itens || []).filter(x => ext.test(x.k));
+    for (let a = 0; a < cs.length; a++) {
+      const x = cs[a]; diz(`Cenário ${a + 1}/${cs.length} · ${n} convertidas…`);
+      const b = await (await pega('/cenarios/arquivo?k=' + encodeURIComponent(x.k))).blob().catch(() => null); if (!b) continue;
+      const w = await webp(b).catch(() => null); if (!w) continue;
+      const nk = x.k.replace(ext, '.webp'); await pega(`/cenarios/arquivo?k=${encodeURIComponent(nk)}&de=${encodeURIComponent(x.k)}&nome=${encodeURIComponent(x.nome || 'Cenário')}`, { method: 'POST', body: w, headers: { 'content-type': 'image/webp' } });
+      await pega('/cenarios/arquivo?k=' + encodeURIComponent(x.k), { method: 'DELETE' }).catch(() => { }); salvo += b.size - w.size; n++;
+    }
+  } catch (e) { return { n, salvo, erro: e.message }; }
+  return { n, salvo };
 }
 function nvTrocaFonte(f) { if (!NV_FONTE[f]) return; NV.fonte = f; try { localStorage.setItem('ep-nuvem-fonte', f); } catch { } renderNuvem(); }
 

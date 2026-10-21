@@ -134,6 +134,8 @@ export default {
     //   GET    /personagens/arquivo?k=…         → o arquivo
     //   PUT    /personagens/arquivo?k=…         → salva (corpo = arquivo; até 10 MB)
     //   DELETE /personagens/arquivo?k=…         → apaga  (k terminado em "/" apaga a pasta do personagem inteira)
+    // ADM convertendo para WEBP (?de=<chave antiga>): o arquivo novo continua com quem enviou e quando (não vira do ADM)
+    const metaDe = async (de) => { if (!de || !ehAdmin(env, login.email) || de.length > 300) return null; try { const o = await env.EQUIPE.getWithMetadata(de, { type: 'stream' }); try { await o.value?.cancel(); } catch { } return o.metadata || null; } catch { return null; } };
     if (p0 === '/personagens' || p0 === '/personagens/arquivo') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
@@ -153,7 +155,8 @@ export default {
         const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
         if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
         if (!k.endsWith('.json') && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
-        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
+        const m0 = await metaDe(q.get('de'));
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
@@ -214,7 +217,8 @@ export default {
         const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
         if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
         if ((await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
-        await env.EQUIPE.put(k, buf, { metadata: { nome, tipo, ia, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
+        const m0 = await metaDe(q.get('de'));
+        await env.EQUIPE.put(k, buf, { metadata: { nome: m0?.nome || nome, tipo, ia: m0 ? !!m0.ia : ia, tam: buf.byteLength, por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') { if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors); await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors); } // apagar da nuvem: só ADM
