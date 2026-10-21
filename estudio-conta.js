@@ -203,6 +203,8 @@
 .ep-msgs .epm-carr,.epa-carr{margin:auto;display:grid;justify-items:center;gap:6px;padding:22px 10px;color:#a9adb7;font-size:12px}.ep-msgs .epm-lista .epm-carr{margin:20px auto}
 .ep-msgs .epm-cb{width:160px;height:4px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}.ep-msgs .epm-cb i{position:absolute;top:0;bottom:0;left:0;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);transition:width .2s linear}
 .ep-msgs .epm-ct2{display:flex;gap:7px;align-items:baseline;max-width:240px}.ep-msgs .epm-ct2 b{color:#cfd3da;font-variant-numeric:tabular-nums}.ep-msgs .epm-ct2 span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ep-msgs .epm-pend{opacity:.62}.ep-msgs .epm-pend .epm-b{min-width:120px}.ep-msgs .epm-pbar{height:3px;border-radius:3px;background:rgba(255,255,255,.25);overflow:hidden;margin:6px 0 2px;position:relative}.ep-msgs .epm-pbar i{position:absolute;top:0;bottom:0;left:0;background:#fff;border-radius:3px;transition:width .2s linear}
+.ep-msgs .epm-pend time{white-space:nowrap}.ep-msgs .epm-pend time b{font-variant-numeric:tabular-nums;font-weight:700}.ep-msgs .epm-falhou{opacity:1}.ep-msgs .epm-falhou .epm-b{background:#5a2c33!important}.ep-msgs .epm-perr{font-size:12px;color:#ffc2c8;margin-top:4px}.ep-msgs .epm-pbt{display:flex;gap:6px;margin-top:6px}.ep-msgs .epm-pbt .epm-bt{height:26px;font-size:12px}
 .ep-msgs .epm-ck{width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid #6a6d78;display:grid;place-items:center;color:#fff}.ep-msgs .epm-alvo .epm-ck{background:#9b7bff;border-color:#9b7bff}.ep-msgs .epm-ck svg{width:13px;height:13px}
 .ep-msgs .epm-pes.epm-alvo{background:rgba(155,123,255,.16);box-shadow:inset 0 0 0 1px rgba(155,123,255,.6)}
 .ep-msgs .epm-m .epm-b p .epm-ment{display:inline;font-size:inherit;margin:0;color:#9ec5ff;font-weight:700;background:rgba(61,139,255,.16);border-radius:5px;padding:0 3px}.ep-msgs .epm-m .epm-b p .epm-ment.epm-eu{color:#fff;background:#d6394b}
@@ -942,7 +944,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     async function desenhaConversa() {
       const c = M.conv; if (!c) return;
       const perto = fala.scrollHeight - fala.scrollTop - fala.clientHeight < 80;
-      if (!c.msgs.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : c.u.startsWith('g:') ? 'Ninguém escreveu neste grupo nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
+      if (!c.msgs.length && !c.pend?.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : c.u.startsWith('g:') ? 'Ninguém escreveu neste grupo nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
       const autores = [...new Set([...c.msgs.map(m => m.de), ...c.msgs.flatMap(m => codigosMenc(m.texto))].filter(u => u !== M.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
       const nomesM = Object.fromEntries(Object.entries(qs).map(([u, q]) => [u, q?.nome || 'alguém'])); nomesM[M.eu] = euNome();
       let h = '', dia = '', ant = null; const cits = [];
@@ -953,7 +955,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}${m.apagada ? (M.como ? ' epm-apagadaAdm' : ' epm-apagada') : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-avvz"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && (c.u === 'geral' || c.u.startsWith('g:')) ? `<b>${esc(nomeU(m.de, q, M))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.apagada ? `<div class="epm-apg">${ICONES.lixo} ${M.como ? 'Apagada para todos · ' + esc(new Date(m.apagada).toLocaleString('pt-BR')) : 'Mensagem apagada'}</div>` : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM, M.eu)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}${meu && !m.apagada ? `<span class="epm-tk" data-tk="${m.id}"></span>` : ''}</time></div>${m.apagada && !M.como ? '' : meu ? `<button type="button" class="epm-denuncia" data-apaga="${m.id}" title="Apagar para todos">${ICONES.lixo}</button>` : `<button type="button" class="epm-denuncia" data-den="${m.id}" title="Denunciar esta mensagem para os ADMs">${ICONES.bandeira}</button>`}</div>`;
         ant = m;
       }
-      fala.innerHTML = h;
+      fala.innerHTML = h + (c.pend || []).map(pendHtml).join(''); ligaPend(fala);
       pintaTicks();
       fala.querySelectorAll('[data-den]').forEach(b => b.onclick = () => denunciar(+b.dataset.den));
       fala.querySelectorAll('[data-apaga]').forEach(b => b.onclick = () => apagarParaTodos(+b.dataset.apaga));
@@ -1030,39 +1032,63 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (sug && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); escolheSug(sugI); return; }
       if (sug && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fechaSug(); return; }
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } };
-    form.onsubmit = async e => {
-      e.preventDefault(); const texto = comMencoes(ta.value.trim()), c = M.conv, ci = M.citando; if ((!texto && !ci) || !c || form.classList.contains('ind')) return;
-      const alvos = c.multi ? c.alvos : [{ id: c.id, u: c.u }];
-      form.classList.add('ind');
-      const aviso = txt => { let n = fala.querySelector('.epm-enviando'); if (!txt) return n?.remove(); if (!n) { n = document.createElement('div'); n.className = 'epm-enviando'; fala.appendChild(n); } n.textContent = txt; fala.scrollTop = fala.scrollHeight; };
+    // enviar: a mensagem sai da caixa na hora e aparece meio transparente, com barra e %, até chegar no servidor
+    let fila = Promise.resolve();
+    const ciVer = ci => ci && { ...ci, anexo: ci.arquivo ? { bytes: ci.tamanho || 0, nome: ci.nomeArquivo || '' } : null };
+    const nomesJa = () => { const o = Object.fromEntries(NOMES); o[M.eu] = euNome(); return o; };
+    function pendHtml(pe) {
+      const falhou = pe.est === 'falhou';
+      return `<div class="epm-m epm-meu epm-pend${falhou ? ' epm-falhou' : ''}" data-pend="${pe.key}"><div class="epm-b">${pe.ci ? citaHtml(ciVer(pe.ci), -1) : ''}${pe.texto ? `<p>${textoMsg(pe.texto, nomesJa(), M.eu)}</p>` : ''}
+        ${falhou ? `<div class="epm-perr">${esc(pe.erro || 'Não enviou.')}</div><div class="epm-pbt"><button type="button" class="epm-bt" data-retry>Tentar de novo</button><button type="button" class="epm-bt" data-desc>Descartar</button></div>`
+          : `<div class="epm-pbar"><i style="width:${pe.pct}%"></i></div><time><b>${Math.round(pe.pct)}%</b> ${esc(pe.txt)}</time>`}</div></div>`;
+    }
+    function ligaPend(raiz) {
+      raiz.querySelectorAll('[data-pend]').forEach(el => { const pe = (M.conv?.pend || []).find(x => x.key === el.dataset.pend); if (!pe) return;
+        el.querySelector('[data-retry]')?.addEventListener('click', () => { pe.est = ''; pe.erro = ''; pe.pct = 3; pe.txt = 'Enviando…'; pintaPendEl(pe, true); fila = fila.then(() => enviaPend(pe)); });
+        el.querySelector('[data-desc]')?.addEventListener('click', () => { pe.conv.pend = pe.conv.pend.filter(x => x !== pe); el.remove(); }); });
+    }
+    function pintaPendEl(pe, tudo) {
+      if (M.conv !== pe.conv) return; const el = fala.querySelector(`[data-pend="${pe.key}"]`);
+      if (!el) { fala.querySelector(':scope > .epm-vazio')?.remove(); fala.insertAdjacentHTML('beforeend', pendHtml(pe)); ligaPend(fala); fala.scrollTop = fala.scrollHeight; return; }
+      if (tudo || pe.est === 'falhou') { el.outerHTML = pendHtml(pe); ligaPend(fala); return; }
+      const i = el.querySelector('.epm-pbar i'), t = el.querySelector('time'); if (i) i.style.width = pe.pct + '%'; if (t) t.innerHTML = `<b>${Math.round(pe.pct)}%</b> ${esc(pe.txt)}`;
+    }
+    async function enviaPend(pe) {
+      const c = pe.conv, alvos = pe.alvos, ci = pe.ci, atu = (pct, txt) => { pe.pct = Math.max(pe.pct, pct); if (txt) pe.txt = txt; pintaPendEl(pe); };
       try {
         let cita = null;
         if (ci) {
           cita = { prog: ci.prog, titulo: ci.titulo, sub: ci.sub, mini: ci.mini, url: ci.url, abrir: ci.abrir, parte: ci.parte };
           if (ci.arquivo) { // o arquivo sobe uma vez só e vale para todas as conversas escolhidas
-            aviso('Preparando o arquivo…');
-            const a = await ci.arquivo(); if (!a?.blob) throw new Error('O programa não conseguiu montar o arquivo.');
+            atu(5, 'Preparando o arquivo…');
+            const a = pe.arq || (pe.arq = await ci.arquivo()); if (!a?.blob) throw new Error('O programa não conseguiu montar o arquivo.');
             const up = await new Promise((ok, falha) => { const x = new XMLHttpRequest();
               x.open('POST', '/mensagens/anexo?para=' + encodeURIComponent(alvos.map(a2 => a2.u).join(',')) + '&nome=' + encodeURIComponent(a.nome || 'arquivo'));
-              x.upload.onprogress = ev => { if (ev.lengthComputable) aviso(`Enviando ${a.nome || 'o arquivo'}… ${Math.round(ev.loaded / ev.total * 100)}%`); };
+              x.upload.onprogress = ev => { if (ev.lengthComputable) atu(10 + ev.loaded / ev.total * 75, `Enviando ${a.nome || 'o arquivo'} (${fmtTam(ev.loaded)} de ${fmtTam(ev.total)})`); };
               x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch { } x.status < 300 ? ok(j) : falha(new Error(j.error?.message || 'Não deu para enviar o arquivo.')); };
               x.onerror = () => falha(new Error('A internet caiu no meio do envio.')); x.send(a.blob); });
             cita.anexo = { id: up.id };
           }
-          aviso('');
         }
-        const feitas = [];
+        const base = pe.pct < 10 ? 20 : pe.pct, feitas = [];
+        atu(base, alvos.length > 1 ? `Enviando para ${alvos.length} conversas…` : 'Enviando…');
         for (const al of alvos) {
-          if (alvos.length > 1) aviso(`Enviando ${feitas.length + 1} de ${alvos.length}…`);
-          const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: al.u, texto, cita }) });
+          const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'enviar', para: al.u, texto: pe.texto, cita }) });
           const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu para enviar.');
           feitas.push(j.msg); if (M.res) M.res.ultimas = { ...(M.res.ultimas || {}), [j.msg.conv]: j.msg };
+          atu(base + (100 - base) * feitas.length / alvos.length, alvos.length > 1 ? `Enviado ${feitas.length} de ${alvos.length}` : 'Enviando…');
         }
-        aviso(''); ta.value = ''; ajusta(); mencionados.clear(); if (ci || c.multi) { M.citando = null; M.escolha = null; pintaCitando(); }
-        if (c.multi) { const n = feitas.length; desenhaLista(); await abreConv(feitas[0].conv, alvos[0].u); aviso(`Enviado para ${n} conversas.`); setTimeout(() => aviso(''), 3500); }
-        else if (M.conv === c) { c.msgs.push(feitas[0]); if (c.id !== feitas[0].conv) c.id = feitas[0].conv; c.primeira = true; desenhaConversa(); desenhaLista(); }
-      } catch (er) { aviso(''); const n = document.createElement('div'); n.className = 'epm-erro'; n.textContent = er.message; fala.appendChild(n); fala.scrollTop = fala.scrollHeight; setTimeout(() => n.remove(), 5000); }
-      finally { form.classList.remove('ind'); ta.focus(); }
+        c.pend = (c.pend || []).filter(x => x !== pe);
+        if (c.multi) { desenhaLista(); if (M.conv === c) { await abreConv(feitas[0].conv, alvos[0].u); const n = document.createElement('div'); n.className = 'epm-enviando'; n.textContent = `Enviado para ${feitas.length} conversas.`; fala.appendChild(n); setTimeout(() => n.remove(), 3500); } }
+        else { for (const m of feitas) if (!c.msgs.some(x => x.id === m.id)) c.msgs.push(m); if (c.id !== feitas[0].conv) c.id = feitas[0].conv; if (M.conv === c) { c.primeira = true; desenhaConversa(); } desenhaLista(); }
+      } catch (er) { pe.est = 'falhou'; pe.erro = er.message; pintaPendEl(pe, true); }
+    }
+    form.onsubmit = e => {
+      e.preventDefault(); const texto = comMencoes(ta.value.trim()), c = M.conv, ci = M.citando; if ((!texto && !ci) || !c) return;
+      const pe = { key: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), texto, ci, conv: c, alvos: c.multi ? c.alvos.slice() : [{ id: c.id, u: c.u }], pct: 3, txt: ci?.arquivo ? 'Preparando o arquivo…' : 'Enviando…' };
+      ta.value = ''; ajusta(); mencionados.clear(); fechaSug(); if (ci || c.multi) { M.citando = null; M.escolha = null; pintaCitando(); desenhaLista(); }
+      (c.pend ||= []).push(pe); pintaPendEl(pe);
+      fila = fila.then(() => enviaPend(pe)); ta.focus();
     };
     M.janela = { desenhaLista, desenhaConversa, pintaTicks };
     const tComo = o.como ? setInterval(() => { if (document.visibilityState === 'visible') puxaMensagens(false, M); }, 8000) : 0;
