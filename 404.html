@@ -188,6 +188,8 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-g>summary i{width:10px;height:10px;border-radius:3px;flex:none}.nv-g>summary b{flex:1}.nv-g>summary small{color:var(--tx2);font-variant-numeric:tabular-nums}
 .nv-i{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--bd);font-size:13px}.nv-i .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nv-i .tm{color:var(--tx2);font-variant-numeric:tabular-nums;width:76px;text-align:right}
 .nv-i .por{display:inline-flex;align-items:center;gap:6px;color:var(--tx2);font-size:12px;max-width:180px;overflow:hidden;white-space:nowrap}.nv-i .mini{width:18px;height:18px;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:var(--bg3,#3a3a3a);font-size:10px;flex:none}.nv-i .mini img{width:100%;height:100%;object-fit:cover}
+.nv-x{width:26px;height:26px;color:var(--tx2);flex:none;border:0;background:none;border-radius:6px;display:inline-grid;place-items:center;cursor:pointer}.nv-x:hover{color:#ff6b6b;background:rgba(255,80,80,.12)}.nv-lock{width:26px;display:inline-grid;place-items:center;color:var(--tx3);flex:none}
+.nv-limpa{margin-left:8px;display:inline-flex;align-items:center;gap:5px;color:#ff8f8f}.nv-limpa:hover{background:rgba(255,80,80,.14)}.nv-erro{color:#ff8f8f;margin-bottom:10px}
 .nv-ia{font-size:10.5px;padding:1px 6px;border-radius:6px;color:#bff4ff;background:linear-gradient(90deg,#1a6dff,#19d3f0);margin-left:6px}
 #nuvem-atu{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0}#nuvem-atu.girando svg{animation:giraAtu .8s linear infinite}
 @media (max-width:640px){.nv-i .por,.nv-i .qd{display:none}}
@@ -1013,16 +1015,31 @@ async function renderNuvem() {
   let j; try { const r = await fetch('/nuvem-uso', { credentials: 'same-origin', cache: 'no-store', headers: { authorization: 'Bearer ' + await token() } }); j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.'); }
   catch (e) { box.innerHTML = `<div class="hint">Não consegui medir: ${esc(e.message)}</div>`; return; }
   const pct = j.total / j.limite * 100, livre = Math.max(0, j.limite - j.total);
-  const P = j.projetos || [{ nome: 'Nuvem', bytes: j.total, grupos: j.grupos }];
+  const P = j.projetos || [{ nome: 'Nuvem', bytes: j.total, grupos: j.grupos }], ITENS = [], GRUPOS = [];
+  const LIXO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+  const CADEADO = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  const btItem = it => it.ref ? `<button class="ibtn nv-x" type="button" data-i="${ITENS.push(it) - 1}" title="Apagar da nuvem">${LIXO}</button>` : it.protegido ? `<span class="nv-lock" title="${esc(it.protegido)}">${CADEADO}</span>` : '<span class="nv-lock"></span>';
+  const btGrupo = g => g.itens.some(it => it.ref) ? `<button class="btn sm nv-limpa" type="button" data-g="${GRUPOS.push(g) - 1}" title="Apagar tudo deste grupo (o que é protegido fica)">${LIXO}Limpar</button>` : '';
   box.innerHTML = `<div class="nv-top"><div><b>${fmt(j.total)}</b> <small>usados de ${fmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${fmt(livre)}</b> <small>livres</small></div></div>
     <div class="nv-barra">${P.map((pr, i) => `<i style="width:${pr.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(pr.nome)}: ${fmt(pr.bytes)}"></i>`).join('')}</div>
     <div class="nv-leg">${P.map((pr, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(pr.nome)} · ${fmt(pr.bytes)}</span>`).join('')}</div>
     ${P.map((pr, i) => `<div class="nv-p"><div class="nv-pt"><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(pr.nome)}</b><span class="sp"></span><small>${fmt(pr.bytes)}</small></div>
-    ${pr.grupos.map(g => `<details class="nv-g"><summary><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${fmt(g.bytes)}</small></summary>
+    ${pr.grupos.map(g => `<details class="nv-g"><summary><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${fmt(g.bytes)}</small>${btGrupo(g)}</summary>
       ${g.itens.slice(0, 300).map(it => `<div class="nv-i"><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.ia ? '<span class="nv-ia">IA</span>' : ''}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
-        ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${fmt(it.bytes)}</span></div>`).join('')}
+        ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${fmt(it.bytes)}</span>${btItem(it)}</div>`).join('')}
       ${g.itens.length > 300 ? `<div class="nv-i hint">… e mais ${g.itens.length - 300}</div>` : ''}</details>`).join('')}</div>`).join('') || '<div class="hint">A nuvem está vazia.</div>'}
     <div class="hint" style="margin-top:10px">Espaço grátis da Cloudflare (KV), dividido entre tudo o que está aqui. Os sons ficam num espaço separado e não entram nesta conta.</div>`;
+  const apaga = async (refs, titulo, texto, bt) => {
+    if (!refs.length || !(await pergunta({ titulo, texto, ok: 'Apagar', perigo: true }))) return;
+    if (bt) bt.disabled = true;
+    try { const r = await fetch('/nuvem-uso', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + await token() }, body: JSON.stringify({ refs }) }); const jj = await r.json().catch(() => ({})); if (!r.ok) throw new Error(jj.error?.message || 'Não deu certo.'); }
+    catch (e) { if (bt) bt.disabled = false; return alerta(e.message); }
+    const abertas = new Set($$('#nuvem-box details[open] > summary b').map(b => b.textContent)); await renderNuvem(); $$('#nuvem-box details > summary b').forEach(b => { if (abertas.has(b.textContent)) b.closest('details').open = true; });
+  };
+  const alerta = m => { const h = $('#nuvem-box .nv-erro') || box.insertAdjacentElement('afterbegin', Object.assign(document.createElement('div'), { className: 'hint nv-erro' })); h.textContent = 'Não apagou: ' + m; };
+  $$('#nuvem-box [data-i]').forEach(b => b.onclick = () => { const it = ITENS[+b.dataset.i]; apaga([it.ref], 'Apagar da nuvem?', `"${it.nome}" (${fmt(it.bytes)}) sai da nuvem da equipe para todo mundo. Não dá para desfazer.${/^k:menu\/midia/.test(it.ref) ? ' Se for um fundo em uso no menu, ele some do menu.' : ''}`, b); });
+  $$('#nuvem-box [data-g]').forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); const g = GRUPOS[+b.dataset.g], refs = g.itens.filter(it => it.ref).map(it => it.ref);
+    apaga(refs, `Limpar "${g.nome}"?`, `${refs.length} ${refs.length === 1 ? 'item sai' : 'itens saem'} da nuvem da equipe (${fmt(g.itens.filter(it => it.ref).reduce((t, it) => t + it.bytes, 0))}). O que é protegido fica. Não dá para desfazer.`, b); });
 }
 function abaAdm(n) {
   const abas = $$('.adm-abas [data-aba]'); if (!abas.some(b => b.dataset.aba === n && !b.hidden)) n = 'botoes';

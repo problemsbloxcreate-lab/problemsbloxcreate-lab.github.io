@@ -217,6 +217,20 @@ export default {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só quem é ADM vê o uso da nuvem.' } }, 403, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      // ADM apaga itens da nuvem: chaves inteiras ou a pasta de um personagem ("personagens/<id>/"). A lista de acesso e os links do menu têm tela própria.
+      if (req.method === 'POST') {
+        let b = {}; try { b = await req.json(); } catch { }
+        const PROT = ['acesso/extras', 'menu/links'], ks = (Array.isArray(b.apagar) ? b.apagar : []).map(String).slice(0, 500);
+        if (!ks.length) return json({ error: { message: 'Nada para apagar.' } }, 400, cors);
+        let n = 0;
+        for (const k of ks) {
+          if (PROT.includes(k) || k.length > 300 || !/^[\w\-./ ]+$/.test(k) || k.includes('..')) continue;
+          if (/^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/.test(k)) { let c2; do { const r = await env.EQUIPE.list({ prefix: k, cursor: c2 }); for (const x of r.keys) { await env.EQUIPE.delete(x.name); n++; } c2 = r.list_complete ? null : r.cursor; } while (c2); continue; }
+          if (k.endsWith('/')) continue;
+          await env.EQUIPE.delete(k); n++;
+        }
+        usoEq = null; return json({ ok: true, apagados: n }, 200, cors);
+      }
       const itens = []; let cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const x of r.keys) itens.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur);
       // chaves pequenas sem tamanho guardado (listas, configurações): mede de verdade
       for (const it of itens) if (!(+it.tam)) { try { const v = await env.EQUIPE.get(it.k, { type: 'arrayBuffer' }); it.tam = v ? v.byteLength : 0; it.medido = true; } catch { } }

@@ -142,6 +142,28 @@ async function nuvemUso(req, env, url) {
   if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
   const auth = req.headers.get('authorization') || '';
   if (!/^Bearer \S+/.test(auth)) return json({ error: { message: 'Faltou o login do Google.' } }, 401);
+  const eu0 = s.e.toLowerCase();
+  // APAGAR (ADM): o navegador manda só referências ("k:<chave da nuvem>" ou "f:<id>:<versão>" para fotos de perfil, sem e-mail)
+  if (req.method === 'POST') {
+    if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    let b = {}; try { b = await req.json(); } catch { }
+    const refs = (Array.isArray(b.refs) ? b.refs : []).map(String).slice(0, 500), ks = refs.filter(r => r.startsWith('k:')).map(r => r.slice(2)), fs = refs.filter(r => r.startsWith('f:'));
+    let apagados = 0;
+    if (ks.length) {
+      const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { method: 'POST', headers: { authorization: auth, origin: url.origin, 'content-type': 'application/json' }, body: JSON.stringify({ apagar: ks }) });
+      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+      if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403].includes(r.status) ? r.status : 502);
+      apagados += +j.apagados || 0;
+    }
+    if (fs.length) { // fotos de perfil: só quem o servidor confirmou como ADM há pouco (marca da leitura da nuvem)
+      if (!(+(await env.PERFIS.get('adm:' + eu0).catch(() => 0)) > Date.now())) return json({ error: { message: 'Abra a aba Nuvem de novo para confirmar que você é ADM.' } }, 403);
+      const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + eu0).catch(() => '{}') || '{}');
+      for (const r of fs) { const [, id, v] = r.split(':'), em = mapa[id]; if (!em || !/^\d+$/.test(v || '')) continue;
+        await env.PERFIS.delete(chaveFoto(em) + ':' + v); apagados++;
+        const p = await lePerfil(env, em); if (String(p.fotoV) === v) { delete p.fotoV; await env.PERFIS.put(chavePerfil(em), JSON.stringify(p)); } }
+    }
+    return json({ ok: true, apagados });
+  }
   const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
   let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
@@ -156,18 +178,19 @@ async function nuvemUso(req, env, url) {
     const tam = +it.tam || 0, raiz = it.k.split('/')[0];
     if (raiz === 'personagens') {
       const slug = it.k.split('/')[1] || '?', g = grupo('personagens', 'Personagens'), c = pers[slug] || (pers[slug] = { nome: humano(slug), bytes: 0, n: 0, em: null, por: null, imagens: 0 });
-      c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
+      c.ref = 'k:personagens/' + slug + '/'; c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
     }
     const g = grupo(NOMES[raiz] ? raiz : 'outros', NOMES[raiz] || 'Outros'); g.bytes += tam; g.n++;
-    g.itens.push({ nome: it.nome || it.k.split('/').pop().replace(/^\d{10,}_/, ''), bytes: tam, tipo: it.tipo || '', em: it.em || null, ia: !!it.ia, ...(await quem(it.por)) });
+    g.itens.push({ nome: it.nome || it.k.split('/').pop().replace(/^\d{10,}_/, ''), bytes: tam, tipo: it.tipo || '', em: it.em || null, ia: !!it.ia, ...(['acesso/extras', 'menu/links'].includes(it.k) ? { protegido: raiz === 'acesso' ? 'Mude na aba Quem pode entrar' : 'Mude na aba Botões' } : { ref: 'k:' + it.k }), ...(await quem(it.por)) });
   }
-  for (const c of Object.values(pers)) { const g = G.personagens; g.n++; g.itens.push({ nome: c.nome, bytes: c.bytes, tipo: 'personagem', info: `${c.imagens} imagens`, em: c.em, ...(await quem(c.por)) }); }
+  for (const c of Object.values(pers)) { const g = G.personagens; g.n++; g.itens.push({ nome: c.nome, bytes: c.bytes, tipo: 'personagem', ref: c.ref, info: `${c.imagens} imagens`, em: c.em, ...(await quem(c.por)) }); }
   // fotos de perfil (KV PERFIS, mesma conta da Cloudflare: o 1 GB grátis é dividido entre todos)
   if (env.PERFIS) {
     const g = grupo('fotos', 'Fotos de perfil'); let cur, k = 0;
     do { const l = await env.PERFIS.list({ prefix: 'f:', cursor: cur }); for (const x of l.keys) {
       let tam = +x.metadata?.tam || 0; if (!tam && k++ < 300) { const v = await env.PERFIS.get(x.name, { type: 'arrayBuffer' }).catch(() => null); tam = v ? v.byteLength : 0; }
-      const email = x.name.slice(2).replace(/:\d+$/, ''); g.bytes += tam; g.n++; g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(await quem(email)) });
+      const email = x.name.slice(2).replace(/:\d+$/, ''), v = (x.name.match(/:(\d+)$/) || [])[1]; g.bytes += tam; g.n++;
+      g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(v ? { ref: 'f:' + await idDe(email) + ':' + v } : {}), ...(await quem(email)) });
     } cur = l.list_complete ? null : l.cursor; } while (cur);
   }
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
