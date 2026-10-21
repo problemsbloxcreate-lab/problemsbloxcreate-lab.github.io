@@ -180,6 +180,17 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .rng output{width:46px;text-align:right;font-size:12px;color:var(--tx2)}
 .acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .hint{font-size:11.5px;color:var(--tx3)}
+.nv-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}.nv-top b{font-size:22px}.nv-top small{color:var(--tx2)}
+.nv-barra{height:12px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;display:flex;margin:6px 0 4px}.nv-barra i{display:block;height:100%;min-width:3px}
+.nv-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--tx2);margin-bottom:14px}.nv-leg span{display:inline-flex;align-items:center;gap:6px}.nv-leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.nv-g{border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden}.nv-g>summary{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;list-style:none}.nv-g>summary::-webkit-details-marker{display:none}
+.nv-g>summary i{width:10px;height:10px;border-radius:3px;flex:none}.nv-g>summary b{flex:1}.nv-g>summary small{color:var(--tx2);font-variant-numeric:tabular-nums}
+.nv-i{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--bd);font-size:13px}.nv-i .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nv-i .tm{color:var(--tx2);font-variant-numeric:tabular-nums;width:76px;text-align:right}
+.nv-i .por{display:inline-flex;align-items:center;gap:6px;color:var(--tx2);font-size:12px;max-width:180px;overflow:hidden;white-space:nowrap}.nv-i .mini{width:18px;height:18px;border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:var(--bg3,#3a3a3a);font-size:10px;flex:none}.nv-i .mini img{width:100%;height:100%;object-fit:cover}
+.nv-ia{font-size:10.5px;padding:1px 6px;border-radius:6px;color:#bff4ff;background:linear-gradient(90deg,#1a6dff,#19d3f0);margin-left:6px}
+#nuvem-atu{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0}#nuvem-atu.girando svg{animation:giraAtu .8s linear infinite}
+@media (max-width:640px){.nv-i .por,.nv-i .qd{display:none}}
+
 .bgitems{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
 .bgit{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
 .frame{position:relative;overflow:hidden;border-radius:9px;background:#000;cursor:grab;touch-action:none}
@@ -248,6 +259,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <button role="tab" data-aba="mensagens"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span><b>Mensagens</b><small>saudação e frases</small></span></button>
     <button role="tab" data-aba="fundo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span><b>Fundo</b><small>imagem ou vídeo da tela</small></span></button>
     <button role="tab" data-aba="acesso" id="aba-acesso" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg><span><b>Quem pode entrar</b><small>liberar e tirar e-mails</small></span></button>
+    <button role="tab" data-aba="nuvem" id="aba-nuvem" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span><b>Nuvem</b><small>o que está guardado e o espaço</small></span></button>
   </nav>
   <div class="adm-pag" data-pag="botoes">
     <p class="adm-desc">Os cartões que aparecem no menu: nome, endereço, ícone, fundo e o jeito de tocar. Arraste para mudar a ordem.</p>
@@ -277,6 +289,11 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
         <div class="hint" id="acesso-st" style="margin:8px 0 2px">Vale na hora para quem entrar (até 1 minuto). Quem for tirado perde o acesso em até 1 minuto, mesmo se estiver com o site aberto. Os e-mails da lista fixa (EMAILS_PERMITIDOS) só mudam na Cloudflare.</div>
         <div class="acesso-lista" id="acesso-lista"></div>
       </div>
+    </section>
+    <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
+      <p class="adm-desc">Tudo o que a equipe guardou na nuvem do Estúdio Problems (personagens, cenários, fundos do menu, fotos de perfil) e quanto espaço ainda sobra.</p>
+      <h2>Nuvem da equipe<span class="sp"></span><button class="btn sm" type="button" id="nuvem-atu" title="Medir de novo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Atualizar</button></h2>
+      <div class="box" id="nuvem-box"><div class="hint">Abra esta aba para medir.</div></div>
     </section>
   </div>
   <div class="savebar"><button class="btn primary" id="btn-save">Salvar</button><button class="btn" id="btn-undo">Desfazer mudanças</button><span class="st" id="save-st"></span></div>
@@ -973,7 +990,7 @@ async function renderAcesso() {
       b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'del', id: it.id }) }); stA('Acesso removido.'); carrega(); } catch (e) { stA(e.message, true); b.disabled = false; }
     });
   };
-  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; pinta(j.itens || []); }
+  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; $('#aba-nuvem').hidden = false; pinta(j.itens || []); }
     catch (e) { if (e.status === 403 && /ADMINS do servidor/.test(e.message)) { $('#aba-acesso').hidden = false; lista.innerHTML = ''; $('#acesso-add').hidden = true; stA(e.message); } else $('#aba-acesso').hidden = true; } };
   $('#acesso-add').onsubmit = async ev => {
     ev.preventDefault(); const inp = $('#acesso-add input'), email = inp.value.trim(); if (!email) return;
@@ -985,17 +1002,38 @@ async function renderAcesso() {
   clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 30e3); // online/offline ao vivo
   return carrega();
 }
+// ADM › Nuvem: o que está guardado na nuvem da equipe e quanto sobra (o porteiro troca os e-mails por nome e foto)
+async function renderNuvem() {
+  const box = $('#nuvem-box'), CORES = ['#19d3f0', '#3d8bff', '#9b7bff', '#ff7ab6', '#ffb84d', '#3ddc84', '#ff6b6b', '#aaaaaa'];
+  const fmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
+  const quando = t => t ? new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  const mini = (f, n) => `<span class="mini">${f ? `<img src="${esc(f)}" alt="" referrerpolicy="no-referrer">` : esc((n || '?')[0].toUpperCase())}</span>`;
+  box.innerHTML = '<div class="hint" style="text-align:center;padding:18px 0"><span class="spin"></span>Medindo a nuvem…</div>';
+  let j; try { const r = await fetch('/nuvem-uso', { credentials: 'same-origin', cache: 'no-store', headers: { authorization: 'Bearer ' + await token() } }); j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.'); }
+  catch (e) { box.innerHTML = `<div class="hint">Não consegui medir: ${esc(e.message)}</div>`; return; }
+  const pct = j.total / j.limite * 100, livre = Math.max(0, j.limite - j.total);
+  box.innerHTML = `<div class="nv-top"><div><b>${fmt(j.total)}</b> <small>usados de ${fmt(j.limite)} (${pct < 0.1 && j.total ? '<0,1' : pct.toFixed(1).replace('.', ',')}%)</small></div><span class="sp"></span><div><b style="font-size:16px">${fmt(livre)}</b> <small>livres</small></div></div>
+    <div class="nv-barra">${j.grupos.map((g, i) => `<i style="width:${g.bytes / j.limite * 100}%;background:${CORES[i % CORES.length]}" title="${esc(g.nome)}: ${fmt(g.bytes)}"></i>`).join('')}</div>
+    <div class="nv-leg">${j.grupos.map((g, i) => `<span><i style="background:${CORES[i % CORES.length]}"></i>${esc(g.nome)} · ${fmt(g.bytes)}</span>`).join('')}</div>
+    ${j.grupos.map((g, i) => `<details class="nv-g"><summary><i style="background:${CORES[i % CORES.length]}"></i><b>${esc(g.nome)}</b><small>${g.n} ${g.n === 1 ? 'item' : 'itens'} · ${fmt(g.bytes)}</small></summary>
+      ${g.itens.slice(0, 300).map(it => `<div class="nv-i"><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.ia ? '<span class="nv-ia">IA</span>' : ''}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
+        ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${fmt(it.bytes)}</span></div>`).join('')}
+      ${g.itens.length > 300 ? `<div class="nv-i hint">… e mais ${g.itens.length - 300}</div>` : ''}</details>`).join('') || '<div class="hint">A nuvem está vazia.</div>'}
+    <div class="hint" style="margin-top:10px">Espaço grátis da Cloudflare (KV), dividido entre tudo o que está aqui. Os sons ficam num espaço separado e não entram nesta conta.</div>`;
+}
 function abaAdm(n) {
   const abas = $$('.adm-abas [data-aba]'); if (!abas.some(b => b.dataset.aba === n && !b.hidden)) n = 'botoes';
   abas.forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === n)));
   $$('.adm-pag').forEach(p => p.hidden = p.dataset.pag !== n);
-  $('#adm .savebar').hidden = n === 'acesso'; // quem pode entrar salva sozinho
+  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem'; // quem pode entrar salva sozinho; a nuvem é só para ver
+  if (n === 'nuvem' && !renderNuvem.feito) { renderNuvem.feito = true; renderNuvem(); }
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
 }
 function showAdm() {
   $$('.adm-abas [data-aba]').forEach(b => b.onclick = () => { abaAdm(b.dataset.aba); window.scrollTo({ top: 0 }); });
   let ultima = 'botoes'; try { ultima = localStorage.getItem('ep-adm-aba') || 'botoes'; } catch { }
   abaAdm(ultima); renderAcesso().then(() => abaAdm(ultima));
+  $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); await renderNuvem(); b.classList.remove('girando'); b.disabled = false; };
   $('#adm').hidden = false; $('#badge-adm').hidden = false;
   const ver = $('#btn-ver'); ver.hidden = false; ver.href = BASE;
   document.title = 'ADM — Estúdio Problems';

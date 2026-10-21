@@ -37,6 +37,13 @@ const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') +
 const ehAdmin = (env, email) => (env.ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean).includes(String(email || '').toLowerCase());
 const baseFixa = env => (env.EMAILS_PERMITIDOS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 async function extrasAcesso(env) { try { const v = await env.EQUIPE?.get('acesso/extras', { type: 'json', cacheTtl: 60 }); return Array.isArray(v) ? v.filter(x => x && typeof x.email === 'string') : []; } catch { return []; } }
+// espaço da equipe (KV grátis da Cloudflare: 1 GB por conta; EQUIPE_LIMITE_MB muda o limite)
+const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || 1024) * 1048576;
+let usoEq = null; // conta guardada por 1 min (listar a nuvem toda a cada imagem gasta a cota de listagens do dia)
+async function usadoEquipe(env, mais = 0) {
+  if (!usoEq || Date.now() - usoEq.at > 60e3) { let u = 0, cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const k of r.keys) u += +(k.metadata?.tam) || 0; cur = r.list_complete ? null : r.cursor; } while (cur); usoEq = { u, at: Date.now() }; }
+  const u = usoEq.u; usoEq.u += mais; return u;
+}
 const EMAIL_OK = /^[^\s@,;<>"']{1,64}@[^\s@,;<>"']{1,190}\.[a-z]{2,24}$/i;
 async function confereLogin(req, env) {
   if (!env.FIREBASE_PROJECT_ID) return { ok: true };
@@ -145,7 +152,8 @@ export default {
         const tipo = k.endsWith('.json') ? 'application/json' : { png: 'image/png', webp: 'image/webp', gif: 'image/gif', jpg: 'image/jpeg', jpeg: 'image/jpeg' }[k.split('.').pop()];
         const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
         if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
-        await env.EQUIPE.put(k, buf, { metadata: { tipo, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
+        if (!k.endsWith('.json') && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
@@ -180,6 +188,51 @@ export default {
       } else return json({ error: { message: 'Ação inválida.' } }, 400, cors);
       await env.EQUIPE.put('acesso/extras', JSON.stringify(ex));
       return json({ ok: true, base, extras: ex, admins }, 200, cors);
+    }
+    // CENÁRIOS da equipe (KV EQUIPE, prefixo "cenarios/"): só entram quando alguém escolhe "Salvar na nuvem" no Animador.
+    //   GET /cenarios → lista · GET/POST/DELETE /cenarios/arquivo?k=cenarios/<id>.<ext>[&nome=…]
+    if (p0 === '/cenarios' || p0 === '/cenarios/arquivo') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const q = new URL(req.url).searchParams, k = q.get('k') || '', KC = /^cenarios\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|jpg|jpeg)$/;
+      if (p0 === '/cenarios') { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'cenarios/', cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (!KC.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+      if (req.method === 'GET') {
+        const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        return new Response(r.value, { status: 200, headers: { ...cors, 'content-type': r.metadata?.tipo || 'image/jpeg', 'cache-control': 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff' } });
+      }
+      if (req.method === 'POST' || req.method === 'PUT') {
+        const tipo = { png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg' }[k.split('.').pop()], nome = String(q.get('nome') || 'Cenário').slice(0, 80), ia = q.get('ia') === '1';
+        const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
+        if ((await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+        await env.EQUIPE.put(k, buf, { metadata: { nome, tipo, ia, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
+        return json({ ok: true, k }, 200, cors);
+      }
+      if (req.method === 'DELETE') { await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors); }
+      return json({ error: { message: 'Método não aceito.' } }, 405, cors);
+    }
+    // IMAGEM pela IA (Workers AI da Cloudflare, cota grátis dela): devolve a imagem; NÃO guarda nada (salvar é outro passo)
+    if (p0 === '/imagem') {
+      if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
+      if (!env.AI) return json({ error: { type: 'sem_ia', message: 'Falta o binding Workers AI (nome AI) no worker.' } }, 501, cors);
+      let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
+      const prompt = String(b.prompt || '').trim().slice(0, 2000); if (!prompt) return json({ error: { message: 'Diga o que desenhar.' } }, 400, cors);
+      try {
+        const r = await env.AI.run('@cf/black-forest-labs/flux-1-schnell', { prompt, steps: 6, ...(Number.isInteger(b.seed) && b.seed > 0 ? { seed: b.seed } : {}) });
+        if (!r?.image) return json({ error: { message: 'A IA não devolveu a imagem.' } }, 502, cors);
+        return json({ image: r.image, tipo: 'image/jpeg' }, 200, { ...cors, 'cache-control': 'no-store' });
+      } catch (e) { return json({ error: { message: 'A imagem falhou: ' + (e.message || e) } }, 502, cors); }
+    }
+    // USO DA NUVEM (tela ADM › Nuvem, pelo porteiro): tudo o que está guardado no KV da equipe e o limite. Só ADMINS.
+    if (p0 === '/nuvem-uso') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só quem é ADM vê o uso da nuvem.' } }, 403, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const itens = []; let cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const x of r.keys) itens.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur);
+      // chaves pequenas sem tamanho guardado (listas, configurações): mede de verdade
+      for (const it of itens) if (!(+it.tam)) { try { const v = await env.EQUIPE.get(it.k, { type: 'arrayBuffer' }); it.tam = v ? v.byteLength : 0; it.medido = true; } catch { } }
+      return json({ itens, limite: limiteEquipe(env) }, 200, { ...cors, 'cache-control': 'no-store' });
     }
     // MENU do Estúdio Problems (KV EQUIPE): links + fundos ("menu/links") e mídias dos fundos ("menu/midia/...").
     // Ler: conta liberada. Mudar (tela ADM): conta liberada E, se a variável ADMINS existir, só os e-mails dela.

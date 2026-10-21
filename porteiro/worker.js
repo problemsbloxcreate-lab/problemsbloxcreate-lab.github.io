@@ -134,6 +134,47 @@ function contaPublica(email, p) {
   return { email, nome: p.nome || nomeG, foto: p.fotoV ? '/conta/foto?v=' + p.fotoV : fotoG, nomeGoogle: nomeG, fotoGoogle: fotoG,
     nomeProprio: !!p.nome, fotoPropria: !!p.fotoV, fundo: p.fundo === 'cor' ? 'cor' : 'padrao', cor: /^#[0-9a-f]{6}$/i.test(p.cor || '') ? p.cor : '#262626' };
 }
+/* ---------- ADM › Nuvem: o que está guardado na nuvem da equipe (KV da Cloudflare) e quanto sobra ----------
+   Quem pode: só os e-mails da variável ADMINS do turma-ia (ele confere). Quem enviou sai com nome e foto, nunca o e-mail. */
+const humano = slug => { const t = String(slug).replace(/-[a-z0-9]{4}$/, '').replace(/-/g, ' ').trim(); return t ? t[0].toUpperCase() + t.slice(1) : slug; };
+async function nuvemUso(req, env, url) {
+  const s = await leSessao(env, req);
+  if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  const auth = req.headers.get('authorization') || '';
+  if (!/^Bearer \S+/.test(auth)) return json({ error: { message: 'Faltou o login do Google.' } }, 401);
+  const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
+  let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
+  const eu = s.e.toLowerCase(), mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + eu).catch(() => '{}') || '{}'), perfis = new Map();
+  const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (!perfis.has(email)) { const p = await lePerfil(env, email), id = await idDe(email); mapa[id] = email;
+    perfis.set(email, { porNome: p.nome || p.google?.nome || mascara(email), porFoto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); };
+  const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, bytes: 0, n: 0, itens: [] });
+  const NOMES = { cenarios: 'Cenários', menu: 'Menu (fundos e links)', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento da IA', acesso: 'Lista de quem entra' };
+  const pers = {};
+  for (const it of j.itens || []) {
+    const tam = +it.tam || 0, raiz = it.k.split('/')[0];
+    if (raiz === 'personagens') {
+      const slug = it.k.split('/')[1] || '?', g = grupo('personagens', 'Personagens do Animador'), c = pers[slug] || (pers[slug] = { nome: humano(slug), bytes: 0, n: 0, em: null, por: null, imagens: 0 });
+      c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
+    }
+    const g = grupo(NOMES[raiz] ? raiz : 'outros', NOMES[raiz] || 'Outros'); g.bytes += tam; g.n++;
+    g.itens.push({ nome: it.nome || it.k.split('/').pop().replace(/^\d{10,}_/, ''), bytes: tam, tipo: it.tipo || '', em: it.em || null, ia: !!it.ia, ...(await quem(it.por)) });
+  }
+  for (const c of Object.values(pers)) { const g = G.personagens; g.n++; g.itens.push({ nome: c.nome, bytes: c.bytes, tipo: 'personagem', info: `${c.imagens} imagens`, em: c.em, ...(await quem(c.por)) }); }
+  // fotos de perfil (KV PERFIS, mesma conta da Cloudflare: o 1 GB grátis é dividido entre todos)
+  if (env.PERFIS) {
+    const g = grupo('fotos', 'Fotos de perfil'); let cur, k = 0;
+    do { const l = await env.PERFIS.list({ prefix: 'f:', cursor: cur }); for (const x of l.keys) {
+      let tam = +x.metadata?.tam || 0; if (!tam && k++ < 300) { const v = await env.PERFIS.get(x.name, { type: 'arrayBuffer' }).catch(() => null); tam = v ? v.byteLength : 0; }
+      const email = x.name.slice(2).replace(/:\d+$/, ''); g.bytes += tam; g.n++; g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(await quem(email)) });
+    } cur = l.list_complete ? null : l.cursor; } while (cur);
+  }
+  const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
+  await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
+  await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
+  return json({ limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos });
+}
+
 /* ---------- ADM › Acesso: quem pode entrar (lista do servidor turma-ia) com nome e foto da conta de cada um ----------
    Quem pode: só os e-mails da variável ADMINS do turma-ia (quem decide é ele; o porteiro só repassa o login do Google).
    Os e-mails saem CENSURADOS para o navegador (ex.: pr•••••@gmail.com); para tirar alguém, o navegador manda só o "id". */
@@ -176,7 +217,8 @@ async function acesso(req, env, url) {
   } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
   // monta a lista com nome/foto da conta (personalizado e original do Google)
-  const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], mapa = {}, itens = [];
+  const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], itens = [];
+  const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + s.e.toLowerCase()).catch(() => '{}') || '{}'); // junto com as fotos da tela Nuvem
   const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {};
   for (const [email, fixo, info] of [...base.map(e => [e, true, null]), ...extras.map(x => [x.email, false, x])]) {
     const id = await idDe(email), p = await lePerfil(env, email); mapa[id] = email;
@@ -266,7 +308,7 @@ async function conta(req, env, url, s) {
       const buf = await req.arrayBuffer();
       if (!buf.byteLength || buf.byteLength > 3 * 1048576) return json({ error: { message: 'A foto precisa ter até 3 MB.' } }, 413);
       const fotoV = Date.now();
-      await env.PERFIS.put(chaveFoto(s.e) + ':' + fotoV, buf, { metadata: { tipo } });
+      await env.PERFIS.put(chaveFoto(s.e) + ':' + fotoV, buf, { metadata: { tipo, tam: buf.byteLength } });
       const n = { ...p, fotoV }; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
       if (p.fotoV) await env.PERFIS.delete(chaveFoto(s.e) + ':' + p.fotoV); await env.PERFIS.delete(chaveFoto(s.e)); // a anterior não serve mais
       return json(contaPublica(s.e, n));
@@ -329,6 +371,7 @@ export default {
       return json(out);
     }
     if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url);
+    if (caminho === '/nuvem-uso') return nuvemUso(req, env, url);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
     if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
