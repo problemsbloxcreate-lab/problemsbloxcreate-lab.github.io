@@ -96,6 +96,7 @@ jobs:
           grep -q 'Entrar com Google' menu.html || { head -c 600 menu.html; echo; echo "::error::O menu não apareceu em $URL/ (resposta $MCOD)"; exit 1; }
           # mais leve: os scripts do menu saem com carimbo de versão e a página responde "não mudou" (304) quando é a mesma (só avisa, não trava)
           if grep -q 'estudio-carregando.js?_ev=' menu.html; then echo "::notice::Carimbo de versão nos scripts do menu: ok"; else echo "::warning::O menu saiu sem o carimbo de versão nos scripts (?_ev=)."; fi
+          echo "::notice::Cabeçalhos do menu (gzip): $(curl -s -D - -o /dev/null -H 'Accept-Encoding: gzip, br' "$URL/" | tr -d '\r' | grep -iE '^(etag|content-encoding|cache-control):' | tr '\n' ' ' || true)"
           ET="$(curl -s -D - -o /dev/null "$URL/" | tr -d '\r' | grep -i '^etag:' | cut -d' ' -f2- || true)"
           if [ -n "$ET" ]; then echo "::notice::ETag do menu: $ET · com If-None-Match: $(curl -s -o /dev/null -w '%{http_code}' -H "If-None-Match: $ET" "$URL/" || true)"; else echo "::warning::O menu saiu sem ETag."; fi
           JS="$(grep -o 'estudio-conta.js?_ev=[0-9a-f]*' menu.html | head -1 || true)"

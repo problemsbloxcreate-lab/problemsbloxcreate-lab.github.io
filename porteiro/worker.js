@@ -170,7 +170,7 @@ async function repassa(req, url, p, env, s) {
     out.delete('content-length'); out.delete('content-encoding'); out.delete('etag'); out.delete('last-modified');
     // ETag da página já montada: se o navegador já tem esta versão, responde "não mudou" (304) e ele não baixa de novo
     // (a página dos Shorts tem mais de 1 MB: sem isto ela vinha inteira a cada abertura)
-    const et = 'W/"ep-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(h)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
+    const et = '"ep-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(h)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
     out.set('etag', et);
     if ((req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et)) return new Response(null, { status: 304, headers: out });
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
@@ -700,7 +700,7 @@ async function menu(env, url, status = 200, req = null) {
   if (!r.ok) return new Response(r.body, { status, headers: h });
   // scripts do menu com carimbo de versão (o navegador guarda de vez) + "não mudou" (304) quando a página é a mesma
   let t = await r.text(); try { t = await comVersoes(env, t, url.href, null); } catch { }
-  const et = 'W/"epm-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(t)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
+  const et = '"epm-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(t)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
   h.delete('content-length'); h.delete('content-encoding'); h.set('etag', et);
   if (status === 200 && req && (req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et)) return new Response(null, { status: 304, headers: h });
   return new Response(t, { status, headers: h });
