@@ -138,6 +138,10 @@ async function comVersoes(env, html, paginaUrl, s) {
   achados.forEach((a, k) => { if (!vs[k]) return; out += html.slice(pos, a.i) + a.src + (a.src.includes('?') ? '&' : '?') + '_ev=' + vs[k]; pos = a.i + a.src.length; });
   return out + html.slice(pos);
 }
+// "não mudou" sem ETag: a Cloudflare tira o ETag das páginas HTML deste endereço (ela mexe no HTML), então a página
+// leva um Last-Modified tirado do próprio conteúdo (sempre o mesmo para a mesma página) e o navegador devolve ele
+function dataDaVersao(hex) { const n = parseInt(hex.slice(0, 8), 16) % (5 * 365 * 86400); return new Date(Date.UTC(2020, 0, 1) + n * 1000).toUTCString(); }
+const naoMudou = (req, et, lm) => (req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et) || (!!lm && req.headers.get('if-modified-since') === lm);
 async function repassa(req, url, p, env, s) {
   if (p.nuvem && /(^|\/)dados\/sons-url\.json$/.test(p.resto)) return json({ url: url.origin + '/nuvem' }); // servidor de sons pelo porteiro
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
@@ -171,8 +175,8 @@ async function repassa(req, url, p, env, s) {
     // ETag da página já montada: se o navegador já tem esta versão, responde "não mudou" (304) e ele não baixa de novo
     // (a página dos Shorts tem mais de 1 MB: sem isto ela vinha inteira a cada abertura)
     const et = '"ep-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(h)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
-    out.set('etag', et);
-    if ((req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et)) return new Response(null, { status: 304, headers: out });
+    const lm = dataDaVersao(et.slice(4)); out.set('etag', et); out.set('last-modified', lm);
+    if (naoMudou(req, et, lm)) return new Response(null, { status: 304, headers: out });
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
   }
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: out });
@@ -701,8 +705,8 @@ async function menu(env, url, status = 200, req = null) {
   // scripts do menu com carimbo de versão (o navegador guarda de vez) + "não mudou" (304) quando a página é a mesma
   let t = await r.text(); try { t = await comVersoes(env, t, url.href, null); } catch { }
   const et = '"epm-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(t)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
-  h.delete('content-length'); h.delete('content-encoding'); h.set('etag', et);
-  if (status === 200 && req && (req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et)) return new Response(null, { status: 304, headers: h });
+  const lm = dataDaVersao(et.slice(5)); h.delete('content-length'); h.delete('content-encoding'); h.set('etag', et); h.set('last-modified', lm);
+  if (status === 200 && req && naoMudou(req, et, lm)) return new Response(null, { status: 304, headers: h });
   return new Response(t, { status, headers: h });
 }
 
