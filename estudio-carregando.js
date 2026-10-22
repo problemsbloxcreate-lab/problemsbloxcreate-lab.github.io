@@ -25,7 +25,8 @@
   const IGNORA = /\/(presenca|mensagens|sessao)(\/|\?|$)|^(data|blob|about|chrome-extension):/i;
   const feitos = new Set(), pend = new Map(), pendEls = new Set(), vistos = new WeakSet(); let ativo = true, ultimo = '', etapa = '', mostrado = 0, alvo = 0, nId = 0, imgsTotal = 0, imgsOk = 0;
   const abs = u => { try { return new URL(u, location.href).href.split('#')[0]; } catch { return String(u || ''); } };
-  const curto = u => { try { const x = new URL(u, location.href); let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
+  const NOMES_ARQ = [[/^\/pessoa(\/|$)/, 'nomes e fotos da equipe'], [/^\/conta(\/|$)/, 'a sua conta'], [/^\/personagens/, 'a biblioteca de personagens'], [/^\/nuvem-uso/, 'o espaço na nuvem'], [/^\/cenarios/, 'os cenários da equipe'], [/^\/menu/, 'o menu']];
+  const curto = u => { try { const x = new URL(u, location.href); if (x.origin === location.origin) { const n = NOMES_ARQ.find(([re]) => re.test(x.pathname)); if (n) return n[1]; } let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
   const muda = () => { if (ativo) agenda(); };
   try { new PerformanceObserver(l => { for (const e of l.getEntries()) { if (IGNORA.test(e.name)) continue; feitos.add(abs(e.name)); if (!ultimo || pend.size === 0) ultimo = curto(e.name); } muda(); }).observe({ type: 'resource', buffered: true }); } catch { }
   const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); muda(); return id; };
@@ -53,12 +54,16 @@
   const restante = () => { for (const el of pendEls) { if (!el.isConnected) pendEls.delete(el); else if (el.tagName === 'IMG' && el.complete) { pendEls.delete(el); imgsOk++; } } return pend.size + pendEls.size; };
   const calcula = () => {
     const falta = restante(), tot = feitos.size + falta, raw = tot ? feitos.size / tot : 0;
-    const cap = document.readyState === 'loading' ? 60 : document.readyState === 'interactive' ? 85 : 97;
-    alvo = Math.max(alvo, Math.min(cap, Math.round(4 + raw * (cap - 4))));
+    const cap = document.readyState === 'loading' ? 72 : document.readyState === 'interactive' ? 90 : 98;
+    alvo = Math.max(alvo, Math.min(cap - 14, 4 + raw * (cap - 18))); // deixa folga para continuar andando
+    // nunca fica parado: enquanto falta algo, vai andando devagarinho (cada vez mais devagar) sem passar do teto da fase
+    const teto = falta || document.readyState !== 'complete' ? cap - 1 : cap;
+    if (alvo < teto) alvo = Math.min(teto, alvo + (teto - alvo) * .0025 + .012);
   };
   const texto = () => {
     if (etapa) return etapa;
     const imgsF = [...pendEls].filter(e => e.tagName === 'IMG').length;
+    const tar = [...pend.values()].filter(v => v.startsWith('\u0001')); if (tar.length) return tar[tar.length - 1].slice(1) + (tar.length > 1 ? ` (+${tar.length - 1})` : '');
     if (pend.size) return 'Baixando ' + curto([...pend.values()].pop());
     if (imgsF) return `Carregando imagens (${imgsOk} de ${imgsOk + imgsF})`;
     if (pendEls.size) return 'Carregando ' + curto([...pendEls].pop().src || [...pendEls].pop().href || '');
@@ -80,6 +85,8 @@
   window.EstudioProgresso = {
     get pct() { return Math.round(mostrado); }, get texto() { return texto(); },
     etapa(t) { etapa = String(t || ''); muda(); },
+    // a tela de carregamento também espera esta tarefa (ex.: nomes e fotos da equipe) e mostra o texto dela
+    tarefa(p, txt) { if (!ativo || !p?.then) return p; const id = ++nId; pend.set(id, '\u0001' + String(txt || 'Preparando…')); muda(); const fim = () => { if (pend.delete(id)) feitos.add('tarefa:' + id); muda(); }; p.then(fim, fim); setTimeout(fim, 15000); return p; },
     // espera os arquivos e imagens que a página ainda está baixando (no máximo ms); termina em 100%
     esperarTudo(ms = 12000) {
       if (!ativo) { ativo = true; mo.observe(document.documentElement, { childList: true, subtree: true }); document.querySelectorAll('img,script[src],link[rel~="stylesheet"]').forEach(olha); alvo = Math.min(alvo, 90); mostrado = Math.min(mostrado, 90); agenda(); } // tela que volta (ex.: menu depois do login)

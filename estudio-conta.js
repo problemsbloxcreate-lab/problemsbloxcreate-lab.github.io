@@ -375,6 +375,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   async function montar(alvo) {
     P = await perfil(); if (!P) return; // fora do porteiro ou sem sessão: não mostra nada
+    window.EstudioProgresso?.tarefa(preImg(P.foto), 'Carregando a sua foto');
     if (window.top === window) mensagensLiga();
     if (window.top === window) vigiaSessao();
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
@@ -702,9 +703,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (id <= ja) return;
     if (plim()) { try { localStorage.setItem('ep-mencao-tocada', String(id)); } catch { } }
   }
+  // baixa uma imagem antes de aparecer na tela (fica no cache do navegador); no máximo 5 s
+  const preImg = url => !url ? Promise.resolve() : new Promise(ok => { const im = new Image(), t = setTimeout(ok, 5000); im.referrerPolicy = 'no-referrer'; im.onload = im.onerror = () => { clearTimeout(t); ok(); }; im.src = url; });
   function mensagensLiga() {
     if (MSG.ligado) return; MSG.ligado = true;
-    puxaMensagens();
+    // já na tela de carregamento: as conversas, os nomes e as fotos da equipe (abrir as Mensagens fica na hora, sem foto "pipocando")
+    const pre = (async () => { await puxaMensagens(true); await Promise.all(MSG.pessoas.map(async p => { const q = await quemU(p.u); await preImg(q?.foto); }));
+      await Promise.all([...(MSG.res?.grupos || []).map(g => preImg(g.foto)), preImg(MSG.res?.geral?.foto)]); MSG.abertoEm = Date.now(); })();
+    window.EstudioProgresso?.tarefa(pre, 'Carregando nomes e fotos da equipe');
     setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: a cada 60 s
       const t = Date.now(), passo = document.visibilityState !== 'visible' ? 60000 : MSG.janela ? 4000 : 40000; // escondida: confere devagar (para o @ tocar em qualquer site)
       if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
@@ -762,8 +768,17 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       <span class="epm-ctx"><small>${esc(c.prog || 'Estúdio')} · ${c.anexo ? 'arquivo ' + esc(fmtTam(c.anexo.bytes || 0)) : 'na nuvem'}</small><b>${esc(c.titulo)}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ''}
       <em>${c.anexo ? 'Abrir e continuar daqui' : 'Abrir e ir direto para aqui'}</em></span></div>${comBaixar && c.anexo ? `<a class="epm-cbaixa" href="/mensagens/anexo?id=${esc(c.anexo.id)}" download="${esc(c.anexo.nome || 'arquivo')}">${ICONES.baixar} Baixar ${esc(c.anexo.nome || 'arquivo')}</a>` : ''}`;
   // "carregando" com porcentagem e o que está sendo carregado (o mesmo jeito das telas de carregamento)
-  const carregandoHtml = (txt, pct = 5) => `<div class="epm-carr" data-carr><div class="epm-cb"><i style="width:${pct}%"></i></div><div class="epm-ct2"><b>${Math.round(pct)}%</b><span>${esc(txt)}</span></div></div>`;
-  function progresso(onde, pct, txt) { const c = onde?.querySelector?.('[data-carr]'); if (!c) return; c.querySelector('i').style.width = pct + '%'; c.querySelector('b').textContent = Math.round(pct) + '%'; c.querySelector('span').textContent = txt; }
+  const carregandoHtml = (txt, pct = 5) => (setTimeout(() => document.querySelectorAll('[data-carr]').forEach(c => { if (!CARR.has(c)) { CARR.set(c, { v: pct, alvo: pct }); if (!carrRaf) carrRaf = requestAnimationFrame(carrPasso); } }), 0), 0) || `<div class="epm-carr" data-carr><div class="epm-cb"><i style="width:${pct}%"></i></div><div class="epm-ct2"><b>${Math.round(pct)}%</b><span>${esc(txt)}</span></div></div>`;
+  // a barra anda sozinha entre um passo e outro (devagarinho, sem passar do próximo passo), para nunca parecer travada
+  const CARR = new Map(); let carrRaf = 0;
+  const carrPasso = () => { carrRaf = 0;
+    for (const [c, st] of CARR) { if (!c.isConnected) { CARR.delete(c); continue; }
+      const teto = Math.min(99, st.alvo + 14); st.v += st.v < st.alvo ? Math.max(.3, (st.alvo - st.v) * .15) : (teto - st.v) * .006; if (st.alvo >= 100) st.v = Math.min(100, Math.max(st.v, st.alvo));
+      c.querySelector('i').style.width = st.v.toFixed(1) + '%'; c.querySelector('b').textContent = Math.floor(st.v) + '%'; }
+    if (CARR.size) carrRaf = requestAnimationFrame(carrPasso); };
+  function progresso(onde, pct, txt) { const c = onde?.querySelector?.('[data-carr]'); if (!c) return;
+    const st = CARR.get(c) || { v: parseFloat(c.querySelector('i').style.width) || 0, alvo: 0 }; st.alvo = Math.max(st.alvo, pct); CARR.set(c, st);
+    if (txt) c.querySelector('span').textContent = txt; if (!carrRaf) carrRaf = requestAnimationFrame(carrPasso); }
   async function painelMensagens(o = {}) {
     const M = o.como ? novoEstado(o.como) : MSG; // o.como = ADM vendo as conversas pela visão de outra pessoa (só leitura)
     if (o.como) { o.citar = null; M.comoNome = (await quemU(o.como))?.nome || 'esta pessoa'; }
@@ -1276,7 +1291,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
-    sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
+    preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
     nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
