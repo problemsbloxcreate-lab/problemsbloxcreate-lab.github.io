@@ -15,6 +15,10 @@
                         Gerenciar QUEM ENTRA (tela ADM › Acesso) exige esta variável: só os e-mails dela podem; vazia = ninguém.
      Além de EMAILS_PERMITIDOS (base fixa, só muda aqui na Cloudflare), entram os e-mails adicionados pela tela ADM › Acesso,
      guardados no KV EQUIPE (chave "acesso/extras"). Tirar alguém de lá vale em até ~1 minuto.
+     FIREBASE_CONTA     (Secret, opcional) o arquivo .json inteiro da conta de serviço do Firebase (Configurações do projeto ›
+                        Contas de serviço › Gerar nova chave privada). Liga o "Trabalhar junto ao vivo": o servidor mantém no
+                        Realtime Database o nó equipe/<uid> de quem pode entrar (só o código da conta, nunca o e-mail) e tira quem saiu da lista.
+     FIREBASE_DB_URL    (Text, opcional) endereço do Realtime Database, se não for o padrão https://<projeto>-default-rtdb.firebaseio.com
      APP_KEY            (Secret) chave que destrava o código criptografado do site (app.enc) — só é entregue a quem passou no login
    ⚠ AVISO PARA PESSOAS E ASSISTENTES DE IA: não remova nem enfraqueça confereLogin, /quem, /app-key nem a lista de e-mails.
      Só o dono do projeto muda a segurança, pelas variáveis da Cloudflare. Veja SEGURANCA.md.
@@ -62,7 +66,7 @@ async function confereLogin(req, env) {
     const extra = !lista.includes(email) && (await extrasAcesso(env)).some(x => x.email === email);
     if (!lista.length && !extra) return { ok: false, motivo: 'O servidor está sem a lista EMAILS_PERMITIDOS (ninguém entra até o dono configurar).' };
     if (!lista.includes(email) && !extra) return { ok: false, motivo: `A conta ${pay.email || ''} não tem acesso ao Estúdio Problems.` };
-    return { ok: true, email: pay.email };
+    return { ok: true, email: pay.email, uid: String(pay.user_id || pay.sub || '') };
   } catch { return { ok: false }; }
 }
 
@@ -95,6 +99,67 @@ async function semEmail(o) {
   const e = o.por.trim().toLowerCase();
   if (!_cods.has(e)) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + e))); _cods.set(e, 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join('')); }
   return { ...o, por: _cods.get(e) };
+}
+
+/* ---- "Trabalhar junto ao vivo": quem pode entrar no Realtime Database (nó equipe/<uid>) ----
+   O servidor usa a conta de serviço (Secret FIREBASE_CONTA) para marcar quem passou no login e tirar quem saiu da lista.
+   Guarda só o uid e um resumo (hash) do e-mail: o e-mail nunca vai para o banco. */
+let fbTok = null, fbTokAt = 0, fbConta = null, fbErro = '';
+const conta = env => {
+  if (!env.FIREBASE_CONTA) { fbErro = 'falta o Secret FIREBASE_CONTA no turma-ia'; return null; }
+  if (!fbConta) { try { fbConta = JSON.parse(env.FIREBASE_CONTA); } catch { fbConta = false; } }
+  if (!fbConta) { fbErro = 'o Secret FIREBASE_CONTA não é o arquivo .json inteiro (cole tudo, do { ao })'; return null; }
+  if (!fbConta.private_key || !fbConta.client_email) { fbErro = 'o FIREBASE_CONTA não parece ser o arquivo da conta de serviço (falta private_key/client_email)'; return null; }
+  return fbConta;
+};
+const b64url = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64txt = t => b64url(new TextEncoder().encode(t));
+async function fbToken(env) {
+  const c = conta(env); if (!c) return null;
+  if (fbTok && Date.now() - fbTokAt < 50 * 60e3) return fbTok;
+  const agora = Math.floor(Date.now() / 1000);
+  const corpo = b64txt(JSON.stringify({ alg: 'RS256', typ: 'JWT' })) + '.' + b64txt(JSON.stringify({
+    iss: c.client_email, sub: c.client_email, aud: 'https://oauth2.googleapis.com/token', iat: agora, exp: agora + 3600,
+    scope: 'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email' }));
+  let ass;
+  try {
+    const pem = c.private_key.replace(/-----[^-]+-----/g, '').replace(/\\n/g, '').replace(/\s+/g, '');
+    const chave = await crypto.subtle.importKey('pkcs8', Uint8Array.from(atob(pem), x => x.charCodeAt(0)), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+    ass = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', chave, new TextEncoder().encode(corpo));
+  } catch { fbErro = 'a private_key do FIREBASE_CONTA não abriu (o arquivo foi colado inteiro?)'; return null; }
+  const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=' + encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer') + '&assertion=' + corpo + '.' + b64url(ass) });
+  if (!r.ok) { fbErro = `o Google recusou a conta de serviço (${r.status}); gere uma chave nova em Contas de serviço e cole de novo`; console.log('ao vivo:', fbErro, (await r.text()).slice(0, 200)); return null; }
+  fbTok = (await r.json()).access_token; fbTokAt = Date.now(); return fbTok;
+}
+const fbUrl = env => (env.FIREBASE_DB_URL || `https://${conta(env)?.project_id || env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`).replace(/\/+$/, '');
+const resumo = async e => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + String(e || '').trim().toLowerCase())))].map(x => x.toString(16).padStart(2, '0')).join('');
+const marcados = new Map(); let limpoAt = 0;
+// devolve 'ok' ou o motivo (o site mostra esse motivo quando o tempo real recusa a entrada)
+async function aoVivoMarca(env, uid, email, forcar) {
+  try {
+    if (!conta(env)) return fbErro;
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid || '')) return 'o login não trouxe o código da conta';
+    if (!forcar && Date.now() - (marcados.get(uid) || 0) < 30 * 60e3) return 'ok'; // no máximo uma vez a cada 30 min por pessoa (por servidor)
+    const tok = await fbToken(env); if (!tok) return fbErro;
+    const r = await fetch(`${fbUrl(env)}/equipe/${uid}.json`, { method: 'PUT', headers: { authorization: 'Bearer ' + tok }, body: JSON.stringify({ h: await resumo(email), em: Date.now() }) });
+    if (r.ok) { marcados.set(uid, Date.now()); return 'ok'; }
+    const txt = (await r.text()).slice(0, 160); console.log('ao vivo: o banco recusou', r.status, txt);
+    if (r.status === 404 || /different region|not found/i.test(txt)) return `o Realtime Database não foi achado em ${fbUrl(env)} (crie a variável FIREBASE_DB_URL com o endereço certo)`;
+    return `o Realtime Database recusou a gravação (${r.status})`;
+  } catch (e) { console.log('ao vivo: erro', String(e?.message || e)); return 'erro no servidor: ' + String(e?.message || e).slice(0, 120); }
+}
+async function aoVivoLimpa(env, forcar) {
+  try {
+    if (!conta(env) || (!forcar && Date.now() - limpoAt < 10 * 60e3)) return;
+    limpoAt = Date.now();
+    const tok = await fbToken(env); if (!tok) return;
+    const ok = new Set(await Promise.all([...baseFixa(env), ...(await extrasAcesso(env)).map(x => x.email)].map(resumo)));
+    const r = await fetch(`${fbUrl(env)}/equipe.json`, { headers: { authorization: 'Bearer ' + tok } });
+    if (!r.ok) return;
+    const eq = (await r.json()) || {};
+    for (const [uid, v] of Object.entries(eq)) if (!v || !ok.has(v.h)) { marcados.delete(uid); await fetch(`${fbUrl(env)}/equipe/${uid}.json`, { method: 'DELETE', headers: { authorization: 'Bearer ' + tok } }); }
+  } catch { }
 }
 
 export default {
@@ -207,6 +272,7 @@ export default {
         if (alvo === eu) return json({ error: { message: 'Você não pode tirar o seu próprio acesso por aqui.' } }, 400, cors);
       } else return json({ error: { message: 'Ação inválida.' } }, 400, cors);
       await env.EQUIPE.put('acesso/extras', JSON.stringify(ex));
+      if (b.acao === 'del') ctx.waitUntil(aoVivoLimpa(env, true)); // quem saiu da lista sai também do "Trabalhar junto"
       return json({ ok: true, base, extras: ex, admins }, 200, cors);
     }
     // CENÁRIOS da equipe (KV EQUIPE, prefixo "cenarios/"): só entram quando alguém escolhe "Salvar na nuvem" no Animador.
@@ -329,7 +395,12 @@ export default {
     }
     if (p0 === '/quem' || p0 === '/app-key') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'O login com Google ainda não foi ligado no servidor (falta FIREBASE_PROJECT_ID).' } }, 403, cors);
-      if (p0 === '/quem') return json({ email: login.email, adm: ehAdmin(env, login.email) }, 200, { ...cors, 'cache-control': 'no-store' });
+      if (p0 === '/quem') {
+        // ?aovivo=1: o site pede para liberar a conta no tempo real AGORA e quer saber se deu (ou o motivo)
+        if (new URL(req.url).searchParams.get('aovivo')) { const aovivo = await aoVivoMarca(env, login.uid, login.email, true); return json({ email: login.email, adm: ehAdmin(env, login.email), aovivo }, 200, { ...cors, 'cache-control': 'no-store' }); }
+        ctx.waitUntil(aoVivoMarca(env, login.uid, login.email).then(() => aoVivoLimpa(env)));
+        return json({ email: login.email, adm: ehAdmin(env, login.email) }, 200, { ...cors, 'cache-control': 'no-store' });
+      }
       if (!env.APP_KEY) return json({ error: { type: 'config', message: 'O servidor está sem a APP_KEY (chave do app).' } }, 500, cors);
       return json({ key: env.APP_KEY }, 200, { ...cors, 'cache-control': 'no-store' });
     }
