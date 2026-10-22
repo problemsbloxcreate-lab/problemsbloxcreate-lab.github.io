@@ -107,11 +107,28 @@ async function semEmail(o) {
 let fbTok = null, fbTokAt = 0, fbConta = null, fbErro = '';
 const conta = env => {
   if (!env.FIREBASE_CONTA) { fbErro = 'falta o Secret FIREBASE_CONTA no turma-ia'; return null; }
-  if (!fbConta) { try { fbConta = JSON.parse(env.FIREBASE_CONTA); } catch { fbConta = false; } }
-  if (!fbConta) { fbErro = 'o Secret FIREBASE_CONTA não é o arquivo .json inteiro (cole tudo, do { ao })'; return null; }
+  if (!fbConta) fbConta = lerConta(env.FIREBASE_CONTA); // erro não fica guardado: depois de corrigir o Secret, vale na hora
+  if (!fbConta) { const t = String(env.FIREBASE_CONTA).trim(); fbErro = !t.includes('{') ? 'o Secret FIREBASE_CONTA não tem o arquivo .json: abra o arquivo baixado no Bloco de Notas e cole TUDO (começa com { e termina com })'
+    : !t.includes('}') || t.lastIndexOf('}') < t.lastIndexOf('"') ? 'o Secret FIREBASE_CONTA ficou cortado no meio: cole o arquivo .json inteiro de novo (até o } do fim)'
+    : 'o Secret FIREBASE_CONTA não é o arquivo .json inteiro (cole tudo, do { ao })'; return null; }
   if (!fbConta.private_key || !fbConta.client_email) { fbErro = 'o FIREBASE_CONTA não parece ser o arquivo da conta de serviço (falta private_key/client_email)'; return null; }
   return fbConta;
 };
+// aceita o arquivo colado do jeito que vier: com aspas em volta, com ``` em volta, com espaço/BOM, com quebras de linha de verdade
+// dentro da private_key (o JSON não aceita) ou em base64
+function lerConta(t) {
+  t = String(t || '').replace(/^\uFEFF/, '').trim();
+  const tenta = x => { try { const j = JSON.parse(x); return typeof j === 'string' ? tenta(j) : j && typeof j === 'object' ? j : null; } catch { return null; } };
+  const cands = [t];
+  const i = t.indexOf('{'), f = t.lastIndexOf('}'); if (i >= 0 && f > i) cands.push(t.slice(i, f + 1));
+  try { const d = atob(t.replace(/\s+/g, '')); if (d.includes('{')) cands.push(d.slice(d.indexOf('{'), d.lastIndexOf('}') + 1)); } catch { }
+  for (const c of cands) {
+    const j = tenta(c) || tenta(c.replace(/"(?:[^"\\]|\\.)*"/gs, m => m.replace(/\r?\n/g, '\\n'))) // quebras de linha de verdade dentro das aspas
+      || tenta(c.replace(/[\u201C\u201D]/g, '"')); // aspas "curvas" de editor de texto
+    if (j) return j;
+  }
+  return null;
+}
 const b64url = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const b64txt = t => b64url(new TextEncoder().encode(t));
 async function fbToken(env) {
