@@ -60,6 +60,16 @@ jobs:
           [ -n "$ID" ] || { echo "::error::Não consegui criar nem achar o KV PERFIS (o token precisa de Workers KV Storage: Edit)."; exit 1; }
           sed -i "s/PREENCHIDO_PELA_ACTION/$ID/" wrangler.toml
           echo "KV PERFIS: $ID"
+      - name: Conferir o bucket de mídia (R2 estudio-midia)
+        if: steps.seg.outputs.ok == '1'
+        working-directory: porteiro
+        shell: bash
+        run: |
+          set -uo pipefail
+          # a Action NÃO cria o bucket (R2 pede ativação na conta): sem ele, publica sem a ligação MIDIA e /midia responde 503
+          if $WR r2 bucket list 2>/dev/null | grep -qw 'estudio-midia'; then echo "R2 estudio-midia: ok"
+          else node -e "const f='wrangler.toml',fs=require('fs'),s=fs.readFileSync(f,'utf8'),i=s.indexOf('[[r2_buckets]]');if(i>=0)fs.writeFileSync(f,s.slice(0,i))"
+            echo "::warning::O bucket R2 estudio-midia não existe (ou o token não tem R2: Edit). Publicando sem /midia."; fi
       - name: Publicar
         if: steps.seg.outputs.ok == '1'
         working-directory: porteiro
