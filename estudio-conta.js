@@ -100,6 +100,10 @@
 .ep-conta-head{display:flex;align-items:center;gap:10px;padding:8px 8px 10px;border-bottom:1px solid #1f2024;margin-bottom:4px}
 .ep-conta-head .av{width:40px;height:40px;border-radius:50%;overflow:hidden;flex:none;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff}
 .ep-conta-head .av img{width:100%;height:100%;object-fit:cover}
+/* fotos redondas: a imagem cobre o círculo inteiro (o CSS do programa não estica nem encolhe) e o fundo azul some quando tem foto */
+.ep-conta-head .av,.ep-conta-btn,.ep-msgs .epm-av,.epa-av,.ep-quem-av,.ep-conta-pop .av{position:relative}
+.ep-conta-head .av img,.ep-conta-btn img,.ep-msgs .epm-av img,.epa-av img,.ep-quem-av img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-width:0!important;object-fit:cover!important;display:block!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.ep-conta-head .av:has(img),.ep-conta-btn:has(img),.ep-msgs .epm-av:has(img),.epa-av:has(img),.ep-quem-av:has(img){background:#2b2c31!important}
 .ep-conta-head b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-conta-head small{display:block;color:#a9adb7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-conta-pop .it{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;color:#e9ebef;text-decoration:none;font-size:13.5px;line-height:1.3}
