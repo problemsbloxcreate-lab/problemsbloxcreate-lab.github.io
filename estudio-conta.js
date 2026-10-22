@@ -610,7 +610,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
      Para texto simples (ex.: dica ao passar o mouse): await EstudioConta.nomeDe(email). */
   const QUEM = new Map();
   const quem = email => { const k = String(email || '').trim().toLowerCase(); if (!k) return Promise.resolve(null);
-    if (!QUEM.has(k)) QUEM.set(k, fetch('/pessoa?e=' + encodeURIComponent(k), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEM.get(k); };
+    if (!QUEM.has(k)) QUEM.set(k, /^u[0-9a-f]{16}$/.test(k) ? quemU(k) : fetch('/pessoa?e=' + encodeURIComponent(k), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEM.get(k); };
   const nomeDe = async email => (await quem(email))?.nome || '';
   async function pintaQuem(el) {
     el.dataset.quemOk = '1'; const q = await quem(el.dataset.quem); if (!q) { el.textContent = ''; return; }
@@ -1264,7 +1264,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function confereVersao(primeira) {
     if (VERSAO.nova || VERSAO.rodando) return; VERSAO.rodando = true; VERSAO.ultima = Date.now();
     try {
-      const lista = [...new Set([...recursosDaPagina(), ...SITES])];
+      // ao abrir: só a página e os scripts comuns (leve, não disputa com o carregamento); o resto entra 20 s depois
+      const lista = primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : [...new Set([...recursosDaPagina(), ...SITES])];
       for (const u of lista) {
         if (VERSAO.instavel.has(u) || VERSAO.nova) continue;
         let agora; try { agora = await digital(u, 'no-cache'); } catch { continue; }
@@ -1284,7 +1285,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     } finally { VERSAO.rodando = false; }
   }
   if (window.top === window && /^https?:$/.test(location.protocol)) {
-    const comeca = () => { confereVersao(true).catch(() => { }); };
+    const comeca = () => { confereVersao(true).catch(() => { }); setTimeout(() => { VERSAO.ultima = 0; confereVersao().catch(() => { }); }, 20000); };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comeca, { once: true }); else comeca();
     setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 3.5 * 60000) confereVersao().catch(() => { }); }, 30000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); });

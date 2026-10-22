@@ -122,7 +122,12 @@ async function repassa(req, url, p, env, s) {
     const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
     const extra = carregando + icone + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
     h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h;
-    out.delete('content-length'); out.delete('content-encoding'); out.delete('etag');
+    out.delete('content-length'); out.delete('content-encoding'); out.delete('etag'); out.delete('last-modified');
+    // ETag da página já montada: se o navegador já tem esta versão, responde "não mudou" (304) e ele não baixa de novo
+    // (a página dos Shorts tem mais de 1 MB: sem isto ela vinha inteira a cada abertura)
+    const et = 'W/"ep-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(h)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
+    out.set('etag', et);
+    if ((req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et)) return new Response(null, { status: 304, headers: out });
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
   }
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: out });

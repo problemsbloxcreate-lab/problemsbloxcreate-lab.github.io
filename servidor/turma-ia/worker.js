@@ -88,6 +88,15 @@ async function gastoOficial(env) {
   } catch { return oficial; }
 }
 
+// e-mail de quem subiu um arquivo vira o código da pessoa ("u" + 16 hex, o mesmo do porteiro e do Animador): o e-mail nunca vai para o navegador
+const _cods = new Map();
+async function semEmail(o) {
+  if (!o || typeof o.por !== 'string' || !o.por.includes('@')) return o;
+  const e = o.por.trim().toLowerCase();
+  if (!_cods.has(e)) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + e))); _cods.set(e, 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join('')); }
+  return { ...o, por: _cods.get(e) };
+}
+
 export default {
   async fetch(req, env, ctx) {
     const origin = req.headers.get('origin') || '';
@@ -110,7 +119,7 @@ export default {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const q = new URL(req.url).searchParams, LIM = (+env.EQUIPE_LIMITE_MB || 1024) * 1048576;
-      const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const k of r.keys) out.push({ k: k.name, ...(k.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
+      const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const k of r.keys) out.push(await semEmail({ k: k.name, ...(k.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/equipe/arquivo') {
         const k = q.get('k') || ''; if (!/^(equipe|conhecimento)\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
@@ -142,7 +151,7 @@ export default {
       const q = new URL(req.url).searchParams, k = q.get('k') || '';
       const KP = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/(personagem\.json|img\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|gif|jpg|jpeg))$/;
       const KD = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/;
-      const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
+      const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push(await semEmail({ k: x.name, ...(x.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/personagens') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors); return json({ itens: await listar('personagens/') }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'GET') {
         if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
@@ -156,7 +165,7 @@ export default {
         if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
         if (!k.endsWith('.json') && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
         const m0 = await metaDe(q.get('de'));
-        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, mod: Date.now(), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
@@ -206,7 +215,7 @@ export default {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const q = new URL(req.url).searchParams, k = q.get('k') || '', KC = /^cenarios\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|jpg|jpeg)$/;
-      if (p0 === '/cenarios') { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'cenarios/', cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (p0 === '/cenarios') { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'cenarios/', cursor: cur }); for (const x of r.keys) out.push(await semEmail({ k: x.name, ...(x.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (!KC.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
       if (req.method === 'GET') {
         const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
@@ -289,7 +298,7 @@ export default {
         }
         return json({ error: { message: 'Método não aceito' } }, 405, cors);
       }
-      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); return json({ links: v?.links || null, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: v?.por || null, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); return json({ links: v?.links || null, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'PUT' || req.method === 'POST') {
         if (!adm) return semAdm();
         let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
