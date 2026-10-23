@@ -231,7 +231,8 @@ export default {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const q = new URL(req.url).searchParams, k = q.get('k') || '';
-      const KP = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/(personagem\.json|img\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|gif|jpg|jpeg))$/;
+      // personagens/pastas.json = as PASTAS da biblioteca do Animador (quais existem e em qual está cada personagem); toda a equipe pode mudar
+      const KP = /^personagens\/(pastas\.json|[a-z0-9][a-z0-9-]{1,40}\/(personagem\.json|img\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|gif|jpg|jpeg)))$/;
       const KD = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/;
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push(await semEmail({ k: x.name, ...(x.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/personagens') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors); return json({ itens: await listar('personagens/') }, 200, { ...cors, 'cache-control': 'no-store' }); }

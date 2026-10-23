@@ -263,6 +263,7 @@ async function nuvemUso(req, env, url) {
   const pers = {};
   for (const it of j.itens || []) {
     const tam = +it.tam || 0, raiz = it.k.split('/')[0];
+    if (it.k === 'personagens/pastas.json') continue; // as pastas da biblioteca do Animador (não é um personagem)
     if (raiz === 'personagens') {
       const slug = it.k.split('/')[1] || '?', g = grupo('personagens', 'Personagens'), c = pers[slug] || (pers[slug] = { nome: humano(slug), bytes: 0, n: 0, em: null, por: null, imagens: 0 });
       c.ref = 'k:personagens/' + slug + '/'; (c.arqs || (c.arqs = [])).push({ k: it.k, tam, tipo: it.tipo || '' }); c.bytes += tam; c.n++; if (/\/img\//.test(it.k)) c.imagens++; if (it.k.endsWith('personagem.json')) { if (it.nome) c.nome = it.nome; c.por = it.por; c.em = it.em; } g.bytes += tam; continue;
