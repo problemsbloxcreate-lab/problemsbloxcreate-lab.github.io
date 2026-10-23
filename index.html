@@ -211,6 +211,9 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nvd-n{font-size:10.5px;color:var(--tx3);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nvd-p{font-size:12px;color:var(--tx3);line-height:1.5;border-top:1px solid var(--bd);padding-top:12px}
 .nvd-aviso{grid-column:1/-1;display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:12px;font-size:13px;line-height:1.45;border:1px solid rgba(var(--ac-rgb),.4);background:rgba(var(--ac-rgb),.08);color:var(--tx)}.nvd-aviso svg{flex:none;margin-top:1px;color:var(--ac)}.nvd-aviso small{display:block;color:var(--tx2);font-size:12px}.nvd-aviso.al{border-color:rgba(255,184,77,.45);background:rgba(255,184,77,.07)}.nvd-aviso.al svg{color:#ffb84d}
+.nvd-copia{grid-column:1/-1}.nvd-copia .nvd-h small{max-width:720px;line-height:1.45}
+.nvd-ck{display:flex;flex-wrap:wrap;gap:8px}.nvd-ck label{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:99px;border:1px solid var(--bd2);font-size:12.5px;cursor:pointer;color:var(--tx2)}
+.nvd-ck label:has(input:checked){color:var(--tx);border-color:rgba(var(--ac-rgb),.5);background:rgba(var(--ac-rgb),.1)}.nvd-ck label.fixo{cursor:default}.nvd-ck input{accent-color:var(--ac);margin:0}
 .nvd-rod{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--tx3);padding:2px 2px 0}
 @media (max-width:860px){.nvd{grid-template-columns:1fr}}@media (max-width:420px){.nvd-g{grid-template-columns:1fr 1fr}}
 .nv-fontes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:20px 0 14px;position:relative;clear:both}
@@ -1272,6 +1275,24 @@ async function renderUsoDia(forcar) {
     + `<div class="nvd-rod"><span>${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (sozinho de 30 em 30 min) · ` : ''}o limite do plano grátis zera às 21h de Brasília (em ${falta(j.volta)}).</span>
       <button class="btn sm" type="button" id="nvd-medir" style="margin-left:auto" ${nvMedindo ? 'disabled' : ''} title="Mede o gasto de hoje agora (leva cerca de 1 minuto)">${nvMedindo ? '<span class="spin"></span>Medindo…' : 'Medir agora'}</button></div>`;
   const bt = $('#nvd-medir'); if (bt) bt.onclick = () => medirUsoDia(c?.em || 0);
+  // CÓPIA DE SEGURANÇA na reserva: o ADM marca o que entra (Personagens do Ateliê sempre entra)
+  const cp = j.copia; if (!cp) return;
+  const NOMES = { 'personagens/': 'Personagens do Ateliê (Animador)', 'cenarios/': 'Cenários', 'menu/': 'Menu (botões, fundo, mensagens)', 'equipe/': 'Mídia da equipe', 'conhecimento/': 'Conhecimento da IA', 'acesso/': 'Quem pode entrar' };
+  const todas = [...new Set(['personagens/', ...(cp.raizes || []), ...(cp.prefixos || [])])], marc = new Set(['personagens/', ...(cp.prefixos || [])]);
+  const quandoC = cp.em ? new Date(cp.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : null;
+  const box = document.createElement('div'); box.className = 'nvd-c nvd-copia';
+  box.innerHTML = `<div class="nvd-h"><div><b>Cópia de segurança na reserva</b><small>O que estiver marcado é copiado da principal para a reserva (só o que mudou), logo depois das 21h, a cada 6 horas e quando a principal chega perto do limite. Se a principal não deixar ler ou listar, o Estúdio usa a cópia.</small></div>${j.poupando ? '<span class="nvd-chip er">principal poupada até as 21h</span>' : ''}</div>
+    <div class="nvd-ck">${todas.map(p => `<label class="${p === 'personagens/' ? 'fixo' : ''}" title="${p === 'personagens/' ? 'Sempre entra na cópia' : esc(p)}"><input type="checkbox" value="${esc(p)}" ${marc.has(p) ? 'checked' : ''} ${p === 'personagens/' ? 'disabled' : ''}><span>${esc(NOMES[p] || p.replace(/\/$/, ''))}</span></label>`).join('')}</div>
+    <div class="nvd-rod" style="padding:0"><span>${quandoC ? `Última cópia ${quandoC}: <b style="color:var(--tx)">${num(cp.n)} arquivos</b>${cp.bytes ? ` (${nvFmt(cp.bytes)})` : ''}${cp.falta ? ` · faltam ${num(cp.falta)} (vão na próxima)` : ''}` : 'Ainda não foi feita nenhuma cópia.'} · Proteção: a partir de ${Math.round((j.seguro || .85) * 100)}% do limite do dia a principal é poupada e tudo vai para a reserva, com folga para a última cópia.</span>
+      <button class="btn sm" type="button" data-copiar style="margin-left:auto" title="Copia agora o que mudou (leva alguns minutos)">Copiar agora</button></div>`;
+  el.insertBefore(box, el.querySelector('.nvd-rod'));
+  box.querySelectorAll('input[type=checkbox]').forEach(ck => ck.onchange = async () => {
+    const prefixos = [...box.querySelectorAll('input[type=checkbox]:checked')].map(x => x.value);
+    try { const r = await api('/nuvem-painel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ acao: 'cfg', prefixos }) }); if (r.erro) throw new Error(r.erro); }
+    catch (e) { ck.checked = !ck.checked; alert('Não consegui mudar: ' + e.message); } });
+  box.querySelector('[data-copiar]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true; b.textContent = 'Pedindo…';
+    try { const r = await api('/nuvem-painel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ acao: 'copiar' }) }); if (r.erro) throw new Error(r.erro); b.textContent = r.ja ? 'Já está copiando' : 'Copiando… (alguns min)'; }
+    catch (e) { b.disabled = false; b.textContent = 'Copiar agora'; alert('Não consegui pedir a cópia: ' + e.message); } };
 }
 // "Medir agora": pede a medida já (a Action leva ~1 min) e confere a cada 15 s até chegar a nova (no máximo 4 min)
 let nvMedindo = false;

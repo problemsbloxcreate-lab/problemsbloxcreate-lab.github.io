@@ -191,7 +191,10 @@ let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
    reserva levam o cabeçalho x-nuvem: reserva (o site mostra o aviso). */
 const RESERVA_URL = 'https://sons-problems.problemsbloxcreate.workers.dev';
 const fimDoDia = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
-let limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0;
+let limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0, bkMan = null, resConta = null, cheioVisto = 0;
+// PROTEÇÃO: com 85% das gravações, listas ou apagadas do dia já gastas (medida de 15 em 15 min), a principal é poupada até as 21h
+// (como se tivesse acabado): sobra folga para a última foto da lista e para a cópia de segurança, e nada para no meio.
+const SEGURO = 0.85;
 const emLimite = () => Date.now() < limiteAte;
 function reservaDe(env, auth) {
   if (!auth || env.RESERVA === 'nao') return null; const base = (env.RESERVA_URL || RESERVA_URL).replace(/\/+$/, '');
@@ -209,6 +212,13 @@ function reservaDe(env, auth) {
       resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: meta || {} }); },
     async del(k, tomb) { await ok(await call('/reserva/arq?k=' + encodeURIComponent(k) + (tomb ? '&tomb=1' : ''), { method: 'DELETE' }));
       if (tomb) { resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); } else resIdx.m?.delete(k); },
+    copiar: () => call('/reserva/copiar', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
+    bkcfg: () => call('/reserva/bkcfg').then(r => r.ok ? r.json() : null).catch(() => null),
+    poeBkcfg: c => call('/reserva/bkcfg', { method: 'PUT', body: JSON.stringify(c) }).then(async r => r.ok ? { ok: true } : { erro: (await r.json().catch(() => ({}))).erro || 'a reserva respondeu ' + r.status }),
+    async bkman() { if (bkMan && Date.now() - bkMan.at < 300e3) return bkMan.j; const r = await call('/reserva/bkman'); const j = r.ok ? await r.json().catch(() => null) : null; bkMan = { at: Date.now(), j }; return j; },
+    async bkget(k) { const r = await call('/reserva/bk?k=' + encodeURIComponent(k)); if (!r.ok) return { value: null, metadata: null };
+      let meta = {}; try { meta = JSON.parse(decodeURIComponent(r.headers.get('x-meta') || '%7B%7D')); } catch { } return { value: await r.arrayBuffer(), metadata: meta }; },
+    async contaJa() { if (resConta && Date.now() - resConta.at < 300e3) return resConta.j; const j = await this.conta(); resConta = { at: Date.now(), j }; return j; },
     medir: () => call('/reserva/medir', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
     conta: () => call('/reserva/conta').then(r => r.ok ? r.json() : null).catch(() => null),
     fim: () => call('/reserva/fim', { method: 'POST' }).then(() => { resEstado = { at: Date.now(), ativo: false }; }),
@@ -232,7 +242,8 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
   };
   const ler = async (k, o, meta) => { const it = await naReserva(k);
     if (it) { usou(); if (it.metadata?._del) return meta ? { value: null, metadata: null } : null; const g = await R.get(k); return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); }
-    return meta ? kv.getWithMetadata(k, o) : kv.get(k, o); };
+    try { return meta ? await kv.getWithMetadata(k, o) : await kv.get(k, o); }
+    catch (e) { if (!R) throw e; const g = await R.bkget(k).catch(() => ({ value: null })); if (g.value == null) throw e; usou(); flag.copia = true; return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); } };
   const W = {
     get: (k, o) => ler(k, o, false), getWithMetadata: (k, o) => ler(k, o, true),
     async put(k, v, o) {
@@ -247,13 +258,24 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
       try { const r = await kv.delete(k); kvLista?.m.delete(k); return r; } catch (e) { if (!R || !marca(e)) throw e; return W.delete(k); }
     },
     async list(o = {}) {
-      let m; try { m = await carrega(); }
-      catch (e) { if (!R || !marca(e)) throw e; m = kvLista?.m || await R.fotoLista().catch(() => null); if (!m) throw e; usou(); }
+      const semLista = async e => { let m2 = kvLista?.m || await R.fotoLista().catch(() => null);
+        if (!m2) { const bk = await R.bkman().catch(() => null); if (bk?.itens && Object.keys(bk.itens).length) { m2 = new Map(Object.entries(bk.itens).map(([n, v]) => [n, { name: n, metadata: v.m || {} }])); flag.copia = true; } }
+        if (!m2) throw e; usou(); return m2; };
+      let m; if (R && emLimite() && !(kvLista && Date.now() - kvLista.at < KV_LISTA_MS)) m = await semLista(new Error('KV list() limit exceeded for the day.'));
+      else try { m = await carrega(); } catch (e) { if (!R || !marca(e)) throw e; m = await semLista(e); }
       if (await ativa()) { try { const ri = await R.indice(); if (ri.size) { m = new Map(m); for (const [k, it] of ri) { if (it.metadata?._del) m.delete(k); else m.set(k, { name: k, metadata: it.metadata }); } usou(); } } catch { } }
       const pre = o.prefix || ''; return { keys: [...m.values()].filter(k => k.name.startsWith(pre)).sort((a, b) => a.name < b.name ? -1 : 1), list_complete: true };
     },
   };
   return W;
+}
+async function confereCheio(kv, R) {
+  if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
+  const c = await R.contaJa(), o = c?.contas?.principal, L = c?.limites; if (!o?.kv || !L || c.dia !== new Date().toISOString().slice(0, 10)) return;
+  const pct = Math.max(o.kv.write / L.write, o.kv.list / L.list, o.kv.delete / L.delete); if (pct < SEGURO) return;
+  // última foto da lista antes de poupar (se ainda dá para listar) e a cópia de segurança do que mudou
+  if (o.kv.list / L.list < 0.97 && Date.now() - fotoListaEm > 30 * 60e3) { try { kvLista = null; fotoListaEm = 0; await kv.list({}); } catch { } }
+  limiteAte = fimDoDia(); R.copiar().catch(() => { });
 }
 // depois do limite: passa da reserva para a principal aos poucos (10 por pedido, no máximo a cada 2 min nesta instância)
 async function migra(kv, R) {
@@ -288,7 +310,7 @@ export default {
     const flag = { reserva: false }; let r;
     try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
     if (flag.reserva || emLimite()) { // o site mostra "usando a nuvem reserva" (ou só o aviso do limite)
-      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? 'reserva' : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta');
+      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? 'reserva' : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia');
       r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
     return r;
@@ -311,15 +333,21 @@ export default {
     const login = await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
     if (R && login.email) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
+    if (R && login.email) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
     // ADM › Nuvem: gasto de hoje das duas contas (medido pela Action "Uso da nuvem" de 30 em 30 min) + o que está na reserva agora
     if (new URL(req.url).pathname === '/nuvem-painel') {
       if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só para ADM.' } }, 403, cors);
       const R2 = reservaDe(env, auth0), out = { conta: null, reserva: { ativo: false, n: 0, bytes: 0, apagadas: 0 }, limite: emLimite() ? new Date(limiteAte).toISOString() : null, volta: new Date(fimDoDia()).toISOString() };
-      if (R2 && req.method === 'POST') return json(await R2.medir(), 200, { ...cors, 'cache-control': 'no-store' }); // botão "Medir agora"
+      if (R2 && req.method === 'POST') { let b = {}; try { b = await req.json(); } catch { }
+        const r = b.acao === 'copiar' ? await R2.copiar() : b.acao === 'cfg' ? await R2.poeBkcfg({ prefixos: (Array.isArray(b.prefixos) ? b.prefixos : []).filter(x => /^[a-z0-9-]{1,40}\/$/.test(x)).slice(0, 20) }) : await R2.medir();
+        if (b.acao === 'cfg') bkMan = null; return json(r, 200, { ...cors, 'cache-control': 'no-store' }); } // "Medir agora", "Copiar agora" e o que entra na cópia
+      out.seguro = SEGURO; out.poupando = emLimite();
+      if (R2) { const [cfg, bk] = await Promise.all([R2.bkcfg(), (bkMan = null, R2.bkman().catch(() => null))]); out.copia = { prefixos: cfg?.prefixos || ['personagens/'], em: bk?.em || null, n: bk?.n || 0, bytes: bk?.bytes || 0, falta: bk?.falta || 0 };
+        const raizes = new Set(); try { for (const k of (await env.EQUIPE.list({})).keys) raizes.add(k.name.split('/')[0] + '/'); } catch { } out.copia.raizes = [...raizes].sort(); }
       if (R2) { out.conta = await R2.conta(); try { resEstado.at = 0; out.reserva.ativo = await R2.ativa(); if (out.reserva.ativo) for (const it of (await R2.indice(true)).values()) { if (it.metadata?._del) out.reserva.apagadas++; else { out.reserva.n++; out.reserva.bytes += +it.metadata?.tam || 0; } } } catch { out.reserva.erro = true; } }
       return json(out, 200, { ...cors, 'cache-control': 'no-store' });
     }
-    if (new URL(req.url).pathname === '/confere') return json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); // a nuvem reserva confere se o login é da equipe (sem e-mail na resposta)
+    if (new URL(req.url).pathname === '/confere') return new URL(req.url).searchParams.get('adm') && !ehAdmin(env, login.email) ? json({ error: { type: 'adm' } }, 403, cors) : json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); // a nuvem reserva confere se o login é da equipe (sem e-mail na resposta)
     // SEGURANÇA (não remover): quem é + chave do app criptografado — só com login do Firebase confirmado e e-mail liberado
     const p0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
     // MÍDIA DA EQUIPE (KV "EQUIPE" da Cloudflare, grátis: 1 GB, até 25 MB por arquivo) — só com login liberado
