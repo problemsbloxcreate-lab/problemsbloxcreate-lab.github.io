@@ -786,14 +786,14 @@ function abrirConta() {
       <div class="conta-foto"><span class="av">${avatarHtml(CONTA.foto, CONTA.nome)}</span><div class="acts">
         <button class="btn sm" data-a="foto">Trocar foto</button>${CONTA.fotoPropria ? '<button class="btn sm" data-a="semfoto">Usar a foto do Google</button>' : ''}</div></div>
       <label class="f"><span>Nome</span><input type="text" maxlength="40" data-k="nome" value="${esc(rasc.nome)}" placeholder="${esc(CONTA.nomeGoogle)} (do Google)"></label>
-      <div class="f"><span>Fundo do menu</span>
+      ${window.ESTUDIO_EMBED ? '' : `<div class="f"><span>Fundo do menu</span>
         <label class="opcao"><input type="radio" name="fundo" value="padrao" ${rasc.fundo !== 'cor' ? 'checked' : ''}> Padrão do estúdio (o vídeo ou imagem da ADM)</label>
         <label class="opcao"><input type="radio" name="fundo" value="cor" ${rasc.fundo === 'cor' ? 'checked' : ''}> Uma cor só <input type="color" data-k="cor" value="${esc(rasc.cor)}" style="margin-left:auto;width:44px;height:28px;border:1px solid var(--bd2);border-radius:6px;background:none"></label>
         <label class="opcao" style="flex-wrap:wrap"><input type="radio" name="fundo" value="local" ${rasc.fundo === 'local' ? 'checked' : ''}> Imagem ou vídeo meu <small class="hint">(fica só neste computador)</small>
           <button class="btn sm" data-a="local" style="margin-left:auto">${rasc.local ? 'Trocar arquivo' : 'Escolher arquivo'}</button>
           ${rasc.local ? `<span class="hint" style="flex-basis:100%">${esc(rasc.local.nome || 'arquivo')} · ${(rasc.local.blob.size / 1048576).toFixed(1)} MB</span>
             <span class="rng" style="flex-basis:100%"><span class="hint" style="width:70px">Blur</span><input type="range" min="0" max="30" step="1" value="${rasc.blur}" data-k="lblur"><output>${rasc.blur} px</output></span>
-            <span class="rng" style="flex-basis:100%"><span class="hint" style="width:70px">Escurecer</span><input type="range" min="0" max=".9" step=".01" value="${rasc.escurecer}" data-k="lesc"><output>${Math.round(rasc.escurecer * 100)}%</output></span>` : ''}</label></div>
+            <span class="rng" style="flex-basis:100%"><span class="hint" style="width:70px">Escurecer</span><input type="range" min="0" max=".9" step=".01" value="${rasc.escurecer}" data-k="lesc"><output>${Math.round(rasc.escurecer * 100)}%</output></span>` : ''}</label></div>`}
       <span class="hint" data-m></span>
       <div class="acts"><span class="sp"></span><button class="btn sm" data-x>Fechar</button><button class="btn sm primary" data-ok>Salvar</button></div></div>`;
     const m = t => { $('[data-m]', d).textContent = t; };
@@ -809,7 +809,7 @@ function abrirConta() {
     };
     const sf = $('[data-a=semfoto]', d); if (sf) sf.onclick = async () => { try { CONTA = await contaApi('/conta/foto', { method: 'DELETE' }); aplicaConta(); pinta(); } catch (e) { m(e.message); } };
     $('[data-k=nome]', d).oninput = e => { rasc.nome = e.target.value; };
-    $('[data-a=local]', d).onclick = async e => {
+    if ($('[data-a=local]', d)) $('[data-a=local]', d).onclick = async e => {
       e.preventDefault(); const f = await pedirArquivo('image/*,video/*'); if (!f) return;
       if (!/^(image|video)\//.test(f.type)) return m('Escolha uma imagem, GIF ou vídeo.');
       if (f.size > 300 * 1048576) return m('Arquivo grande demais (até 300 MB).');
@@ -818,15 +818,15 @@ function abrirConta() {
     const lb = $('[data-k=lblur]', d); if (lb) lb.oninput = e => { rasc.blur = +e.target.value; e.target.nextElementSibling.textContent = e.target.value + ' px'; };
     const le = $('[data-k=lesc]', d); if (le) le.oninput = e => { rasc.escurecer = +e.target.value; e.target.nextElementSibling.textContent = Math.round(e.target.value * 100) + '%'; };
     $$('input[name=fundo]', d).forEach(r => r.onchange = () => { rasc.fundo = r.value; });
-    $('[data-k=cor]', d).oninput = e => { rasc.cor = e.target.value; rasc.fundo = 'cor'; $('input[value=cor]', d).checked = true; };
+    if ($('[data-k=cor]', d)) $('[data-k=cor]', d).oninput = e => { rasc.cor = e.target.value; rasc.fundo = 'cor'; $('input[value=cor]', d).checked = true; };
     $('[data-ok]', d).onclick = async () => {
       m('Salvando…');
       try {
         if (rasc.fundo === 'local' && !rasc.local) return m('Escolha a imagem ou o vídeo primeiro.');
         // o fundo local fica só neste navegador; no servidor vão o nome e a escolha "padrão/cor" (para os outros computadores)
-        const corpo = { nome: rasc.nome, cor: rasc.cor }; if (rasc.fundo !== 'local') corpo.fundo = rasc.fundo;
+        const corpo = window.ESTUDIO_EMBED ? { nome: rasc.nome } : { nome: rasc.nome, cor: rasc.cor }; if (!window.ESTUDIO_EMBED && rasc.fundo !== 'local') corpo.fundo = rasc.fundo; // fora do menu: só nome (o fundo é coisa do menu)
         CONTA = await contaApi('/conta', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) });
-        if (rasc.local) await LOCAL.gravar({ ...rasc.local, blur: rasc.blur, escurecer: rasc.escurecer });
+        if (rasc.local && !window.ESTUDIO_EMBED) await LOCAL.gravar({ ...rasc.local, blur: rasc.blur, escurecer: rasc.escurecer });
         LOCAL.ativo = rasc.fundo === 'local';
         if (window.ESTUDIO_EMBED) { try { sessionStorage.removeItem('ep-conta-v1'); } catch { } avisaPai('mudou'); return fecha(); }
         aplicaConta(); if (!MODO_ADM && !(await fundoDaPessoa())) fundoTela(DADOS.fundo); d.remove();
