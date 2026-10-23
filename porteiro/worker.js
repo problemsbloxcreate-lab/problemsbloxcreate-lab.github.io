@@ -256,7 +256,7 @@ async function nuvemUso(req, env, url) {
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
   const eu = s.e.toLowerCase(), mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + eu).catch(() => '{}') || '{}'), perfis = new Map();
   const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (!perfis.has(email)) { const p = await lePerfil(env, email), id = await idDe(email); mapa[id] = email;
-    perfis.set(email, { porNome: p.nome || p.google?.nome || mascara(email), porFoto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); };
+    perfis.set(email, { porNome: p.nome || p.google?.nome || mascara(email), porFoto: p.fotoV ? '/pessoa/foto?u=' + (await codigoU(email)) + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); }; // /pessoa/foto: qualquer pessoa da equipe vê (a /acesso/foto é só do ADM)
   const PROJ = { personagens: 'Animador', cenarios: 'Animador', menu: 'Menu do Estúdio', fotos: 'Menu do Estúdio', acesso: 'Menu do Estúdio', conhecimento: 'Shorts', equipe: 'Geral', outros: 'Geral' };
   const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, projeto: PROJ[id] || 'Geral', bytes: 0, n: 0, itens: [] });
   const NOMES = { cenarios: 'Cenários', menu: 'Fundos e links do menu', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento da IA', acesso: 'Lista de quem entra' };
