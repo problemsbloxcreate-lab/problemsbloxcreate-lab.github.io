@@ -731,7 +731,7 @@ const chaveMidia = (c) => { try { c = decodeURIComponent(c); } catch { return nu
   return c && c.length <= 512 && !/[\u0000-\u001f\\]/.test(c) && !c.startsWith('/') && !c.split('/').some(x => x === '' || x === '.' || x === '..') ? c : null; };
 async function midia(req, env, url, caminho) {
   const q = await quemPede(req, env); if (!q) return json({ error: { message: 'Entre pelo menu do Estúdio Problems (ou ligue o dispositivo de novo).' } }, 401);
-  if (!env.MIDIA) return json({ error: { message: 'O porteiro está sem o bucket de mídia (R2 estudio-midia).' } }, 503);
+  if (!env.MIDIA) return json({ error: { message: 'Canal de mídia ainda não configurado (falta o bucket R2 estudio-midia).' } }, 503);
   const k = chaveMidia(caminho.slice('/midia/'.length)); if (!k) return json({ error: { message: 'Caminho inválido.' } }, 400);
   if (req.method === 'GET' || req.method === 'HEAD') {
     // Range de um pedaço só (bytes=a-b, a- ou -n); vários pedaços ou formato estranho: entrega o arquivo inteiro
