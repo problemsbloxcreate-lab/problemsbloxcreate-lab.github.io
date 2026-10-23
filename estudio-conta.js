@@ -302,7 +302,7 @@
 .ep-esp .cx{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:20px}
 .ep-esp h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:10px}.ep-esp h2 .x{margin-left:auto}
 .ep-esp h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#a9adb7;margin:18px 0 8px;font-weight:600}
-.ep-esp .topo{display:flex;gap:16px;align-items:center}.ep-esp .topo b{font-size:21px;display:block}.ep-esp small,.ep-esp .nota{color:#a9adb7;font-size:12.5px}
+.ep-nv-aviso{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(155,123,255,.45);background:rgba(155,123,255,.1);font-size:13px;line-height:1.4}.ep-nv-aviso svg{flex:none;width:18px;height:18px;color:#b9a3ff;margin-top:1px}.ep-nv-aviso b{display:block;font-size:13px!important}.ep-nv-aviso small{display:block;margin-top:2px}.ep-esp .topo{display:flex;gap:16px;align-items:center}.ep-esp .topo b{font-size:21px;display:block}.ep-esp small,.ep-esp .nota{color:#a9adb7;font-size:12.5px}
 .ep-esp .linha{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid #3a3c43;border-radius:10px;margin-bottom:6px;background:#26272c}
 .ep-esp .linha.aqui{border-color:#3d8bff}
 .ep-esp .linha .n{flex:1;min-width:0}.ep-esp .linha .n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
@@ -583,18 +583,18 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (ta?.token) { const t = await ta.token(); return t ? (/^Bearer /.test(t) ? t : 'Bearer ' + t) : null; }
   } catch { } return null; };
   async function usoNuvem(novo) {
-    const K = 'ep-nuvem-uso'; // guardado 3 min (cada medida lista a nuvem inteira)
-    if (!novo) { try { const c = JSON.parse(sessionStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 180e3) return c.j; } catch { } }
+    const K = 'ep-nuvem-uso'; // guardado 5 min e o MESMO para todas as abas (cada medida lista a nuvem inteira; o porteiro também guarda)
+    if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 300e3) return c.j; } catch { } }
     const tk = await tokenNuvem(); if (!tk) throw new Error('Entre pelo menu para ver a nuvem.');
-    const r = await fetch('/nuvem-uso', { credentials: 'same-origin', cache: 'no-store', headers: { authorization: tk } }), j = await r.json().catch(() => ({}));
+    const r = await fetch('/nuvem-uso' + (novo ? '?novo=1' : ''), { credentials: 'same-origin', cache: 'no-store', headers: { authorization: tk } }), j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error?.message || 'A nuvem não respondeu.');
-    try { sessionStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { }
+    try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { }
     return j;
   }
   async function atualizaNuvem(novo) {
     const bs = document.querySelectorAll('.ep-conta-nuvem'); if (!bs.length) return;
     try { const j = await usoNuvem(novo), pct = j.total / j.limite * 100;
-      bs.forEach(b => { b.innerHTML = anelNuvem(pct); b.title = `Nuvem da equipe: ${fmt(j.total)} usados de ${fmt(j.limite)} · ${fmt(Math.max(0, j.limite - j.total))} livres (clique para ver o que ocupa)`; });
+      bs.forEach(b => { b.innerHTML = anelNuvem(pct); b.title = (j.nuvem === 'reserva' ? 'Usando a nuvem reserva até a principal voltar · ' : '') + `Nuvem da equipe: ${fmt(j.total)} usados de ${fmt(j.limite)} · ${fmt(Math.max(0, j.limite - j.total))} livres (clique para ver o que ocupa)`; });
     } catch (e) { bs.forEach(b => { b.title = 'Nuvem da equipe: ' + (e.message || 'não respondeu'); });
       // o programa ainda está terminando de entrar com o Google: tenta de novo daqui a pouco
       if ((atualizaNuvem.tentativas = (atualizaNuvem.tentativas || 0) + 1) <= 6) setTimeout(() => atualizaNuvem(novo), 2500); return; }
@@ -603,6 +603,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   setInterval(() => { if (document.visibilityState === 'visible' && document.querySelector('.ep-conta-nuvem')) atualizaNuvem(); }, 180000);
   const pedeAdm = nome => pergunta({ titulo: 'Só um ADM pode apagar da nuvem', icone: ICONES.nuvem, aviso: true, ok: 'Entendi',
     texto: `Peça para um ADM apagar ${nome ? '"' + nome + '"' : 'isso'} da nuvem da equipe (no menu, ADM › Nuvem). Você pode apagar o que está só neste computador pelo círculo do espaço no navegador.` });
+  // a medida veio da nuvem reserva (a principal chegou no limite de hoje): aviso em cima, com quando a principal volta
+  function avisoReserva(j) {
+    if (!j?.nuvem) return ''; const v = Date.parse(j.volta || ''); if (!v || v < Date.now()) return '';
+    const m = Math.ceil((v - Date.now()) / 6e4), h = Math.floor(m / 60), em = h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`, hora = new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `<div class="ep-nv-aviso" role="status">${ICONES.nuvem}<div><b>${j.nuvem === 'reserva' ? 'Mostrando as informações da nuvem reserva.' : 'A nuvem principal chegou no limite de hoje.'}</b><small>A principal volta às ${hora} (em ${em}). ${j.nuvem === 'reserva' ? 'O que a equipe salvar até lá fica na reserva e volta sozinho para a principal.' : 'O que você fizer continua guardado neste computador.'}</small></div></div>`;
+  }
   async function painelNuvem() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
@@ -617,7 +623,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
       cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
-        <div class="topo"><span style="flex:none">${anelNuvem(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>
+        ${avisoReserva(j)}<div class="topo"><span style="flex:none">${anelNuvem(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
         <h3>Por programa</h3>
@@ -635,7 +641,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         if (!(await pergunta({ titulo: 'Apagar da nuvem?', ok: 'Apagar', texto: `"${it.nome}" (${fmt(it.bytes)}) sai da nuvem da equipe para todo mundo. Não dá para desfazer.`, icone: ICONES.lixo,
           trabalho: async () => { const r = await fetch('/nuvem-uso', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: await tokenNuvem() }, body: JSON.stringify({ refs: [it.ref] }) });
             const x = await r.json().catch(() => ({})); if (!r.ok) throw new Error(x.error?.message || 'Não apagou.'); }, okTrabalho: 'Apagando…', okErro: 'Fechar' }))) return;
-        try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } pinta(true); CFG.aoMudarNuvem?.();
+        try { localStorage.removeItem('ep-nuvem-uso'); } catch { } pinta(true); CFG.aoMudarNuvem?.();
       });
     };
     pinta();
@@ -1401,6 +1407,6 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
     preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
-    nuvem: { atualizar: () => { try { sessionStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
+    nuvem: { atualizar: () => { try { localStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();

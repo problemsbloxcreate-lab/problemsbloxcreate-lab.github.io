@@ -249,8 +249,14 @@ async function nuvemUso(req, env, url) {
         await env.PERFIS.delete(chaveFoto(em) + ':' + v); apagados++;
         const p = await lePerfil(env, em); if (String(p.fotoV) === v) { delete p.fotoV; await env.PERFIS.put(chavePerfil(em), JSON.stringify(p)); } }
     }
+    NUVEM_USO.j = null; try { await caches.default.delete(NUVEM_USO.k); } catch { } // apagou: a próxima medida é nova
     return json({ ok: true, apagados });
   }
+  // a medida é a MESMA para todo mundo: fica guardada 5 min (memória + cache da Cloudflare) e não lista a nuvem a cada clique no círculo
+  // ("Medir de novo" = ?novo=1, vale só se a guardada tiver mais de 1 min)
+  { const novo = url.searchParams.get('novo') === '1', idade = x => Date.now() - (x?.em || 0);
+    let g = NUVEM_USO.j; if (!g) { try { const c = await caches.default.match(NUVEM_USO.k); if (c) g = NUVEM_USO.j = await c.json(); } catch { } }
+    if (g && idade(g) < (novo ? 60e3 : 300e3)) return json({ ...g, adm: !!s.a, guardada: true }); }
   const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
   let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
@@ -284,8 +290,12 @@ async function nuvemUso(req, env, url) {
   }
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
   const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;
-  return json({ adm: !!s.a, limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes) });
+  const out = { limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes), em: Date.now(),
+    nuvem: r.headers.get('x-nuvem') || null, volta: r.headers.get('x-nuvem-volta') || null }; // reserva/limite: o círculo avisa que está mostrando a reserva
+  NUVEM_USO.j = out; try { await caches.default.put(NUVEM_USO.k, new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=300' } })); } catch { }
+  return json({ ...out, adm: !!s.a });
 }
+const NUVEM_USO = { j: null, k: 'https://porteiro.cache/nuvem-uso-v1' };
 
 /* ---------- ADM › Acesso: quem pode entrar (lista do servidor turma-ia) com nome e foto da conta de cada um ----------
    Quem pode: só os e-mails da variável ADMINS do turma-ia (quem decide é ele; o porteiro só repassa o login do Google).
@@ -358,6 +368,7 @@ async function emailDoCodigo(env, u) {
   let cur; try { do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); COD.set(await codigoU(em), em); } cur = l.list_complete ? null : l.cursor; } while (cur); } catch { }
   return COD.get(u) || null;
 }
+const PESSOA_MEM = new Map();
 async function pessoa(req, env, url) {
   const s = await leSessao(env, req);
   if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
@@ -366,8 +377,10 @@ async function pessoa(req, env, url) {
   if (u) { const e2 = await emailDoCodigo(env, u); if (!e2) return json({ nome: null, foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' }); url.searchParams.delete('u'); url.searchParams.set('e', e2); }
   const em = String(url.searchParams.get('e') || '').trim().toLowerCase().slice(0, 254);
   if (!/^[^\s@]+@[^\s@]+$/.test(em)) return json({ error: { message: 'E-mail inválido.' } }, 400);
-  const p = env.PERFIS ? await lePerfil(env, em) : {};
+  // nome/foto de quem aparece nas mensagens e nas fichas: guardado 2 min aqui (abrir conversas e perfis não lê a nuvem toda vez)
+  let p = {}; if (env.PERFIS) { const c = PESSOA_MEM.get(em); if (c && Date.now() - c.t < 120e3) p = c.p; else { p = await lePerfil(env, em); PESSOA_MEM.set(em, { p, t: Date.now() }); if (PESSOA_MEM.size > 500) PESSOA_MEM.clear(); } }
   if (url.pathname === '/pessoa/foto') {
+    if (url.searchParams.get('v') && url.searchParams.get('v') !== String(p.fotoV || '')) { p = await lePerfil(env, em); PESSOA_MEM.set(em, { p, t: Date.now() }); } // trocou a foto agora há pouco
     if (!p.fotoV) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
     let r = await env.PERFIS.getWithMetadata(chaveFoto(em) + ':' + p.fotoV, { type: 'stream' }); if (!r.value) r = await env.PERFIS.getWithMetadata(chaveFoto(em), { type: 'stream' });
     if (!r.value) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
@@ -672,7 +685,7 @@ async function conta(req, env, url, s) {
     if ('nome' in b) { const nome = String(b.nome || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 40); if (nome) n.nome = nome; else delete n.nome; }
     if ('fundo' in b) n.fundo = b.fundo === 'cor' ? 'cor' : 'padrao';
     if ('cor' in b && /^#[0-9a-f]{6}$/i.test(b.cor || '')) n.cor = b.cor.toLowerCase();
-    await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
+    await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); PESSOA_MEM.delete(String(s.e).toLowerCase());
     return json(contaPublica(s.e, n));
   }
   if (url.pathname === '/conta/foto') {
@@ -686,7 +699,7 @@ async function conta(req, env, url, s) {
       return new Response(r.value, { headers: { 'content-type': r.metadata?.tipo || 'image/png', 'cache-control': v ? 'private, max-age=31536000, immutable' : 'no-cache', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
     }
     if (!mesmoSite) return json({ error: { message: 'Pedido de outro site.' } }, 403);
-    if (req.method === 'DELETE') { await env.PERFIS.delete(chaveFoto(s.e)); if (p.fotoV) await env.PERFIS.delete(chaveFoto(s.e) + ':' + p.fotoV); const n = { ...p }; delete n.fotoV; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); return json(contaPublica(s.e, n)); }
+    if (req.method === 'DELETE') { await env.PERFIS.delete(chaveFoto(s.e)); if (p.fotoV) await env.PERFIS.delete(chaveFoto(s.e) + ':' + p.fotoV); const n = { ...p }; delete n.fotoV; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); PESSOA_MEM.delete(String(s.e).toLowerCase()); return json(contaPublica(s.e, n)); }
     if (req.method === 'PUT' || req.method === 'POST') {
       const tipo = (req.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
       if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(tipo)) return json({ error: { message: 'Use uma imagem PNG, JPG, WebP ou GIF.' } }, 400); // SVG não: poderia ter script
@@ -694,7 +707,7 @@ async function conta(req, env, url, s) {
       if (!buf.byteLength || buf.byteLength > 3 * 1048576) return json({ error: { message: 'A foto precisa ter até 3 MB.' } }, 413);
       const fotoV = Date.now();
       await env.PERFIS.put(chaveFoto(s.e) + ':' + fotoV, buf, { metadata: { tipo, tam: buf.byteLength } });
-      const n = { ...p, fotoV }; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n));
+      PESSOA_MEM.delete(String(s.e).toLowerCase()); const n = { ...p, fotoV }; await env.PERFIS.put(chavePerfil(s.e), JSON.stringify(n)); PESSOA_MEM.delete(String(s.e).toLowerCase());
       if (p.fotoV) await env.PERFIS.delete(chaveFoto(s.e) + ':' + p.fotoV); await env.PERFIS.delete(chaveFoto(s.e)); // a anterior não serve mais
       return json(contaPublica(s.e, n));
     }
