@@ -335,6 +335,14 @@ export default {
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
     if (R && login.email) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
     if (R && login.email) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
+    // RESUMO para o círculo da nuvem quando a principal não deixa listar (limite do dia): o espaço medido pela Cloudflare
+    // (Action "Uso da nuvem") + o que está na reserva agora. Qualquer conta da equipe; sem e-mails (semEmail)
+    if (new URL(req.url).pathname === '/nuvem-resumo') {
+      const R3 = reservaDe(env, auth0), out = { bytes: null, em: null, reserva: { n: 0, bytes: 0, itens: [] }, volta: new Date(fimDoDia()).toISOString() };
+      if (R3) { const c = await R3.contaJa().catch(() => null), o = c?.contas?.principal; if (o?.bytes != null) { out.bytes = o.bytes; out.em = c.em; }
+        try { if (await R3.ativa()) for (const it of (await R3.indice()).values()) { if (it.metadata?._del) continue; out.reserva.n++; out.reserva.bytes += +it.metadata?.tam || 0; if (out.reserva.itens.length < 300) out.reserva.itens.push(await semEmail({ k: it.name, ...(it.metadata || {}) })); } } catch { } }
+      return json(out, 200, { ...cors, 'cache-control': 'no-store' });
+    }
     // ADM › Nuvem: gasto de hoje das duas contas (medido pela Action "Uso da nuvem" de 30 em 30 min) + o que está na reserva agora
     if (new URL(req.url).pathname === '/nuvem-painel') {
       if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só para ADM.' } }, 403, cors);
