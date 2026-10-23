@@ -13,6 +13,8 @@
      PROJETOS   JSON { "/animador/": "https://.../animador/", ... }  caminho → de onde vem o projeto
    KV PERFIS: a conta de cada pessoa (nome e foto próprios, fundo do menu). Sem nada salvo, valem o nome e a foto do
      Google. Os projetos do mesmo endereço leem com GET /conta (o estudio-login.js já faz isso).
+     Também guarda os dispositivos do Estúdio Problems Local (dispositivo:<id>, só o SHA-256 do token) e a conta Claude em uso (cu:…).
+   R2 MIDIA (bucket estudio-midia): a mídia que o serviço local baixa (/midia/…). Sem o bucket, /midia responde 503.
    Segredos (criados sozinhos pela Action na primeira publicação; nunca no código):
      SESSAO_SEGREDO   assina o cookie. Trocar ele derruba todas as sessões.
      ASSINATURA       par de chaves (ECDSA P-256) para assinar o "passe" que o porteiro manda aos projetos que têm portão
@@ -697,6 +699,152 @@ async function conta(req, env, url, s) {
   return json({ error: { message: 'Não encontrado.' } }, 404);
 }
 
+/* ---------- Estúdio Problems Local (serviço no PC de cada editor, http://127.0.0.1:4790) ----------
+   1. a página do Estúdio pede GET /passe-local (cookie da sessão) e entrega o passe ao serviço local;
+   2. o serviço troca o passe por um TOKEN DE DISPOSITIVO (POST /dispositivo) — o passe vale 2 min, só para o host
+      127.0.0.1:4790 e uma vez só; o KV guarda só o SHA-256 do token (dispositivo:<id> no PERFIS);
+   3. com o token o serviço baixa a mídia do R2 (GET /midia/...) e avisa qual conta Claude está usando (/conta-em-uso).
+   Quem foi tirado da lista (ADM › Quem pode entrar) ou teve o dispositivo revogado (ADM › Dispositivos) para na hora. */
+const LOCAL_HOST = '127.0.0.1:4790';
+const sha256 = async (txt) => b64u(await crypto.subtle.digest('SHA-256', enc.encode(txt)));
+let chavePub = null;
+async function conferePasse(env, ps, host) { // devolve o conteúdo do passe ou null (assinatura, validade e host)
+  const k = await chavesAssinatura(env); if (!k || typeof ps !== 'string') return null;
+  const [dados, ass] = ps.split('.'); if (!dados || !ass) return null;
+  try {
+    chavePub = chavePub || await crypto.subtle.importKey('jwk', k.pub, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    if (!(await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, chavePub, deB64u(ass), enc.encode(dados)))) return null;
+    const p = JSON.parse(new TextDecoder().decode(deB64u(dados)));
+    return p.e && p.h === host && p.x > Date.now() / 1000 ? p : null;
+  } catch { return null; }
+}
+// token → dispositivo (fica 30 s na memória; revogar aqui limpa na hora, nos outros lugares da Cloudflare vale em até 30 s)
+const DISPOS = new Map();
+async function leDispositivo(env, token) {
+  if (!env.PERFIS || !/^[\w-]{43}$/.test(token || '')) return null;
+  const h = await sha256('dispositivo:' + token), id = h.slice(0, 16);
+  const c = DISPOS.get(id); let d = c && Date.now() - c.t < 30e3 ? c.d : undefined;
+  if (d === undefined) { d = await env.PERFIS.get('dispositivo:' + id, { type: 'json' }).catch(() => null); DISPOS.set(id, { d, t: Date.now() }); if (DISPOS.size > 500) DISPOS.clear(); }
+  if (!d || d.h !== h) return null;
+  const tirado = await foiTirado(env, d.email); if (tirado && +tirado > d.criado) return null; // tirado do acesso depois de ligar o PC
+  if (Date.now() - (d.visto || 0) > 36e5) { d.visto = Date.now(); env.PERFIS.put('dispositivo:' + id, JSON.stringify(d)).catch(() => { }); } // último uso (no máximo 1 gravação por hora)
+  return { id, ...d };
+}
+// quem está pedindo: token de dispositivo (Authorization: Bearer) ou a sessão do navegador
+async function quemPede(req, env) {
+  const auth = req.headers.get('authorization') || '';
+  if (auth) { const m = auth.match(/^Bearer ([\w-]+)$/); const d = m && await leDispositivo(env, m[1]); return d ? { email: d.email, adm: !!d.adm, dispositivo: d } : null; }
+  const s = await leSessao(env, req); return s ? { email: s.e, adm: !!s.a, sessao: true } : null;
+}
+async function passeLocal(req, env, url) {
+  if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405);
+  if ((req.headers.get('sec-fetch-site') || 'same-origin') !== 'same-origin') return json({ error: { message: 'Pedido de outro site.' } }, 403);
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  const ps = await passe(env, s.e, LOCAL_HOST, s.a ? { a: 1 } : {}); if (!ps) return json({ error: { message: 'O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.' } }, 503);
+  return json({ passe: ps });
+}
+async function novoDispositivo(req, env) {
+  if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
+  if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS.' } }, 503);
+  let b = {}; try { b = await req.json(); } catch { }
+  const p = await conferePasse(env, b.passe, LOCAL_HOST);
+  if (!p) return json({ error: { message: 'Passe inválido ou vencido. Abra o Estúdio no navegador e ligue o serviço local de novo.' } }, 401);
+  const email = String(p.e).toLowerCase(), usado = 'passe-usado:' + (await sha256(b.passe)).slice(0, 24);
+  if (await env.PERFIS.get(usado)) return json({ error: { message: 'Este passe já foi usado. Peça outro.' } }, 401);
+  await env.PERFIS.put(usado, '1', { expirationTtl: 300 });
+  const tirado = await foiTirado(env, email); if (tirado && +tirado > (p.x - 120) * 1000) return json({ error: { message: 'Esta conta não tem mais acesso ao Estúdio Problems.' } }, 401);
+  const token = b64u(crypto.getRandomValues(new Uint8Array(32))), h = await sha256('dispositivo:' + token), id = h.slice(0, 16);
+  const nome_pc = String(b.nome_pc || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 60);
+  await env.PERFIS.put('dispositivo:' + id, JSON.stringify({ h, email, criado: Date.now(), ...(nome_pc ? { nome_pc } : {}), ...(p.a ? { adm: true } : {}) }));
+  return json({ id, token });
+}
+// ADM › Dispositivos: lista (e-mail censurado, nome e foto da conta) e revogar
+async function dispositivos(req, env, url) {
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  if (!s.a) return json({ error: { message: 'Só quem é ADM vê os dispositivos.' } }, 403);
+  if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS.' } }, 503);
+  if (req.method === 'POST') {
+    if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    let b = {}; try { b = await req.json(); } catch { }
+    if (b.acao !== 'revogar' || !/^[\w-]{16}$/.test(b.id || '')) return json({ error: { message: 'Pedido desconhecido.' } }, 400);
+    await env.PERFIS.delete('dispositivo:' + b.id); DISPOS.delete(b.id);
+    return json({ ok: true });
+  }
+  const itens = []; let cur;
+  do { const l = await env.PERFIS.list({ prefix: 'dispositivo:', cursor: cur });
+    for (const x of l.keys) { const d = await env.PERFIS.get(x.name, { type: 'json' }).catch(() => null); if (!d) continue;
+      const p = await lePerfil(env, d.email);
+      itens.push({ id: x.name.slice(12), mascara: mascara(d.email), nome: p.nome || p.google?.nome || '', foto: p.fotoV ? '/pessoa/foto?u=' + await codigoU(d.email) + '&v=' + p.fotoV : (p.google?.foto || null),
+        nome_pc: d.nome_pc || '', criado: d.criado, visto: d.visto || null, adm: !!d.adm, voce: d.email === s.e.toLowerCase() }); }
+    cur = l.list_complete ? null : l.cursor; } while (cur);
+  return json({ itens: itens.sort((a, b) => b.criado - a.criado) });
+}
+/* mídia da equipe para o serviço local (R2 "estudio-midia", binding MIDIA). Ler: dispositivo ou sessão; gravar: só ADM.
+   PUT /midia/<k> (até ~100 MB); maiores em partes: POST ?uploads → PUT ?uploadId=&partNumber= → POST ?uploadId= {parts} (DELETE ?uploadId= cancela) */
+const chaveMidia = (c) => { try { c = decodeURIComponent(c); } catch { return null; }
+  return c && c.length <= 512 && !/[\u0000-\u001f\\]/.test(c) && !c.startsWith('/') && !c.split('/').some(x => x === '' || x === '.' || x === '..') ? c : null; };
+async function midia(req, env, url, caminho) {
+  const q = await quemPede(req, env); if (!q) return json({ error: { message: 'Entre pelo menu do Estúdio Problems (ou ligue o dispositivo de novo).' } }, 401);
+  if (!env.MIDIA) return json({ error: { message: 'Canal de mídia ainda não configurado (falta o bucket R2 estudio-midia).' } }, 503);
+  const k = chaveMidia(caminho.slice('/midia/'.length)); if (!k) return json({ error: { message: 'Caminho inválido.' } }, 400);
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    // Range de um pedaço só (bytes=a-b, a- ou -n); vários pedaços ou formato estranho: entrega o arquivo inteiro
+    const rg = (req.headers.get('range') || '').match(/^bytes=(?:(\d+)-(\d*)|-(\d+))$/), range = !rg ? null : rg[3] ? { suffix: +rg[3] } : { offset: +rg[1], ...(rg[2] ? { length: +rg[2] - +rg[1] + 1 } : {}) };
+    const fora = (tam) => new Response(null, { status: 416, headers: { 'content-range': `bytes */${tam}` } });
+    if (range && (range.length <= 0 || range.suffix === 0)) return fora('*');
+    let o; try { o = req.method === 'HEAD' ? await env.MIDIA.head(k) : await env.MIDIA.get(k, { ...(range ? { range } : {}), onlyIf: req.headers }); }
+    catch { const h = await env.MIDIA.head(k).catch(() => null); return h ? fora(h.size) : json({ error: { message: 'Não encontrado.' } }, 404); }
+    if (!o) return json({ error: { message: 'Não encontrado.' } }, 404);
+    if (range && 'offset' in range && range.offset >= o.size && req.method === 'GET') return fora(o.size);
+    const h = new Headers(); o.writeHttpMetadata(h); h.set('etag', o.httpEtag); h.set('accept-ranges', 'bytes'); h.set('cache-control', 'private, no-cache'); h.set('x-content-type-options', 'nosniff');
+    if (!h.get('content-type')) h.set('content-type', 'application/octet-stream');
+    if (req.method === 'HEAD') { h.set('content-length', String(o.size)); return new Response(null, { headers: h }); }
+    if (!('body' in o)) return new Response(null, { status: req.headers.get('if-none-match') || req.headers.get('if-modified-since') ? 304 : 412, headers: h }); // onlyIf não passou
+    if (range) {
+      const ini = 'suffix' in range ? Math.max(0, o.size - range.suffix) : range.offset, tam = Math.min(o.size - ini, 'suffix' in range ? range.suffix : (range.length ?? o.size - ini));
+      h.set('content-range', `bytes ${ini}-${ini + tam - 1}/${o.size}`); h.set('content-length', String(tam));
+      return new Response(o.body, { status: 206, headers: h });
+    }
+    h.set('content-length', String(o.size)); return new Response(o.body, { headers: h });
+  }
+  if (!q.adm) return json({ error: { message: 'Só quem é ADM envia ou apaga mídia.' } }, 403);
+  if (q.sessao && (req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+  const up = url.searchParams.get('uploadId');
+  try {
+    if (req.method === 'POST' && url.searchParams.has('uploads')) { const m = await env.MIDIA.createMultipartUpload(k, { httpMetadata: { contentType: req.headers.get('content-type') || 'application/octet-stream' } }); return json({ key: k, uploadId: m.uploadId }); }
+    if (req.method === 'PUT' && up) { const n = +url.searchParams.get('partNumber'); if (!(n >= 1 && n <= 10000)) return json({ error: { message: 'partNumber inválido.' } }, 400);
+      const parte = await env.MIDIA.resumeMultipartUpload(k, up).uploadPart(n, req.body); return json({ partNumber: parte.partNumber, etag: parte.etag }); }
+    if (req.method === 'POST' && up) { let b = {}; try { b = await req.json(); } catch { }
+      const o = await env.MIDIA.resumeMultipartUpload(k, up).complete((b.parts || []).map(p => ({ partNumber: +p.partNumber, etag: String(p.etag) }))); return json({ key: k, etag: o.httpEtag, size: o.size }); }
+    if (req.method === 'DELETE' && up) { await env.MIDIA.resumeMultipartUpload(k, up).abort(); return json({ ok: true }); }
+    if (req.method === 'PUT') { if (!req.body) return json({ error: { message: 'Arquivo vazio.' } }, 400);
+      const o = await env.MIDIA.put(k, req.body, { httpMetadata: { contentType: req.headers.get('content-type') || 'application/octet-stream' } }); return json({ key: k, etag: o.httpEtag, size: o.size }); }
+    if (req.method === 'DELETE') { await env.MIDIA.delete(k); return json({ ok: true }); }
+  } catch (e) { return json({ error: { message: 'O R2 recusou: ' + String(e.message || e).slice(0, 200) } }, 400); }
+  return json({ error: { message: 'Método não aceito.' } }, 405);
+}
+/* conta Claude em uso: cada PC avisa (ativo true/false) qual conta está usando; outro PC na mesma conta vê o aviso.
+   KV PERFIS cu:<sha da conta> = { <id do dispositivo>: { pc, email, desde, visto } }, some sozinho 6 h depois do último aviso. */
+const SEIS_H = 6 * 3600;
+async function contaEmUso(req, env, url) {
+  const q = await quemPede(req, env); if (!q?.dispositivo) return json({ error: { message: 'Só o serviço local (token de dispositivo) usa esta rota.' } }, 401);
+  if (req.method !== 'GET' && req.method !== 'POST') return json({ error: { message: 'Use GET ou POST.' } }, 405);
+  let b = {}; if (req.method === 'POST') { try { b = await req.json(); } catch { } }
+  const eu = q.dispositivo.id, agora = Date.now(), c = String((req.method === 'POST' ? b.conta : url.searchParams.get('conta')) || '').trim().toLowerCase().slice(0, 200);
+  if (!c) return json({ error: { message: 'Faltou a conta.' } }, 400);
+  const chave = 'cu:' + (await sha256('conta:' + c)).slice(0, 24);
+  const m = (await env.PERFIS.get(chave, { type: 'json' }).catch(() => null)) || {};
+  for (const [id, v] of Object.entries(m)) if (agora - v.visto > SEIS_H * 1000) delete m[id];
+  if (req.method === 'POST') {
+    if (b.ativo) m[eu] = { pc: String(b.pc || q.dispositivo.nome_pc || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 60), email: q.email, desde: m[eu]?.desde || agora, visto: agora };
+    else delete m[eu];
+    if (Object.keys(m).length) await env.PERFIS.put(chave, JSON.stringify(m), { expirationTtl: SEIS_H }); else await env.PERFIS.delete(chave);
+  }
+  const ativos = [];
+  for (const [id, v] of Object.entries(m)) { const p = await lePerfil(env, v.email); ativos.push({ dispositivo: id, pc: v.pc, nome: p.nome || p.google?.nome || mascara(v.email), desde: v.desde, visto: v.visto, eu: id === eu }); }
+  return json({ ativos, outros: ativos.filter(a => !a.eu).length });
+}
+
 // o menu (index.html) é público: é a tela de login. Qualquer endereço desconhecido também mostra o menu.
 async function menu(env, url, status = 200, req = null) {
   const r = await env.ASSETS.fetch(new Request(new URL('/', url)));
@@ -770,6 +918,11 @@ export default {
       if (env.PRESENCA && (prog || b.saiu)) await presenca(env, { e: s.e.toLowerCase(), aba: String(b.aba || ''), prog: b.saiu ? null : prog }).catch(() => null); // programa desconhecido: ignora
       return json({ ok: true });
     }
+    if (caminho === '/passe-local') return passeLocal(req, env, url);
+    if (caminho === '/dispositivo') return novoDispositivo(req, env);
+    if (caminho === '/dispositivos') return dispositivos(req, env, url);
+    if (caminho.startsWith('/midia/')) return midia(req, env, url, caminho);
+    if (caminho === '/conta-em-uso') return contaEmUso(req, env, url);
     if (caminho === '/conta' || caminho === '/conta/foto') {
       const s = await leSessao(env, req);
       if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);

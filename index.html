@@ -298,6 +298,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <button role="tab" data-aba="acesso" id="aba-acesso" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg><span><b>Quem pode entrar</b><small>liberar e tirar e-mails</small></span></button>
     <button role="tab" data-aba="nuvem" id="aba-nuvem" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span><b>Nuvem</b><small>o que está guardado e o espaço</small></span></button>
     <button role="tab" data-aba="conversas" id="aba-conversas" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/><path d="M12 8v4.5"/><path d="M12 15.6v.1"/></svg><span><b>Conversas</b><small>denúncias e mensagens</small></span><b class="adm-aba-alerta" id="aba-conversas-n" hidden></b></button>
+    <button role="tab" data-aba="dispositivos" id="aba-dispositivos" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg><span><b>Dispositivos</b><small>PCs com o Estúdio Local</small></span></button>
   </nav>
   <div class="adm-pag" data-pag="botoes">
     <p class="adm-desc">Os cartões que aparecem no menu: nome, endereço, ícone, fundo e o jeito de tocar. Arraste para mudar a ordem.</p>
@@ -331,6 +332,14 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <section id="conversas-sec" class="adm-pag" data-pag="conversas">
       <p class="adm-desc">Segurança das Mensagens: as denúncias que a equipe fez e as conversas pela visão de cada pessoa (só leitura).</p>
       <div id="conversas-adm"></div>
+    </section>
+    <section id="dispositivos-sec" class="adm-pag" data-pag="dispositivos">
+      <p class="adm-desc">Os computadores ligados ao Estúdio Problems Local (o serviço que baixa a mídia e edita no PC de cada pessoa). Revogar desliga o PC na hora; para ligar de novo, a pessoa abre o Estúdio no navegador.</p>
+      <h2>Dispositivos<span class="sp"></span><span class="hint" id="disp-n"></span><button class="btn sm" type="button" id="disp-atu" title="Atualizar a lista"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg> Atualizar</button></h2>
+      <div class="box">
+        <div class="hint" id="disp-st" style="margin:0 0 2px"></div>
+        <div class="acesso-lista" id="disp-lista"><div class="hint">Abra esta aba para ver.</div></div>
+      </div>
     </section>
     <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
       <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems (Cloudflare): a da equipe e a dos sons. O Firebase só cuida do login e não guarda nada. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
@@ -1060,7 +1069,7 @@ async function renderAcesso() {
       b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'del', id: it.id }) }); stA('Acesso removido.'); carrega(); } catch (e) { stA(e.message, true); b.disabled = false; }
     });
   };
-  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; $('#aba-nuvem').hidden = false; $('#aba-conversas').hidden = false; pinta(j.itens || []); }
+  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; $('#aba-nuvem').hidden = false; $('#aba-conversas').hidden = false; $('#aba-dispositivos').hidden = false; pinta(j.itens || []); }
     catch (e) { if (e.status === 403 && /ADMINS do servidor/.test(e.message)) { $('#aba-acesso').hidden = false; lista.innerHTML = ''; $('#acesso-add').hidden = true; stA(e.message); } else $('#aba-acesso').hidden = true; } };
   $('#acesso-add').onsubmit = async ev => {
     ev.preventDefault(); const inp = $('#acesso-add input'), email = inp.value.trim(); if (!email) return;
@@ -1070,6 +1079,31 @@ async function renderAcesso() {
   };
   $('#acesso-atu').onclick = async () => { const b = $('#acesso-atu'); b.disabled = true; b.classList.add('girando'); await carrega(); b.classList.remove('girando'); b.disabled = false; };
   clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 30e3); // online/offline ao vivo
+  return carrega();
+}
+// ADM › Dispositivos: PCs com o Estúdio Problems Local (o porteiro confere se é ADM); e-mail sempre censurado
+async function renderDispositivos() {
+  const lista = $('#disp-lista'), st = (t, err) => { const e = $('#disp-st'); e.textContent = t; e.style.color = err ? 'var(--err,#ff8a9a)' : ''; };
+  const chama = async (opt = {}) => { const r = await fetch('/dispositivos', { credentials: 'same-origin', cache: 'no-store', ...opt, headers: { 'content-type': 'application/json' } });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error?.message || 'Não deu certo.'); return j; };
+  const av = (f, n) => `<span class="ac-av">${f ? `<img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${esc((n || '?')[0].toUpperCase())}'))">` : esc((n || '?')[0].toUpperCase())}</span>`;
+  const quando = t => t ? new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  const carrega = async () => {
+    let itens; try { itens = (await chama()).itens || []; st(''); } catch (e) { st(e.message, true); return; }
+    $('#disp-n').textContent = itens.length + (itens.length === 1 ? ' dispositivo' : ' dispositivos');
+    lista.innerHTML = itens.map(it => `<div class="ac-l">${av(it.foto, it.nome || it.mascara)}
+      <div class="ac-n"><b>${esc(it.nome_pc || 'PC sem nome')}</b><small>${esc(it.nome || 'Sem nome')} · ${esc(it.mascara)}</small>
+        <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm" title="Ligado por um ADM: pode enviar mídia">ADM</span>' : ''}<span class="ac-tag" style="text-transform:none;letter-spacing:0">ligado ${esc(quando(it.criado))}</span></div></div>
+      <span class="ac-em">${it.visto ? 'último uso ' + esc(quando(it.visto)) : 'ainda não usou'}</span>
+      <button class="btn sm danger" data-revoga="${esc(it.id)}" title="Desligar este PC">Revogar</button></div>`).join('') || '<div class="hint">Nenhum PC ligado ainda.</div>';
+    $$('[data-revoga]', lista).forEach(b => b.onclick = async () => {
+      const it = itens.find(x => x.id === b.dataset.revoga);
+      if (!(await pergunta({ titulo: 'Revogar este dispositivo?', foto: it.foto, nome: it.nome_pc || 'PC sem nome', detalhe: (it.nome || '') + ' · ' + it.mascara,
+        texto: 'O Estúdio Problems Local deste PC para de baixar a mídia na hora. Para ligar de novo, a pessoa abre o Estúdio no navegador.', ok: 'Revogar', perigo: true }))) return;
+      b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'revogar', id: it.id }) }); st('Dispositivo revogado.'); carrega(); } catch (e) { st(e.message, true); b.disabled = false; }
+    });
+  };
+  $('#disp-atu').onclick = async () => { const b = $('#disp-atu'); b.disabled = true; b.classList.add('girando'); await carrega(); b.classList.remove('girando'); b.disabled = false; };
   return carrega();
 }
 // ADM › Nuvem: as nuvens do Estúdio Problems — a da equipe (Cloudflare, KV) e a dos sons (Cloudflare antiga, worker sons-problems);
@@ -1374,8 +1408,9 @@ function abaAdm(n) {
   abas.forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === n)));
   $$('.adm-pag').forEach(p => p.hidden = p.dataset.pag !== n);
   if (n === 'conversas') window.EstudioConta?.adm?.conversas($('#conversas-adm'));
-  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'conversas'; // quem pode entrar salva sozinho; a nuvem é só para ver
+  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'conversas' || n === 'dispositivos'; // quem pode entrar salva sozinho; a nuvem é só para ver
   if (n === 'nuvem' && !renderNuvem.feito) { renderNuvem.feito = true; renderNuvem(); }
+  if (n === 'dispositivos') renderDispositivos();
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
 }
 function showAdm() {

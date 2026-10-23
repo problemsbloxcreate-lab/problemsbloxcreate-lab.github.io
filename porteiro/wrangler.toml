@@ -65,3 +65,9 @@ class_name = "Conversas"
 [[migrations]]
 tag = "conversas-v1"
 new_sqlite_classes = ["Conversas"]
+
+# mídia da equipe para o Estúdio Problems Local (/midia/… no porteiro). O bucket é criado à mão na Cloudflare (R2 → Create bucket
+# "estudio-midia"); enquanto ele não existir, a Action tira esta ligação antes de publicar e /midia responde 503.
+[[r2_buckets]]
+binding = "MIDIA"
+bucket_name = "estudio-midia"
