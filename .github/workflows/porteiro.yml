@@ -104,6 +104,15 @@ jobs:
           MCOD="$(curl -s -o menu.html -w '%{http_code}' "$URL/")"   # salva antes de procurar (procurar direto no curl falhava à toa)
           echo "menu: $MCOD, $(wc -c < menu.html) bytes"
           grep -q 'Entrar com Google' menu.html || { head -c 600 menu.html; echo; echo "::error::O menu não apareceu em $URL/ (resposta $MCOD)"; exit 1; }
+          # mais leve: os scripts do menu saem com carimbo de versão e a página responde "não mudou" (304) quando é a mesma (só avisa, não trava)
+          if grep -q 'estudio-carregando.js?_ev=' menu.html; then echo "::notice::Carimbo de versão nos scripts do menu: ok"; else echo "::warning::O menu saiu sem o carimbo de versão nos scripts (?_ev=)."; fi
+          echo "::notice::Cabeçalhos do menu (gzip): $(curl -s -D - -o /dev/null -H 'Accept-Encoding: gzip, br' "$URL/" | tr -d '\r' | grep -iE '^(etag|content-encoding|cache-control):' | tr '\n' ' ' || true)"
+          ET="$(curl -s -D - -o /dev/null "$URL/" | tr -d '\r' | grep -i '^etag:' | cut -d' ' -f2- || true)"
+          LM="$(curl -s -D - -o /dev/null "$URL/" | tr -d '\r' | grep -i '^last-modified:' | cut -d' ' -f2- || true)"
+          if [ -n "$ET" ]; then echo "::notice::ETag do menu: $ET · com If-None-Match: $(curl -s -o /dev/null -w '%{http_code}' -H "If-None-Match: $ET" "$URL/" || true)"; fi
+          if [ -n "$LM" ]; then echo "::notice::Last-Modified do menu: $LM · com If-Modified-Since: $(curl -s -o /dev/null -w '%{http_code}' -H "If-Modified-Since: $LM" "$URL/" || true)"; elif [ -z "$ET" ]; then echo "::warning::O menu saiu sem ETag e sem Last-Modified."; fi
+          JS="$(grep -o 'estudio-conta.js?_ev=[0-9a-f]*' menu.html | head -1 || true)"
+          if [ -n "$JS" ]; then echo "::notice::Cache do script com carimbo: $(curl -s -D - -o /dev/null "$URL/$JS" | tr -d '\r' | grep -i '^cache-control:' || true)"; fi
           curl -s -o chave.json "$URL/chave-publica"; grep -q '"kty":"EC"' chave.json || { echo "::error::/chave-publica não respondeu a chave do passe: $(head -c 200 chave.json)"; exit 1; }
           # o porteiro consegue conferir login no servidor da turma? (login falso → o servidor deve responder 403, não erro de ligação)
           ECOD="$(curl -s -o entrar.json -w '%{http_code}' -X POST -H "Origin: $URL" -H 'content-type: application/json' -d '{"token":"teste-falso"}' "$URL/entrar")"

@@ -98,6 +98,52 @@ async function passe(env, email, host, extra = {}) { // extra: { a: 1 } só nas 
 
 // busca o arquivo do projeto na origem (ex.: GitHub Pages) e entrega como se fosse deste endereço
 const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do Google do menu (o porteiro leva o passe) */try{if(!localStorage.getItem('estudio.senhaSons'))localStorage.setItem('estudio.senhaSons','login-google')}catch(e){}</script>`;
+/* ---------- arquivos com carimbo de versão (mais leve) ----------
+   Ao entregar uma página, o porteiro troca  <script src="js/app.js">  por  js/app.js?_ev=<versão do arquivo>.
+   Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
+   quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
+const RAIZ_ASSETS = new Set(['/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
+const VERS = new Map();
+const IMUTAVEL = 'private, max-age=31536000, immutable';
+async function versaoDe(env, u, s) {
+  const c = VERS.get(u); if (c && Date.now() - c.t < 20000) return c.v;
+  let v = null;
+  try {
+    const url = new URL(u);
+    if (RAIZ_ASSETS.has(url.pathname)) { const r = await env.ASSETS.fetch(new Request(url.origin + url.pathname, { method: 'HEAD' })); v = r.ok ? (r.headers.get('etag') || r.headers.get('last-modified')) : null; }
+    else {
+      const p = achaProjeto(env, url.pathname); if (!p?.resto || p.para) return null;
+      const alvo = new URL(p.resto, p.origem.replace(/\/?$/, '/'));
+      if (!p.servico && /\.github\.io$/.test(alvo.hostname)) alvo.searchParams.set('_at', String(Math.floor(Date.now() / 30000)));
+      const h = new Headers(); if (p.assinar && s) { const ps = await passe(env, s.e, alvo.host); if (ps) h.set('x-porteiro-passe', ps); }
+      const pedido = new Request(alvo, { method: 'HEAD', headers: h, redirect: 'manual' });
+      const r = p.servico && env[p.servico] ? await env[p.servico].fetch(pedido) : await fetch(pedido, { cf: { cacheTtl: -1, cacheEverything: false } });
+      v = r.ok ? (r.headers.get('etag') || r.headers.get('last-modified')) : null;
+    }
+  } catch { v = null; }
+  if (v) v = [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(v)))].slice(0, 6).map(x => x.toString(16).padStart(2, '0')).join('');
+  VERS.set(u, { v, t: Date.now() }); if (VERS.size > 3000) VERS.clear();
+  return v;
+}
+async function comVersoes(env, html, paginaUrl, s) {
+  const base = (() => { const m = html.match(/<base\s[^>]*href=["']([^"']+)["']/i); try { return new URL(m ? m[1] : '', paginaUrl); } catch { return new URL(paginaUrl); } })();
+  const re = /(<(?:script)\b[^>]*?\bsrc=|<link\b(?=[^>]*\brel=["']?(?:stylesheet|modulepreload|preload)\b)[^>]*?\bhref=)(["'])([^"']+)\2/gi;
+  const achados = []; let m;
+  while ((m = re.exec(html)) && achados.length < 45) {
+    const src = m[3]; if (/^(?:[a-z][\w+.-]*:|\/\/|#)/i.test(src) || /[?&]_ev=/.test(src)) continue;
+    let abs; try { abs = new URL(src, base); } catch { continue; } if (abs.origin !== new URL(paginaUrl).origin) continue;
+    achados.push({ i: m.index + m[1].length + 1, src, u: abs.origin + abs.pathname });
+  }
+  if (!achados.length) return html;
+  const vs = await Promise.all(achados.map(a => versaoDe(env, a.u, s)));
+  let out = '', pos = 0;
+  achados.forEach((a, k) => { if (!vs[k]) return; out += html.slice(pos, a.i) + a.src + (a.src.includes('?') ? '&' : '?') + '_ev=' + vs[k]; pos = a.i + a.src.length; });
+  return out + html.slice(pos);
+}
+// "não mudou" sem ETag: a Cloudflare tira o ETag das páginas HTML deste endereço (ela mexe no HTML), então a página
+// leva um Last-Modified tirado do próprio conteúdo (sempre o mesmo para a mesma página) e o navegador devolve ele
+function dataDaVersao(hex) { const n = parseInt(hex.slice(0, 8), 16) % (5 * 365 * 86400); return new Date(Date.UTC(2020, 0, 1) + n * 1000).toUTCString(); }
+const naoMudou = (req, et, lm) => (req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et) || (!!lm && req.headers.get('if-modified-since') === lm);
 async function repassa(req, url, p, env, s) {
   if (p.nuvem && /(^|\/)dados\/sons-url\.json$/.test(p.resto)) return json({ url: url.origin + '/nuvem' }); // servidor de sons pelo porteiro
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
@@ -117,14 +163,22 @@ async function repassa(req, url, p, env, s) {
   }
   const out = new Headers(r.headers);
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
-  if ((p.nuvem || p.conta) && r.ok && (out.get('content-type') || '').includes('text/html')) {
-    let h = await r.text(); const m = h.match(/<head[^>]*>/i);
+  if (url.searchParams.has('_ev') && r.ok) out.set('cache-control', IMUTAVEL); // arquivo com carimbo de versão: guarda de vez
+  if (r.ok && (out.get('content-type') || '').includes('text/html')) {
+    let h = await r.text();
+    if (p.nuvem || p.conta) { const m = h.match(/<head[^>]*>/i);
     const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
     // ícone da aba: cada programa usa o próprio logo; o do menu só entra nas páginas que não têm ícone nenhum
     const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
     const extra = carregando + icone + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
-    h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h;
-    out.delete('content-length'); out.delete('content-encoding'); out.delete('etag');
+    h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h; }
+    try { h = await comVersoes(env, h, url.href, s); } catch { }
+    out.delete('content-length'); out.delete('content-encoding'); out.delete('etag'); out.delete('last-modified');
+    // ETag da página já montada: se o navegador já tem esta versão, responde "não mudou" (304) e ele não baixa de novo
+    // (a página dos Shorts tem mais de 1 MB: sem isto ela vinha inteira a cada abertura)
+    const et = '"ep-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(h)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
+    const lm = dataDaVersao(et.slice(4)); out.set('etag', et); out.set('last-modified', lm);
+    if (naoMudou(req, et, lm)) return new Response(null, { status: 304, headers: out });
     return new Response(h, { status: r.status, statusText: r.statusText, headers: out });
   }
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: out });
@@ -792,10 +846,16 @@ async function contaEmUso(req, env, url) {
 }
 
 // o menu (index.html) é público: é a tela de login. Qualquer endereço desconhecido também mostra o menu.
-async function menu(env, url, status = 200) {
+async function menu(env, url, status = 200, req = null) {
   const r = await env.ASSETS.fetch(new Request(new URL('/', url)));
   const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); h.set('x-robots-tag', 'noindex');
-  return new Response(r.body, { status, headers: h });
+  if (!r.ok) return new Response(r.body, { status, headers: h });
+  // scripts do menu com carimbo de versão (o navegador guarda de vez) + "não mudou" (304) quando a página é a mesma
+  let t = await r.text(); try { t = await comVersoes(env, t, url.href, null); } catch { }
+  const et = '"epm-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(t)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
+  const lm = dataDaVersao(et.slice(5)); h.delete('content-length'); h.delete('content-encoding'); h.set('etag', et); h.set('last-modified', lm);
+  if (status === 200 && req && naoMudou(req, et, lm)) return new Response(null, { status: 304, headers: h });
+  return new Response(t, { status, headers: h });
 }
 
 export default {
@@ -885,10 +945,11 @@ export default {
     }
 
     // menu e arquivos dele
-    if (caminho === '/' || caminho === '/index.html') return menu(env, url);
+    if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
     if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
+      if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
-    if (/^\/adm\/?$/i.test(caminho)) return menu(env, url);
-    return menu(env, url, 404);
+    if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);
+    return menu(env, url, 404, req);
   },
 };

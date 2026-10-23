@@ -457,10 +457,26 @@ async function carregar() {
 
 /* ======================= mídia ======================= */
 const blobs = new Map();
-async function srcReal(src) {
+// mídia do menu (fundo e botões): cada arquivo tem nome único e nunca muda, então fica guardado NESTE computador
+// depois da primeira vez — abrir o menu não baixa os vídeos de novo (nem espera o login do Google para isso)
+const MIDIA_CACHE = 'ep-menu-midia-v1';
+async function srcReal(src, o = {}) {
   if (!src?.startsWith('kv:')) return src;
-  if (!blobs.has(src)) blobs.set(src, (async () => { const r = await fetch(SRV + '/menu-midia?k=' + encodeURIComponent(src.slice(3)), { headers: { authorization: 'Bearer ' + await token() } }); if (!r.ok) throw new Error('mídia'); return URL.createObjectURL(await r.blob()); })());
+  if (!blobs.has(src)) blobs.set(src, (async () => {
+    const url = SRV + '/menu-midia?k=' + encodeURIComponent(src.slice(3));
+    try { const c = await caches.open(MIDIA_CACHE), hit = await c.match(url); if (hit) return URL.createObjectURL(await hit.blob()); } catch { }
+    const r = await fetch(url, { headers: { authorization: 'Bearer ' + await token() }, epFundo: !!o.fundo }); if (!r.ok) throw new Error('mídia');
+    const b = await r.blob();
+    try { const c = await caches.open(MIDIA_CACHE); await c.put(url, new Response(b, { headers: { 'content-type': b.type || r.headers.get('content-type') || 'application/octet-stream' } })); } catch { }
+    return URL.createObjectURL(b);
+  })().catch(e => { blobs.delete(src); throw e; }));
   return blobs.get(src);
+}
+// tira deste computador as mídias que o menu não usa mais (trocadas na ADM)
+async function limpaMidiaCache() {
+  try { const usadas = new Set(JSON.stringify({ l: DADOS?.links, f: DADOS?.fundo }).match(/kv:menu\/midia\/[^"]+/g) || []);
+    const c = await caches.open(MIDIA_CACHE);
+    for (const req of await c.keys()) { const k = new URL(req.url).searchParams.get('k'); if (k && !usadas.has('kv:' + k)) await c.delete(req); } } catch { }
 }
 // posição, zoom e blur. Com blur, a mídia cresce um pouco para a borda borrada não aparecer.
 function posicionar(el, m, blur = m.blur || 0) {
@@ -473,7 +489,7 @@ function midiaEl(m, { loop = true, tocar = true, blur } = {}) {
   el.className = 'mfill'; el.alt = ''; el.draggable = false;
   if (m.tipo === 'video') { el.muted = true; el.loop = loop; el.autoplay = tocar; el.playsInline = true; el.setAttribute('playsinline', ''); el.preload = tocar ? 'auto' : 'metadata'; }
   posicionar(el, m, blur ?? m.blur ?? 0);
-  srcReal(m.src).then(u => { el.src = u; if (m.tipo === 'video' && tocar) el.play?.().catch(() => { }); }).catch(() => { el.remove(); });
+  srcReal(m.src, { fundo: m.tipo === 'video' }).then(u => { el.src = u; if (m.tipo === 'video' && tocar) el.play?.().catch(() => { }); }).catch(() => { el.remove(); }); // vídeo não segura a tela de carregamento
   return el;
 }
 const MODOS = { sempre: 'Tocar sempre', blur: 'Tocar com blur', blurHover: 'Com blur, e sem blur ao passar o mouse', hover: 'Escondido: toca por trás e aparece ao passar o mouse' };
@@ -1467,6 +1483,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
       const lg = $('#login'); lg.classList.add('cobrindo'); msg('Abrindo o menu…', false, true); topo(email);
       MODO_ADM ? showAdm() : showMenu();
       try { await window.EstudioProgresso?.esperarTudo(8000); } catch { }
+      setTimeout(limpaMidiaCache, 15000);
       lg.classList.add('saindo'); setTimeout(() => { lg.hidden = true; lg.classList.remove('saindo', 'cobrindo'); }, 320);
       if (QS.has('conta') && CONTA) abrirConta();
     } catch (e) {

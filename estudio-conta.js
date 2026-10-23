@@ -100,6 +100,10 @@
 .ep-conta-head{display:flex;align-items:center;gap:10px;padding:8px 8px 10px;border-bottom:1px solid #1f2024;margin-bottom:4px}
 .ep-conta-head .av{width:40px;height:40px;border-radius:50%;overflow:hidden;flex:none;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff}
 .ep-conta-head .av img{width:100%;height:100%;object-fit:cover}
+/* fotos redondas: a imagem cobre o círculo inteiro (o CSS do programa não estica nem encolhe) e o fundo azul some quando tem foto */
+.ep-conta-head .av,.ep-conta-btn,.ep-msgs .epm-av,.epa-av,.ep-quem-av,.ep-conta-pop .av{position:relative}
+.ep-conta-head .av img,.ep-conta-btn img,.ep-msgs .epm-av img,.epa-av img,.ep-quem-av img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-width:0!important;object-fit:cover!important;display:block!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.ep-conta-head .av:has(img),.ep-conta-btn:has(img),.ep-msgs .epm-av:has(img),.epa-av:has(img),.ep-quem-av:has(img){background:#2b2c31!important}
 .ep-conta-head b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-conta-head small{display:block;color:#a9adb7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-conta-pop .it{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;color:#e9ebef;text-decoration:none;font-size:13.5px;line-height:1.3}
@@ -610,7 +614,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
      Para texto simples (ex.: dica ao passar o mouse): await EstudioConta.nomeDe(email). */
   const QUEM = new Map();
   const quem = email => { const k = String(email || '').trim().toLowerCase(); if (!k) return Promise.resolve(null);
-    if (!QUEM.has(k)) QUEM.set(k, fetch('/pessoa?e=' + encodeURIComponent(k), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEM.get(k); };
+    if (!QUEM.has(k)) QUEM.set(k, /^u[0-9a-f]{16}$/.test(k) ? quemU(k) : fetch('/pessoa?e=' + encodeURIComponent(k), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); return QUEM.get(k); };
   const nomeDe = async email => (await quem(email))?.nome || '';
   async function pintaQuem(el) {
     el.dataset.quemOk = '1'; const q = await quem(el.dataset.quem); if (!q) { el.textContent = ''; return; }
@@ -1264,7 +1268,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function confereVersao(primeira) {
     if (VERSAO.nova || VERSAO.rodando) return; VERSAO.rodando = true; VERSAO.ultima = Date.now();
     try {
-      const lista = [...new Set([...recursosDaPagina(), ...SITES])];
+      // ao abrir: só a página e os scripts comuns (leve, não disputa com o carregamento); o resto entra 20 s depois
+      const lista = primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : [...new Set([...recursosDaPagina(), ...SITES])];
       for (const u of lista) {
         if (VERSAO.instavel.has(u) || VERSAO.nova) continue;
         let agora; try { agora = await digital(u, 'no-cache'); } catch { continue; }
@@ -1284,7 +1289,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     } finally { VERSAO.rodando = false; }
   }
   if (window.top === window && /^https?:$/.test(location.protocol)) {
-    const comeca = () => { confereVersao(true).catch(() => { }); };
+    const comeca = () => { confereVersao(true).catch(() => { }); setTimeout(() => { VERSAO.ultima = 0; confereVersao().catch(() => { }); }, 20000); };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comeca, { once: true }); else comeca();
     setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 3.5 * 60000) confereVersao().catch(() => { }); }, 30000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); });
