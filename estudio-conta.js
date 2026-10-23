@@ -36,8 +36,8 @@
    contagem regressiva (calculada aqui no computador, sem pedir nada para a nuvem). */
 (() => {
   if (window.EstudioLimite) return;
-  const K = 'estudio-limite-cf', MSG = 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
-  const MSG_TALVEZ = 'Não consegui falar com a nuvem da equipe. Se for o limite grátis de hoje da Cloudflare, ela volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
+  const K = 'estudio-limite-cf', MSG = 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
+  const MSG_TALVEZ = 'Não consegui falar com a nuvem da equipe. Se for o limite de hoje, ela volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
   const proxima = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
   // marca = { t: quando a principal volta, r: está usando a nuvem reserva (conta antiga da Cloudflare) }
   const le = () => { try { const v = localStorage.getItem(K) || ''; const o = v[0] === '{' ? JSON.parse(v) : { t: +v }; return o.t > Date.now() ? o : null; } catch { return null; } };
@@ -59,9 +59,9 @@
     }
     const pinta = () => { const t2 = marcado(); if (!t2) return selo();
       const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
-      const r = naReserva(); el.title = (r ? 'A nuvem principal chegou ao limite grátis de hoje da Cloudflare. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (21h de Brasília) passa de volta sozinho.' : MSG) + ' (clique para encolher)';
+      const r = naReserva(); el.title = (r ? 'A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (21h de Brasília) passa de volta sozinho.' : MSG) + ' (clique para encolher)';
       el.style.borderColor = r ? 'rgba(120,170,255,.35)' : 'rgba(255,255,255,.12)';
-      el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>` : `<span>Nuvem no limite grátis de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
+      el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
   }
   const f0 = window.fetch?.bind(window); if (!f0) return;

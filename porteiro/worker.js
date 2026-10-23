@@ -269,7 +269,7 @@ async function nuvemUso(req, env, url) {
       const grupos = [{ id: 'principal', nome: 'Nuvem principal' + (quando ? ` (medida da Cloudflare às ${quando})` : ''), projeto: 'Nuvem da equipe', bytes: z.bytes || 0, n: 0, itens: [], info: 'A lista dos arquivos volta às 21h, quando o limite do dia zera.' }];
       if (z.reserva?.n) grupos.push({ id: 'reserva', nome: 'Na nuvem reserva agora (volta para a principal às 21h)', projeto: 'Nuvem da equipe', bytes: z.reserva.bytes, n: z.reserva.n, itens: z.reserva.itens.map(it => ({ nome: String(it.nome || it.k.split('/').pop()), bytes: +it.tam || 0, tipo: it.tipo || '', em: it.em || null })) });
       return json({ limite: 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: [{ nome: 'Nuvem da equipe', bytes: grupos.reduce((t, g) => t + g.bytes, 0), grupos }], em: Date.now(), adm: !!s.a, nuvem: z.reserva?.n ? 'reserva' : 'limite', antiga: true, resumo: true, volta: z.volta,
-        avisos: ['A nuvem principal chegou ao limite grátis de hoje: dá para ver o espaço usado, mas a lista de cada arquivo só volta às 21h (horário de Brasília).'] }); } catch { return null; } };
+        avisos: ['A nuvem principal chegou ao limite de hoje: dá para ver o espaço usado, mas a lista de cada arquivo só volta às 21h (horário de Brasília).'] }); } catch { return null; } };
   if (!r.ok) { if (r.status === 503 || j.error?.type === 'limite_cloudflare' || /limit/i.test(j.error?.message || '')) { const u2 = await ultima(j.error?.volta) || await peloResumo(); if (u2) return u2; }
     return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501, 503].includes(r.status) ? r.status : 502); }
   const perfis = new Map();
@@ -897,7 +897,7 @@ async function menu(env, url, status = 200, req = null) {
 // limite grátis da Cloudflare (KV) acabou: aviso claro em vez de erro solto (volta 00:00 UTC = 21h de Brasília)
 function avisoLimitePorteiro(e) {
   const lim = /10048|free usage limit|limit exceeded for the day|for today|daily limit/i.test(String(e?.message || e)), d = new Date(); d.setUTCHours(24, 0, 0, 0);
-  return json({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+  return json({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
     : { message: 'O porteiro teve um erro: ' + String(e?.message || e).slice(0, 160) } }, lim ? 503 : 500);
 }
 /* listas do KV PERFIS guardadas na memória por 5 min (o plano grátis só deixa 1000 listas por dia na conta toda);

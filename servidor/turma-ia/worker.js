@@ -301,7 +301,7 @@ async function migra(kv, R) {
 const ehLimite = e => /10048|free usage limit|limit exceeded for the day|for today|daily limit/i.test(String(e?.message || e));
 function avisoLimite(req, e) {
   const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const lim = ehLimite(e);
-  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
     : { type: 'servidor', message: 'O servidor da nuvem teve um erro: ' + String(e?.message || e).slice(0, 160) } }), { status: lim ? 503 : 500,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
 }
@@ -375,7 +375,7 @@ export default {
       if (req.method === 'POST') {
         const pasta = q.get('pasta') === 'conhecimento' ? 'conhecimento' : 'equipe', nome = String(q.get('nome') || 'arquivo').slice(0, 120), tipo = String(q.get('tipo') || req.headers.get('content-type') || 'application/octet-stream').slice(0, 80);
         const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
-        if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB (limite do espaço grátis).' } }, 413, cors);
+        if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB (limite da nuvem).' } }, 413, cors);
         const usado = (await listar('')).reduce((s, x) => s + (+x.tam || 0), 0); if (usado + buf.byteLength > LIM) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
         const k = `${pasta}/${Date.now()}_${nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.\- ]+/g, '_').slice(-80)}`;
         await env.EQUIPE.put(k, buf, { metadata: { nome, tipo, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
@@ -536,7 +536,7 @@ export default {
           const tipo = String(q.get('tipo') || req.headers.get('content-type') || '').slice(0, 80), nome = String(q.get('nome') || 'midia').slice(0, 120);
           if (!/^(image|video)\//.test(tipo)) return json({ error: { message: 'Só imagem, GIF ou vídeo.' } }, 400, cors);
           const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
-          if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB (limite do espaço grátis). Para vídeos grandes, use "colar link".' } }, 413, cors);
+          if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB (limite da nuvem). Para vídeos grandes, use "colar link".' } }, 413, cors);
           let usado = 0, cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const k of r.keys) usado += +(k.metadata?.tam) || 0; cur = r.list_complete ? null : r.cursor; } while (cur);
           if (usado + buf.byteLength > (+env.EQUIPE_LIMITE_MB || 1024) * 1048576) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
           const k = `menu/midia/${Date.now()}_${nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.\- ]+/g, '_').slice(-80)}`;

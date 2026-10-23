@@ -366,7 +366,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     </section>
     <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
       <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems (Cloudflare): a da equipe e a dos sons. O Firebase só cuida do login e não guarda nada. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
-      <div class="nvd" id="nuvem-dia" aria-label="Gasto de hoje do plano grátis da Cloudflare"></div>
+      <div class="nvd" id="nuvem-dia" aria-label="Gasto de hoje da nuvem"></div>
       <div class="nv-fontes" id="nuvem-fontes" role="tablist" aria-label="Qual nuvem">
         <button type="button" role="tab" data-fonte="equipe"><b>Equipe</b><small>Cloudflare · personagens, cenários, menu</small></button>
         <button type="button" role="tab" data-fonte="sons"><b>Sons</b><small>Cloudflare antiga · sons, vozes, Shorts</small></button>
@@ -1229,7 +1229,7 @@ const NV_FONTE = {
       if (it.arqs) it.arqs = it.arqs.map(a => ({ nome: a.k.split('/').slice(2).join('/') || a.k, bytes: a.tam, tipo: a.tipo, abrir: arq(a.k) }));
     }
     return { total: j.total, limite: j.limite, projetos: P, apagar: refs => nvApagaEquipe(refs),
-      nota: 'Espaço grátis da Cloudflare (KV) da conta nova, dividido entre tudo o que está aqui.' };
+      nota: 'Espaço da conta nova, dividido entre tudo o que está aqui.' };
   },
   async sons() {
     const j = await (await nvBusca('/nuvem-sons/uso')).json();
@@ -1244,7 +1244,7 @@ const NV_FONTE = {
     const grupos = Object.values(G).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes), total = grupos.reduce((t, g) => t + g.bytes, 0);
     return { total, limite: j.limite || 1073741824, projetos: [{ nome: 'Servidor dos sons', bytes: total, grupos }],
       apagar: async refs => { await nvBusca('/nuvem-sons/apagar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ks: refs }) }); },
-      nota: 'Espaço grátis da Cloudflare (KV) da conta antiga, que guarda os sons, as gravações das vozes e o que o Shorts e o Editor usam.' };
+      nota: 'Espaço da conta antiga, que guarda os sons, as gravações das vozes e o que o Shorts e o Editor usam.' };
   },
 };
 async function nvApagaEquipe(refs) {
@@ -1279,7 +1279,7 @@ async function renderUsoDia(forcar) {
     ? `<div class="nvd-aviso" role="status">${icoAviso}<div><b>${cheia ? 'A nuvem principal chegou no limite de hoje.' : 'A nuvem reserva ainda está sendo usada.'} A reserva está sendo usada até as ${hora21} (em ${falta(j.volta)}).</b><small>O que a equipe salvar fica na reserva e volta sozinho para a principal depois desse horário. Ninguém precisa fazer nada.</small></div></div>`
     : `<div class="nvd-aviso al" role="status">${icoAviso}<div><b>A nuvem principal chegou no limite de hoje.</b><small>A reserva entra sozinha no próximo arquivo salvo e fica até as ${hora21} (em ${falta(j.volta)}). Depois disso tudo volta para a principal.</small></div></div>`;
   el.innerHTML = aviso + cartao('principal', 'Nuvem principal', 'Conta nova · personagens, cenários, menu', chipP) + cartao('reserva', 'Nuvem reserva', 'Conta antiga · sons e reserva da equipe', chipR, extraR)
-    + `<div class="nvd-rod"><span>${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (sozinho de 30 em 30 min) · ` : ''}o limite do plano grátis zera às 21h de Brasília (em ${falta(j.volta)}).</span>
+    + `<div class="nvd-rod"><span>${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (sozinho de 30 em 30 min) · ` : ''}o limite zera às 21h de Brasília (em ${falta(j.volta)}).</span>
       <button class="btn sm" type="button" id="nvd-medir" style="margin-left:auto" ${nvMedindo ? 'disabled' : ''} title="Mede o gasto de hoje agora (leva cerca de 1 minuto)">${nvMedindo ? '<span class="spin"></span>Medindo…' : 'Medir agora'}</button></div>`;
   const bt = $('#nvd-medir'); if (bt) bt.onclick = () => medirUsoDia(c?.em || 0);
   // CÓPIA DE SEGURANÇA na reserva: o ADM marca o que entra (Personagens do Ateliê sempre entra)
