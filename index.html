@@ -197,6 +197,15 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-limpa{margin-left:8px;display:inline-flex;align-items:center;gap:5px;color:#ff8f8f}.nv-limpa:hover{background:rgba(255,80,80,.14)}.nv-erro{color:#ff8f8f;margin-bottom:10px}
 .nv-ia{font-size:10.5px;padding:1px 6px;border-radius:6px;color:#bff4ff;background:linear-gradient(90deg,#1a6dff,#19d3f0);margin-left:6px}
 /* ADM › Nuvem: as três nuvens, abrir (player de som/vídeo, imagem, texto), baixar e apagar */
+.nvd{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin:16px 0 4px}
+.nvd-c{border:1px solid var(--bd);background:var(--bg1);border-radius:12px;padding:12px 14px}
+.nvd-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}.nvd-h b{font-size:13.5px}.nvd-h small{color:var(--tx3);font-size:11.5px}
+.nvd-chip{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap}
+.nvd-chip.ok{color:var(--ok);border-color:rgba(47,207,122,.35)}.nvd-chip.al{color:#ffb84d;border-color:rgba(255,184,77,.4)}.nvd-chip.er{color:#ff8a9a;border-color:rgba(255,107,107,.4)}.nvd-chip.az{color:var(--ac);border-color:rgba(var(--ac-rgb),.4)}
+.nvd-l{display:grid;grid-template-columns:72px 1fr 148px;align-items:center;gap:8px;font-size:12px;margin:5px 0}.nvd-l>span:first-child{color:var(--tx2)}
+.nvd-b{height:6px;border-radius:99px;background:var(--bg3);overflow:hidden}.nvd-b>i{display:block;height:100%;border-radius:inherit;background:var(--ac)}
+.nvd-l>em{font-style:normal;color:var(--tx3);font-variant-numeric:tabular-nums;font-size:11.5px;min-width:96px;text-align:right}.nvd-l>em b{color:var(--tx);font-weight:600}
+.nvd-p{font-size:11.5px;color:var(--tx3);margin-top:8px;line-height:1.45}
 .nv-fontes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:20px 0 14px;position:relative;clear:both}
 .nv-fontes button{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(48,48,48,.85);color:var(--tx);cursor:pointer;font:inherit}
 .nv-fontes button b{font-size:13.5px}.nv-fontes button small{color:var(--tx2);font-size:11.5px}.nv-fontes button:hover{border-color:var(--bd2)}
@@ -343,6 +352,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     </section>
     <section id="nuvem-sec" class="adm-pag" data-pag="nuvem">
       <p class="adm-desc">Tudo o que está guardado nas nuvens do Estúdio Problems (Cloudflare): a da equipe e a dos sons. O Firebase só cuida do login e não guarda nada. Clique num arquivo para ouvir, assistir ou ver grande; baixe no computador ou apague da nuvem.</p>
+      <div class="nvd" id="nuvem-dia" aria-label="Gasto de hoje do plano grátis da Cloudflare"></div>
       <div class="nv-fontes" id="nuvem-fontes" role="tablist" aria-label="Qual nuvem">
         <button type="button" role="tab" data-fonte="equipe"><b>Equipe</b><small>Cloudflare · personagens, cenários, menu</small></button>
         <button type="button" role="tab" data-fonte="sons"><b>Sons</b><small>Cloudflare antiga · sons, vozes, Shorts</small></button>
@@ -1225,7 +1235,31 @@ async function nvApagaEquipe(refs) {
 }
 
 /* ---------- tela ---------- */
+// ADM › Nuvem: quanto as duas contas da Cloudflare já gastaram HOJE do plano grátis (o limite zera às 21h de Brasília)
+let nvDiaEm = 0;
+async function renderUsoDia(forcar) {
+  const el = $('#nuvem-dia'); if (!el || (!forcar && Date.now() - nvDiaEm < 60e3)) return; nvDiaEm = Date.now();
+  if (!el.innerHTML) el.innerHTML = '<div class="hint"><span class="spin"></span>Medindo o gasto de hoje…</div>';
+  let j; try { j = await api('/nuvem-painel'); } catch (e) { el.innerHTML = `<div class="hint">Não consegui ver o gasto de hoje: ${esc(e.message)}</div>`; return; }
+  const c = j.conta, L = c?.limites || { write: 1000, list: 1000, delete: 1000, read: 1e5, workers: 1e5, bytes: 1073741824 };
+  const num = n => Number(n || 0).toLocaleString('pt-BR'), falta = t => { const m = Math.max(0, Math.ceil((Date.parse(t) - Date.now()) / 6e4)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
+  const velho = c && c.dia !== new Date().toISOString().slice(0, 10); // a medida é de ontem (UTC): hoje ainda não mediu
+  const barra = (nome, v, lim, fmt = num) => { const p = lim ? Math.min(100, v / lim * 100) : 0, cor = p >= 90 ? '#ff6b6b' : p >= 70 ? '#ffb84d' : 'var(--ac)';
+    return `<div class="nvd-l"><span>${nome}</span><span class="nvd-b"><i style="width:${p.toFixed(1)}%;background:${cor}"></i></span><em><b>${p < 1 && v ? '<1' : Math.round(p)}%</b> · ${fmt(v)} de ${fmt(lim)}</em></div>`; };
+  const cartao = (papel, titulo, sub, chip, extra) => { const o = velho ? null : c?.contas?.[papel];
+    const linhas = !o ? `<div class="nvd-p">${c ? (velho ? 'Ainda não medi hoje (o limite já zerou às 21h).' : 'Sem medida desta conta (o token dela precisa de Account Analytics: Read).') : 'Ainda sem medida: a Action "Uso da nuvem" mede de 30 em 30 min.'}</div>`
+      : o.erro ? `<div class="nvd-p">${esc(o.erro)}</div>`
+      : barra('Gravações', o.kv.write, L.write) + barra('Listas', o.kv.list, L.list) + barra('Apagadas', o.kv.delete, L.delete) + barra('Leituras', o.kv.read, L.read) + barra('Pedidos', o.workers, L.workers) + (o.bytes != null ? barra('Espaço', o.bytes, L.bytes, nvFmt) : '');
+    return `<div class="nvd-c"><div class="nvd-h"><b>${titulo}</b><small>${sub}</small>${chip}</div>${linhas}${extra || ''}</div>`; };
+  const pr = c && !velho ? c.contas?.principal : null, cheia = j.limite || (pr && !pr.erro && Math.max(pr.kv.write / L.write, pr.kv.list / L.list, pr.kv.delete / L.delete) >= 1);
+  const chipP = cheia ? '<span class="nvd-chip er">no limite de hoje</span>' : pr && !pr.erro && Math.max(pr.kv.write / L.write, pr.kv.list / L.list, pr.kv.delete / L.delete) >= .7 ? '<span class="nvd-chip al">perto do limite</span>' : '<span class="nvd-chip ok">normal</span>';
+  const R = j.reserva || {}, chipR = R.erro ? '<span class="nvd-chip er">não respondeu</span>' : R.ativo ? '<span class="nvd-chip az">em uso</span>' : '<span class="nvd-chip">parada</span>';
+  const extraR = `<div class="nvd-p">${R.erro ? 'A reserva não respondeu agora.' : R.ativo ? `Na reserva agora: <b style="color:var(--tx)">${num(R.n)} arquivo${R.n === 1 ? '' : 's'}</b>${R.bytes ? ` (${nvFmt(R.bytes)})` : ''}${R.apagadas ? ` e ${num(R.apagadas)} apagada${R.apagadas === 1 ? '' : 's'}` : ''} esperando para voltar à principal (volta sozinho depois das 21h).` : 'Vazia: entra sozinha só se a principal chegar no limite.'}</div>`;
+  el.innerHTML = cartao('principal', 'Principal', 'conta nova · equipe', chipP) + cartao('reserva', 'Reserva', 'conta antiga · sons + reserva', chipR, extraR)
+    + `<div class="hint" style="grid-column:1/-1">${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (de 30 em 30 min) · ` : ''}o limite do plano grátis zera às 21h de Brasília (em ${falta(j.volta)}).</div>`;
+}
 async function renderNuvem(manter) {
+  renderUsoDia(!!manter);
   const box = $('#nuvem-box'), CORES = ['#19d3f0', '#3d8bff', '#9b7bff', '#ff7ab6', '#ffb84d', '#3ddc84', '#ff6b6b', '#aaaaaa'], fonte = NV.fonte;
   $$('#nuvem-fontes [data-fonte]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.fonte === fonte)));
   const quando = t => t ? new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';

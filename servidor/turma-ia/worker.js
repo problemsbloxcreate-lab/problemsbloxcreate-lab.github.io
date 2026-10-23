@@ -209,6 +209,7 @@ function reservaDe(env, auth) {
       resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: meta || {} }); },
     async del(k, tomb) { await ok(await call('/reserva/arq?k=' + encodeURIComponent(k) + (tomb ? '&tomb=1' : ''), { method: 'DELETE' }));
       if (tomb) { resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); } else resIdx.m?.delete(k); },
+    conta: () => call('/reserva/conta').then(r => r.ok ? r.json() : null).catch(() => null),
     fim: () => call('/reserva/fim', { method: 'POST' }).then(() => { resEstado = { at: Date.now(), ativo: false }; }),
     async fotoLista() { const a = await (await ok(await call('/reserva/lista-principal'))).json(); return a.length ? new Map(a.map(([n, m]) => [n, { name: n, ...(m ? { metadata: m } : {}) }])) : null; },
     guardaLista: m => call('/reserva/lista-principal', { method: 'PUT', body: JSON.stringify([...m.values()].map(k => [k.name, k.metadata || null])) }, 20000),
@@ -309,6 +310,13 @@ export default {
     const login = await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
     if (R && login.email) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
+    // ADM › Nuvem: gasto de hoje das duas contas (medido pela Action "Uso da nuvem" de 30 em 30 min) + o que está na reserva agora
+    if (new URL(req.url).pathname === '/nuvem-painel') {
+      if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só para ADM.' } }, 403, cors);
+      const R2 = reservaDe(env, auth0), out = { conta: null, reserva: { ativo: false, n: 0, bytes: 0, apagadas: 0 }, limite: emLimite() ? new Date(limiteAte).toISOString() : null, volta: new Date(fimDoDia()).toISOString() };
+      if (R2) { out.conta = await R2.conta(); try { resEstado.at = 0; out.reserva.ativo = await R2.ativa(); if (out.reserva.ativo) for (const it of (await R2.indice(true)).values()) { if (it.metadata?._del) out.reserva.apagadas++; else { out.reserva.n++; out.reserva.bytes += +it.metadata?.tam || 0; } } } catch { out.reserva.erro = true; } }
+      return json(out, 200, { ...cors, 'cache-control': 'no-store' });
+    }
     if (new URL(req.url).pathname === '/confere') return json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); // a nuvem reserva confere se o login é da equipe (sem e-mail na resposta)
     // SEGURANÇA (não remover): quem é + chave do app criptografado — só com login do Firebase confirmado e e-mail liberado
     const p0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
