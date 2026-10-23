@@ -190,7 +190,8 @@ async function lePerfil(env, email) { try { return (await env.PERFIS?.get(chaveP
 async function guardaGoogle(env, email, nome, foto) {
   if (!env.PERFIS) return;
   const p = await lePerfil(env, email), g = { nome: String(nome || '').slice(0, 80), foto: /^https:\/\//.test(foto || '') ? String(foto).slice(0, 500) : '' };
-  await env.PERFIS.put(chavePerfil(email), JSON.stringify({ ...p, google: g, visto: Date.now() })); // visto = último login (aparece na tela Acesso)
+  if (p.google?.nome === g.nome && p.google?.foto === g.foto && Date.now() - (p.visto || 0) < 6 * 36e5) return; // nada mudou: não grava (o KV grátis tem limite de gravações por dia)
+  await env.PERFIS.put(chavePerfil(email), JSON.stringify({ ...p, google: g, visto: Date.now() })).catch(() => { }); // visto = último login (aparece na tela Acesso)
 }
 function contaPublica(email, p) {
   const nomeG = p.google?.nome || String(email).split('@')[0], fotoG = p.google?.foto || null;
@@ -243,9 +244,8 @@ async function nuvemUso(req, env, url) {
       apagados += +j.apagados || 0;
     }
     if (fs.length) { // fotos de perfil: só quem o servidor confirmou como ADM há pouco (marca da leitura da nuvem)
-      if (!(+(await env.PERFIS.get('adm:' + eu0).catch(() => 0)) > Date.now())) return json({ error: { message: 'Abra a aba Nuvem de novo para confirmar que você é ADM.' } }, 403);
-      const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + eu0).catch(() => '{}') || '{}');
-      for (const r of fs) { const [, id, v] = r.split(':'), em = mapa[id]; if (!em || !/^\d+$/.test(v || '')) continue;
+      if (!s.a) return json({ error: { message: 'Só ADM apaga fotos de perfil.' } }, 403);
+      for (const r of fs) { const [, id, v] = r.split(':'), em = await emailDoCodigo(env, id); if (!em || !/^\d+$/.test(v || '')) continue;
         await env.PERFIS.delete(chaveFoto(em) + ':' + v); apagados++;
         const p = await lePerfil(env, em); if (String(p.fotoV) === v) { delete p.fotoV; await env.PERFIS.put(chavePerfil(em), JSON.stringify(p)); } }
     }
@@ -254,9 +254,10 @@ async function nuvemUso(req, env, url) {
   const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
   let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
-  const eu = s.e.toLowerCase(), mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + eu).catch(() => '{}') || '{}'), perfis = new Map();
-  const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (!perfis.has(email)) { const p = await lePerfil(env, email), id = await idDe(email); mapa[id] = email;
-    perfis.set(email, { porNome: p.nome || p.google?.nome || mascara(email), porFoto: p.fotoV ? '/pessoa/foto?u=' + (await codigoU(email)) + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); }; // /pessoa/foto: qualquer pessoa da equipe vê (a /acesso/foto é só do ADM)
+  const perfis = new Map();
+  const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (/^u[0-9a-f]{16}$/.test(email)) email = (await emailDoCodigo(env, email)) || email; // o turma-ia já manda o código no lugar do e-mail
+    if (!perfis.has(email)) { const p = await lePerfil(env, email);
+    perfis.set(email, { porNome: p.nome || p.google?.nome || (email.includes('@') ? mascara(email) : 'Alguém da equipe'), porFoto: p.fotoV ? '/pessoa/foto?u=' + (await codigoU(email)) + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); }; // /pessoa/foto: qualquer pessoa da equipe vê (a /acesso/foto é só do ADM)
   const PROJ = { personagens: 'Animador', cenarios: 'Animador', menu: 'Menu do Estúdio', fotos: 'Menu do Estúdio', acesso: 'Menu do Estúdio', conhecimento: 'Shorts', equipe: 'Geral', outros: 'Geral' };
   const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, projeto: PROJ[id] || 'Geral', bytes: 0, n: 0, itens: [] });
   const NOMES = { cenarios: 'Cenários', menu: 'Fundos e links do menu', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento da IA', acesso: 'Lista de quem entra' };
@@ -278,14 +279,10 @@ async function nuvemUso(req, env, url) {
     do { const l = await env.PERFIS.list({ prefix: 'f:', cursor: cur }); for (const x of l.keys) {
       let tam = +x.metadata?.tam || 0; if (!tam && k++ < 300) { const v = await env.PERFIS.get(x.name, { type: 'arrayBuffer' }).catch(() => null); tam = v ? v.byteLength : 0; }
       const email = x.name.slice(2).replace(/:\d+$/, ''), v = (x.name.match(/:(\d+)$/) || [])[1]; g.bytes += tam; g.n++;
-      g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(v ? { ref: 'f:' + await idDe(email) + ':' + v } : {}), ...(await quem(email)) });
+      g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(v ? { ref: 'f:' + await codigoU(email) + ':' + v } : {}), ...(await quem(email)) });
     } cur = l.list_complete ? null : l.cursor; } while (cur);
   }
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
-  if (s.a) { // a marca de ADM (para apagar fotos de perfil) só para quem é ADM; os outros só veem
-    await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
-    await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
-  }
   const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;
   return json({ adm: !!s.a, limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes) });
 }
@@ -301,9 +298,8 @@ async function acesso(req, env, url) {
   if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS.' } }, 503);
   // foto de outra pessoa: só para quem abriu a lista como ADM há pouco (marca guardada quando o servidor confirmou)
   if (url.pathname === '/acesso/foto') {
-    const ok = +(await env.PERFIS.get('adm:' + s.e.toLowerCase()).catch(() => 0)) > Date.now();
-    if (!ok) return new Response('sem permissão', { status: 403, headers: { 'cache-control': 'no-store' } });
-    const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + s.e.toLowerCase()).catch(() => '{}') || '{}'), em = mapa[url.searchParams.get('id') || ''];
+    if (!s.a) return new Response('sem permissão', { status: 403, headers: { 'cache-control': 'no-store' } }); // ADM: vem da sessão (o servidor confirmou no login)
+    const em = await emailDoCodigo(env, url.searchParams.get('id') || '');
     if (!em) return new Response('não achei', { status: 404, headers: { 'cache-control': 'no-store' } });
     const p = await lePerfil(env, em); if (!p.fotoV) return new Response('sem foto', { status: 404, headers: { 'cache-control': 'no-store' } });
     let r = await env.PERFIS.getWithMetadata(chaveFoto(em) + ':' + p.fotoV, { type: 'stream' }); if (!r.value) r = await env.PERFIS.getWithMetadata(chaveFoto(em), { type: 'stream' });
@@ -333,19 +329,15 @@ async function acesso(req, env, url) {
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
   // monta a lista com nome/foto da conta (personalizado e original do Google)
   const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], itens = [];
-  const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + s.e.toLowerCase()).catch(() => '{}') || '{}'); // junto com as fotos da tela Nuvem
   const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {};
   await Promise.all([...base.map(e => [e, true, null]), ...extras.map(x => [x.email, false, x])].map(async ([email, fixo, info], ordem) => { try { // todos ao mesmo tempo (antes um por um)
-    const id = await idDe(email), p = await lePerfil(env, email); mapa[id] = email;
+    const id = await idDe(email), p = await lePerfil(env, email), cu = await codigoU(email); COD.set(cu, email);
     const nomeG = p.google?.nome || '', fotoG = p.google?.foto || '';
     itens.push({ id, mascara: mascara(email), voce: email === s.e.toLowerCase(), fixo, adm: admins.has(email),
-      nome: p.nome || nomeG || '', nomeOriginal: nomeG, nomeProprio: !!p.nome, foto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : fotoG, fotoOriginal: fotoG, fotoPropria: !!p.fotoV,
+      nome: p.nome || nomeG || '', nomeOriginal: nomeG, nomeProprio: !!p.nome, foto: p.fotoV ? '/pessoa/foto?u=' + cu + '&v=' + p.fotoV : fotoG, fotoOriginal: fotoG, fotoPropria: !!p.fotoV,
       visto: p.visto || null, online: on[email]?.prog || null, em: info?.em || null, ...(info?.por ? await (async () => { const q = await lePerfil(env, info.por); return { porNome: q.nome || q.google?.nome || mascara(info.por), porFoto: q.fotoV ? '/pessoa/foto?u=' + (await codigoU(info.por)) + '&v=' + q.fotoV : (q.google?.foto || null) }; })() : {}), ordem });
   } catch { } }));
   itens.sort((a, b) => a.ordem - b.ordem); itens.forEach(x => delete x.ordem);
-  const eu = s.e.toLowerCase();
-  await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
-  await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
   return json({ itens });
 }
 /* ---------- quem fez uma mudança: nome e foto da conta (no lugar do e-mail) ----------
@@ -354,12 +346,17 @@ async function acesso(req, env, url) {
 // código de pessoa que os programas guardam nos arquivos (Animador: "u" + 16 hex do SHA-256 de "estudio-problems:<e-mail>"),
 // para mostrar SEMPRE o nome e a foto de agora de quem subiu/editou, sem o e-mail nunca sair daqui
 async function codigoU(email) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('estudio-problems:' + email))); return 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); }
+// código → e-mail: memória → lista de pessoas das Mensagens (objeto durável, sem limite diário) → KV. Nunca grava em massa no KV.
+const COD = new Map(); let codVarrido = 0;
 async function emailDoCodigo(env, u) {
-  if (!env.PERFIS || !/^u[0-9a-f]{16}$/.test(u)) return null;
-  const k = await env.PERFIS.get('u:' + u).catch(() => null); if (k) return k;
-  let cur; do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); const c = await codigoU(em);
-    await env.PERFIS.put('u:' + c, em).catch(() => { }); if (c === u) return em; } cur = l.list_complete ? null : l.cursor; } while (cur);
-  return null;
+  if (!/^u[0-9a-f]{16}$/.test(u || '')) return null;
+  if (COD.has(u)) return COD.get(u);
+  if (env.CONVERSAS) { try { for (const r of (await conversas(env, { op: 'pessoas' })).j || []) if (r.u && r.e) COD.set(r.u, r.e); } catch { } if (COD.has(u)) return COD.get(u); }
+  if (!env.PERFIS) return null;
+  const k = await env.PERFIS.get('u:' + u).catch(() => null); if (k) { COD.set(u, k); return k; }
+  if (Date.now() - codVarrido < 10 * 6e4) return null; codVarrido = Date.now(); // varre os perfis no máximo a cada 10 min (só leitura)
+  let cur; try { do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); COD.set(await codigoU(em), em); } cur = l.list_complete ? null : l.cursor; } while (cur); } catch { }
+  return COD.get(u) || null;
 }
 async function pessoa(req, env, url) {
   const s = await leSessao(env, req);
@@ -910,8 +907,8 @@ export default {
       }
       return json(out);
     }
-    if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url);
-    if (caminho === '/nuvem-uso') return nuvemUso(req, env, url);
+    if (caminho === '/acesso' || caminho === '/acesso/foto') return acesso(req, env, url).catch(e => json({ error: { message: 'O porteiro falhou: ' + String(e?.message || e).slice(0, 200) } }, 500)); // mostra o motivo na tela
+    if (caminho === '/nuvem-uso') return nuvemUso(req, env, url).catch(e => json({ error: { message: 'O porteiro falhou: ' + String(e?.message || e).slice(0, 200) } }, 500)); // mostra o motivo na tela
     if (caminho === '/nuvem-uso/arq') return nuvemArq(req, env, url);
     if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
