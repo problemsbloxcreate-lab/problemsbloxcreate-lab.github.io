@@ -276,11 +276,11 @@ async function nuvemUso(req, env, url) {
   // fotos de perfil (KV PERFIS, mesma conta da Cloudflare: o 1 GB grátis é dividido entre todos)
   if (env.PERFIS) {
     const g = grupo('fotos', 'Fotos de perfil'); let cur, k = 0;
-    do { const l = await env.PERFIS.list({ prefix: 'f:', cursor: cur }); for (const x of l.keys) {
+    try { do { const l = await env.PERFIS.list({ prefix: 'f:', cursor: cur }); for (const x of l.keys) {
       let tam = +x.metadata?.tam || 0; if (!tam && k++ < 300) { const v = await env.PERFIS.get(x.name, { type: 'arrayBuffer' }).catch(() => null); tam = v ? v.byteLength : 0; }
       const email = x.name.slice(2).replace(/:\d+$/, ''), v = (x.name.match(/:(\d+)$/) || [])[1]; g.bytes += tam; g.n++;
       g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(v ? { ref: 'f:' + await codigoU(email) + ':' + v } : {}), ...(await quem(email)) });
-    } cur = l.list_complete ? null : l.cursor; } while (cur);
+    } cur = l.list_complete ? null : l.cursor; } while (cur); } catch (e) { console.log('fotos:', String(e?.message || e).slice(0, 120)); } // sem listas hoje: o resto aparece igual
   }
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
   const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;

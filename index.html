@@ -1281,7 +1281,7 @@ async function renderNuvem(manter) {
   const mini = (f, n) => `<span class="mini">${f ? `<img src="${esc(f)}" alt="" referrerpolicy="no-referrer">` : esc((n || '?')[0].toUpperCase())}</span>`;
   const abertas = manter ? new Set($$('#nuvem-box details[open] > summary b').map(b => b.textContent)) : new Set();
   box.innerHTML = '<div class="hint" style="text-align:center;padding:18px 0"><span class="spin"></span>Medindo a nuvem…</div>';
-  let j; try { j = await NV_FONTE[fonte](); } catch (e) { if (NV.fonte === fonte) box.innerHTML = `<div class="hint">Não consegui medir: ${esc(e.message)}</div>`; return; }
+  let j; try { j = await NV_FONTE[fonte](); } catch (e) { if (NV.fonte === fonte) box.innerHTML = `<div class="hint">Não consegui listar os arquivos: ${esc(e.message)}${/limite/i.test(e.message) ? ' O gasto de hoje aparece nos cartões acima.' : ''}</div>`; return; }
   if (NV.fonte !== fonte) return; // trocou de nuvem enquanto media
   NV.atual = j;
   const P = j.projetos, ITENS = [], GRUPOS = [], pct = j.total / j.limite * 100, livre = Math.max(0, j.limite - j.total);
@@ -1386,7 +1386,12 @@ async function nvConverteWebp(diz) {
   } catch (e) { return { n, salvo, erro: e.message }; }
   return { n, salvo };
 }
-function nvTrocaFonte(f) { if (!NV_FONTE[f]) return; NV.fonte = f; try { localStorage.setItem('ep-nuvem-fonte', f); } catch { } renderNuvem(); }
+// antes de clicar: só o convite (medir a nuvem lista tudo e mede cada arquivo: demora e gasta do limite de listas do dia)
+function nvEspera() {
+  $$('#nuvem-fontes [data-fonte]').forEach(b => b.setAttribute('aria-selected', 'false'));
+  $('#nuvem-box').innerHTML = `<div class="hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0"><span>Clique em <b style="color:var(--tx)">Equipe</b> ou <b style="color:var(--tx)">Sons</b> para ver os arquivos de cada nuvem. A lista completa demora um pouco e gasta do limite de listas do dia, por isso só carrega quando você pede.</span></div>`;
+}
+function nvTrocaFonte(f) { if (!NV_FONTE[f]) return; renderNuvem.feito = true; NV.fonte = f; try { localStorage.setItem('ep-nuvem-fonte', f); } catch { } renderNuvem(); }
 
 /* ---------- abrir um item: player de som, player de vídeo, imagem grande, texto ou a pasta (personagem) ---------- */
 async function nvVer(it) {
@@ -1476,7 +1481,7 @@ function abaAdm(n) {
   $$('.adm-pag').forEach(p => p.hidden = p.dataset.pag !== n);
   if (n === 'conversas') window.EstudioConta?.adm?.conversas($('#conversas-adm'));
   $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'conversas' || n === 'dispositivos'; // quem pode entrar salva sozinho; a nuvem é só para ver
-  if (n === 'nuvem' && !renderNuvem.feito) { renderNuvem.feito = true; renderNuvem(); }
+  if (n === 'nuvem') { renderUsoDia(); if (!renderNuvem.feito) nvEspera(); } // o gasto (rápido) aparece na hora; a lista dos arquivos (demorada, gasta listas do dia) só ao clicar
   if (n === 'dispositivos') renderDispositivos();
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
 }
@@ -1487,7 +1492,7 @@ function showAdm() {
   addEventListener('hashchange', () => { if (/^#denuncias/.test(location.hash)) abaAdm('conversas'); });
   ['#aba-acesso', '#aba-nuvem', '#aba-conversas', '#aba-dispositivos'].forEach(q => { const b = $(q); if (b) b.hidden = false; }); // só chega aqui quem o servidor confirmou ADM
   abaAdm(ultima); renderAcesso().then(() => abaAdm(ultima));
-  $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); await renderNuvem(true); b.classList.remove('girando'); b.disabled = false; };
+  $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); if (renderNuvem.feito) await renderNuvem(true); else await renderUsoDia(true); b.classList.remove('girando'); b.disabled = false; };
   try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
   $$('#nuvem-fontes [data-fonte]').forEach(b => b.onclick = () => nvTrocaFonte(b.dataset.fonte));
   $('#adm').hidden = false; $('#badge-adm').hidden = false;
