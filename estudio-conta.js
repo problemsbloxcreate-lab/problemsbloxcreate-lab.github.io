@@ -92,7 +92,7 @@
   selo();
 })();
 (() => {
-  if (window.EstudioConta) return;
+  if (window.EstudioConta || window.ESTUDIO_EMBED) return; // ESTUDIO_EMBED: a Minha conta aberta dentro de outro programa (só a janela)
   const CFG = window.ESTUDIO_CONTA || {};
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const svg = d => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -176,6 +176,7 @@
 .ep-conta-pop .it.sair,.ep-conta-pop .it.sair svg{color:#ff8a9a}.ep-conta-pop .it.sair:hover,.ep-conta-pop .it.sair:focus-visible{background:rgba(214,58,82,.16)}
 .ep-pg{position:fixed;inset:0;z-index:2147483003;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef;animation:epPgF .16s ease-out both}
 .ep-pg *,.ep-pg *::before{box-sizing:border-box}
+.ep-gira{display:inline-block;width:13px;height:13px;margin-right:8px;vertical-align:-2px;border:2px solid rgba(255,255,255,.25);border-top-color:#3d8bff;border-radius:50%;animation:epGira .7s linear infinite}@keyframes epGira{to{transform:rotate(360deg)}}
 .ep-pg .cx{width:min(400px,100%);box-sizing:border-box;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:22px 20px 18px;display:grid;justify-items:center;gap:8px;text-align:center;animation:epPgE .18s ease-out both}
 .ep-pg .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(214,58,82,.16);color:#ff8a9a}.ep-pg .ic svg{width:22px;height:22px}
 .ep-pg .t{font-size:17px;font-weight:700}.ep-pg .x{margin:0 0 4px;color:#a9adb7;font-size:13.5px}
@@ -379,6 +380,37 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     try { await Promise.race([Promise.allSettled(salvadores().map(f => Promise.resolve().then(f))), new Promise(r => setTimeout(r, 3000))]); } catch { }
     location.reload();
   });
+  /* VOLTAR AO MENU (mesma aba): salva o que está aberto antes. Se não tem nada para salvar (ou salva num instante), vai direto;
+     se está salvando, aparece a janela "Indo para o menu" até terminar; se não conseguir salvar, pergunta se vai mesmo assim. */
+  async function irAoMenu(e) {
+    if (e && (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1)) return; // nova aba/janela: o navegador faz sozinho
+    e?.preventDefault(); const vai = () => { location.href = '/'; };
+    if (!salvadores().length) return vai();
+    let pronto = false, erro = null; const sal = salvarAntesDeSair().then(() => { pronto = true; }, x => { erro = x; pronto = true; });
+    await Promise.race([sal, new Promise(r => setTimeout(r, 350))]);
+    let d = null;
+    if (!pronto) { d = document.createElement('div'); d.className = 'ep-pg';
+      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="Indo para o menu"><div class="ic azul">${ICONES.inicio}</div><div class="t">Indo para o menu</div><p class="x"><span class="ep-gira"></span>Salvando o que está aberto antes de sair…</p></div>`;
+      document.body.appendChild(d); await sal; }
+    if (erro) { d?.remove(); if (await pergunta({ titulo: 'Não consegui salvar', texto: (erro.message || 'O projeto aberto não foi salvo.') + ' Ir para o menu mesmo assim?', ok: 'Ir sem salvar', okErro: 'Ir sem salvar', icone: ICONES.inicio })) vai(); return; }
+    vai();
+  }
+  /* MINHA CONTA em qualquer programa: abre a janela da conta do menu por cima (sem sair do programa), como as Mensagens */
+  function abrirMinhaConta() {
+    if (document.querySelector('.ep-conta-jan')) return;
+    const f = document.createElement('iframe'); f.className = 'ep-conta-jan'; f.title = 'Minha conta'; f.src = '/?conta=1&embed=1';
+    f.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:2147483004;background:transparent;color-scheme:normal;opacity:0;pointer-events:none;transition:opacity .15s';
+    const esp = document.createElement('div'); esp.className = 'ep-pg'; esp.innerHTML = `<div class="cx" aria-label="Abrindo a Minha conta"><div class="ic azul">${ICONES.conta}</div><div class="t">Minha conta</div><p class="x"><span class="ep-gira"></span>Abrindo…</p></div>`;
+    document.body.appendChild(esp); document.body.appendChild(f);
+    const fim = () => { removeEventListener('message', ouve); clearTimeout(t); f.remove(); esp.remove(); };
+    const ouve = ev => { if (ev.source !== f.contentWindow || ev.origin !== location.origin) return; const m = ev.data?.epConta;
+      if (m === 'pronto') { esp.remove(); f.style.opacity = '1'; f.style.pointerEvents = 'auto'; f.focus(); }
+      else if (m === 'mudou') { try { sessionStorage.removeItem('ep-conta-v1'); } catch { } recarregar(); }
+      else if (m === 'fechar') { fim(); recarregar(); }
+      else if (m === 'login') { fim(); location.href = '/?conta=1'; } };
+    addEventListener('message', ouve);
+    const t = setTimeout(() => { if (f.style.opacity !== '1') { fim(); location.href = '/?conta=1'; } }, 25000); // não abriu: vai pelo menu como antes
+  }
   async function salvarAntesDeSair() {
     const limite = (pr, ms) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error('demorou demais')), ms))]);
     const rs = await Promise.allSettled(salvadores().map(f => limite(Promise.resolve().then(f), 15000)));
@@ -403,14 +435,15 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.adm}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
-        ${p.adm && MSG.denuncias ? `<a class="it denun" href="/adm#denuncias" role="menuitem">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></a>` : ''}
-        ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<a class="it" href="/adm" role="menuitem">${ICONES.adm}ADM</a>`) : ''}
+        ${p.adm && MSG.denuncias ? `<a class="it denun" href="/adm#denuncias" target="_blank" rel="noopener" role="menuitem">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></a>` : ''}
+        ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<a class="it" href="/adm" target="_blank" rel="noopener" role="menuitem">${ICONES.adm}ADM</a>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
         <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
-      pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else location.href = '/?conta=1'; };
+      pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else abrirMinhaConta(); };
+      pop.querySelectorAll('a.it[href="/"]').forEach(a => a.onclick = ev => { fecha(); irAoMenu(ev); });
       pop.querySelector('[data-a=msgs]').onclick = () => { fecha(); painelMensagens(); };
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
@@ -423,6 +456,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     };
     btn.onclick = e => { e.stopPropagation(); pop.hidden ? abre() : fecha(); };
     box.querySelector('.ep-conta-espaco').onclick = () => { fecha(); painelEspaco(); };
+    const bm = box.querySelector('.ep-conta-menu'); if (bm) bm.onclick = ev => irAoMenu(ev); // salva antes de ir (e avisa se demorar)
     const nb = box.querySelector('.ep-conta-nuvem'); if (nb) { nb.onclick = () => { fecha(); painelNuvem(); }; setTimeout(() => atualizaNuvem(), 0); }
     atualizaAneis();
     document.addEventListener('click', e => { if (!box.contains(e.target)) fecha(); });
