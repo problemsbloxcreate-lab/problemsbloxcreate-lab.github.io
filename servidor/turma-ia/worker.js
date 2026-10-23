@@ -184,9 +184,9 @@ async function aoVivoLimpa(env, forcar) {
    este servidor grava ou apaga já entra na lista guardada na hora (put/delete passam por aqui). Antes cada abertura da
    biblioteca/espaço gastava listas e o limite do dia acabava ("reached the free usage limit"). */
 let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
-function kvComLista(kv) {
+function kvComLista(kv, forcar) { // forcar (?novo=1, botão Atualizar): busca de novo se a guardada tem mais de 30 s
   const carrega = async () => {
-    if (kvLista && Date.now() - kvLista.at < KV_LISTA_MS) return kvLista.m;
+    if (kvLista && Date.now() - kvLista.at < (forcar ? 30e3 : KV_LISTA_MS)) return kvLista.m;
     const m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
     kvLista = { m, at: Date.now() }; return m;
   };
@@ -198,9 +198,22 @@ function kvComLista(kv) {
   };
 }
 
+// limite grátis da Cloudflare acabou (KV: 1000 gravações/listas/apagadas por dia na conta): em vez de "Failed to fetch",
+// responde um aviso claro (com CORS, para o navegador conseguir ler) e quando volta (00:00 UTC = 21h de Brasília)
+const ehLimite = e => /limit|exceeded|10048|quota/i.test(String(e?.message || e));
+function avisoLimite(req, e) {
+  const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const lim = ehLimite(e);
+  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+    : { type: 'servidor', message: 'O servidor da nuvem teve um erro: ' + String(e?.message || e).slice(0, 160) } }), { status: lim ? 503 : 500,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
+}
+
 export default {
   async fetch(req, env, ctx) {
-    if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE), _kvLista: true };
+    try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
+  },
+  async atende(req, env, ctx) {
+    if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE, new URL(req.url).searchParams.get('novo') === '1'), _kvLista: true };
     const origin = req.headers.get('origin') || '';
     const origens = (env.ORIGENS || '*').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
     const liberado = origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin); // seu PC: sempre aceito (ainda exige login com e-mail liberado)

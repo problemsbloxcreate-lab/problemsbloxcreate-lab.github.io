@@ -203,7 +203,7 @@ async function nuvemArq(req, env, url) {
   const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
   const auth = req.headers.get('authorization') || ''; if (!/^Bearer \S+/.test(auth)) return json({ error: { message: 'Faltou o login do Google.' } }, 401);
   const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso/arq' + url.search, { headers: { authorization: auth, origin: url.origin } });
-  let r; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  let r; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   const h = new Headers(r.headers); h.set('cache-control', 'no-store'); h.delete('set-cookie'); for (const k of [...h.keys()]) if (k.startsWith('access-control-')) h.delete(k);
   return new Response(r.body, { status: r.status, headers: h });
 }
@@ -239,7 +239,7 @@ async function nuvemUso(req, env, url) {
     let apagados = 0;
     if (ks.length) {
       const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { method: 'POST', headers: { authorization: auth, origin: url.origin, 'content-type': 'application/json' }, body: JSON.stringify({ apagar: ks }) });
-      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
       if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403].includes(r.status) ? r.status : 502);
       apagados += +j.apagados || 0;
     }
@@ -252,7 +252,7 @@ async function nuvemUso(req, env, url) {
     return json({ ok: true, apagados });
   }
   const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
-  let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
   const perfis = new Map();
   const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (/^u[0-9a-f]{16}$/.test(email)) email = (await emailDoCodigo(env, email)) || email; // o turma-ia já manda o código no lugar do e-mail
@@ -325,7 +325,7 @@ async function acesso(req, env, url) {
       if (r.ok && b.acao === 'del') { await env.PERFIS.put('r:' + email, String(Date.now()), { expirationTtl: DURACAO + 3600 }); TIRADOS.delete(email); } // a sessão dele cai
       if (r.ok && b.acao === 'add') { await env.PERFIS.delete('r:' + email); TIRADOS.delete(email); }
     } else { r = await turma('GET'); j = await r.json().catch(() => ({})); }
-  } catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
   // monta a lista com nome/foto da conta (personalizado e original do Google)
   const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], itens = [];
@@ -862,8 +862,15 @@ async function menu(env, url, status = 200, req = null) {
   return new Response(t, { status, headers: h });
 }
 
+// limite grátis da Cloudflare (KV) acabou: aviso claro em vez de erro solto (volta 00:00 UTC = 21h de Brasília)
+function avisoLimitePorteiro(e) {
+  const lim = /limit|exceeded|10048|quota/i.test(String(e?.message || e)), d = new Date(); d.setUTCHours(24, 0, 0, 0);
+  return json({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+    : { message: 'O porteiro teve um erro: ' + String(e?.message || e).slice(0, 160) } }, lim ? 503 : 500);
+}
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) { try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
+  async atende(req, env) {
     const url = new URL(req.url), caminho = url.pathname;
     if (caminho === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain' } });
 
@@ -879,7 +886,7 @@ export default {
       // o servidor do Estúdio Problems só atende sites da lista ORIGENS: o porteiro se apresenta com o próprio endereço
       const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token, origin: url.origin } });
       let r; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); }
-      catch { return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+      catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
       const j = await r.json().catch(() => ({}));
       if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
       if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor do Estúdio Problems (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
