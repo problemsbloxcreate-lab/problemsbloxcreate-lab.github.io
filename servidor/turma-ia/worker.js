@@ -201,7 +201,7 @@ function reservaDe(env, auth) {
   if (!auth || env.RESERVA === 'nao') return null; const base = (env.RESERVA_URL || RESERVA_URL).replace(/\/+$/, '');
   const call = async (path, o = {}, ms = 9000) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
     try { return await fetch(base + path, { ...o, headers: { authorization: auth, ...(o.headers || {}) }, signal: ac.signal }); } finally { clearTimeout(t); } };
-  const ok = async r => { if (!r.ok) throw new Error('a nuvem reserva respondeu ' + r.status); return r; };
+  const ok = async r => { if (!r.ok) { let j = null; try { j = await r.clone().json(); } catch { } throw new Error(j?.erro === 'limite' ? 'RESERVA_NO_LIMITE' : 'a nuvem reserva respondeu ' + r.status); } return r; };
   return {
     async ativa() { if (Date.now() - resEstado.at < 120e3) return resEstado.ativo;
       try { const j = await (await call('/reserva/estado', {}, 2500)).json(); resEstado = { at: Date.now(), ativo: !!j.ativo }; } catch { resEstado = { at: Date.now(), ativo: false }; } return resEstado.ativo; },
@@ -215,6 +215,8 @@ function reservaDe(env, auth) {
       if (tomb) { resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); } else resIdx.m?.delete(k); },
     async delMuitos(ks, tomb) { if (!ks.length) return; await ok(await call('/reserva/apaga', { method: 'POST', body: JSON.stringify({ k: ks, tomb: !!tomb }), headers: { 'content-type': 'application/json' } }, 25000));
       if (tomb) resEstado = { at: Date.now(), ativo: true }; for (const k of ks) { if (tomb) resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); else resIdx.m?.delete(k); } },
+    async delPasta(pasta) { await ok(await call('/reserva/apaga', { method: 'POST', body: JSON.stringify({ k: [pasta], tomb: true, pasta: true }), headers: { 'content-type': 'application/json' } }, 25000));
+      resEstado = { at: Date.now(), ativo: true }; if (resIdx.m) { for (const n of [...resIdx.m.keys()]) if (n.startsWith(pasta)) resIdx.m.delete(n); resIdx.m.set(pasta, { name: pasta, metadata: { _del: 1 } }); } },
     copiar: () => call('/reserva/copiar', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
     bkcfg: () => call('/reserva/bkcfg').then(r => r.ok ? r.json() : null).catch(() => null),
     poeBkcfg: c => call('/reserva/bkcfg', { method: 'PUT', body: JSON.stringify(c) }).then(async r => r.ok ? { ok: true } : { erro: (await r.json().catch(() => ({}))).erro || 'a reserva respondeu ' + r.status }),
@@ -234,8 +236,10 @@ const valorComo = (buf, o) => { const t = typeof o === 'string' ? o : o?.type ||
 function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atualizar): busca de novo se a guardada tem mais de 30 s
   const usou = () => { flag.reserva = true; }, marca = e => { if (!ehLimite(e)) return false; limiteAte = fimDoDia(); return true; };
   const ativa = async () => !!R && (emLimite() || await R.ativa());
-  const res = async fn => { try { return await fn(); } catch (e) { throw new Error('KV limit exceeded for the day (e a nuvem reserva não respondeu: ' + String(e?.message || e).slice(0, 80) + ')'); } };
-  const naReserva = async k => { if (!(await ativa())) return null; try { return (await R.indice()).get(k) || null; } catch { return null; } };
+  const res = async fn => { try { return await fn(); } catch (e) { const m = String(e?.message || e); throw new Error(m === 'RESERVA_NO_LIMITE' ? 'RESERVA_NO_LIMITE' : 'RESERVA_SEM_RESPOSTA: ' + m.slice(0, 80)); } };
+  // pasta apagada inteira (marca "personagens/<id>/" na reserva): tudo dentro dela conta como apagado
+  const pastaApagada = (ri, k) => { for (const [n, it] of ri) if (n.endsWith('/') && it.metadata?._del && k.startsWith(n)) return true; return false; };
+  const naReserva = async k => { if (!(await ativa())) return null; try { const ri = await R.indice(); return ri.get(k) || (pastaApagada(ri, k) ? { name: k, metadata: { _del: 1 } } : null); } catch { return null; } };
   const carrega = async () => {
     if (kvLista && Date.now() - kvLista.at < (forcar ? 30e3 : KV_LISTA_MS)) return kvLista.m;
     const m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
@@ -261,10 +265,10 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
       try { const r = await kv.delete(k); kvLista?.m.delete(k); return r; } catch (e) { if (!R || !marca(e)) throw e; return W.delete(k); }
     },
     // apagar VÁRIAS (personagem inteiro) com poucos pedidos à reserva (o Worker grátis aceita só 50 pedidos para fora por vez)
-    async deleteMuitos(ks) {
-      if (R && emLimite()) { await res(() => R.delMuitos(ks, true)); usou(); for (const k of ks) kvLista?.m.delete(k); return; }
+    async deleteMuitos(ks, pasta) {
+      if (R && emLimite()) { await res(() => pasta ? R.delPasta(pasta) : R.delMuitos(ks, true)); usou(); for (const k of ks) kvLista?.m.delete(k); if (pasta && kvLista) for (const n of [...kvLista.m.keys()]) if (n.startsWith(pasta)) kvLista.m.delete(n); return; }
       if (await ativa()) { let ri = null; try { ri = await R.indice(); } catch { } const la = ks.filter(k => ri?.get(k) && !ri.get(k).metadata?._del); if (la.length) { await R.delMuitos(la, false); usou(); } }
-      for (let i = 0; i < ks.length; i++) { try { await kv.delete(ks[i]); kvLista?.m.delete(ks[i]); } catch (e) { if (!R || !marca(e)) throw e; return W.deleteMuitos(ks.slice(i)); } }
+      for (let i = 0; i < ks.length; i++) { try { await kv.delete(ks[i]); kvLista?.m.delete(ks[i]); } catch (e) { if (!R || !marca(e)) throw e; return W.deleteMuitos(ks.slice(i), pasta); } }
     },
     async list(o = {}) {
       const semLista = async e => { let m2 = kvLista?.m || await R.fotoLista().catch(() => null);
@@ -274,7 +278,7 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
         if (!m2) throw e; usou(); return m2; };
       let m; if (R && emLimite() && !(kvLista && Date.now() - kvLista.at < KV_LISTA_MS)) m = await semLista(new Error('KV list() limit exceeded for the day.'));
       else try { m = await carrega(); } catch (e) { if (!R || !marca(e)) throw e; m = await semLista(e); }
-      if (await ativa()) { try { const ri = await R.indice(); if (ri.size) { m = new Map(m); for (const [k, it] of ri) { if (it.metadata?._del) m.delete(k); else m.set(k, { name: k, metadata: { ...(it.metadata || {}), _res: 1 } }); } usou(); } } catch { } } // _res: está na reserva (o Animador põe a borda cor água)
+      if (await ativa()) { try { const ri = await R.indice(); if (ri.size) { m = new Map(m); const pastas = [...ri].filter(([n, it]) => n.endsWith('/') && it.metadata?._del).map(([n]) => n); if (pastas.length) for (const n of [...m.keys()]) if (pastas.some(p => n.startsWith(p)) && !(ri.get(n) && !ri.get(n).metadata?._del)) m.delete(n); for (const [k, it] of ri) { if (it.metadata?._del) m.delete(k); else m.set(k, { name: k, metadata: { ...(it.metadata || {}), _res: 1 } }); } usou(); } } catch { } } // _res: está na reserva (o Animador põe a borda cor água)
       const pre = o.prefix || ''; return { keys: [...m.values()].filter(k => k.name.startsWith(pre)).sort((a, b) => a.name < b.name ? -1 : 1), list_complete: true };
     },
   };
@@ -296,7 +300,8 @@ async function migra(kv, R) {
   for (const [k, it] of [...m]) {
     if (n++ >= 10) break;
     try {
-      if (it.metadata?._del) await kv.delete(k);
+      if (it.metadata?._del && k.endsWith('/')) { const l = await kv.list({ prefix: k }); for (const x of l.keys.slice(0, 40)) { await kv.delete(x.name); kvLista?.m.delete(x.name); } if (l.keys.length > 40) continue; }
+      else if (it.metadata?._del) await kv.delete(k);
       else { const atual = kvLista?.m.get(k)?.metadata, rm = it.metadata || {};
         const maisNova = atual && (+(atual.mod || Date.parse(atual.em || 0) || 0)) > (+(rm.mod || Date.parse(rm.em || 0) || 0));
         if (!maisNova) { const g = await R.get(k); if (g.value != null) { await kv.put(k, g.value, Object.keys(rm).length ? { metadata: rm } : undefined); if (kvLista) kvLista.m.set(k, { name: k, metadata: rm }); } } }
@@ -310,8 +315,10 @@ async function migra(kv, R) {
 // responde um aviso claro (com CORS, para o navegador conseguir ler) e quando volta (00:00 UTC = 21h de Brasília)
 const ehLimite = e => /10048|free usage limit|limit exceeded for the day|for today|daily limit/i.test(String(e?.message || e));
 function avisoLimite(req, e) {
-  const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const lim = ehLimite(e);
-  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+  const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const m = String(e?.message || e), duas = /RESERVA_NO_LIMITE/.test(m), semRes = /RESERVA_SEM_RESPOSTA/.test(m), lim = duas || ehLimite(e);
+  if (semRes) return new Response(JSON.stringify({ error: { type: 'reserva', message: 'A nuvem da equipe está no limite de hoje e a nuvem reserva não respondeu agora. Tente de novo em alguns segundos. O que você fez continua guardado neste computador.' } }), { status: 503,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
+  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: duas ? 'A nuvem da equipe E a nuvem reserva chegaram ao limite de hoje. Voltam sozinhas às 21h (horário de Brasília). O que você fez continua guardado neste computador.' : 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
     : { type: 'servidor', message: 'O servidor da nuvem teve um erro: ' + String(e?.message || e).slice(0, 160) } }), { status: lim ? 503 : 500,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
 }
@@ -428,10 +435,10 @@ export default {
         // APAGAR DA NUVEM: só ADM (decisão do dono). Quem não é ADM só pode tirar imagens que o personagem salvo já não usa
         // (é a limpeza automática do "Salvar na nuvem"); apagar o personagem inteiro, peça a um ADM.
         const adm = ehAdmin(env, login.email), semAdm = () => json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors);
-        if (KD.test(k)) { if (!adm) return semAdm(); const todos = await listar(k); const ks = todos.map(x => x.k);
+        if (KD.test(k)) { if (!adm) return semAdm(); let todos = []; try { todos = await listar(k); } catch (e) { if (!emLimite()) throw e; } const ks = todos.map(x => x.k);
           // no limite a lista pode vir só com o que está na reserva: as imagens que o personagem.json cita também entram (viram "apagada" e saem da principal às 21h)
           if (emLimite()) { ks.push(k + 'personagem.json'); try { const t = await env.EQUIPE.get(k + 'personagem.json'); if (t) for (const m of String(t).matchAll(/personagens\/[a-z0-9-]+\/(?:img|aud)\/[^"\\]+/g)) if (m[0].startsWith(k)) ks.push(m[0]); } catch { } }
-          if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos([...new Set(ks)]); else for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
+          if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos([...new Set(ks)], k); else for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
         if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         if (!adm) {
           if (k.endsWith('personagem.json')) return semAdm();
