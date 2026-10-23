@@ -335,13 +335,14 @@ async function acesso(req, env, url) {
   const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], itens = [];
   const mapa = JSON.parse(await env.PERFIS.get('adm-mapa:' + s.e.toLowerCase()).catch(() => '{}') || '{}'); // junto com as fotos da tela Nuvem
   const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {};
-  for (const [email, fixo, info] of [...base.map(e => [e, true, null]), ...extras.map(x => [x.email, false, x])]) {
+  await Promise.all([...base.map(e => [e, true, null]), ...extras.map(x => [x.email, false, x])].map(async ([email, fixo, info], ordem) => { try { // todos ao mesmo tempo (antes um por um)
     const id = await idDe(email), p = await lePerfil(env, email); mapa[id] = email;
     const nomeG = p.google?.nome || '', fotoG = p.google?.foto || '';
     itens.push({ id, mascara: mascara(email), voce: email === s.e.toLowerCase(), fixo, adm: admins.has(email),
       nome: p.nome || nomeG || '', nomeOriginal: nomeG, nomeProprio: !!p.nome, foto: p.fotoV ? '/acesso/foto?id=' + id + '&v=' + p.fotoV : fotoG, fotoOriginal: fotoG, fotoPropria: !!p.fotoV,
-      visto: p.visto || null, online: on[email]?.prog || null, em: info?.em || null, ...(info?.por ? await (async () => { const q = await lePerfil(env, info.por); return { porNome: q.nome || q.google?.nome || mascara(info.por), porFoto: q.fotoV ? '/pessoa/foto?e=' + encodeURIComponent(info.por) + '&v=' + q.fotoV : (q.google?.foto || null) }; })() : {}) });
-  }
+      visto: p.visto || null, online: on[email]?.prog || null, em: info?.em || null, ...(info?.por ? await (async () => { const q = await lePerfil(env, info.por); return { porNome: q.nome || q.google?.nome || mascara(info.por), porFoto: q.fotoV ? '/pessoa/foto?u=' + (await codigoU(info.por)) + '&v=' + q.fotoV : (q.google?.foto || null) }; })() : {}), ordem });
+  } catch { } }));
+  itens.sort((a, b) => a.ordem - b.ordem); itens.forEach(x => delete x.ordem);
   const eu = s.e.toLowerCase();
   await env.PERFIS.put('adm:' + eu, String(Date.now() + 15 * 60e3), { expirationTtl: 3600 });
   await env.PERFIS.put('adm-mapa:' + eu, JSON.stringify(mapa), { expirationTtl: 3600 });
@@ -472,7 +473,12 @@ export class Conversas {
     }
     if (b.op === 'conversa') {
       const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ erro: 'Conversa de outras pessoas.' }, { status: 403 });
-      return Response.json({ vistos: b.vistos, msgs: this.sql.exec('SELECT * FROM (SELECT * FROM msgs WHERE conv = ? ORDER BY id DESC LIMIT 300) ORDER BY id', conv).toArray().map(r => this.vis(r, b.ver)) });
+      // mais leve: desde = só o que chegou depois da última que a tela já tem (+ apagadas há pouco); antes = página mais antiga ao rolar para cima
+      const desde = Math.max(0, +b.desde || 0), antes = Math.max(0, +b.antes || 0), N = 80;
+      if (desde) return Response.json({ vistos: b.vistos, delta: true, msgs: this.sql.exec('SELECT * FROM msgs WHERE conv = ? AND (id > ? OR apagada > ?) ORDER BY id LIMIT 300', conv, desde, agora - 7 * 864e5).toArray().map(r => this.vis(r, b.ver)),
+        ids: this.sql.exec('SELECT MIN(id) AS a FROM msgs WHERE conv = ?', conv).toArray()[0]?.a || 0 }); // a = a mais antiga que ainda existe (o que for menor foi limpo)
+      const l = this.sql.exec(`SELECT * FROM msgs WHERE conv = ?${antes ? ' AND id < ?' : ''} ORDER BY id DESC LIMIT ${N + 1}`, ...(antes ? [conv, antes] : [conv])).toArray();
+      return Response.json({ vistos: b.vistos, mais: l.length > N, msgs: l.slice(0, N).reverse().map(r => this.vis(r, b.ver)) });
     }
     if (b.op === 'lida') {
       const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ ok: false });
@@ -637,7 +643,7 @@ async function mensagens(req, env, url) {
     for (const [cod, em] of Object.entries(r.emails || {})) { const p = await lePerfil(env, em); quem[cod] = { nome: p.nome || p.google?.nome || mascara(em), email: mascara(em), foto: p.fotoV ? '/pessoa/foto?u=' + cod + '&v=' + p.fotoV : (p.google?.foto || null) }; }
     return json({ denuncias: r.denuncias, grupos: r.grupos, quem, site: url.origin });
   }
-  if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e: como ? null : e, ver: !!como, conv: url.searchParams.get('conv') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
+  if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e: como ? null : e, ver: !!como, conv: url.searchParams.get('conv'), desde: url.searchParams.get('desde'), antes: url.searchParams.get('antes') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
   const r = await conversas(env, { op: 'resumo', u, e: como ? null : e, ver: !!como, adm: !!s.a && !como, desde: url.searchParams.get('desde') });
   const out = { eu: u, adm: !!s.a, ...r.j };
   if (url.searchParams.get('pessoas') === '1') {

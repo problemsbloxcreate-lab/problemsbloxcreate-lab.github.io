@@ -422,7 +422,7 @@ async function init() {
   try { await fb.getRedirectResult(); } catch { }
   return new Promise(r => { const u = fb.onAuthStateChanged(x => { u(); r(x); }); });
 }
-const token = () => fb.currentUser.getIdToken();
+const token = async () => { for (let i = 0; !fb?.currentUser && i < 40; i++) await new Promise(r => setTimeout(r, 250)); if (!fb?.currentUser) throw Object.assign(new Error('O login do Google ainda não terminou de carregar.'), { status: 0 }); return fb.currentUser.getIdToken(); };
 async function api(path, opt = {}) {
   let r; try { r = await fetch(SRV + path, { cache: 'no-store', ...opt, headers: { authorization: 'Bearer ' + await token(), ...(opt.headers || {}) } }); }
   catch { throw new Error(location.protocol === 'file:' ? 'Abra o menu pelo endereço do site (https://...), não pelo arquivo no computador.' : `Não consegui falar com o servidor do Estúdio Problems. Se a internet estiver ok, falta liberar este site na Cloudflare: coloque ${location.origin} na variável ORIGENS do worker turma-ia.`); }
@@ -1069,8 +1069,13 @@ async function renderAcesso() {
       b.disabled = true; try { await chama({ method: 'POST', body: JSON.stringify({ acao: 'del', id: it.id }) }); stA('Acesso removido.'); carrega(); } catch (e) { stA(e.message, true); b.disabled = false; }
     });
   };
-  const carrega = async () => { try { const j = await chama(); $('#aba-acesso').hidden = false; $('#aba-nuvem').hidden = false; $('#aba-conversas').hidden = false; $('#aba-dispositivos').hidden = false; pinta(j.itens || []); }
-    catch (e) { if (e.status === 403 && /ADMINS do servidor/.test(e.message)) { $('#aba-acesso').hidden = false; lista.innerHTML = ''; $('#acesso-add').hidden = true; stA(e.message); } else $('#aba-acesso').hidden = true; } };
+  // a aba fica SEMPRE à vista para o ADM: se a lista não vier, mostra o motivo e tenta de novo (antes um erro qualquer escondia as abas)
+  const carrega = async (tentativa = 0) => { $('#aba-acesso').hidden = false;
+    try { const j = await chama(); $('#acesso-add').hidden = false; stA(''); pinta(j.itens || []); }
+    catch (e) {
+      if (tentativa < 2 && !(e.status >= 400 && e.status < 500 && e.status !== 401)) { await new Promise(r => setTimeout(r, 1500 * (tentativa + 1))); return carrega(tentativa + 1); }
+      if (e.status === 403) { lista.innerHTML = ''; $('#acesso-add').hidden = true; }
+      stA((e.message || 'Não consegui carregar a lista.') + ' Toque em Atualizar para tentar de novo.', true); } };
   $('#acesso-add').onsubmit = async ev => {
     ev.preventDefault(); const inp = $('#acesso-add input'), email = inp.value.trim(); if (!email) return;
     const bt = $('#acesso-add button'); bt.disabled = true;
@@ -1418,6 +1423,7 @@ function showAdm() {
   let ultima = 'botoes'; try { ultima = localStorage.getItem('ep-adm-aba') || 'botoes'; } catch { }
   if (/^#denuncias/.test(location.hash)) ultima = 'conversas'; // veio do alerta de denúncia (foto da conta)
   addEventListener('hashchange', () => { if (/^#denuncias/.test(location.hash)) abaAdm('conversas'); });
+  ['#aba-acesso', '#aba-nuvem', '#aba-conversas', '#aba-dispositivos'].forEach(q => { const b = $(q); if (b) b.hidden = false; }); // só chega aqui quem o servidor confirmou ADM
   abaAdm(ultima); renderAcesso().then(() => abaAdm(ultima));
   $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); await renderNuvem(true); b.classList.remove('girando'); b.disabled = false; };
   try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
@@ -1498,7 +1504,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
   };
   // vindo do botão da conta de um projeto: ?sair=1 sai da conta; ?conta=1 abre a Minha conta depois de entrar
   const QS = new URLSearchParams(location.search);
-  if (QS.has('sair')) { try { await init(); await fb.signOut(); } catch { } location.replace(BASE); return; }
+  if (QS.has('sair')) { try { localStorage.removeItem('ep-conv-v1'); } catch { } try { await init(); await fb.signOut(); } catch { } location.replace(BASE); return; }
   try { const u = await init(); if (u) await pass(); else { btn.disabled = false; msg(new URLSearchParams(location.search).has('volta') ? 'Entre com o Google para abrir o site.' : ''); } }
   catch (e) { btn.disabled = true; msg(esc(e.message || String(e)), true); }
 })();

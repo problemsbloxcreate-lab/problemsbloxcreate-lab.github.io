@@ -350,7 +350,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const temQueSalvar = salvadores().length > 0;
         if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu.' + (temQueSalvar ? ' O projeto aberto é salvo antes de sair.' : '') + ' Seus projetos salvos aqui continuam.',
           ok: 'Sair', perfil: p, trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Sair sem salvar' }))) return;
-        if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
+        try { localStorage.removeItem('ep-conv-v1'); } catch { } if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
       pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
     };
@@ -659,7 +659,24 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const NOME_PROG_ON = { MENU: 'no menu', ADM: 'na tela ADM', ANIMADOR: 'no Animador', EDITOR: 'no Editor', SHORTS: 'nos Shorts', MODELADOR: 'no Modelador', BLOCKBENCH: 'no Blockbench' };
   const QUEMU = new Map();
   const NOMES = new Map(); // código → nome (para achar @Nome escrito à mão)
-  const quemU = u => { if (!QUEMU.has(u)) QUEMU.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).then(q => { if (q?.nome) NOMES.set(u, q.nome); return q; }).catch(() => null)); return QUEMU.get(u); };
+  // nomes e fotos ficam guardados neste navegador (30 min): abrir as mensagens não pede de novo um por um
+  const QUEM_LS = 'ep-quem-v1'; let quemLs = {}; try { quemLs = JSON.parse(localStorage.getItem(QUEM_LS) || '{}') || {}; } catch { }
+  let quemGrava = 0; const gravaQuem = () => { clearTimeout(quemGrava); quemGrava = setTimeout(() => { try { localStorage.setItem(QUEM_LS, JSON.stringify(quemLs)); } catch { } }, 400); };
+  const buscaQuem = u => fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).then(q => { if (q?.nome) { NOMES.set(u, q.nome); quemLs[u] = { q, t: Date.now() }; gravaQuem(); } return q; }).catch(() => null);
+  const quemU = u => { if (!QUEMU.has(u)) { const g = quemLs[u];
+      if (g?.q && Date.now() - g.t < 7 * 864e5) { NOMES.set(u, g.q.nome); QUEMU.set(u, Promise.resolve(g.q)); if (Date.now() - g.t > 30 * 6e4) buscaQuem(u).then(q => { if (q) QUEMU.set(u, Promise.resolve(q)); }); } // guardado: na hora (e confere por trás se ficou velho)
+      else QUEMU.set(u, buscaQuem(u)); } return QUEMU.get(u); };
+  // conversas já abertas ficam guardadas (neste navegador, só da sua conta): abrem na hora e só baixam o que chegou de novo
+  const CONV_LS = 'ep-conv-v1', CONV_MAX = 80;
+  const cacheConv = { eu: null, c: {} };
+  const leCacheConv = eu => { if (cacheConv.eu === eu) return; cacheConv.eu = eu; cacheConv.c = {};
+    try { const j = JSON.parse(localStorage.getItem(CONV_LS) || 'null'); if (j?.eu === eu) cacheConv.c = j.c || {}; else localStorage.removeItem(CONV_LS); } catch { } }; // outra conta: joga fora
+  let convGrava = 0; const gravaCacheConv = () => { clearTimeout(convGrava); convGrava = setTimeout(() => { try {
+    const ids = Object.keys(cacheConv.c).sort((a, b) => (cacheConv.c[b].t || 0) - (cacheConv.c[a].t || 0)).slice(0, 12), c = {}; // só as 12 mais recentes
+    for (const k of ids) { const x = cacheConv.c[k]; c[k] = { ...x, msgs: x.msgs.slice(-CONV_MAX), mais: x.mais || x.msgs.length > CONV_MAX }; }
+    cacheConv.c = c; localStorage.setItem(CONV_LS, JSON.stringify({ eu: cacheConv.eu, c })); } catch { } }, 600); };
+  const guardaConv = (M, id, msgs, mais) => { if (M.como || !M.eu) return; leCacheConv(M.eu); cacheConv.c[id] = { msgs: msgs.filter(m => m.id > 0), mais: !!mais, t: Date.now() }; gravaCacheConv(); };
+  const juntaMsgs = (lista, novas) => { for (const m of novas) { const i = lista.findIndex(x => x.id === m.id); if (i >= 0) lista[i] = m; else lista.push(m); } return lista.sort((a, b) => a.id - b.id); };
   const outroDe = (c, eu = MSG.eu) => c === 'geral' || c.startsWith('g:') ? c : c.slice(2).split('|').find(x => x !== eu) || '';
   const novoEstado = como => ({ mencoes: 0, nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, como });
   const pintaAvisoMsg = () => {
@@ -678,6 +695,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const daqui = j.novas.filter(m => m.conv === M.conv.id);
         if (daqui.length) { for (const m of daqui) { const i = M.conv.msgs.findIndex(x => x.id === m.id); if (i >= 0) M.conv.msgs[i] = m; else M.conv.msgs.push(m); } M.conv.msgs.sort((a, b) => a.id - b.id); if (M.janela) { M.janela.desenhaConversa(); marcaLida(M.conv.id, M); delete j.nao[M.conv.id]; if (j.mencoes) delete j.mencoes[M.conv.id]; } }
       }
+      if (!primeira && j.novas?.length && !M.como && M.eu) { leCacheConv(M.eu); let mudou = false; // conversas guardadas também recebem o que chegou
+        for (const m of j.novas) { const x = cacheConv.c[m.conv]; if (x && m.conv !== M.conv?.id) { juntaMsgs(x.msgs, [m]); x.t = Date.now(); mudou = true; } } if (mudou) gravaCacheConv(); }
+      if (M.conv?.id && !M.conv.multi && !primeira && j.novas?.some(m => m.conv === M.conv.id)) guardaConv(M, M.conv.id, M.conv.msgs, M.conv.mais);
       M.ultimo = j.ultimo || M.ultimo;
       M.nao = Object.values(j.nao || {}).reduce((a, b) => a + b, 0); M.mencoes = Object.values(j.mencoes || {}).reduce((a, b) => a + b, 0); M.denuncias = +j.denuncias || 0;
       if (M === MSG) { pintaAvisoMsg(); tocaMencao(j.mencaoId); } M.janela?.desenhaLista();
@@ -798,6 +818,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <form class="epm-escreve" hidden><div class="epm-citaPrev" hidden></div><div class="epm-linhaE"><textarea rows="1" maxlength="2000" placeholder="Escreva uma mensagem…"></textarea><button class="epm-bt epm-envia" type="submit" title="Enviar (Enter)">${ICONES.enviar}</button></div></form></section></div>`;
     document.body.appendChild(d);
     const cx = d.querySelector('.cx'), lista = d.querySelector('.epm-lista'), fala = d.querySelector('.epm-fala'), tit = d.querySelector('.epm-tit'), form = d.querySelector('.epm-escreve'), ta = form.querySelector('textarea');
+    // mensagens mais antigas só quando rolar até o topo (abre com as 80 últimas)
+    fala.addEventListener('scroll', async () => {
+      const c = M.conv; if (fala.scrollTop > 60 || !c?.mais || c.multi || c.puxandoAntigas || !c.msgs.length) return; c.puxandoAntigas = true;
+      const aviso = fala.querySelector('.epm-antigas span'); if (aviso) aviso.textContent = 'Carregando as mais antigas…';
+      try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(c.id) + '&antes=' + c.msgs[0].id + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (M.conv !== c) return;
+        const h0 = fala.scrollHeight, t0 = fala.scrollTop; c.mais = !!j.mais; juntaMsgs(c.msgs, j.msgs || []); await desenhaConversa(); fala.scrollTop = fala.scrollHeight - h0 + t0; }
+      catch { if (aviso) aviso.textContent = 'Não consegui carregar as mais antigas.'; } finally { c.puxandoAntigas = false; }
+    }, { passive: true });
     const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); M.janela = null; M.conv = null; M.citando = null; M.escolha = null; clearInterval(tComo); }, esc1 = e => { if (e.key === 'Escape') fechar(); };
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
     d.querySelectorAll('[data-x]').forEach(b => b.onclick = fechar); d.querySelector('.epm-volta').onclick = () => { cx.classList.remove('so-conv'); M.conv = null; desenhaLista(); };
@@ -966,7 +994,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (!c.msgs.length && !c.pend?.length) { fala.innerHTML = `<div class="epm-vazio">${c.u === 'geral' ? 'Ninguém escreveu na conversa geral nos últimos 7 dias.' : c.u.startsWith('g:') ? 'Ninguém escreveu neste grupo nos últimos 7 dias.' : 'Comece a conversa. Só vocês dois veem.'}</div>`; return; }
       const autores = [...new Set([...c.msgs.map(m => m.de), ...c.msgs.flatMap(m => codigosMenc(m.texto))].filter(u => u !== M.eu))], qs = Object.fromEntries(await Promise.all(autores.map(async u => [u, await quemU(u)])));
       const nomesM = Object.fromEntries(Object.entries(qs).map(([u, q]) => [u, q?.nome || 'alguém'])); nomesM[M.eu] = euNome();
-      let h = '', dia = '', ant = null; const cits = [];
+      let h = c.mais && !c.multi ? '<div class="epm-dia epm-antigas"><span>Role para cima para ver as mais antigas</span></div>' : '', dia = '', ant = null; const cits = [];
       for (const m of c.msgs) {
         const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="epm-dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
         const meu = m.de === M.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
@@ -1006,11 +1034,18 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       });
     }
     async function abreConv(id, u) {
-      M.conv = { id, u, msgs: [], primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
-      fala.innerHTML = carregandoHtml('Baixando as mensagens…', 12); pintaTitulo(); desenhaLista();
-      if (id.startsWith('p:') && !(M.res?.ultimas?.[id])) { desenhaConversa(); ta.focus(); return; }
-      try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id) + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (M.conv?.id !== id) return; M.conv.msgs = j.msgs || []; M.conv.vistos = j.vistos || null; }
-      catch { fala.innerHTML = '<div class="epm-vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
+      if (!M.como && M.eu) leCacheConv(M.eu);
+      const G = !M.como && cacheConv.c[id], ultG = G?.msgs?.at(-1)?.id || 0;
+      M.conv = { id, u, msgs: G ? G.msgs.slice() : [], mais: !!G?.mais, primeira: true }; cx.classList.add('so-conv'); form.hidden = false;
+      pintaTitulo(); desenhaLista();
+      if (G) { await desenhaConversa(); ta.focus(); } else fala.innerHTML = carregandoHtml('Baixando as mensagens…', 12); // guardada: aparece na hora
+      if (id.startsWith('p:') && !(M.res?.ultimas?.[id])) { if (!G) { M.conv.msgs = []; desenhaConversa(); } ta.focus(); return; }
+      try { const r = await fetch('/mensagens?conv=' + encodeURIComponent(id) + (ultG ? '&desde=' + ultG : '') + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json(); if (M.conv?.id !== id) return;
+        if (j.delta) { const lista = j.ids ? M.conv.msgs.filter(m => m.id >= j.ids) : []; M.conv.msgs = juntaMsgs(lista, j.msgs || []); } // o que foi limpo some daqui também
+        else { M.conv.msgs = j.msgs || []; M.conv.mais = !!j.mais; }
+        M.conv.vistos = j.vistos || null; guardaConv(M, id, M.conv.msgs, M.conv.mais); }
+      catch { if (!G) fala.innerHTML = '<div class="epm-vazio">Não consegui abrir a conversa. Confira a internet.</div>'; return; }
+      if (G) { await desenhaConversa(); marcaLida(id, M); desenhaLista(); return; }
       { const quem = [...new Set([...M.conv.msgs.map(m => m.de), ...M.conv.msgs.flatMap(m => codigosMenc(m.texto))].filter(x => x !== M.eu))]; let k = 0; // nomes e fotos de quem escreveu
         progresso(fala, 55, `Carregando nomes e fotos (0 de ${quem.length})`);
         await Promise.all(quem.map(x => quemU(x).then(() => { k++; if (M.conv?.id === id) progresso(fala, 55 + k / quem.length * 40, `Carregando nomes e fotos (${k} de ${quem.length})`); }))); if (M.conv?.id !== id) return; progresso(fala, 100, 'Pronto'); }
@@ -1166,6 +1201,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (!(await pergunta({ titulo: alvo === 'todas' ? 'Limpar TODAS as mensagens?' : `Limpar "${nome}"?`, texto: 'As mensagens somem agora para todo mundo. Não dá para desfazer. As cópias das denúncias continuam.', ok: 'Limpar' }))) return;
       const r = await fetch('/mensagens', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'limpar', alvo }) });
       if (!r.ok) { const j2 = await r.json().catch(() => ({})); alert(j2.error?.message || 'Não limpou.'); return; }
+      if (alvo === 'todas') cacheConv.c = {}; else delete cacheConv.c[alvo]; gravaCacheConv(); // o que ficou guardado aqui também some
       MSG.ultimo = 0; await puxaMensagens(); admConversas(el); };
     el.querySelector('[data-limpa="todas"]').onclick = () => limpa('todas');
     fetch('/mensagens?todasConversas=1', { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(k => {
