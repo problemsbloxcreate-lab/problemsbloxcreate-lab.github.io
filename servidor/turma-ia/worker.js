@@ -213,6 +213,8 @@ function reservaDe(env, auth) {
       resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: meta || {} }); },
     async del(k, tomb) { await ok(await call('/reserva/arq?k=' + encodeURIComponent(k) + (tomb ? '&tomb=1' : ''), { method: 'DELETE' }));
       if (tomb) { resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); } else resIdx.m?.delete(k); },
+    async delMuitos(ks, tomb) { if (!ks.length) return; await ok(await call('/reserva/apaga', { method: 'POST', body: JSON.stringify({ k: ks, tomb: !!tomb }), headers: { 'content-type': 'application/json' } }, 25000));
+      if (tomb) resEstado = { at: Date.now(), ativo: true }; for (const k of ks) { if (tomb) resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); else resIdx.m?.delete(k); } },
     copiar: () => call('/reserva/copiar', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
     bkcfg: () => call('/reserva/bkcfg').then(r => r.ok ? r.json() : null).catch(() => null),
     poeBkcfg: c => call('/reserva/bkcfg', { method: 'PUT', body: JSON.stringify(c) }).then(async r => r.ok ? { ok: true } : { erro: (await r.json().catch(() => ({}))).erro || 'a reserva respondeu ' + r.status }),
@@ -257,6 +259,12 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
       const it = await naReserva(k); if (it && !it.metadata?._del) { await R.del(k); usou(); if (kvLista && !kvLista.m.has(k)) return; }
       if (R && emLimite()) { await res(() => R.del(k, true)); usou(); kvLista?.m.delete(k); return; }
       try { const r = await kv.delete(k); kvLista?.m.delete(k); return r; } catch (e) { if (!R || !marca(e)) throw e; return W.delete(k); }
+    },
+    // apagar VÁRIAS (personagem inteiro) com poucos pedidos à reserva (o Worker grátis aceita só 50 pedidos para fora por vez)
+    async deleteMuitos(ks) {
+      if (R && emLimite()) { await res(() => R.delMuitos(ks, true)); usou(); for (const k of ks) kvLista?.m.delete(k); return; }
+      if (await ativa()) { let ri = null; try { ri = await R.indice(); } catch { } const la = ks.filter(k => ri?.get(k) && !ri.get(k).metadata?._del); if (la.length) { await R.delMuitos(la, false); usou(); } }
+      for (let i = 0; i < ks.length; i++) { try { await kv.delete(ks[i]); kvLista?.m.delete(ks[i]); } catch (e) { if (!R || !marca(e)) throw e; return W.deleteMuitos(ks.slice(i)); } }
     },
     async list(o = {}) {
       const semLista = async e => { let m2 = kvLista?.m || await R.fotoLista().catch(() => null);
@@ -420,7 +428,10 @@ export default {
         // APAGAR DA NUVEM: só ADM (decisão do dono). Quem não é ADM só pode tirar imagens que o personagem salvo já não usa
         // (é a limpeza automática do "Salvar na nuvem"); apagar o personagem inteiro, peça a um ADM.
         const adm = ehAdmin(env, login.email), semAdm = () => json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors);
-        if (KD.test(k)) { if (!adm) return semAdm(); const todos = await listar(k); for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
+        if (KD.test(k)) { if (!adm) return semAdm(); const todos = await listar(k); const ks = todos.map(x => x.k);
+          // no limite a lista pode vir só com o que está na reserva: as imagens que o personagem.json cita também entram (viram "apagada" e saem da principal às 21h)
+          if (emLimite()) { ks.push(k + 'personagem.json'); try { const t = await env.EQUIPE.get(k + 'personagem.json'); if (t) for (const m of String(t).matchAll(/personagens\/[a-z0-9-]+\/(?:img|aud)\/[^"\\]+/g)) if (m[0].startsWith(k)) ks.push(m[0]); } catch { } }
+          if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos([...new Set(ks)]); else for (const x of todos) await env.EQUIPE.delete(x.k); return json({ ok: true, apagados: todos.length }, 200, cors); }
         if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         if (!adm) {
           if (k.endsWith('personagem.json')) return semAdm();
@@ -504,13 +515,15 @@ export default {
         let b = {}; try { b = await req.json(); } catch { }
         const PROT = ['acesso/extras', 'menu/links'], ks = (Array.isArray(b.apagar) ? b.apagar : []).map(String).slice(0, 500);
         if (!ks.length) return json({ error: { message: 'Nada para apagar.' } }, 400, cors);
-        let n = 0;
+        let n = 0; const vao = [];
         for (const k of ks) {
           if (PROT.includes(k) || k.length > 300 || !/^[\w\-./ ]+$/.test(k) || k.includes('..')) continue;
-          if (/^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/.test(k)) { let c2; do { const r = await env.EQUIPE.list({ prefix: k, cursor: c2 }); for (const x of r.keys) { await env.EQUIPE.delete(x.name); n++; } c2 = r.list_complete ? null : r.cursor; } while (c2); continue; }
+          if (/^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/.test(k)) { let c2; do { const r = await env.EQUIPE.list({ prefix: k, cursor: c2 }); for (const x of r.keys) vao.push(x.name); c2 = r.list_complete ? null : r.cursor; } while (c2); }
           if (k.endsWith('/')) continue;
-          await env.EQUIPE.delete(k); n++;
+          vao.push(k);
         }
+        const unicos = [...new Set(vao)]; n = unicos.length; // todas de uma vez (poucos pedidos à reserva)
+        if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(unicos); else for (const x of unicos) await env.EQUIPE.delete(x);
         usoEq = null; return json({ ok: true, apagados: n }, 200, cors);
       }
       const itens = []; let cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const x of r.keys) itens.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur);
