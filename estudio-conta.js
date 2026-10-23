@@ -98,6 +98,7 @@
   const svg = d => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   // mesmos ícones de linha do menu
   const ICONES = {
+    seta: svg('<path d="m9 6 6 6-6 6"/>'),
     nuvem: svg('<path d="M7 18h10.5a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18z"/>'),
     adm: svg('<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>'),
     inicio: svg('<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z"/>'),
@@ -304,6 +305,12 @@
 .ep-esp h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:10px}.ep-esp h2 .x{margin-left:auto}
 .ep-esp h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#a9adb7;margin:18px 0 8px;font-weight:600}
 .ep-nv-aviso{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(47,208,168,.5);background:rgba(47,208,168,.1);font-size:13px;line-height:1.4}.ep-nv-aviso svg{flex:none;width:18px;height:18px;color:#2fd0a8;margin-top:1px}.ep-nv-aviso b{display:block;font-size:13px!important}.ep-nv-aviso small{display:block;margin-top:2px}.ep-esp .topo{display:flex;gap:16px;align-items:center}.ep-esp .topo b{font-size:21px;display:block}.ep-esp small,.ep-esp .nota{color:#a9adb7;font-size:12.5px}
+.ep-esp details.grp{border:1px solid #3a3c43;border-radius:12px;margin-bottom:8px;background:#232429;overflow:hidden}
+.ep-esp details.grp>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none}.ep-esp details.grp>summary::-webkit-details-marker{display:none}
+.ep-esp details.grp>summary:hover{background:#2a2b31}.ep-esp details.grp>summary b{font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ep-esp details.grp .sp{flex:1}
+.ep-esp details.grp .seta{display:inline-grid;place-items:center;width:16px;height:16px;color:#a9adb7;transition:transform .15s}.ep-esp details.grp .seta svg{width:14px;height:14px}.ep-esp details.grp[open] .seta{transform:rotate(90deg)}
+.ep-esp details.grp .cnt{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:#3a3c43;color:#c9ccd3}
+.ep-esp .grp-l{max-height:min(320px,45vh);overflow-y:auto;padding:2px 8px 8px;scrollbar-width:thin}.ep-esp .grp-l .linha{margin:0 0 6px}
 .ep-esp .linha{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid #3a3c43;border-radius:10px;margin-bottom:6px;background:#26272c}
 .ep-esp .linha.aqui{border-color:#2f6be6}
 .ep-esp .linha .n{flex:1;min-width:0}.ep-esp .linha .n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
@@ -683,6 +690,15 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     pinta();
   }
 
+  // ARQUIVOS do programa em GRUPOS que abrem e fecham (lista grande rola dentro do grupo): pelo it.grupo ou pela extensão do "Baixar .xxx"
+  function gruposEsp(itens) {
+    const NOMES = { animador: 'Animações (.animador)', atelieanimador: 'Personagens do Ateliê (.atelieanimador)', editor: 'Edições (.editor)', bbmodel: 'Modelos (.bbmodel)' }, G = new Map();
+    for (const it of itens) { const ext = /\.([a-z0-9]+)\b/i.exec(it.rotuloBaixar || '')?.[1]?.toLowerCase(), k = it.grupo || (ext ? ext : 'outros');
+      if (!G.has(k)) G.set(k, { k, nome: it.grupo || NOMES[k] || (ext ? `Arquivos .${ext}` : 'Outros'), L: [], b: 0 }); const g = G.get(k); g.L.push(it); g.b += +it.bytes || 0; }
+    const L = [...G.values()].sort((a, b) => (a.k === 'outros') - (b.k === 'outros')); let mem = {}; try { mem = JSON.parse(sessionStorage.getItem('ep-esp-grupos') || '{}'); } catch { }
+    for (const g of L) g.aberto = g.k in mem ? mem[g.k] : (L.length === 1 || (g.L.length <= 4 && itens.length <= 8));
+    return L;
+  }
   async function painelEspaco() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
@@ -708,11 +724,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       <h3>Por programa</h3>
       ${linhas.length ? linhas.map(([n, x]) => `<div class="linha ${n === atual ? 'aqui' : ''}"><div class="n"><b>${esc(n)}${n === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(x.b / maior * 100).toFixed(1)}%"></i></div></div><span class="tam">${fmt(x.b)}</span>${x.end && n !== atual ? `<a class="bt" href="${x.end}">Abrir</a>` : ''}</div>`).join('') : '<div class="vazio">Nada guardado neste navegador ainda.</div>'}
       ${prov ? `<h3>Arquivos do ${esc(prov.programa)} (${itens.length})</h3>
-        ${itens.length ? itens.map((it, i) => `<div class="linha">${it.thumb ? `<img class="th" src="${esc(it.thumb)}" alt="">` : ''}<div class="n"><b>${esc(it.nome)}</b><small>${[it.bytes != null ? fmt(it.bytes) : '', dataTxt(it.data), it.info || ''].filter(Boolean).join(' · ')}</small></div>
-          ${it.baixar ? `<button class="bt" data-b="${i}" title="${esc(it.rotuloBaixar || 'Baixar')}">${ICONES.baixar}${esc(it.rotuloBaixar || 'Baixar')}</button>` : ''}${it.apagar ? `<button class="bt perigo" data-d="${i}" title="Apagar deste navegador">${ICONES.lixo}</button>` : ''}</div>`).join('') : '<div class="vazio">Nenhum arquivo guardado por este programa.</div>'}` : ''}
+        ${itens.length ? gruposEsp(itens).map(g => `<details class="grp" data-g="${esc(g.k)}" ${g.aberto ? 'open' : ''}><summary><span class="seta">${ICONES.seta || '›'}</span><b>${esc(g.nome)}</b><span class="cnt">${g.L.length}</span><span class="sp"></span><span class="tam">${fmt(g.b)}</span></summary><div class="grp-l">${g.L.map(it => { const i = itens.indexOf(it); return `<div class="linha">${it.thumb ? `<img class="th" src="${esc(it.thumb)}" alt="">` : ''}<div class="n"><b>${esc(it.nome)}</b><small>${[it.bytes != null ? fmt(it.bytes) : '', dataTxt(it.data), it.info || ''].filter(Boolean).join(' · ')}</small></div>
+          ${it.baixar ? `<button class="bt" data-b="${i}" title="${esc(it.rotuloBaixar || 'Baixar')}">${ICONES.baixar}${esc(it.rotuloBaixar || 'Baixar')}</button>` : ''}${it.apagar ? `<button class="bt perigo" data-d="${i}" title="Apagar deste navegador">${ICONES.lixo}</button>` : ''}</div>`; }).join('')}</div></details>`).join('') : '<div class="vazio">Nenhum arquivo guardado por este programa.</div>'}` : ''}
       <div class="pe">${prov?.detalhes ? `<button class="bt" data-det>${ICONES.lista}Limpeza e detalhes…</button>` : ''}<span class="sp"></span>
         <span class="nota">Para não perder nada, baixe os projetos importantes.</span></div>`;
     cx.querySelector('[data-x]').onclick = fechar;
+    cx.querySelectorAll('details.grp').forEach(dt => dt.ontoggle = () => { try { const m = JSON.parse(sessionStorage.getItem('ep-esp-grupos') || '{}'); m[dt.dataset.g] = dt.open; sessionStorage.setItem('ep-esp-grupos', JSON.stringify(m)); } catch { } });
     cx.querySelectorAll('[data-b]').forEach(b => b.onclick = async () => { b.disabled = true; try { await itens[+b.dataset.b].baixar(); } catch (er) { alert('Não consegui baixar: ' + er.message); } b.disabled = false; });
     cx.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => { const it = itens[+b.dataset.d]; if (it.confirma !== false && !confirm(`Apagar "${it.nome}" deste navegador? Baixe antes se quiser guardar.`)) return; try { await it.apagar(); } catch (er) { alert(er.message); } atualizaAneis(); painelEspaco(); });
     const det = cx.querySelector('[data-det]'); if (det) det.onclick = () => { fechar(); prov.detalhes(); };
