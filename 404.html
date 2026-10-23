@@ -404,6 +404,19 @@ const clamp = (v, a, z) => Math.min(z, Math.max(a, v));
 // "site.github.io/animador" (sem https://) viraria uma pasta dentro do menu; aqui completamos o https://
 const normUrl = u => { u = String(u || '').trim(); if (!u) return u; if (/^\/\//.test(u)) return 'https:' + u; if (!/^[a-z][\w+.-]*:/i.test(u) && /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/|\?|#|$)/i.test(u) && !/\.(html?|php|js|css|json|png|jpe?g|gif|svg|webp|mp4|webm)$/i.test(u.split(/[/?#]/)[0])) return 'https://' + u; return u; };
 const SRV = MENU_CONFIG.servidor, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+// ADM: as listas (Quem pode entrar, Dispositivos, Nuvem) ficam guardadas na memória desta página por 90 s — trocar de aba
+// e voltar não pede de novo à Cloudflare (o plano grátis tem limite por dia). Qualquer mudança (POST/DELETE) limpa tudo.
+(() => {
+  const MEMO = new Map(), f0 = window.fetch.bind(window), guarda = /^\/(acesso|dispositivos|nuvem-uso|nuvem-sons\/uso)$/;
+  window.fetch = async function (input, init = {}) {
+    const url = typeof input === 'string' ? input : input?.url || '', met = (init.method || input?.method || 'GET').toUpperCase();
+    let cam = ''; try { const u = new URL(url, location.href); cam = u.origin === location.origin && !u.search ? u.pathname : ''; } catch { }
+    if (met !== 'GET') { MEMO.clear(); return f0(input, init); }
+    if (!guarda.test(cam)) return f0(input, init);
+    const m = MEMO.get(cam); if (m && Date.now() - m.t < 90e3) return m.r.clone();
+    const r = await f0(input, init); if (r.ok) MEMO.set(cam, { t: Date.now(), r: r.clone() }); return r;
+  };
+})();
 const MODO_ADM = /\/adm\/?$/i.test(location.pathname);              // só abre a ADM digitando /adm no endereço
 const BASE = location.pathname.replace(/\/adm\/?$/i, '/').replace(/[^/]*$/, '') || '/'; // endereço do menu principal
 let fb = null, DADOS = null;
