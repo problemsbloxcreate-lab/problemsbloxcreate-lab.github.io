@@ -192,7 +192,7 @@ let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
    reserva levam o cabeçalho x-nuvem: reserva (o site mostra o aviso). */
 const RESERVA_URL = 'https://sons-problems.problemsbloxcreate.workers.dev';
 const fimDoDia = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
-let limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0, bkMan = null, resConta = null, cheioVisto = 0;
+let fotoC = null, limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0, bkMan = null, resConta = null, cheioVisto = 0;
 // PROTEÇÃO: com 85% das gravações, listas ou apagadas do dia já gastas (medida de 15 em 15 min), a principal é poupada até as 21h
 // (como se tivesse acabado): sobra folga para a última foto da lista e para a cópia de segurança, e nada para no meio.
 const SEGURO = 0.85;
@@ -227,6 +227,7 @@ function reservaDe(env, auth) {
     medir: () => call('/reserva/medir', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
     conta: () => call('/reserva/conta').then(r => r.ok ? r.json() : null).catch(() => null),
     fim: () => call('/reserva/fim', { method: 'POST' }).then(() => { resEstado = { at: Date.now(), ativo: false }; }),
+    async fotoMapa() { if (fotoC && Date.now() - fotoC.at < 300e3) return fotoC.m; let m = null; try { m = await this.fotoLista(); } catch { } fotoC = { at: Date.now(), m }; return m; }, // foto da lista da principal (5 min)
     async fotoLista() { const a = await (await ok(await call('/reserva/lista-principal'))).json(); return a.length ? new Map(a.map(([n, m]) => [n, { name: n, ...(m ? { metadata: m } : {}) }])) : null; },
     guardaLista: m => call('/reserva/lista-principal', { method: 'PUT', body: JSON.stringify([...m.values()].map(k => [k.name, k.metadata || null])) }, 20000),
   };
@@ -260,12 +261,18 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
       catch (e) { if (!R || !marca(e)) throw e; return W.put(k, v, o); }
     },
     async delete(k) {
-      const it = await naReserva(k); if (it && !it.metadata?._del) { await R.del(k); usou(); if (kvLista && !kvLista.m.has(k)) return; }
-      if (R && emLimite()) { await res(() => R.del(k, true)); usou(); kvLista?.m.delete(k); return; }
+      // a principal não tem essa chave (nasceu na reserva, ex.: imagem nova do Ateliê, ou nem existe): apaga de verdade, SEM "apagada"
+      // (cada "apagada" é uma gravação na reserva e mais uma apagada na principal depois das 21h)
+      const semNaPrincipal = async () => { const f = R && emLimite() ? await R.fotoMapa() : null; return !!f && !f.has(k); };
+      const it = await naReserva(k); if (it && !it.metadata?._del) { await R.del(k); usou(); if (kvLista && !kvLista.m.has(k)) return; if (await semNaPrincipal()) { kvLista?.m.delete(k); return; } }
+      if (R && emLimite()) { if (!it && await semNaPrincipal()) { kvLista?.m.delete(k); return; } await res(() => R.del(k, true)); usou(); kvLista?.m.delete(k); return; }
       try { const r = await kv.delete(k); kvLista?.m.delete(k); return r; } catch (e) { if (!R || !marca(e)) throw e; return W.delete(k); }
     },
     // apagar VÁRIAS (personagem inteiro) com poucos pedidos à reserva (o Worker grátis aceita só 50 pedidos para fora por vez)
     async deleteMuitos(ks, pasta) {
+      if (R && emLimite() && !pasta) { const f = await R.fotoMapa(); if (f) { const real = ks.filter(k => !f.has(k)); // nasceram na reserva: apagam de verdade (sem "apagada")
+          if (real.length) { let ri = null; try { ri = await R.indice(); } catch { } const la = real.filter(k => ri?.get(k)); if (la.length) await res(() => R.delMuitos(la, false)); }
+          ks = ks.filter(k => f.has(k)); if (!ks.length) { usou(); for (const k of real) kvLista?.m.delete(k); return; } for (const k of real) kvLista?.m.delete(k); } }
       if (R && emLimite()) { await res(() => pasta ? R.delPasta(pasta) : R.delMuitos(ks, true)); usou(); for (const k of ks) kvLista?.m.delete(k); if (pasta && kvLista) for (const n of [...kvLista.m.keys()]) if (n.startsWith(pasta)) kvLista.m.delete(n); return; }
       if (await ativa()) { let ri = null; try { ri = await R.indice(); } catch { } const la = ks.filter(k => ri?.get(k) && !ri.get(k).metadata?._del); if (la.length) { await R.delMuitos(la, false); usou(); } }
       for (let i = 0; i < ks.length; i++) { try { await kv.delete(ks[i]); kvLista?.m.delete(ks[i]); } catch (e) { if (!R || !marca(e)) throw e; return W.deleteMuitos(ks.slice(i), pasta); } }
@@ -301,7 +308,7 @@ async function migra(kv, R) {
     if (n++ >= 10) break;
     try {
       if (it.metadata?._del && k.endsWith('/')) { const l = await kv.list({ prefix: k }); for (const x of l.keys.slice(0, 40)) { await kv.delete(x.name); kvLista?.m.delete(x.name); } if (l.keys.length > 40) continue; }
-      else if (it.metadata?._del) await kv.delete(k);
+      else if (it.metadata?._del) { if (!kvLista || kvLista.m.has(k)) await kv.delete(k); } // a principal nem tem: só some da reserva
       else { const atual = kvLista?.m.get(k)?.metadata, rm = it.metadata || {};
         const maisNova = atual && (+(atual.mod || Date.parse(atual.em || 0) || 0)) > (+(rm.mod || Date.parse(rm.em || 0) || 0));
         if (!maisNova) { const g = await R.get(k); if (g.value != null) { await kv.put(k, g.value, Object.keys(rm).length ? { metadata: rm } : undefined); if (kvLista) kvLista.m.set(k, { name: k, metadata: rm }); } } }

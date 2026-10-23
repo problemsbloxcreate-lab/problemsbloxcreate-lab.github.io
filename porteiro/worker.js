@@ -370,15 +370,14 @@ async function acesso(req, env, url) {
 // para mostrar SEMPRE o nome e a foto de agora de quem subiu/editou, sem o e-mail nunca sair daqui
 async function codigoU(email) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('estudio-problems:' + email))); return 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); }
 // código → e-mail: memória → lista de pessoas das Mensagens (objeto durável, sem limite diário) → KV. Nunca grava em massa no KV.
-const COD = new Map(); let codVarrido = 0;
+const COD = new Map();
 async function emailDoCodigo(env, u) {
   if (!/^u[0-9a-f]{16}$/.test(u || '')) return null;
   if (COD.has(u)) return COD.get(u);
   if (env.CONVERSAS) { try { for (const r of (await conversas(env, { op: 'pessoas' })).j || []) if (r.u && r.e) COD.set(r.u, r.e); } catch { } if (COD.has(u)) return COD.get(u); }
   if (!env.PERFIS) return null;
   const k = await env.PERFIS.get('u:' + u).catch(() => null); if (k) { COD.set(u, k); return k; }
-  if (Date.now() - codVarrido < 10 * 6e4) return null; codVarrido = Date.now(); // varre os perfis no máximo a cada 10 min (só leitura)
-  let cur; try { do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); COD.set(await codigoU(em), em); } cur = l.list_complete ? null : l.cursor; } while (cur); } catch { }
+  // (sem varrer os perfis: cada varredura gasta listas do limite do dia; quem entra fica registrado nas Mensagens no login)
   return COD.get(u) || null;
 }
 const PESSOA_MEM = new Map(), GERAL = { t: 0, fora: [], semeado: 0 };
@@ -459,7 +458,8 @@ export class Conversas {
     const b = await req.json(), agora = Date.now(); this.limpa();
     const u = /^u[0-9a-f]{16}$/.test(b.u || '') ? b.u : null;
     if (b.op === 'pessoa') { if (u && b.e) this.sql.exec('INSERT INTO pessoas(u,e,v) VALUES(?,?,?) ON CONFLICT(u) DO UPDATE SET e=excluded.e, v=excluded.v', u, b.e, agora); return Response.json({ ok: true }); }
-    if (b.op === 'semear') { for (const p of b.lista || []) if (/^u[0-9a-f]{16}$/.test(p.u)) this.sql.exec('INSERT OR IGNORE INTO pessoas(u,e,v) VALUES(?,?,?)', p.u, p.e, +p.v || 0); return Response.json({ ok: true }); }
+    if (b.op === 'semear') { for (const p of b.lista || []) if (/^u[0-9a-f]{16}$/.test(p.u)) this.sql.exec('INSERT OR IGNORE INTO pessoas(u,e,v) VALUES(?,?,?)', p.u, p.e, +p.v || 0); if (b.marca) this.sql.exec("INSERT INTO cfg(k,v) VALUES('semeado','1') ON CONFLICT(k) DO UPDATE SET v='1'"); return Response.json({ ok: true }); }
+    if (b.op === 'semeado') return Response.json({ ok: !!this.sql.exec("SELECT v FROM cfg WHERE k = 'semeado'").toArray()[0] });
     if (b.op === 'pessoas') return Response.json(this.sql.exec('SELECT u, e, v FROM pessoas').toArray());
     // última medida boa da nuvem (para o círculo roxo continuar mostrando algo quando a principal chega no limite do dia)
     if (b.op === 'ult-le') { try { return Response.json({ v: JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'ult:nuvem-uso'").toArray()[0]?.v || 'null') }); } catch { return Response.json({ v: null }); } }
@@ -665,9 +665,9 @@ async function mensagens(req, env, url) {
   // (não só quem já abriu as Mensagens) e tira quem perdeu o acesso
   const foraGeral = async conv => { if (conv !== 'geral') return [];
     if (Date.now() - GERAL.t < 60e3) return GERAL.fora;
-    try { if (env.PERFIS && Date.now() - GERAL.semeado > 3600e3) { GERAL.semeado = Date.now(); const sem = []; let cur;
+    try { if (env.PERFIS && !GERAL.semeado && !(await conversas(env, { op: 'semeado' })).j?.ok) { GERAL.semeado = 1; const sem = []; let cur; // uma vez só (fica marcado nas Mensagens)
         do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); sem.push({ u: await codigoU(em), e: em, v: 0 }); } cur = l.list_complete ? null : l.cursor; } while (cur);
-        if (sem.length) await conversas(env, { op: 'semear', lista: sem }); }
+        if (sem.length) await conversas(env, { op: 'semear', lista: sem, marca: true }); } else GERAL.semeado = 1;
       const fora = []; for (const pp of (await conversas(env, { op: 'pessoas' })).j || []) { const t = await foiTirado(env, pp.e); if (t && +t > (pp.v || 0)) fora.push(pp.u); }
       GERAL.t = Date.now(); GERAL.fora = fora; } catch { } return GERAL.fora; };
   if (url.searchParams.has('vistos')) { const cv = url.searchParams.get('conv'); const r = await conversas(env, { op: 'vistos', u, conv: cv, fora: await foraGeral(cv) }); return json(r.j, r.status); }
