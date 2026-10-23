@@ -381,7 +381,7 @@ async function emailDoCodigo(env, u) {
   let cur; try { do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); COD.set(await codigoU(em), em); } cur = l.list_complete ? null : l.cursor; } while (cur); } catch { }
   return COD.get(u) || null;
 }
-const PESSOA_MEM = new Map();
+const PESSOA_MEM = new Map(), GERAL = { t: 0, fora: [], semeado: 0 };
 async function pessoa(req, env, url) {
   const s = await leSessao(env, req);
   if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
@@ -490,7 +490,7 @@ export class Conversas {
       if (conv === 'geral') part = this.sql.exec('SELECT u FROM pessoas').toArray().map(r => r.u);
       else if (conv.startsWith('g:')) { try { part = JSON.parse(this.sql.exec('SELECT membros FROM grupos WHERE id = ?', conv.slice(2)).toArray()[0]?.membros || '[]'); } catch { } }
       else part = conv.slice(2).split('|');
-      part = part.filter(x => x !== u);
+      const fora = new Set(Array.isArray(b.fora) ? b.fora : []); part = part.filter(x => x !== u && !fora.has(x)); // fora = tirados da equipe (o porteiro confere)
       const lidas = {}, entregues = {};
       for (const r of this.sql.exec('SELECT u, ate FROM lidas WHERE conv = ?', conv).toArray()) if (part.includes(r.u)) lidas[r.u] = r.ate;
       for (const r of this.sql.exec('SELECT u, ate FROM entregas').toArray()) if (part.includes(r.u)) entregues[r.u] = r.ate;
@@ -661,7 +661,16 @@ async function mensagens(req, env, url) {
     const r = await conversas(env, { op: b.op, u, e, para: b.para, texto: b.texto, conv: b.op === 'enviar' ? undefined : b.conv, ate: b.ate, cita: cita ? JSON.stringify(cita) : null });
     return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j);
   }
-  if (url.searchParams.has('vistos')) { const r = await conversas(env, { op: 'vistos', u, conv: url.searchParams.get('conv') }); return json(r.j, r.status); }
+  // conversa GERAL: "lida por todos" só quando TODA a equipe leu — a lista de quem conta inclui quem já entrou alguma vez no Estúdio
+  // (não só quem já abriu as Mensagens) e tira quem perdeu o acesso
+  const foraGeral = async conv => { if (conv !== 'geral') return [];
+    if (Date.now() - GERAL.t < 60e3) return GERAL.fora;
+    try { if (env.PERFIS && Date.now() - GERAL.semeado > 3600e3) { GERAL.semeado = Date.now(); const sem = []; let cur;
+        do { const l = await env.PERFIS.list({ prefix: 'p:', cursor: cur }); for (const x of l.keys) { const em = x.name.slice(2); sem.push({ u: await codigoU(em), e: em, v: 0 }); } cur = l.list_complete ? null : l.cursor; } while (cur);
+        if (sem.length) await conversas(env, { op: 'semear', lista: sem }); }
+      const fora = []; for (const pp of (await conversas(env, { op: 'pessoas' })).j || []) { const t = await foiTirado(env, pp.e); if (t && +t > (pp.v || 0)) fora.push(pp.u); }
+      GERAL.t = Date.now(); GERAL.fora = fora; } catch { } return GERAL.fora; };
+  if (url.searchParams.has('vistos')) { const cv = url.searchParams.get('conv'); const r = await conversas(env, { op: 'vistos', u, conv: cv, fora: await foraGeral(cv) }); return json(r.j, r.status); }
   if (url.searchParams.has('todasConversas')) { if (!s.a || como) return json({ error: { message: 'Só ADM.' } }, 403); return json((await conversas(env, { op: 'conversas-todas', u })).j); }
   if (url.searchParams.has('denuncias')) { // ADM: a lista de denúncias, com nomes e e-mails censurados (nunca o e-mail inteiro)
     if (!s.a) return json({ error: { message: 'Só ADM vê as denúncias.' } }, 403);
@@ -669,7 +678,7 @@ async function mensagens(req, env, url) {
     for (const [cod, em] of Object.entries(r.emails || {})) { const p = await lePerfil(env, em); quem[cod] = { nome: p.nome || p.google?.nome || mascara(em), email: mascara(em), foto: p.fotoV ? '/pessoa/foto?u=' + cod + '&v=' + p.fotoV : (p.google?.foto || null) }; }
     return json({ denuncias: r.denuncias, grupos: r.grupos, quem, site: url.origin });
   }
-  if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e: como ? null : e, ver: !!como, conv: url.searchParams.get('conv'), desde: url.searchParams.get('desde'), antes: url.searchParams.get('antes') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
+  if (url.searchParams.has('conv')) { const r = await conversas(env, { op: 'conversa', u, e: como ? null : e, ver: !!como, fora: await foraGeral(url.searchParams.get('conv')), conv: url.searchParams.get('conv'), desde: url.searchParams.get('desde'), antes: url.searchParams.get('antes') }); return r.j.erro ? json({ error: { message: r.j.erro } }, r.status) : json(r.j); }
   const r = await conversas(env, { op: 'resumo', u, e: como ? null : e, ver: !!como, adm: !!s.a && !como, desde: url.searchParams.get('desde') });
   const out = { eu: u, adm: !!s.a, ...r.j };
   if (url.searchParams.get('pessoas') === '1') {
