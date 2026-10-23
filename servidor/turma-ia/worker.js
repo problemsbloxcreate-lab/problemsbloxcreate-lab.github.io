@@ -179,8 +179,28 @@ async function aoVivoLimpa(env, forcar) {
   } catch { }
 }
 
+/* ---- LISTA DO KV GUARDADA NA MEMÓRIA (plano grátis da Cloudflare: só 1000 "list" por DIA na conta toda) ----
+   Toda lista do KV EQUIPE (personagens, cenários, espaço usado…) sai de UMA lista completa guardada aqui por 5 min; o que
+   este servidor grava ou apaga já entra na lista guardada na hora (put/delete passam por aqui). Antes cada abertura da
+   biblioteca/espaço gastava listas e o limite do dia acabava ("reached the free usage limit"). */
+let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
+function kvComLista(kv) {
+  const carrega = async () => {
+    if (kvLista && Date.now() - kvLista.at < KV_LISTA_MS) return kvLista.m;
+    const m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
+    kvLista = { m, at: Date.now() }; return m;
+  };
+  return {
+    get: (...a) => kv.get(...a), getWithMetadata: (...a) => kv.getWithMetadata(...a),
+    async put(k, v, o) { const r = await kv.put(k, v, o); if (kvLista) kvLista.m.set(k, { name: k, ...(o?.metadata ? { metadata: o.metadata } : {}) }); return r; },
+    async delete(k) { const r = await kv.delete(k); if (kvLista) kvLista.m.delete(k); return r; },
+    async list(o = {}) { const m = await carrega(), pre = o.prefix || ''; return { keys: [...m.values()].filter(k => k.name.startsWith(pre)).sort((a, b) => a.name < b.name ? -1 : 1), list_complete: true }; },
+  };
+}
+
 export default {
   async fetch(req, env, ctx) {
+    if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE), _kvLista: true };
     const origin = req.headers.get('origin') || '';
     const origens = (env.ORIGENS || '*').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
     const liberado = origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin); // seu PC: sempre aceito (ainda exige login com e-mail liberado)
