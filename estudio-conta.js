@@ -60,7 +60,7 @@
     const pinta = () => { const t2 = marcado(); if (!t2) return selo();
       const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
       const r = naReserva(); el.title = (r ? 'A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (21h de Brasília) passa de volta sozinho.' : MSG) + ' (clique para encolher)';
-      el.style.borderColor = r ? 'rgba(120,170,255,.35)' : 'rgba(255,255,255,.12)';
+      el.style.borderColor = r ? 'rgba(47,208,168,.55)' : 'rgba(255,255,255,.12)'; el.style.color = r ? '#9df0db' : '#cfd3dc'; // nuvem reserva = verde-água
       el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
   }
@@ -303,11 +303,11 @@
 .ep-esp .cx{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:20px}
 .ep-esp h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:10px}.ep-esp h2 .x{margin-left:auto}
 .ep-esp h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#a9adb7;margin:18px 0 8px;font-weight:600}
-.ep-nv-aviso{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(155,123,255,.45);background:rgba(155,123,255,.1);font-size:13px;line-height:1.4}.ep-nv-aviso svg{flex:none;width:18px;height:18px;color:#b9a3ff;margin-top:1px}.ep-nv-aviso b{display:block;font-size:13px!important}.ep-nv-aviso small{display:block;margin-top:2px}.ep-esp .topo{display:flex;gap:16px;align-items:center}.ep-esp .topo b{font-size:21px;display:block}.ep-esp small,.ep-esp .nota{color:#a9adb7;font-size:12.5px}
+.ep-nv-aviso{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(47,208,168,.5);background:rgba(47,208,168,.1);font-size:13px;line-height:1.4}.ep-nv-aviso svg{flex:none;width:18px;height:18px;color:#2fd0a8;margin-top:1px}.ep-nv-aviso b{display:block;font-size:13px!important}.ep-nv-aviso small{display:block;margin-top:2px}.ep-esp .topo{display:flex;gap:16px;align-items:center}.ep-esp .topo b{font-size:21px;display:block}.ep-esp small,.ep-esp .nota{color:#a9adb7;font-size:12.5px}
 .ep-esp .linha{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid #3a3c43;border-radius:10px;margin-bottom:6px;background:#26272c}
-.ep-esp .linha.aqui{border-color:#3d8bff}
+.ep-esp .linha.aqui{border-color:#2f6be6}
 .ep-esp .linha .n{flex:1;min-width:0}.ep-esp .linha .n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
-.ep-esp .barra{height:5px;border-radius:3px;background:#3a3c43;margin-top:5px;overflow:hidden}.ep-esp .barra i{display:block;height:100%;background:linear-gradient(90deg,#3d8bff,#19d3f0)}
+.ep-esp .barra{height:5px;border-radius:3px;background:#3a3c43;margin-top:5px;overflow:hidden}.ep-esp .barra i{display:block;height:100%;background:linear-gradient(90deg,#2453c4,#2f6be6)}
 .ep-esp .tam{font-variant-numeric:tabular-nums;color:#c9ccd3;font-size:12.5px;white-space:nowrap}
 .ep-esp img.th{width:56px;height:32px;object-fit:cover;border-radius:5px;background:#000;flex:none}
 .ep-esp .bt{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #4a4c55;background:#33353b;color:#e9ebef;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap;text-decoration:none}
@@ -547,7 +547,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const fmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
   const dataTxt = t => { if (!t) return ''; const d = new Date(t); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
   function anel(pct) {
-    const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : '#19d3f0', r = 13, L = 2 * Math.PI * r;
+    const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : '#2f6be6', r = 13, L = 2 * Math.PI * r;
     return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct, 2) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><g fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="10.6" y="11" width="10.8" height="7.4" rx="1.3"/><path d="M14 21.4h4M16 18.4v3"/></g></svg>`; // computador no meio: é o espaço DESTE computador
   }
   const estimativa = async () => { try { return await navigator.storage.estimate(); } catch { return {}; } };
