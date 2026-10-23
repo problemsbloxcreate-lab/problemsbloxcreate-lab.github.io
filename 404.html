@@ -127,12 +127,12 @@ svg{display:block;flex:none}
 .adm{max-width:1100px;width:100%;margin:0 auto;padding:4px 24px 40px;flex:1}
 .adm h2{font-size:12.5px;text-transform:uppercase;letter-spacing:1px;color:var(--tx2);font-weight:700;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
 .adm h2 .sp{flex:1}
-.adm-abas{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:14px 0 12px;margin-bottom:4px;background:var(--bg0);box-shadow:0 10px 18px -12px rgba(0,0,0,.6)}
-.adm-abas button{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--bg1);color:var(--tx);cursor:pointer;font:inherit;position:relative}
-.adm-abas button svg{flex:none;color:var(--tx2)}.adm-abas button b{display:block;font-size:13.5px}.adm-abas button small{display:block;color:var(--tx2);font-size:11.5px}
-.adm-abas button:hover{border-color:var(--bd2)}.adm-abas button[aria-selected=true]{border-color:var(--ac);background:linear-gradient(rgba(var(--ac-rgb),.16),rgba(var(--ac-rgb),.16)),var(--bg1)}.adm-abas button[aria-selected=true] svg{color:var(--ac)}
+.adm-abas{position:sticky;top:10px;z-index:4;display:flex;gap:4px;padding:5px;margin:12px 0 8px;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(18,19,23,.55);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);box-shadow:0 8px 24px -14px rgba(0,0,0,.7)}.adm-abas::-webkit-scrollbar{display:none}
+.adm-abas button{display:flex;align-items:center;gap:8px;flex:none;white-space:nowrap;padding:8px 14px;border-radius:10px;border:1px solid transparent;background:none;color:var(--tx2);cursor:pointer;font:inherit;position:relative;transition:background .15s,color .15s}
+.adm-abas button svg{flex:none;color:inherit;opacity:.85}.adm-abas button b{display:block;font-size:13px;font-weight:600}.adm-abas button small{display:none}
+.adm-abas button:hover{background:rgba(255,255,255,.06);color:var(--tx)}.adm-abas button[aria-selected=true]{color:var(--tx);background:rgba(var(--ac-rgb),.2);border-color:rgba(var(--ac-rgb),.45)}.adm-abas button[aria-selected=true] svg{color:var(--ac);opacity:1}
 .adm-abas button[hidden]{display:none}
-.adm-pag[hidden]{display:none!important}.adm-abas .adm-aba-alerta{position:absolute;top:6px;right:8px;margin:0}.adm-aba-alerta{margin-left:4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff4d5e;color:#fff;font-size:11px;display:inline-grid;place-items:center}.adm-aba-alerta[hidden]{display:none}.adm-desc{color:var(--tx2);margin:8px 0 -10px;font-size:13px}
+.adm-pag[hidden]{display:none!important}.adm-abas .adm-aba-alerta{position:static;margin:0 0 0 2px}.adm-aba-alerta{margin-left:4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff4d5e;color:#fff;font-size:11px;display:inline-grid;place-items:center}.adm-aba-alerta[hidden]{display:none}.adm-desc{color:var(--tx2);margin:8px 0 -10px;font-size:13px}
 .savebar[hidden],.acesso-add[hidden]{display:none!important}
 .acesso-add{display:flex;gap:8px;flex-wrap:wrap}.acesso-add input{flex:1;min-width:220px;height:36px;border-radius:9px;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx);padding:0 12px;font:inherit}
 .acesso-lista{display:grid;gap:8px;margin-top:12px}
@@ -197,20 +197,20 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-limpa{margin-left:8px;display:inline-flex;align-items:center;gap:5px;color:#ff8f8f}.nv-limpa:hover{background:rgba(255,80,80,.14)}.nv-erro{color:#ff8f8f;margin-bottom:10px}
 .nv-ia{font-size:10.5px;padding:1px 6px;border-radius:6px;color:#bff4ff;background:linear-gradient(90deg,#1a6dff,#19d3f0);margin-left:6px}
 /* ADM › Nuvem: as três nuvens, abrir (player de som/vídeo, imagem, texto), baixar e apagar */
-.nvd{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;margin:16px 0 6px}
-.nvd-c{border:1px solid var(--bd);background:var(--bg1);border-radius:14px;padding:14px 16px 12px;display:flex;flex-direction:column;gap:10px}
-.nvd-h{display:flex;align-items:flex-start;gap:10px}.nvd-h>div{min-width:0}.nvd-h b{display:block;font-size:14px;line-height:1.2}.nvd-h small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
+.nvd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0 8px}
+.nvd-c{border:1px solid var(--bd);background:var(--bg1);border-radius:16px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:14px}
+.nvd-h{display:flex;align-items:flex-start;gap:10px}.nvd-h>div{min-width:0}.nvd-h b{display:block;font-size:15px;line-height:1.25}.nvd-h small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
 .nvd-chip{margin-left:auto;flex:none;font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .nvd-chip:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .nvd-chip.ok{color:var(--ok);border-color:rgba(47,207,122,.35)}.nvd-chip.al{color:#ffb84d;border-color:rgba(255,184,77,.4)}.nvd-chip.er{color:#ff8a9a;border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.06)}.nvd-chip.az{color:var(--ac);border-color:rgba(var(--ac-rgb),.4)}
-.nvd-g{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.nvd-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 22px}
 .nvd-l{min-width:0}.nvd-t{display:flex;align-items:baseline;gap:6px;font-size:12px;margin-bottom:5px}.nvd-t>span{color:var(--tx2)}
 .nvd-t>b{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums;font-size:12.5px}.nvd-t>b.al{color:#ffb84d}.nvd-t>b.er{color:#ff8a9a}
 .nvd-b{height:5px;border-radius:99px;background:var(--bg3);overflow:hidden}.nvd-b>i{display:block;height:100%;border-radius:inherit;background:var(--ac);min-width:2px}
 .nvd-n{font-size:10.5px;color:var(--tx3);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nvd-p{font-size:11.5px;color:var(--tx3);line-height:1.45;border-top:1px solid var(--bd);padding-top:9px}
+.nvd-p{font-size:12px;color:var(--tx3);line-height:1.5;border-top:1px solid var(--bd);padding-top:12px}
 .nvd-rod{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--tx3);padding:2px 2px 0}
-@media (max-width:420px){.nvd-g{grid-template-columns:1fr}}
+@media (max-width:860px){.nvd{grid-template-columns:1fr}}@media (max-width:420px){.nvd-g{grid-template-columns:1fr 1fr}}
 .nv-fontes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:20px 0 14px;position:relative;clear:both}
 .nv-fontes button{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(48,48,48,.85);color:var(--tx);cursor:pointer;font:inherit}
 .nv-fontes button b{font-size:13.5px}.nv-fontes button small{color:var(--tx2);font-size:11.5px}.nv-fontes button:hover{border-color:var(--bd2)}
@@ -418,6 +418,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const clamp = (v, a, z) => Math.min(z, Math.max(a, v));
 // "site.github.io/animador" (sem https://) viraria uma pasta dentro do menu; aqui completamos o https://
 const normUrl = u => { u = String(u || '').trim(); if (!u) return u; if (/^\/\//.test(u)) return 'https:' + u; if (!/^[a-z][\w+.-]*:/i.test(u) && /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/|\?|#|$)/i.test(u) && !/\.(html?|php|js|css|json|png|jpe?g|gif|svg|webp|mp4|webm)$/i.test(u.split(/[/?#]/)[0])) return 'https://' + u; return u; };
+{ const dica = () => document.querySelectorAll('.adm-abas button').forEach(b => { const t = b.querySelector('small')?.textContent; if (t && !b.title) b.title = t; }); document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', dica) : dica(); }
 const SRV = MENU_CONFIG.servidor, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
 // ADM: as listas (Quem pode entrar, Dispositivos, Nuvem) ficam guardadas na memória desta página por 90 s — trocar de aba
 // e voltar não pede de novo à Cloudflare (o plano grátis tem limite por dia). Qualquer mudança (POST/DELETE) limpa tudo.
