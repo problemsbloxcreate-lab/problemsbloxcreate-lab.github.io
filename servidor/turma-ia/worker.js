@@ -184,23 +184,96 @@ async function aoVivoLimpa(env, forcar) {
    este servidor grava ou apaga já entra na lista guardada na hora (put/delete passam por aqui). Antes cada abertura da
    biblioteca/espaço gastava listas e o limite do dia acabava ("reached the free usage limit"). */
 let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
-function kvComLista(kv, forcar) { // forcar (?novo=1, botão Atualizar): busca de novo se a guardada tem mais de 30 s
+/* NUVEM RESERVA (decisão do dono, 23/10/2026): quando esta conta chega no limite grátis do dia, o que seria gravado/apagado vai
+   para a reserva na conta antiga da Cloudflare (Worker sons-problems, rotas /reserva/*), e as leituras/listas juntam as duas.
+   Depois das 21h de Brasília (00:00 UTC) a principal volta e, aos poucos, tudo passa de volta (`migra`) e sai da reserva.
+   Fora do limite a reserva não muda nada (só confere "tem algo lá?" no máximo a cada 2 min). Respostas que usaram a
+   reserva levam o cabeçalho x-nuvem: reserva (o site mostra o aviso). */
+const RESERVA_URL = 'https://sons-problems.problemsbloxcreate.workers.dev';
+const fimDoDia = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
+let limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0;
+const emLimite = () => Date.now() < limiteAte;
+function reservaDe(env, auth) {
+  if (!auth || env.RESERVA === 'nao') return null; const base = (env.RESERVA_URL || RESERVA_URL).replace(/\/+$/, '');
+  const call = async (path, o = {}, ms = 9000) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+    try { return await fetch(base + path, { ...o, headers: { authorization: auth, ...(o.headers || {}) }, signal: ac.signal }); } finally { clearTimeout(t); } };
+  const ok = async r => { if (!r.ok) throw new Error('a nuvem reserva respondeu ' + r.status); return r; };
+  return {
+    async ativa() { if (Date.now() - resEstado.at < 120e3) return resEstado.ativo;
+      try { const j = await (await call('/reserva/estado', {}, 2500)).json(); resEstado = { at: Date.now(), ativo: !!j.ativo }; } catch { resEstado = { at: Date.now(), ativo: false }; } return resEstado.ativo; },
+    async indice(novo) { if (!novo && resIdx.m && Date.now() - resIdx.at < 60e3) return resIdx.m;
+      const j = await (await ok(await call('/reserva/lista'))).json(), m = new Map(); for (const k of j.keys || []) m.set(k.name, k); resIdx = { m, at: Date.now() }; return m; },
+    async get(k) { const r = await call('/reserva/arq?k=' + encodeURIComponent(k)); if (r.status === 404) return { value: null, metadata: null }; await ok(r);
+      let meta = {}; try { meta = JSON.parse(decodeURIComponent(r.headers.get('x-meta') || '%7B%7D')); } catch { } return { value: await r.arrayBuffer(), metadata: meta }; },
+    async put(k, v, meta) { await ok(await call('/reserva/arq?k=' + encodeURIComponent(k), { method: 'PUT', body: v, headers: { 'x-meta': encodeURIComponent(JSON.stringify(meta || {})) } }));
+      resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: meta || {} }); },
+    async del(k, tomb) { await ok(await call('/reserva/arq?k=' + encodeURIComponent(k) + (tomb ? '&tomb=1' : ''), { method: 'DELETE' }));
+      if (tomb) { resEstado = { at: Date.now(), ativo: true }; resIdx.m?.set(k, { name: k, metadata: { _del: 1 } }); } else resIdx.m?.delete(k); },
+    fim: () => call('/reserva/fim', { method: 'POST' }).then(() => { resEstado = { at: Date.now(), ativo: false }; }),
+    async fotoLista() { const a = await (await ok(await call('/reserva/lista-principal'))).json(); return a.length ? new Map(a.map(([n, m]) => [n, { name: n, ...(m ? { metadata: m } : {}) }])) : null; },
+    guardaLista: m => call('/reserva/lista-principal', { method: 'PUT', body: JSON.stringify([...m.values()].map(k => [k.name, k.metadata || null])) }, 20000),
+  };
+}
+const valorComo = (buf, o) => { const t = typeof o === 'string' ? o : o?.type || 'text'; if (buf == null) return null;
+  if (t === 'arrayBuffer') return buf; if (t === 'stream') return new Response(buf).body; const s = new TextDecoder().decode(buf); return t === 'json' ? JSON.parse(s) : s; };
+function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atualizar): busca de novo se a guardada tem mais de 30 s
+  const usou = () => { flag.reserva = true; }, marca = e => { if (!ehLimite(e)) return false; limiteAte = fimDoDia(); return true; };
+  const ativa = async () => !!R && (emLimite() || await R.ativa());
+  const res = async fn => { try { return await fn(); } catch (e) { throw new Error('KV limit exceeded for the day (e a nuvem reserva não respondeu: ' + String(e?.message || e).slice(0, 80) + ')'); } };
+  const naReserva = async k => { if (!(await ativa())) return null; try { return (await R.indice()).get(k) || null; } catch { return null; } };
   const carrega = async () => {
     if (kvLista && Date.now() - kvLista.at < (forcar ? 30e3 : KV_LISTA_MS)) return kvLista.m;
     const m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
-    kvLista = { m, at: Date.now() }; return m;
+    kvLista = { m, at: Date.now() };
+    if (R && Date.now() - fotoListaEm > 3600e3) { fotoListaEm = Date.now(); bg(R.guardaLista(m).catch(() => { })); } // foto da lista guardada na reserva (1 por hora)
+    return m;
   };
-  return {
-    get: (...a) => kv.get(...a), getWithMetadata: (...a) => kv.getWithMetadata(...a),
-    async put(k, v, o) { const r = await kv.put(k, v, o); if (kvLista) kvLista.m.set(k, { name: k, ...(o?.metadata ? { metadata: o.metadata } : {}) }); return r; },
-    async delete(k) { const r = await kv.delete(k); if (kvLista) kvLista.m.delete(k); return r; },
-    async list(o = {}) { const m = await carrega(), pre = o.prefix || ''; return { keys: [...m.values()].filter(k => k.name.startsWith(pre)).sort((a, b) => a.name < b.name ? -1 : 1), list_complete: true }; },
+  const ler = async (k, o, meta) => { const it = await naReserva(k);
+    if (it) { usou(); if (it.metadata?._del) return meta ? { value: null, metadata: null } : null; const g = await R.get(k); return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); }
+    return meta ? kv.getWithMetadata(k, o) : kv.get(k, o); };
+  const W = {
+    get: (k, o) => ler(k, o, false), getWithMetadata: (k, o) => ler(k, o, true),
+    async put(k, v, o) {
+      const poe = () => { if (kvLista) kvLista.m.set(k, { name: k, ...(o?.metadata ? { metadata: o.metadata } : {}) }); };
+      if (R && emLimite()) { await res(() => R.put(k, v, o?.metadata)); usou(); poe(); return; }
+      try { const r = await kv.put(k, v, o); poe(); const it = await naReserva(k); if (it) bg(R.del(k).catch(() => { })); return r; } // a da reserva ficou velha
+      catch (e) { if (!R || !marca(e)) throw e; return W.put(k, v, o); }
+    },
+    async delete(k) {
+      const it = await naReserva(k); if (it && !it.metadata?._del) { await R.del(k); usou(); if (kvLista && !kvLista.m.has(k)) return; }
+      if (R && emLimite()) { await res(() => R.del(k, true)); usou(); kvLista?.m.delete(k); return; }
+      try { const r = await kv.delete(k); kvLista?.m.delete(k); return r; } catch (e) { if (!R || !marca(e)) throw e; return W.delete(k); }
+    },
+    async list(o = {}) {
+      let m; try { m = await carrega(); }
+      catch (e) { if (!R || !marca(e)) throw e; m = kvLista?.m || await R.fotoLista().catch(() => null); if (!m) throw e; usou(); }
+      if (await ativa()) { try { const ri = await R.indice(); if (ri.size) { m = new Map(m); for (const [k, it] of ri) { if (it.metadata?._del) m.delete(k); else m.set(k, { name: k, metadata: it.metadata }); } usou(); } } catch { } }
+      const pre = o.prefix || ''; return { keys: [...m.values()].filter(k => k.name.startsWith(pre)).sort((a, b) => a.name < b.name ? -1 : 1), list_complete: true };
+    },
   };
+  return W;
+}
+// depois do limite: passa da reserva para a principal aos poucos (10 por pedido, no máximo a cada 2 min nesta instância)
+async function migra(kv, R) {
+  if (!R || emLimite() || Date.now() - migraEm < 120e3) return; migraEm = Date.now();
+  if (!(await R.ativa())) return;
+  const m = await R.indice(true); let n = 0;
+  for (const [k, it] of [...m]) {
+    if (n++ >= 10) break;
+    try {
+      if (it.metadata?._del) await kv.delete(k);
+      else { const atual = kvLista?.m.get(k)?.metadata, rm = it.metadata || {};
+        const maisNova = atual && (+(atual.mod || Date.parse(atual.em || 0) || 0)) > (+(rm.mod || Date.parse(rm.em || 0) || 0));
+        if (!maisNova) { const g = await R.get(k); if (g.value != null) { await kv.put(k, g.value, Object.keys(rm).length ? { metadata: rm } : undefined); if (kvLista) kvLista.m.set(k, { name: k, metadata: rm }); } } }
+      await R.del(k); m.delete(k);
+    } catch (e) { if (ehLimite(e)) limiteAte = fimDoDia(); break; }
+  }
+  if (!m.size) await R.fim().catch(() => { });
 }
 
 // limite grátis da Cloudflare acabou (KV: 1000 gravações/listas/apagadas por dia na conta): em vez de "Failed to fetch",
 // responde um aviso claro (com CORS, para o navegador conseguir ler) e quando volta (00:00 UTC = 21h de Brasília)
-const ehLimite = e => /limit|exceeded|10048|quota/i.test(String(e?.message || e));
+const ehLimite = e => /10048|free usage limit|limit exceeded for the day|for today|daily limit/i.test(String(e?.message || e));
 function avisoLimite(req, e) {
   const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const lim = ehLimite(e);
   return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
@@ -210,10 +283,18 @@ function avisoLimite(req, e) {
 
 export default {
   async fetch(req, env, ctx) {
-    try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
+    const flag = { reserva: false }; let r;
+    try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
+    if (flag.reserva || emLimite()) { // o site mostra "usando a nuvem reserva" (ou só o aviso do limite)
+      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? 'reserva' : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta');
+      r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+    }
+    return r;
   },
-  async atende(req, env, ctx) {
-    if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE, new URL(req.url).searchParams.get('novo') === '1'), _kvLista: true };
+  async atende(req, env, ctx, flag = {}) {
+    const auth0 = req.headers.get('authorization') || '', p00 = new URL(req.url).pathname;
+    const R = env.EQUIPE && p00 !== '/confere' && /^Bearer \S{20,}$/.test(auth0) ? reservaDe(env, auth0) : null, bg = pr => ctx?.waitUntil ? ctx.waitUntil(pr) : null;
+    if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE, new URL(req.url).searchParams.get('novo') === '1', R, flag, bg), _kvLista: true, _base: env.EQUIPE };
     const origin = req.headers.get('origin') || '';
     const origens = (env.ORIGENS || '*').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
     const liberado = origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin); // seu PC: sempre aceito (ainda exige login com e-mail liberado)
@@ -227,6 +308,8 @@ export default {
 
     const login = await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
+    if (R && login.email) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
+    if (new URL(req.url).pathname === '/confere') return json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); // a nuvem reserva confere se o login é da equipe (sem e-mail na resposta)
     // SEGURANÇA (não remover): quem é + chave do app criptografado — só com login do Firebase confirmado e e-mail liberado
     const p0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
     // MÍDIA DA EQUIPE (KV "EQUIPE" da Cloudflare, grátis: 1 GB, até 25 MB por arquivo) — só com login liberado

@@ -39,8 +39,10 @@
   const K = 'estudio-limite-cf', MSG = 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
   const MSG_TALVEZ = 'Não consegui falar com a nuvem da equipe. Se for o limite grátis de hoje da Cloudflare, ela volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
   const proxima = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
-  const marcado = () => { try { const t = +localStorage.getItem(K); return t > Date.now() ? t : 0; } catch { return 0; } };
-  const marca = t => { if (!(t > Date.now())) t = proxima(); try { localStorage.setItem(K, String(t)); } catch { } selo(); };
+  // marca = { t: quando a principal volta, r: está usando a nuvem reserva (conta antiga da Cloudflare) }
+  const le = () => { try { const v = localStorage.getItem(K) || ''; const o = v[0] === '{' ? JSON.parse(v) : { t: +v }; return o.t > Date.now() ? o : null; } catch { return null; } };
+  const marcado = () => le()?.t || 0, naReserva = () => !!le()?.r;
+  const marca = (t, r = false) => { if (!(t > Date.now())) t = proxima(); const a = le(); if (a && a.t === t && !!a.r === !!r) return; try { localStorage.setItem(K, JSON.stringify({ t, r: !!r })); } catch { } selo(); };
   const nosso = u => { try { const x = new URL(u, location.href); return x.origin === location.origin || /(^|\.)problemsraiz\.workers\.dev$/.test(x.hostname); } catch { return false; } };
   const falta = t => { const m = Math.max(0, Math.ceil((t - Date.now()) / 60e3)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
   let el = null, iv = 0;
@@ -57,7 +59,9 @@
     }
     const pinta = () => { const t2 = marcado(); if (!t2) return selo();
       const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
-      el.innerHTML = ic + (el._mini ? `<span>${falta(t2)}</span>` : `<span>Nuvem no limite grátis de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
+      const r = naReserva(); el.title = (r ? 'A nuvem principal chegou ao limite grátis de hoje da Cloudflare. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (21h de Brasília) passa de volta sozinho.' : MSG) + ' (clique para encolher)';
+      el.style.borderColor = r ? 'rgba(120,170,255,.35)' : 'rgba(255,255,255,.12)';
+      el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>` : `<span>Nuvem no limite grátis de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
   }
   const f0 = window.fetch?.bind(window); if (!f0) return;
@@ -71,9 +75,11 @@
       if (navigator.onLine === false) throw new TypeError('Sem internet agora. O que você fez continua guardado neste computador.');
       throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
     }
+    const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
+    if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'reserva' || (xn === 'limite' && naReserva() && r.ok));
     if (r.status === 503 || r.status === 429) {
       const tipo = r.headers.get('content-type') || '';
-      if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') marca(Date.parse(j.error.volta)); } catch { } }
+      if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') marca(Date.parse(j.error.volta), false); } catch { } }
       else if (!/event-stream/.test(tipo)) { // página de limite da própria Cloudflare (HTML): vira o mesmo aviso
         const txt = await r.clone().text().catch(() => '');
         if (/1027|limit|exceeded|rate.?limit/i.test(txt)) { marca(); return new Response(JSON.stringify({ error: { type: 'limite_cloudflare', message: MSG } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
@@ -82,7 +88,7 @@
     return r;
   };
   window.addEventListener('storage', e => { if (e.key === K) selo(); });
-  window.EstudioLimite = { marcado, marca, MSG, selo };
+  window.EstudioLimite = { marcado, naReserva, marca, MSG, selo };
   selo();
 })();
 (() => {
@@ -326,8 +332,13 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // se a foto falhar, tenta de novo uma vez (sem a memória do navegador) antes de mostrar a letra
   const av = p => p?.foto ? `<img src="${esc(p.foto)}" alt="" referrerpolicy="no-referrer" onerror="if(!this.dataset.r){this.dataset.r=1;var i=this;setTimeout(function(){i.src=i.src+(i.src.indexOf('?')<0?'?':'&')+'r='+Date.now()},1200)}else this.replaceWith(document.createTextNode('${ini(p)}'))">` : ini(p);
   let perfilP = null;
-  const perfil = (novo) => (!novo && perfilP) || (perfilP = fetch('/conta', { credentials: 'same-origin', cache: 'no-store' })
-    .then(r => r.ok && r.headers.get('x-porteiro') ? r.json() : null).catch(() => null));
+  // a conta fica guardada nesta aba por 3 min (trocar de programa não pede de novo); "novo" (salvou a conta) busca sempre
+  const CK = 'ep-conta-v1';
+  const perfil = (novo) => (!novo && perfilP) || (perfilP = (async () => {
+    if (!novo) { try { const c = JSON.parse(sessionStorage.getItem(CK) || 'null'); if (c && Date.now() - c.t < 180e3) return c.j; } catch { } }
+    const j = await fetch('/conta', { credentials: 'same-origin', cache: 'no-store' }).then(r => r.ok && r.headers.get('x-porteiro') ? r.json() : null).catch(() => null);
+    try { if (j) sessionStorage.setItem(CK, JSON.stringify({ t: Date.now(), j })); else sessionStorage.removeItem(CK); } catch { }
+    return j; })());
 
   // janela de confirmação no visual do Estúdio Problems (no lugar do confirm() do navegador); resolve true/false
   // trabalho: async () => {...} roda ao confirmar, com o botão em "Salvando…"; se der erro, mostra e oferece seguir mesmo assim
@@ -406,7 +417,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const temQueSalvar = salvadores().length > 0;
         if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu.' + (temQueSalvar ? ' O projeto aberto é salvo antes de sair.' : '') + ' Seus projetos salvos aqui continuam.',
           ok: 'Sair', perfil: p, trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Sair sem salvar' }))) return;
-        try { localStorage.removeItem('ep-conv-v1'); } catch { } if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
+        try { localStorage.removeItem('ep-conv-v1'); sessionStorage.removeItem('ep-conta-v1'); } catch { } if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
       pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
     };

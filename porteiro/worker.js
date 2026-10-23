@@ -203,7 +203,7 @@ async function nuvemArq(req, env, url) {
   const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
   const auth = req.headers.get('authorization') || ''; if (!/^Bearer \S+/.test(auth)) return json({ error: { message: 'Faltou o login do Google.' } }, 401);
   const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso/arq' + url.search, { headers: { authorization: auth, origin: url.origin } });
-  let r; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  let r; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   const h = new Headers(r.headers); h.set('cache-control', 'no-store'); h.delete('set-cookie'); for (const k of [...h.keys()]) if (k.startsWith('access-control-')) h.delete(k);
   return new Response(r.body, { status: r.status, headers: h });
 }
@@ -239,7 +239,7 @@ async function nuvemUso(req, env, url) {
     let apagados = 0;
     if (ks.length) {
       const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { method: 'POST', headers: { authorization: auth, origin: url.origin, 'content-type': 'application/json' }, body: JSON.stringify({ apagar: ks }) });
-      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
       if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403].includes(r.status) ? r.status : 502);
       apagados += +j.apagados || 0;
     }
@@ -252,7 +252,7 @@ async function nuvemUso(req, env, url) {
     return json({ ok: true, apagados });
   }
   const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
-  let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
   const perfis = new Map();
   const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (/^u[0-9a-f]{16}$/.test(email)) email = (await emailDoCodigo(env, email)) || email; // o turma-ia já manda o código no lugar do e-mail
@@ -325,7 +325,7 @@ async function acesso(req, env, url) {
       if (r.ok && b.acao === 'del') { await env.PERFIS.put('r:' + email, String(Date.now()), { expirationTtl: DURACAO + 3600 }); TIRADOS.delete(email); } // a sessão dele cai
       if (r.ok && b.acao === 'add') { await env.PERFIS.delete('r:' + email); TIRADOS.delete(email); }
     } else { r = await turma('GET'); j = await r.json().catch(() => ({})); }
-  } catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+  } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
   if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
   // monta a lista com nome/foto da conta (personalizado e original do Google)
   const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], itens = [];
@@ -840,9 +840,12 @@ async function contaEmUso(req, env, url) {
   const m = (await env.PERFIS.get(chave, { type: 'json' }).catch(() => null)) || {};
   for (const [id, v] of Object.entries(m)) if (agora - v.visto > SEIS_H * 1000) delete m[id];
   if (req.method === 'POST') {
+    const antes = JSON.stringify(m[eu] ? { ...m[eu], visto: 0 } : null), vistoAntes = m[eu]?.visto || 0, tinha = !!m[eu];
     if (b.ativo) m[eu] = { pc: String(b.pc || q.dispositivo.nome_pc || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 60), email: q.email, desde: m[eu]?.desde || agora, visto: agora };
     else delete m[eu];
-    if (Object.keys(m).length) await env.PERFIS.put(chave, JSON.stringify(m), { expirationTtl: SEIS_H }); else await env.PERFIS.delete(chave);
+    const igual = b.ativo ? antes === JSON.stringify({ ...m[eu], visto: 0 }) && agora - vistoAntes < 30 * 60e3 : !tinha; // nada mudou: não grava (limite de gravações por dia)
+    if (igual) { if (b.ativo) m[eu].visto = vistoAntes; }
+    else if (Object.keys(m).length) await env.PERFIS.put(chave, JSON.stringify(m), { expirationTtl: SEIS_H }); else await env.PERFIS.delete(chave);
   }
   const ativos = [];
   for (const [id, v] of Object.entries(m)) { const p = await lePerfil(env, v.email); ativos.push({ dispositivo: id, pc: v.pc, nome: p.nome || p.google?.nome || mascara(v.email), desde: v.desde, visto: v.visto, eu: id === eu }); }
@@ -864,12 +867,27 @@ async function menu(env, url, status = 200, req = null) {
 
 // limite grátis da Cloudflare (KV) acabou: aviso claro em vez de erro solto (volta 00:00 UTC = 21h de Brasília)
 function avisoLimitePorteiro(e) {
-  const lim = /limit|exceeded|10048|quota/i.test(String(e?.message || e)), d = new Date(); d.setUTCHours(24, 0, 0, 0);
+  const lim = /10048|free usage limit|limit exceeded for the day|for today|daily limit/i.test(String(e?.message || e)), d = new Date(); d.setUTCHours(24, 0, 0, 0);
   return json({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
     : { message: 'O porteiro teve um erro: ' + String(e?.message || e).slice(0, 160) } }, lim ? 503 : 500);
 }
+/* listas do KV PERFIS guardadas na memória por 5 min (o plano grátis só deixa 1000 listas por dia na conta toda);
+   o que este porteiro grava/apaga tira da memória a lista daquele começo de chave na hora */
+const LISTAS_P = new Map();
+function perfisCom(kv) {
+  if (!kv || kv._comLista) return kv; const solta = k => { for (const p of [...LISTAS_P.keys()]) if (String(k).startsWith(p)) LISTAS_P.delete(p); };
+  return { _comLista: true, get: (...a) => kv.get(...a), getWithMetadata: (...a) => kv.getWithMetadata(...a),
+    put: async (k, ...a) => { const r = await kv.put(k, ...a); solta(k); return r; }, delete: async k => { const r = await kv.delete(k); solta(k); return r; },
+    async list(o = {}) { const pre = o.prefix || '', c = LISTAS_P.get(pre);
+      if (o.cursor) return { keys: [], list_complete: true }; // a 1ª página já trouxe tudo (abaixo)
+      if (c && Date.now() - c.t < 5 * 60e3) return { keys: c.keys, list_complete: true };
+      try { const keys = []; let cur; do { const r = await kv.list({ prefix: pre, cursor: cur }); keys.push(...r.keys); cur = r.list_complete ? null : r.cursor; } while (cur);
+        LISTAS_P.set(pre, { t: Date.now(), keys }); return { keys, list_complete: true }; }
+      catch (e) { if (c) return { keys: c.keys, list_complete: true }; throw e; } } };
+}
 export default {
-  async fetch(req, env, ctx) { try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
+  async fetch(req, env, ctx) {
+    if (env.PERFIS && !env.PERFIS._comLista) env = { ...env, PERFIS: perfisCom(env.PERFIS) }; try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
   async atende(req, env) {
     const url = new URL(req.url), caminho = url.pathname;
     if (caminho === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain' } });
@@ -886,7 +904,7 @@ export default {
       // o servidor do Estúdio Problems só atende sites da lista ORIGENS: o porteiro se apresenta com o próprio endereço
       const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/quem', { headers: { authorization: 'Bearer ' + token, origin: url.origin } });
       let r; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); }
-      catch (e) { if (/limit|exceeded/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+      catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
       const j = await r.json().catch(() => ({}));
       if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
       if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor do Estúdio Problems (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
