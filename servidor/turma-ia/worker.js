@@ -261,6 +261,8 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
     async list(o = {}) {
       const semLista = async e => { let m2 = kvLista?.m || await R.fotoLista().catch(() => null);
         if (!m2) { const bk = await R.bkman().catch(() => null); if (bk?.itens && Object.keys(bk.itens).length) { m2 = new Map(Object.entries(bk.itens).map(([n, v]) => [n, { name: n, metadata: v.m || {} }])); flag.copia = true; } }
+        // sem foto nem cópia: ainda assim o que foi SALVO NA RESERVA aparece (lista parcial; o navegador mostra o resto como cópia local)
+        if (!m2) { const ri = await R.indice().catch(() => null); if (ri?.size) { m2 = new Map(); flag.parcial = true; } }
         if (!m2) throw e; usou(); return m2; };
       let m; if (R && emLimite() && !(kvLista && Date.now() - kvLista.at < KV_LISTA_MS)) m = await semLista(new Error('KV list() limit exceeded for the day.'));
       else try { m = await carrega(); } catch (e) { if (!R || !marca(e)) throw e; m = await semLista(e); }
@@ -311,7 +313,7 @@ export default {
     const flag = { reserva: false }; let r;
     try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
     if (flag.reserva || emLimite()) { // o site mostra "usando a nuvem reserva" (ou só o aviso do limite)
-      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? 'reserva' : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia');
+      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? 'reserva' : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial');
       r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
     return r;
