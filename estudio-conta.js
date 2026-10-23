@@ -607,7 +607,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   function avisoReserva(j) {
     if (!j?.nuvem) return ''; const v = Date.parse(j.volta || ''); if (!v || v < Date.now()) return '';
     const m = Math.ceil((v - Date.now()) / 6e4), h = Math.floor(m / 60), em = h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`, hora = new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return `<div class="ep-nv-aviso" role="status">${ICONES.nuvem}<div><b>${j.nuvem === 'reserva' ? 'Mostrando as informações da nuvem reserva.' : 'A nuvem principal chegou no limite de hoje.'}</b><small>A principal volta às ${hora} (em ${em}). ${j.nuvem === 'reserva' ? 'O que a equipe salvar até lá fica na reserva e volta sozinho para a principal.' : 'O que você fizer continua guardado neste computador.'}</small></div></div>`;
+    return `<div class="ep-nv-aviso" role="status">${ICONES.nuvem}<div><b>${j.antiga ? 'A nuvem principal chegou no limite de hoje: mostrando a última medida' + (j.em ? ' (de ' + new Date(j.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ')' : '') + '.' : j.nuvem === 'reserva' ? 'Mostrando as informações da nuvem reserva.' : 'A nuvem principal chegou no limite de hoje.'}</b><small>A principal volta às ${hora} (em ${em}). ${j.nuvem === 'reserva' || j.antiga ? 'O que a equipe salvar até lá vai para a nuvem reserva e volta sozinho para a principal.' : 'O que você fizer continua guardado neste computador.'}</small></div></div>`;
   }
   async function painelNuvem() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }

@@ -239,7 +239,7 @@ async function nuvemUso(req, env, url) {
     let apagados = 0;
     if (ks.length) {
       const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { method: 'POST', headers: { authorization: auth, origin: url.origin, 'content-type': 'application/json' }, body: JSON.stringify({ apagar: ks }) });
-      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
+      let r, j; try { r = env.TURMA ? await env.TURMA.fetch(ped) : await fetch(ped); j = await r.json().catch(() => ({})); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return (await ultima()) || avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
       if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403].includes(r.status) ? r.status : 502);
       apagados += +j.apagados || 0;
     }
@@ -258,8 +258,12 @@ async function nuvemUso(req, env, url) {
     let g = NUVEM_USO.j; if (!g) { try { const c = await caches.default.match(NUVEM_USO.k); if (c) g = NUVEM_USO.j = await c.json(); } catch { } }
     if (g && idade(g) < (novo ? 60e3 : 300e3)) return json({ ...g, adm: !!s.a, guardada: true }); }
   const pedido = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/nuvem-uso', { headers: { authorization: auth, origin: url.origin } });
+  // a principal chegou no limite e não deu para listar: mostra a última medida boa (guardada nas Mensagens, que não têm limite por dia)
+  const ultima = async volta => { if (!env.CONVERSAS) return null; try { let v = (await conversas(env, { op: 'ult-le' })).j?.v; if (!v) { v = NUVEM_USO.j; if (!v) { const c = await caches.default.match(NUVEM_USO.k).catch(() => null); if (c) v = await c.json(); } } if (!v) return null;
+    const d = new Date(); d.setUTCHours(24, 0, 0, 0); return json({ ...v, adm: !!s.a, nuvem: 'limite', antiga: true, volta: volta || d.toISOString() }); } catch { return null; } };
   let r, j; try { r = env.TURMA ? await env.TURMA.fetch(pedido) : await fetch(pedido); j = await r.json().catch(() => ({})); } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
-  if (!r.ok) return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501].includes(r.status) ? r.status : 502);
+  if (!r.ok) { if (r.status === 503 || j.error?.type === 'limite_cloudflare' || /limit/i.test(j.error?.message || '')) { const u2 = await ultima(j.error?.volta); if (u2) return u2; }
+    return json({ error: j.error || { message: 'Sem permissão.' } }, [400, 401, 403, 404, 501, 503].includes(r.status) ? r.status : 502); }
   const perfis = new Map();
   const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (/^u[0-9a-f]{16}$/.test(email)) email = (await emailDoCodigo(env, email)) || email; // o turma-ia já manda o código no lugar do e-mail
     if (!perfis.has(email)) { const p = await lePerfil(env, email);
@@ -292,6 +296,7 @@ async function nuvemUso(req, env, url) {
   const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;
   const out = { limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes), em: Date.now(),
     nuvem: r.headers.get('x-nuvem') || null, volta: r.headers.get('x-nuvem-volta') || null }; // reserva/limite: o círculo avisa que está mostrando a reserva
+  if (env.CONVERSAS && !out.nuvem) conversas(env, { op: 'ult-poe', v: out }).catch(() => { }); // só medida da principal inteira vira "última boa"
   NUVEM_USO.j = out; try { await caches.default.put(NUVEM_USO.k, new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=300' } })); } catch { }
   return json({ ...out, adm: !!s.a });
 }
@@ -448,6 +453,9 @@ export class Conversas {
     if (b.op === 'pessoa') { if (u && b.e) this.sql.exec('INSERT INTO pessoas(u,e,v) VALUES(?,?,?) ON CONFLICT(u) DO UPDATE SET e=excluded.e, v=excluded.v', u, b.e, agora); return Response.json({ ok: true }); }
     if (b.op === 'semear') { for (const p of b.lista || []) if (/^u[0-9a-f]{16}$/.test(p.u)) this.sql.exec('INSERT OR IGNORE INTO pessoas(u,e,v) VALUES(?,?,?)', p.u, p.e, +p.v || 0); return Response.json({ ok: true }); }
     if (b.op === 'pessoas') return Response.json(this.sql.exec('SELECT u, e, v FROM pessoas').toArray());
+    // última medida boa da nuvem (para o círculo roxo continuar mostrando algo quando a principal chega no limite do dia)
+    if (b.op === 'ult-le') { try { return Response.json({ v: JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'ult:nuvem-uso'").toArray()[0]?.v || 'null') }); } catch { return Response.json({ v: null }); } }
+    if (b.op === 'ult-poe') { this.sql.exec("INSERT INTO cfg(k,v) VALUES('ult:nuvem-uso', ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", JSON.stringify(b.v || null)); return Response.json({ ok: true }); }
     if (!u) return Response.json({ erro: 'sem pessoa' }, { status: 400 });
     if (b.e) { const r = this.sql.exec('SELECT v FROM pessoas WHERE u = ?', u).toArray()[0]; if (!r || agora - r.v > 6e5) this.sql.exec('INSERT INTO pessoas(u,e,v) VALUES(?,?,?) ON CONFLICT(u) DO UPDATE SET e=excluded.e, v=excluded.v', u, b.e, agora); }
     const M = this.minhas(u);
