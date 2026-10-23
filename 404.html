@@ -1256,7 +1256,17 @@ async function renderUsoDia(forcar) {
   const R = j.reserva || {}, chipR = R.erro ? '<span class="nvd-chip er">não respondeu</span>' : R.ativo ? '<span class="nvd-chip az">em uso</span>' : '<span class="nvd-chip">parada</span>';
   const extraR = `<div class="nvd-p">${R.erro ? 'A reserva não respondeu agora.' : R.ativo ? `Na reserva agora: <b style="color:var(--tx)">${num(R.n)} arquivo${R.n === 1 ? '' : 's'}</b>${R.bytes ? ` (${nvFmt(R.bytes)})` : ''}${R.apagadas ? ` e ${num(R.apagadas)} apagada${R.apagadas === 1 ? '' : 's'}` : ''} esperando para voltar à principal (volta sozinho depois das 21h).` : 'Vazia: entra sozinha só se a principal chegar no limite.'}</div>`;
   el.innerHTML = cartao('principal', 'Principal', 'conta nova · equipe', chipP) + cartao('reserva', 'Reserva', 'conta antiga · sons + reserva', chipR, extraR)
-    + `<div class="hint" style="grid-column:1/-1">${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (de 30 em 30 min) · ` : ''}o limite do plano grátis zera às 21h de Brasília (em ${falta(j.volta)}).</div>`;
+    + `<div class="hint nvd-rod" style="grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span>${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (sozinho de 30 em 30 min) · ` : ''}o limite do plano grátis zera às 21h de Brasília (em ${falta(j.volta)}).</span>
+      <button class="btn sm" type="button" id="nvd-medir" style="margin-left:auto" ${nvMedindo ? 'disabled' : ''} title="Mede o gasto de hoje agora (leva cerca de 1 minuto)">${nvMedindo ? '<span class="spin"></span>Medindo…' : 'Medir agora'}</button></div>`;
+  const bt = $('#nvd-medir'); if (bt) bt.onclick = () => medirUsoDia(c?.em || 0);
+}
+// "Medir agora": pede a medida já (a Action leva ~1 min) e confere a cada 15 s até chegar a nova (no máximo 4 min)
+let nvMedindo = false;
+async function medirUsoDia(antes) {
+  if (nvMedindo) return; nvMedindo = true; renderUsoDia(true).catch(() => { });
+  try { const r = await api('/nuvem-painel', { method: 'POST' }); if (r.erro) throw new Error(r.erro); } catch (e) { nvMedindo = false; await renderUsoDia(true); const el = $('#nuvem-dia .nvd-rod span'); if (el) el.textContent = 'Não consegui pedir a medida agora: ' + e.message; return; }
+  for (let i = 0; i < 16; i++) { await new Promise(r => setTimeout(r, 15e3)); let j; try { j = await api('/nuvem-painel'); } catch { continue; } if ((j.conta?.em || 0) > antes) break; }
+  nvMedindo = false; renderUsoDia(true);
 }
 async function renderNuvem(manter) {
   renderUsoDia(!!manter);
