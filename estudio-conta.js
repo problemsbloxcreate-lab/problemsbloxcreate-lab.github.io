@@ -42,7 +42,7 @@
   // marca = { t: quando a principal volta, r: está usando a nuvem reserva (conta antiga da Cloudflare) }
   const le = () => { try { const v = localStorage.getItem(K) || ''; const o = v[0] === '{' ? JSON.parse(v) : { t: +v }; return o.t > Date.now() ? o : null; } catch { return null; } };
   const marcado = () => le()?.t || 0, naReserva = () => !!le()?.r;
-  const marca = (t, r = false) => { if (!(t > Date.now())) t = proxima(); const a = le(); if (a && a.t === t && !!a.r === !!r) return; try { localStorage.setItem(K, JSON.stringify({ t, r: !!r })); } catch { } selo(); };
+  const marca = (t, r = false) => { if (!(t > Date.now())) t = proxima(); const a = le(); if (a?.r && Math.abs(a.t - t) < 6e4) r = true; /* a reserva já entrou hoje: o aviso continua "em uso" até a principal voltar (não pisca para o amarelo) */ if (a && a.t === t && !!a.r === !!r) return; try { localStorage.setItem(K, JSON.stringify({ t, r: !!r })); } catch { } selo(); };
   const nosso = u => { try { const x = new URL(u, location.href); return x.origin === location.origin || /(^|\.)problemsraiz\.workers\.dev$/.test(x.hostname); } catch { return false; } };
   const falta = t => { const m = Math.max(0, Math.ceil((t - Date.now()) / 60e3)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
   let el = null, iv = 0;

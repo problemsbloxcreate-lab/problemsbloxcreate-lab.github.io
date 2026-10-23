@@ -266,7 +266,7 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
         if (!m2) throw e; usou(); return m2; };
       let m; if (R && emLimite() && !(kvLista && Date.now() - kvLista.at < KV_LISTA_MS)) m = await semLista(new Error('KV list() limit exceeded for the day.'));
       else try { m = await carrega(); } catch (e) { if (!R || !marca(e)) throw e; m = await semLista(e); }
-      if (await ativa()) { try { const ri = await R.indice(); if (ri.size) { m = new Map(m); for (const [k, it] of ri) { if (it.metadata?._del) m.delete(k); else m.set(k, { name: k, metadata: it.metadata }); } usou(); } } catch { } }
+      if (await ativa()) { try { const ri = await R.indice(); if (ri.size) { m = new Map(m); for (const [k, it] of ri) { if (it.metadata?._del) m.delete(k); else m.set(k, { name: k, metadata: { ...(it.metadata || {}), _res: 1 } }); } usou(); } } catch { } } // _res: está na reserva (o Animador põe a borda cor água)
       const pre = o.prefix || ''; return { keys: [...m.values()].filter(k => k.name.startsWith(pre)).sort((a, b) => a.name < b.name ? -1 : 1), list_complete: true };
     },
   };
