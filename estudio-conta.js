@@ -605,8 +605,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   /* ---------------- espaço na NUVEM da equipe (Cloudflare) — círculo roxo, só nos programas que salvam na nuvem (CFG.nuvem) ----------------
      Mostra quanto a equipe já usou e quanto falta, e o que ocupa. Apagar da nuvem: só ADM (o servidor confere); quem não é ADM
      recebe o aviso para pedir a um ADM. O que está só neste computador se apaga pelo círculo do espaço no navegador. */
-  function anelNuvem(pct) {
-    const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : '#9b7bff', r = 13, L = 2 * Math.PI * r;
+  // na nuvem RESERVA (a principal chegou no limite de hoje) o círculo fica verde-água em vez de roxo
+  const usandoReserva = j => !!(j?.nuvem === 'reserva' || j?.antiga || (window.EstudioLimite?.marcado?.() > Date.now() && window.EstudioLimite?.naReserva?.()));
+  function anelNuvem(pct, reserva) {
+    const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : reserva ? '#2fd0a8' : '#9b7bff', r = 13, L = 2 * Math.PI * r;
     return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct > 0 ? 3 : 0, Math.min(100, pct)) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><path d="M11.6 19.4h8.6a2.9 2.9 0 0 0 .3-5.78 3.9 3.9 0 0 0-7.6.73 2.6 2.6 0 0 0-1.3 5.05z" fill="${c}"/></svg>`;
   }
   const tokenNuvem = async () => { try {
@@ -628,7 +630,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function atualizaNuvem(novo) {
     const bs = document.querySelectorAll('.ep-conta-nuvem'); if (!bs.length) return;
     try { const j = await usoNuvem(novo), pct = j.total / j.limite * 100;
-      bs.forEach(b => { b.innerHTML = anelNuvem(pct); b.title = (j.nuvem === 'reserva' ? 'Usando a nuvem reserva até a principal voltar · ' : '') + `Nuvem da equipe: ${fmt(j.total)} usados de ${fmt(j.limite)} · ${fmt(Math.max(0, j.limite - j.total))} livres (clique para ver o que ocupa)`; });
+      const res = usandoReserva(j); bs.forEach(b => { b.innerHTML = anelNuvem(pct, res); b.classList.toggle('reserva', res); b.title = (res ? 'Usando a nuvem reserva até a principal voltar · ' : '') + `Nuvem da equipe: ${fmt(j.total)} usados de ${fmt(j.limite)} · ${fmt(Math.max(0, j.limite - j.total))} livres (clique para ver o que ocupa)`; });
     } catch (e) { bs.forEach(b => { b.title = 'Nuvem da equipe: ' + (e.message || 'não respondeu'); });
       // o programa ainda está terminando de entrar com o Google: tenta de novo daqui a pouco
       if ((atualizaNuvem.tentativas = (atualizaNuvem.tentativas || 0) + 1) <= 6) setTimeout(() => atualizaNuvem(novo), 2500); return; }
@@ -657,7 +659,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
       cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
-        ${avisoReserva(j)}<div class="topo"><span style="flex:none">${anelNuvem(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>
+        ${avisoReserva(j)}<div class="topo"><span style="flex:none">${anelNuvem(pct, usandoReserva(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
         <h3>Por programa</h3>
