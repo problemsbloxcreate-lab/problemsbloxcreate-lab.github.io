@@ -29,6 +29,62 @@
    API: EstudioConta.montar(alvo?), EstudioConta.recarregar(), EstudioConta.atualizarTudo(), EstudioConta.perfil(), EstudioConta.ICONES
    ⚠ Isto é só a cara da conta: quem decide quem entra é o porteiro + o servidor do Estúdio Problems. Não ponha senhas aqui. */
 'use strict';
+/* ---------- LIMITE GRÁTIS DA CLOUDFLARE: aviso claro em vez de "Failed to fetch", em TODOS os programas ----------
+   O plano grátis da Cloudflare tem um limite por dia (volta às 00:00 UTC = 21h de Brasília). Quando o servidor responde
+   { error: { type: 'limite_cloudflare' } } (ou a Cloudflare devolve a página de limite dela), fica marcado neste navegador
+   até a hora de voltar: os erros de rede para a nossa nuvem viram a frase explicada e aparece um selo discreto com a
+   contagem regressiva (calculada aqui no computador, sem pedir nada para a nuvem). */
+(() => {
+  if (window.EstudioLimite) return;
+  const K = 'estudio-limite-cf', MSG = 'A nuvem da equipe chegou ao limite grátis de hoje da Cloudflare. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
+  const MSG_TALVEZ = 'Não consegui falar com a nuvem da equipe. Se for o limite grátis de hoje da Cloudflare, ela volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
+  const proxima = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
+  const marcado = () => { try { const t = +localStorage.getItem(K); return t > Date.now() ? t : 0; } catch { return 0; } };
+  const marca = t => { if (!(t > Date.now())) t = proxima(); try { localStorage.setItem(K, String(t)); } catch { } selo(); };
+  const nosso = u => { try { const x = new URL(u, location.href); return x.origin === location.origin || /(^|\.)problemsraiz\.workers\.dev$/.test(x.hostname); } catch { return false; } };
+  const falta = t => { const m = Math.max(0, Math.ceil((t - Date.now()) / 60e3)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
+  let el = null, iv = 0;
+  function selo() {
+    const t = marcado();
+    if (!t) { el?.remove(); el = null; clearInterval(iv); iv = 0; return; }
+    if (!document.body) return void document.addEventListener('DOMContentLoaded', selo, { once: true });
+    if (!el) {
+      el = document.createElement('div'); el.title = MSG + ' (clique para esconder)';
+      el.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:2147483600;display:flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:999px;font:12px/1.3 system-ui,sans-serif;color:#cfd3dc;background:rgba(20,22,28,.78);border:1px solid rgba(255,255,255,.12);opacity:.72;cursor:pointer;backdrop-filter:blur(4px);pointer-events:auto';
+      el.onmouseenter = () => el.style.opacity = '1'; el.onmouseleave = () => el.style.opacity = el._mini ? '.45' : '.72';
+      el.onclick = () => { el._mini = !el._mini; pinta(); };
+      document.body.appendChild(el);
+    }
+    const pinta = () => { const t2 = marcado(); if (!t2) return selo();
+      const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
+      el.innerHTML = ic + (el._mini ? `<span>${falta(t2)}</span>` : `<span>Nuvem no limite grátis de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
+    el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
+  }
+  const f0 = window.fetch?.bind(window); if (!f0) return;
+  window.fetch = async function (input, init) {
+    const url = typeof input === 'string' ? input : input?.url || String(input);
+    if (!nosso(url)) return f0(input, init);
+    let r;
+    try { r = await f0(input, init); }
+    catch (e) {
+      if (e?.name === 'AbortError' || !/fetch|network|load failed/i.test(String(e?.message))) throw e;
+      if (navigator.onLine === false) throw new TypeError('Sem internet agora. O que você fez continua guardado neste computador.');
+      throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
+    }
+    if (r.status === 503 || r.status === 429) {
+      const tipo = r.headers.get('content-type') || '';
+      if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') marca(Date.parse(j.error.volta)); } catch { } }
+      else if (!/event-stream/.test(tipo)) { // página de limite da própria Cloudflare (HTML): vira o mesmo aviso
+        const txt = await r.clone().text().catch(() => '');
+        if (/1027|limit|exceeded|rate.?limit/i.test(txt)) { marca(); return new Response(JSON.stringify({ error: { type: 'limite_cloudflare', message: MSG } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
+      }
+    }
+    return r;
+  };
+  window.addEventListener('storage', e => { if (e.key === K) selo(); });
+  window.EstudioLimite = { marcado, marca, MSG, selo };
+  selo();
+})();
 (() => {
   if (window.EstudioConta) return;
   const CFG = window.ESTUDIO_CONTA || {};

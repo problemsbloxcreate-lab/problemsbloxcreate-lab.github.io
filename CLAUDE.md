@@ -36,3 +36,7 @@
   (KV EQUIPE `acesso/extras`). Só os e-mails da variável `ADMINS` do turma-ia podem ver/adicionar/remover; sem ADMINS, ninguém.
 - O porteiro (`/acesso`) mostra os e-mails CENSURADOS, com nome/foto personalizados e os originais do Google; quem é tirado
   perde a sessão em até ~1 min (marca `r:<email>` no KV PERFIS). Nunca devolva e-mails inteiros para o navegador.
+
+## Limite grátis da Cloudflare (aviso em todos os programas)
+- O plano grátis tem limite por dia na conta (KV: 1000 gravações/apagadas/listas; volta 00:00 UTC = 21h de Brasília). O turma-ia e o porteiro respondem `{ error: { type: 'limite_cloudflare', volta } }` (503) em vez de erro solto.
+- `estudio-conta.js` (vai em todos os projetos) envolve o `fetch` para a nossa nuvem: guarda a marca no localStorage `estudio-limite-cf` até a hora de voltar, troca o "Failed to fetch" pela frase explicada e mostra um selo discreto embaixo à esquerda com a contagem regressiva (calculada no computador, sem pedir nada à nuvem; clique encolhe).
