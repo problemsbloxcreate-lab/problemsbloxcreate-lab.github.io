@@ -76,7 +76,8 @@
       throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
     }
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
-    if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'reserva' || (xn === 'limite' && naReserva() && r.ok));
+    if (xn === 'voltando') { if (marcado()) { try { localStorage.removeItem(K); } catch { } selo(); } } // a principal já voltou (o que sobrou na reserva está voltando para ela)
+    else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'reserva' || (xn === 'limite' && naReserva() && r.ok));
     if (r.status === 503 || r.status === 429) {
       const tipo = r.headers.get('content-type') || '';
       if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') marca(Date.parse(j.error.volta), false); } catch { } }
@@ -538,7 +539,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           try { const u = new URL(m[1], base); if (u.origin === location.origin && !/\/(entrar|sair|conta)$/.test(u.pathname)) fila.push(u.pathname + u.search); } catch { }
         }
       };
-      while (fila.length) { await Promise.all(fila.splice(0, 6).map(pega)); diz(`Atualizando os sites… ${feitos.size} arquivos`); }
+      // contagem real: quantos já baixou de quantos achou até agora (as páginas vêm primeiro e dizem quais arquivos usam, então o total para de crescer logo)
+      while (fila.length) { await Promise.all(fila.splice(0, 6).map(pega)); const total = feitos.size + new Set(fila.filter(c => !feitos.has(c))).size; diz(`Atualizando os sites… ${feitos.size} de ${total} arquivos`); }
       diz('Pronto! Tudo atualizado. Recarregando…');
     } catch (e) { diz('Não consegui atualizar tudo: ' + e.message); }
     setTimeout(() => location.reload(), 900);
