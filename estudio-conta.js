@@ -46,9 +46,11 @@
   const nosso = u => { try { const x = new URL(u, location.href); return x.origin === location.origin || /(^|\.)problemsraiz\.workers\.dev$/.test(x.hostname); } catch { return false; } };
   const falta = t => { const m = Math.max(0, Math.ceil((t - Date.now()) / 60e3)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
   let el = null, iv = 0;
+  // VOLTANDO: a principal já voltou e o que ficou na reserva está voltando para ela (aviso verde-água por alguns minutos)
+  const KV = 'estudio-voltando', voltando = () => { try { return +localStorage.getItem(KV) > Date.now(); } catch { return false; } };
   function selo() {
     const t = marcado();
-    if (!t) { el?.remove(); el = null; clearInterval(iv); iv = 0; return; }
+    if (!t && !voltando()) { el?.remove(); el = null; clearInterval(iv); iv = 0; return; }
     if (!document.body) return void document.addEventListener('DOMContentLoaded', selo, { once: true });
     if (!el) {
       el = document.createElement('div'); el.title = MSG + ' (clique para esconder)';
@@ -57,7 +59,12 @@
       el.onclick = () => { el._mini = !el._mini; pinta(); };
       document.body.appendChild(el);
     }
-    const pinta = () => { const t2 = marcado(); if (!t2) return selo();
+    const pinta = () => { const t2 = marcado();
+      if (!t2) { if (!voltando()) return selo();
+        el.title = 'A nuvem principal já voltou. O que foi salvo na nuvem reserva durante o limite está voltando para ela sozinho; ninguém precisa fazer nada. (clique para encolher)';
+        el.style.borderColor = 'rgba(47,208,168,.55)'; el.style.color = '#9df0db';
+        el.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 6.5 19z"/><path d="m9 13 2 2 4-4"/></svg>' + (el._mini ? '<span>voltando</span>' : '<span>Nuvem principal de volta · o que ficou na reserva está voltando</span>');
+        el.style.opacity = el._mini ? '.45' : '.72'; return; }
       const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
       const r = naReserva(); el.title = (r ? 'A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (21h de Brasília) passa de volta sozinho.' : MSG) + ' (clique para encolher)';
       el.style.borderColor = r ? 'rgba(47,208,168,.55)' : 'rgba(255,255,255,.12)'; el.style.color = r ? '#9df0db' : '#cfd3dc'; // nuvem reserva = verde-água
@@ -76,7 +83,7 @@
       throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
     }
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
-    if (xn === 'voltando') { if (marcado()) { try { localStorage.removeItem(K); } catch { } selo(); } } // a principal já voltou (o que sobrou na reserva está voltando para ela)
+    if (xn === 'voltando') { try { localStorage.removeItem(K); localStorage.setItem(KV, String(Date.now() + 10 * 6e4)); } catch { } selo(); } // a principal já voltou (o que sobrou na reserva está voltando para ela)
     else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'reserva' || (xn === 'limite' && naReserva() && r.ok));
     if (r.status === 503 || r.status === 429) {
       const tipo = r.headers.get('content-type') || '';
@@ -88,8 +95,8 @@
     }
     return r;
   };
-  window.addEventListener('storage', e => { if (e.key === K) selo(); });
-  window.EstudioLimite = { marcado, naReserva, marca, MSG, selo };
+  window.addEventListener('storage', e => { if (e.key === K || e.key === KV) selo(); });
+  window.EstudioLimite = { marcado, naReserva, voltando, marca, MSG, selo };
   selo();
 })();
 (() => {
@@ -650,6 +657,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     texto: `Peça para um ADM apagar ${nome ? '"' + nome + '"' : 'isso'} da nuvem da equipe (no menu, ADM › Nuvem). Você pode apagar o que está só neste computador pelo círculo do espaço no navegador.` });
   // a medida veio da nuvem reserva (a principal chegou no limite de hoje): aviso em cima, com quando a principal volta
   function avisoReserva(j) {
+    if (j?.nuvem === 'voltando' || (!j?.nuvem && window.EstudioLimite?.voltando?.())) return `<div class="ep-nv-aviso" role="status">${ICONES.nuvem}<div><b>A nuvem principal já voltou.</b><small>O que foi salvo na nuvem reserva durante o limite está voltando para ela sozinho, em poucos minutos. Ninguém precisa fazer nada.</small></div></div>`;
     if (!j?.nuvem) return ''; const v = Date.parse(j.volta || ''); if (!v || v < Date.now()) return '';
     const m = Math.ceil((v - Date.now()) / 6e4), h = Math.floor(m / 60), em = h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`, hora = new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     return `<div class="ep-nv-aviso" role="status">${ICONES.nuvem}<div><b>${j.antiga ? 'A nuvem principal chegou no limite de hoje: mostrando a última medida' + (j.em ? ' (de ' + new Date(j.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ')' : '') + '.' : j.nuvem === 'reserva' ? 'Mostrando as informações da nuvem reserva.' : 'A nuvem principal chegou no limite de hoje.'}</b><small>A principal volta às ${hora} (em ${em}). ${j.nuvem === 'reserva' || j.antiga ? 'O que a equipe salvar até lá vai para a nuvem reserva e volta sozinho para a principal.' : 'O que você fizer continua guardado neste computador.'}</small></div></div>`;
