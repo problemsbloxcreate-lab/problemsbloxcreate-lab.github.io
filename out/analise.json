@@ -1,5 +1,5 @@
 {
- "em": "2026-10-26T20:04:43.304Z",
+ "em": "2026-10-26T20:07:46.908Z",
  "canais": [
   {
    "h": "@Torajo",
@@ -28,7 +28,7 @@
      {
       "id": "YnUD60t_8gY",
       "titulo": "ALGORITHOMUS - Episódio 3",
-      "views": 4205221,
+      "views": 4205411,
       "dias": 10,
       "dur": "26:53",
       "em": "2026-10-15T21:00:11+00:00",
@@ -260,7 +260,168 @@
       "nota": 0.81
      }
     ],
-    "populares": [],
+    "populares": [
+     {
+      "id": "ZDW9eJOtZ3s",
+      "titulo": "Só Confie em Mim 🍉 - Clipe Oficial",
+      "views": 25000000,
+      "dias": 365,
+      "dur": "4:00",
+      "nota": 11.9
+     },
+     {
+      "id": "mM7bhQekpI4",
+      "titulo": "ESTRANHOS 🍓🍏 - Clipe Oficial",
+      "views": 21000000,
+      "dias": 210,
+      "dur": "3:32",
+      "nota": 10
+     },
+     {
+      "id": "O9GxqrbSk9M",
+      "titulo": "Diferente Juntos 🍋🍋‍🟩 - Clipe Oficial",
+      "views": 14000000,
+      "dias": 150,
+      "dur": "3:48",
+      "nota": 6.67
+     },
+     {
+      "id": "P8_BEDcVhSE",
+      "titulo": "Muito Doces 🍭 - Clipe Oficial",
+      "views": 13000000,
+      "dias": 60,
+      "dur": "3:09",
+      "nota": 6.19
+     },
+     {
+      "id": "bZqkHVv1cGw",
+      "titulo": "MUNDO DE FRUTAS 🍏 - Clipe Oficial",
+      "views": 12000000,
+      "dias": 365,
+      "dur": "2:41",
+      "nota": 5.71
+     },
+     {
+      "id": "la1ivh8d8oI",
+      "titulo": "O Linn é..................... ?",
+      "views": 9500000,
+      "dias": 730,
+      "dur": "18:16",
+      "nota": 4.52
+     },
+     {
+      "id": "crTjJFOxE40",
+      "titulo": "ALGORITHOMUS - Episódio 1",
+      "views": 8100000,
+      "dias": 730,
+      "dur": "13:28",
+      "nota": 3.86
+     },
+     {
+      "id": "jHYN_HRkOKU",
+      "titulo": "Torajo + Zulmi = a....................",
+      "views": 7500000,
+      "dias": 730,
+      "dur": "8:38",
+      "nota": 3.57
+     },
+     {
+      "id": "HunkYZJz3Po",
+      "titulo": "Investigando Meus Amigos com DETECTOR DE MENTIRAS",
+      "views": 7300000,
+      "dias": 730,
+      "dur": "12:42",
+      "nota": 3.48
+     },
+     {
+      "id": "pUwXO9_3quE",
+      "titulo": "FRUTÁSTICO 🥭 - Clipe Oficial",
+      "views": 7100000,
+      "dias": 90,
+      "dur": "3:50",
+      "nota": 3.38
+     },
+     {
+      "id": "2VXSux-Cwnw",
+      "titulo": "Um Erro 🥝🍉 - Clipe Oficial",
+      "views": 6900000,
+      "dias": 5,
+      "dur": "3:55",
+      "nota": 3.29
+     },
+     {
+      "id": "T02bc6-QMB8",
+      "titulo": "Fale Comigo 🍏🍎 - Clipe Oficial",
+      "views": 6800000,
+      "dias": 30,
+      "dur": "3:30",
+      "nota": 3.24
+     },
+     {
+      "id": "L_yXON2Vko0",
+      "titulo": "O Azedo é..................... ?",
+      "views": 6200000,
+      "dias": 730,
+      "dur": "13:26",
+      "nota": 2.95
+     },
+     {
+      "id": "8A_VsUK2mkA",
+      "titulo": "ALGORITHOMUS - Episódio 2",
+      "views": 6000000,
+      "dias": 365,
+      "dur": "22:36",
+      "nota": 2.86
+     },
+     {
+      "id": "hcZK2lPOQfg",
+      "titulo": "TORAJO vs MORAJO - O Filme",
+      "views": 6000000,
+      "dias": 730,
+      "dur": "50:34",
+      "nota": 2.86
+     },
+     {
+      "id": "VNqjvBZDpmc",
+      "titulo": "Respondendo aquela Pergunta...",
+      "views": 5900000,
+      "dias": 730,
+      "dur": "8:02",
+      "nota": 2.81
+     },
+     {
+      "id": "8nNlRRKB2NU",
+      "titulo": "O Crush da Pessy é o............",
+      "views": 5400000,
+      "dias": 365,
+      "dur": "13:00",
+      "nota": 2.57
+     },
+     {
+      "id": "mvar3kgPKyU",
+      "titulo": "O MELHOR NATAL DAS NOSSAS VIDAS !!!",
+      "views": 4900000,
+      "dias": 365,
+      "dur": "9:51",
+      "nota": 2.33
+     },
+     {
+      "id": "4OJz9_cdn3k",
+      "titulo": "TORAJO vs MORAJO - A Batalha Final",
+      "views": 4500000,
+      "dias": 730,
+      "dur": "10:17",
+      "nota": 2.14
+     },
+     {
+      "id": "YnUD60t_8gY",
+      "titulo": "ALGORITHOMUS - Episódio 3",
+      "views": 4200000,
+      "dias": 10,
+      "dur": "26:53",
+      "nota": 2
+     }
+    ],
     "bem": [
      {
       "id": "O9GxqrbSk9M",
@@ -307,7 +468,7 @@
      {
       "id": "YnUD60t_8gY",
       "titulo": "ALGORITHOMUS - Episódio 3",
-      "views": 4205221,
+      "views": 4205411,
       "dias": 10,
       "dur": "26:53",
       "em": "2026-10-15T21:00:11+00:00",
@@ -369,7 +530,7 @@
      {
       "id": "L16gfcFffCE",
       "titulo": "BATE E BOLA com a MARGO",
-      "views": 327197,
+      "views": 331304,
       "em": "2026-10-26T16:00:03+00:00",
       "desc": "#torajo #animação",
       "dias": 0,
@@ -387,7 +548,7 @@
      {
       "id": "Ydinm01cUIM",
       "titulo": "E SE OS PERSONAGENS DO MUNDO TORAJO TIVESSEM TWITTER",
-      "views": 1341222,
+      "views": 1341891,
       "em": "2026-10-24T16:00:23+00:00",
       "desc": "#torajo #animação",
       "dias": 2,
@@ -396,7 +557,7 @@
      {
       "id": "Cm7ckPMUlWo",
       "titulo": "ACABOU!",
-      "views": 2057349,
+      "views": 2057980,
       "em": "2026-10-23T18:00:37+00:00",
       "desc": "#torajo #animação",
       "dias": 3,
@@ -405,7 +566,7 @@
      {
       "id": "EOIuPZWf7Ck",
       "titulo": "EU ERA A ESTRELA!",
-      "views": 1771036,
+      "views": 1771462,
       "em": "2026-10-22T16:00:07+00:00",
       "desc": "#torajo #animação",
       "dias": 4,
@@ -414,7 +575,7 @@
      {
       "id": "BWla5Crs0uM",
       "titulo": "Hoje toda essa história acaba...",
-      "views": 1413816,
+      "views": 1414026,
       "em": "2026-10-20T16:00:29+00:00",
       "desc": "#torajo #animação",
       "dias": 6,
@@ -432,7 +593,7 @@
      {
       "id": "W4wbJGL2yKg",
       "titulo": "Vamos descobrir dia 20...",
-      "views": 1324444,
+      "views": 1324561,
       "em": "2026-10-18T16:00:16+00:00",
       "desc": "#torajo #animação",
       "dias": 8,
@@ -441,7 +602,7 @@
      {
       "id": "dSHerOdgnx8",
       "titulo": "A verdade e o erro...",
-      "views": 1408519,
+      "views": 1408600,
       "em": "2026-10-17T16:00:24+00:00",
       "desc": "#torajo #animação",
       "dias": 9,
@@ -691,7 +852,152 @@
       "nota": 0.97
      }
     ],
-    "populares": [],
+    "populares": [
+     {
+      "id": "APVW5X-F8wM",
+      "titulo": "férias",
+      "views": 22000000,
+      "nota": 11.81
+     },
+     {
+      "id": "1YTC8LckipM",
+      "titulo": "caramelo",
+      "views": 16000000,
+      "nota": 8.59
+     },
+     {
+      "id": "11njp9EVBoQ",
+      "titulo": "Minecraft, mas Reagindo as piores Fanarts 24",
+      "views": 14000000,
+      "nota": 7.51
+     },
+     {
+      "id": "1a-dCfjC57c",
+      "titulo": "REAGINDO AOS DESENHOS ANTIGOS DA ZULMI",
+      "views": 13000000,
+      "nota": 6.98
+     },
+     {
+      "id": "WVE6IFESOsw",
+      "titulo": "POV: Irmões",
+      "views": 12000000,
+      "nota": 6.44
+     },
+     {
+      "id": "dEGcX8mq2X8",
+      "titulo": "Qual a altura ?",
+      "views": 11000000,
+      "nota": 5.9
+     },
+     {
+      "id": "NRqsJLeXjb4",
+      "titulo": "o dinheiro...",
+      "views": 11000000,
+      "nota": 5.9
+     },
+     {
+      "id": "YgNicrWQGLE",
+      "titulo": "A TRAJETÓRIA DO MUNDO TORAJO YOUTUBE #Publicidade #Ad #VejaSuaPaixãoValerAPena",
+      "views": 11000000,
+      "nota": 5.9
+     },
+     {
+      "id": "LohcZFBCIyc",
+      "titulo": "introvertido vs extrovertido...",
+      "views": 10000000,
+      "nota": 5.37
+     },
+     {
+      "id": "vF17eE_cCYw",
+      "titulo": "IDADE #shorts",
+      "views": 10000000,
+      "nota": 5.37
+     },
+     {
+      "id": "KtH5lNufyfE",
+      "titulo": "SEGREDOS EXCLUSIVO DO TORAJO",
+      "views": 10000000,
+      "nota": 5.37
+     },
+     {
+      "id": "0BjlzlI_ytE",
+      "titulo": "dinheiro",
+      "views": 10000000,
+      "nota": 5.37
+     },
+     {
+      "id": "d9OaMFFav-U",
+      "titulo": "Torajo e Morajo Reagindo a Fanarts 40",
+      "views": 9900000,
+      "nota": 5.31
+     },
+     {
+      "id": "265hzwYtWsw",
+      "titulo": "🩷MUNDO TORAJO MULHER ???",
+      "views": 9700000,
+      "nota": 5.21
+     },
+     {
+      "id": "M9J9PAubqUQ",
+      "titulo": "confortável #shorts",
+      "views": 9500000,
+      "nota": 5.1
+     },
+     {
+      "id": "0vv74uFB1AI",
+      "titulo": "menino macho #torajo #animação #omdt",
+      "views": 9500000,
+      "nota": 5.1
+     },
+     {
+      "id": "M8GEdAvcmn4",
+      "titulo": "café",
+      "views": 9300000,
+      "nota": 4.99
+     },
+     {
+      "id": "Uoleb-Bdj5M",
+      "titulo": "Você e seu amigo que só se zoam #animação",
+      "views": 9300000,
+      "nota": 4.99
+     },
+     {
+      "id": "0qR6Xj0RsT8",
+      "titulo": "Zulmi e Torajo, Reagindo a fanarts.",
+      "views": 9000000,
+      "nota": 4.83
+     },
+     {
+      "id": "UtuUObERm0Q",
+      "titulo": "REAGINDO AOS PERSONAGENS QUE VOCÊS CRIARAM 04",
+      "views": 8900000,
+      "nota": 4.78
+     },
+     {
+      "id": "MtnF_oUm6e4",
+      "titulo": "🟩🟦🟥🟨",
+      "views": 8800000,
+      "nota": 4.72
+     },
+     {
+      "id": "hG4TMjrds7w",
+      "titulo": "GENDER SWAP - MUNDO TORAJO #phonk #animation",
+      "views": 8700000,
+      "nota": 4.67
+     },
+     {
+      "id": "FoRrXKwMRJQ",
+      "titulo": "QUANDO SEU MELHOR AMIGO TE CONHECE BEM",
+      "views": 8600000,
+      "nota": 4.62
+     },
+     {
+      "id": "EJFpuYEmzzY",
+      "titulo": "E SE OS PERSONAGENS DO MUNDO TORAJO TIVESSEM TWITTER VOLTOUU",
+      "views": 8600000,
+      "nota": 4.62
+     }
+    ],
     "bem": [
      {
       "id": "gbQJiyZZdyE",
@@ -777,7 +1083,7 @@
    "nVideos": "363 vídeos",
    "avatar": "https://yt3.googleusercontent.com/vxUq9Zf0XZo7zpd-cTi2IoN37vGz3eplmTJxYjRzMAk4ZzbKhrLJwbdkaT2h5vXRCk7RhEFPdQ=s900-c-k-c0x00ffffff-no-rj",
    "mediana": {
-    "longo": 820726,
+    "longo": 820754,
     "short": 804000
    },
    "longos": {
@@ -825,7 +1131,7 @@
      {
       "id": "li1BTGnwbPc",
       "titulo": "ENCONTRAMOS OUTRA BATATINHA",
-      "views": 857852,
+      "views": 857878,
       "dias": 30,
       "dur": "21:55",
       "em": "2026-09-16T21:00:23+00:00",
@@ -835,7 +1141,7 @@
      {
       "id": "N8hj5jquSbM",
       "titulo": "O Yuyu NÃO SABIA...",
-      "views": 766564,
+      "views": 766579,
       "dias": 30,
       "dur": "16:16",
       "em": "2026-09-03T21:00:38+00:00",
@@ -845,7 +1151,7 @@
      {
       "id": "rur9_8qhajI",
       "titulo": "A Sunny ERROU",
-      "views": 820726,
+      "views": 820754,
       "dias": 60,
       "dur": "15:18",
       "em": "2026-08-19T21:30:36+00:00",
@@ -1037,7 +1343,168 @@
       "nota": 0.74
      }
     ],
-    "populares": [],
+    "populares": [
+     {
+      "id": "VDuJ52n5SsA",
+      "titulo": "DOMINAR O MUNDO - TURMA DA BATATINHA | MÚSICA",
+      "views": 15000000,
+      "dias": 365,
+      "dur": "3:31",
+      "nota": 18.28
+     },
+     {
+      "id": "ckPB6OWzqBo",
+      "titulo": "A PRINCESA FALHA - TURMA DA BATATINHA | MÚSICA",
+      "views": 12000000,
+      "dias": 300,
+      "dur": "3:58",
+      "nota": 14.62
+     },
+     {
+      "id": "ox2snsfVfyI",
+      "titulo": "TÃO SOZINHA ASSIM - TURMA DA BATATINHA | MÚSICA",
+      "views": 7300000,
+      "dias": 120,
+      "dur": "3:09",
+      "nota": 8.89
+     },
+     {
+      "id": "yCavVUsSg3I",
+      "titulo": "A irmã da Batatinha CHEGOU! - TURMA DA BATATINHA  |  ANIMAÇÃO",
+      "views": 3200000,
+      "dias": 300,
+      "dur": "10:46",
+      "nota": 3.9
+     },
+     {
+      "id": "vNeWxj1rLUg",
+      "titulo": "A DOCE VERDADE! - TURMA DA BATATINHA | ANIMAÇÃO PARTE 2",
+      "views": 2900000,
+      "dias": 270,
+      "dur": "10:51",
+      "nota": 3.53
+     },
+     {
+      "id": "WuaLhXbOhDU",
+      "titulo": "ENCONTREI AMIGOS - TURMA DA BATATINHA | MÚSICA",
+      "views": 2700000,
+      "dias": 14,
+      "dur": "3:14",
+      "nota": 3.29
+     },
+     {
+      "id": "bf3dHhmQdHg",
+      "titulo": "A FANTASMA CHEGOU!",
+      "views": 1600000,
+      "dias": 120,
+      "dur": "12:58",
+      "nota": 1.95
+     },
+     {
+      "id": "kTl7NnAnI8w",
+      "titulo": "REVELANDO o passado da Turma da Batatinha",
+      "views": 1500000,
+      "dias": 365,
+      "dur": "8:46",
+      "nota": 1.83
+     },
+     {
+      "id": "YnYPjdqqnsc",
+      "titulo": "Sequestrei 3 YOUTUBERS para dominar o mundo",
+      "views": 1500000,
+      "dias": 365,
+      "dur": "5:41",
+      "nota": 1.83
+     },
+     {
+      "id": "T3UKdijcaMk",
+      "titulo": "Meus AMIGOS estão NAMORANDO?",
+      "views": 1500000,
+      "dias": 365,
+      "dur": "8:43",
+      "nota": 1.83
+     },
+     {
+      "id": "eAS8qXp4mbM",
+      "titulo": "A Batatinha tá NAMORANDO alguém da TURMA?",
+      "views": 1400000,
+      "dias": 365,
+      "dur": "10:30",
+      "nota": 1.71
+     },
+     {
+      "id": "mOFTldFDsOE",
+      "titulo": "Eles Ficaram MAIS Próximos depois de.....",
+      "views": 1300000,
+      "dias": 365,
+      "dur": "11:42",
+      "nota": 1.58
+     },
+     {
+      "id": "U7Wi4Ft_zMQ",
+      "titulo": "Eles ficaram SOZINHOS e...",
+      "views": 1300000,
+      "dias": 330,
+      "dur": "11:07",
+      "nota": 1.58
+     },
+     {
+      "id": "MCIS2jsuD0g",
+      "titulo": "Tem ALGUÉM na Turma…",
+      "views": 1200000,
+      "dias": 150,
+      "dur": "9:30",
+      "nota": 1.46
+     },
+     {
+      "id": "ERR_eCdZalY",
+      "titulo": "TROCAMOS as nossas PERSONALIDADES!",
+      "views": 1100000,
+      "dias": 365,
+      "dur": "10:55",
+      "nota": 1.34
+     },
+     {
+      "id": "LIZv7_ugySE",
+      "titulo": "VERDADE ou DESAFIO da Turma da Batatinha",
+      "views": 1000000,
+      "dias": 365,
+      "dur": "12:12",
+      "nota": 1.22
+     },
+     {
+      "id": "0T2QfDGjzk8",
+      "titulo": "A Névoa CONHECE a Doci?",
+      "views": 996000,
+      "dias": 120,
+      "dur": "14:37",
+      "nota": 1.21
+     },
+     {
+      "id": "4MCzas4ZHkg",
+      "titulo": "Lendo Comentários ESTRANHOS da Turma da Batatinha",
+      "views": 991000,
+      "dias": 365,
+      "dur": "9:34",
+      "nota": 1.21
+     },
+     {
+      "id": "O0IBu2XotyU",
+      "titulo": "O que ACONTECEU com a DOCI?",
+      "views": 972000,
+      "dias": 240,
+      "dur": "8:13",
+      "nota": 1.18
+     },
+     {
+      "id": "QpqlSlJX4so",
+      "titulo": "Rimas como as Minhas - Turma da Batatinha ft Mussa",
+      "views": 907000,
+      "dias": 210,
+      "dur": "9:40",
+      "nota": 1.11
+     }
+    ],
     "bem": [
      {
       "id": "ckPB6OWzqBo",
@@ -1137,7 +1604,7 @@
      {
       "id": "oqJqrcRouWk",
       "titulo": "alguma coisa tá acontecendo",
-      "views": 421393,
+      "views": 421532,
       "em": "2026-10-24T21:00:11+00:00",
       "desc": "-. .- --- / .- -.. .. .- -. - .- / ..-. ..- --. .. .-.",
       "dias": 2,
@@ -1146,7 +1613,7 @@
      {
       "id": "vWpqkocUSBE",
       "titulo": "Essa caverna dá medo!",
-      "views": 296108,
+      "views": 296183,
       "em": "2026-10-23T21:00:24+00:00",
       "desc": ".- -.-. .... .- -- / --.- ..- . / . ... - .- --- / ... . --. ..- .-. --- ... ..--..",
       "dias": 3,
@@ -1173,7 +1640,7 @@
      {
       "id": "kMxvg-O7WDo",
       "titulo": "deixe a Batatinha feliz",
-      "views": 181426,
+      "views": 181455,
       "em": "2026-10-19T21:00:29+00:00",
       "desc": "VOTE CANAL INFANTIL: https://premioibest.vote/226672064 VOTE ILUSTRAÇÃO E ANIMAÇÃO: https://premioibest.vote/697518849",
       "dias": 7,
@@ -1191,7 +1658,7 @@
      {
       "id": "vzJ9PIYq0jg",
       "titulo": "VOTE na TURMA DA BATATINHA no iBest",
-      "views": 223808,
+      "views": 223814,
       "em": "2026-10-15T20:00:15+00:00",
       "desc": "VOTE CANAL INFANTIL: https://premioibest.vote/226672064 VOTE ILUSTRAÇÃO E ANIMAÇÃO: https://premioibest.vote/697518849",
       "dias": 11,
@@ -1438,7 +1905,152 @@
       "nota": 0.28
      }
     ],
-    "populares": [],
+    "populares": [
+     {
+      "id": "LE1uazcjaJI",
+      "titulo": "Você já ouviu o Yuyu cantando?😮😍",
+      "views": 2400000,
+      "nota": 2.99
+     },
+     {
+      "id": "4M-T4jZBNH4",
+      "titulo": "Qual outro visual você mais gostou? 🤔",
+      "views": 2300000,
+      "nota": 2.86
+     },
+     {
+      "id": "FWG0baf6H2g",
+      "titulo": "RANCKEANDO os MEDOS da TURMA",
+      "views": 2100000,
+      "nota": 2.61
+     },
+     {
+      "id": "kUsbUpKvx6Y",
+      "titulo": "Você prefere DOCI ou SALGADO???¿¿¿",
+      "views": 2000000,
+      "nota": 2.49
+     },
+     {
+      "id": "ZQPM9UWi1-0",
+      "titulo": "Qual seu PERSONAGEM FAVORITO da Turma da batatinha?",
+      "views": 1700000,
+      "nota": 2.11
+     },
+     {
+      "id": "oF68E1RLdhc",
+      "titulo": "Apenas Batatinha DANÇANDO",
+      "views": 1700000,
+      "nota": 2.11
+     },
+     {
+      "id": "9l5-Huw0cmQ",
+      "titulo": "Esses inúteis não sabem de nada!",
+      "views": 1600000,
+      "nota": 1.99
+     },
+     {
+      "id": "8f-C5G4h6iY",
+      "titulo": "Onde está a Batatinha?",
+      "views": 1500000,
+      "nota": 1.87
+     },
+     {
+      "id": "sQY9dFJbbF4",
+      "titulo": "Queridos! Podem vir aqui por favor?",
+      "views": 1500000,
+      "nota": 1.87
+     },
+     {
+      "id": "wyOEiFMytDU",
+      "titulo": "Vista a Batatinha II! 😱",
+      "views": 1400000,
+      "nota": 1.74
+     },
+     {
+      "id": "L0j5EPCLIfU",
+      "titulo": "a gente todo dia com a nova música",
+      "views": 1400000,
+      "nota": 1.74
+     },
+     {
+      "id": "ANNOmvYtric",
+      "titulo": "E se a Turma da Batatinha fossem blocos de Minecraft",
+      "views": 1400000,
+      "nota": 1.74
+     },
+     {
+      "id": "g8JWPj2MtcY",
+      "titulo": "Reagindo a Fanarts dos inscritos com a Sunny!🥰",
+      "views": 1400000,
+      "nota": 1.74
+     },
+     {
+      "id": "7lCrPAW0qdc",
+      "titulo": "Eles PREFEREM doce ou salgado?  | Turma da Batatinha",
+      "views": 1400000,
+      "nota": 1.74
+     },
+     {
+      "id": "-gvCR9cM38o",
+      "titulo": "a Turma da Batatinha tá bem?......",
+      "views": 1300000,
+      "nota": 1.62
+     },
+     {
+      "id": "yPlECrxvaG8",
+      "titulo": "a fantasma vai ter uma música?",
+      "views": 1300000,
+      "nota": 1.62
+     },
+     {
+      "id": "AXXddw7k2fQ",
+      "titulo": "As comidas favoritas da Turma da Batatinha!🥰",
+      "views": 1300000,
+      "nota": 1.62
+     },
+     {
+      "id": "KylCwOMNv-o",
+      "titulo": "Sunny fez a pergunta proibida pra Névoa...",
+      "views": 1200000,
+      "nota": 1.49
+     },
+     {
+      "id": "1ocAGCo4zl0",
+      "titulo": "Reagindo a fanarts dos inscritos com o Yuyu!🥰",
+      "views": 1200000,
+      "nota": 1.49
+     },
+     {
+      "id": "uBfjNhdt6mo",
+      "titulo": "3 curiosidades sobre a Doci!",
+      "views": 1100000,
+      "nota": 1.37
+     },
+     {
+      "id": "238fmNgcUDI",
+      "titulo": "3 curiosidades sobre a Batatinha",
+      "views": 1100000,
+      "nota": 1.37
+     },
+     {
+      "id": "X7FZ5_CFLV4",
+      "titulo": "Qual fez o melhor desenho? 😂",
+      "views": 1100000,
+      "nota": 1.37
+     },
+     {
+      "id": "qZTgJkCMfss",
+      "titulo": "A Batatinha está com RAIVA DO YUYU???",
+      "views": 1000000,
+      "nota": 1.24
+     },
+     {
+      "id": "GkM_a-7W33A",
+      "titulo": "batatinha tá ficando doida?",
+      "views": 1000000,
+      "nota": 1.24
+     }
+    ],
     "bem": [
      {
       "id": "kUsbUpKvx6Y",
