@@ -1,0 +1,12 @@
+name: teste-yt
+on: { push: { branches: [teste-yt] } }
+permissions: { contents: write }
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node pega.mjs
+      - run: |
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add out; git commit -m "saida [skip ci]" || true; git push
