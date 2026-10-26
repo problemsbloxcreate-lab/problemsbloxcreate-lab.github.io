@@ -186,11 +186,13 @@ async function aoVivoLimpa(env, forcar) {
    biblioteca/espaço gastava listas e o limite do dia acabava ("reached the free usage limit"). */
 let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
 /* NUVEM RESERVA (decisão do dono, 23/10/2026): quando esta conta chega no limite grátis do dia, o que seria gravado/apagado vai
-   para a reserva na conta antiga da Cloudflare (Worker sons-problems, rotas /reserva/*), e as leituras/listas juntam as duas.
+   para a reserva (Worker reserva-problems com D1; em último caso ele passa para a antiga, sons-problems), e as leituras/listas juntam.
    Depois das 21h de Brasília (00:00 UTC) a principal volta e, aos poucos, tudo passa de volta (`migra`) e sai da reserva.
    Fora do limite a reserva não muda nada (só confere "tem algo lá?" no máximo a cada 2 min). Respostas que usaram a
    reserva levam o cabeçalho x-nuvem: reserva (o site mostra o aviso). */
-const RESERVA_URL = 'https://sons-problems.problemsbloxcreate.workers.dev';
+// desde 26/10/2026 a reserva é a NOVA (Worker reserva-problems, D1 na 3ª conta, ~100 mil gravações/dia); ela mesma passa para a
+// reserva ANTIGA (sons-problems, conta antiga) só quando também chega no limite — o contrato /reserva/* é o mesmo
+const RESERVA_URL = 'https://reserva-problems.problemsraizz.workers.dev';
 const fimDoDia = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
 let fotoC = null, limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0, bkMan = null, resConta = null, cheioVisto = 0;
 // PROTEÇÃO: com 85% das gravações, listas ou apagadas do dia já gastas (medida de 15 em 15 min), a principal é poupada até as 21h

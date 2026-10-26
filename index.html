@@ -214,7 +214,7 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nv-limpa{margin-left:8px;display:inline-flex;align-items:center;gap:5px;color:#ff8f8f}.nv-limpa:hover{background:rgba(255,80,80,.14)}.nv-erro{color:#ff8f8f;margin-bottom:10px}
 .nv-ia{font-size:10.5px;padding:1px 6px;border-radius:6px;color:#bff4ff;background:linear-gradient(90deg,#1a6dff,#19d3f0);margin-left:6px}
 /* ADM › Nuvem: as três nuvens, abrir (player de som/vídeo, imagem, texto), baixar e apagar */
-.nvd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0 8px}
+.nvd{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 8px}
 .nvd-c{border:1px solid var(--bd);background:var(--bg1);border-radius:16px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:14px}
 .nvd-h{display:flex;align-items:flex-start;gap:10px}.nvd-h>div{min-width:0}.nvd-h b{display:block;font-size:15px;line-height:1.25}.nvd-h small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
 .nvd-chip{margin-left:auto;flex:none;font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
@@ -231,7 +231,7 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nvd-ck{display:flex;flex-wrap:wrap;gap:8px}.nvd-ck label{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:99px;border:1px solid var(--bd2);font-size:12.5px;cursor:pointer;color:var(--tx2)}
 .nvd-ck label:has(input:checked){color:var(--tx);border-color:rgba(var(--ac-rgb),.5);background:rgba(var(--ac-rgb),.1)}.nvd-ck label.fixo{cursor:default}.nvd-ck input{accent-color:var(--ac);margin:0}
 .nvd-rod{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--tx3);padding:2px 2px 0}
-@media (max-width:860px){.nvd{grid-template-columns:1fr}}@media (max-width:420px){.nvd-g{grid-template-columns:1fr 1fr}}
+@media (max-width:1180px){.nvd{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:860px){.nvd{grid-template-columns:1fr}}@media (max-width:420px){.nvd-g{grid-template-columns:1fr 1fr}}
 .nv-fontes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:20px 0 14px;position:relative;clear:both}
 .nv-fontes button{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(48,48,48,.85);color:var(--tx);cursor:pointer;font:inherit}
 .nv-fontes button b{font-size:13.5px}.nv-fontes button small{color:var(--tx2);font-size:11.5px}.nv-fontes button:hover{border-color:var(--bd2)}
@@ -1306,8 +1306,9 @@ async function renderUsoDia(forcar) {
   const cartao = (papel, titulo, sub, chip, extra) => { const o = velho ? null : c?.contas?.[papel];
     const linhas = !o ? `<div class="nvd-p">${c ? (velho ? 'Ainda não medi hoje (o limite já zerou às 21h).' : 'Sem medida desta conta (o token dela precisa de Account Analytics: Read).') : 'Ainda sem medida: a Action "Uso da nuvem" mede de 30 em 30 min.'}</div>`
       : o.erro ? `<div class="nvd-p">${esc(o.erro)}</div>`
+      : papel === 'nova' ? '<div class="nvd-g">' + barra('Gravações', o.d1.write, L.d1Write || 1e5) + barra('Leituras', o.d1.read, L.d1Read || 5e6) + barra('Pedidos', o.workers, L.workers) + (o.bytes != null ? barra('Espaço', o.bytes, L.d1Bytes || 524288000, nvFmt) : '') + '</div>'
       : '<div class="nvd-g">' + barra('Gravações', o.kv.write, L.write) + barra('Listas', o.kv.list, L.list) + barra('Apagadas', o.kv.delete, L.delete) + barra('Leituras', o.kv.read, L.read) + barra('Pedidos', o.workers, L.workers) + (o.bytes != null ? barra('Espaço', o.bytes, L.bytes, nvFmt) : '') + '</div>';
-    const res = papel === 'reserva'; // a nuvem reserva fica em verde-água
+    const res = papel !== 'principal'; // as reservas ficam em verde-água
     return `<div class="nvd-c"><div class="nvd-h"><div><b${res ? ' style="color:#2fd0a8"' : ''}>${titulo}</b><small>${sub}</small></div>${chip}</div>${res ? linhas.replaceAll('background:var(--ac)', 'background:#2fd0a8') : linhas}${extra || ''}</div>`; };
   const pr = c && !velho ? c.contas?.principal : null, cheia = j.limite || (pr && !pr.erro && Math.max(pr.kv.write / L.write, pr.kv.list / L.list, pr.kv.delete / L.delete) >= 1);
   const chipP = cheia ? '<span class="nvd-chip er">no limite de hoje</span>' : pr && !pr.erro && Math.max(pr.kv.write / L.write, pr.kv.list / L.list, pr.kv.delete / L.delete) >= .7 ? '<span class="nvd-chip al">perto do limite</span>' : '<span class="nvd-chip ok">normal</span>';
@@ -1321,7 +1322,10 @@ async function renderUsoDia(forcar) {
     : R.ativo
     ? `<div class="nvd-aviso res" role="status">${icoAviso}<div><b>${cheia ? 'A nuvem principal chegou no limite de hoje.' : 'A nuvem reserva ainda está sendo usada.'} A reserva está sendo usada até as ${hora21} (em ${falta(j.volta)}).</b><small>O que a equipe salvar fica na reserva e volta sozinho para a principal depois desse horário. Ninguém precisa fazer nada.</small></div></div>`
     : `<div class="nvd-aviso al" role="status">${icoAviso}<div><b>A nuvem principal chegou no limite de hoje.</b><small>A reserva entra sozinha no próximo arquivo salvo e fica até as ${hora21} (em ${falta(j.volta)}). Depois disso tudo volta para a principal.</small></div></div>`;
-  el.innerHTML = aviso + cartao('principal', 'Nuvem principal', 'Conta nova · personagens, cenários, menu', chipP) + cartao('reserva', 'Nuvem reserva', 'Conta antiga · sons e reserva da equipe', chipR, extraR)
+  const an = c && !velho ? c.contas?.reserva : null, anCheia = an && !an.erro && an.kv && Math.max(an.kv.write / L.write, an.kv.list / L.list, an.kv.delete / L.delete) >= 1;
+  const chipA = anCheia ? '<span class="nvd-chip er">no limite de hoje</span>' : '<span class="nvd-chip">último caso</span>';
+  const extraA = '<div class="nvd-p">Guarda os sons e o Shorts. Para a equipe, só entra se a reserva também chegar no limite (é raro: ela aceita cerca de 100 mil gravações por dia).</div>';
+  el.innerHTML = aviso + cartao('principal', 'Nuvem principal', 'Conta problemsraiz · personagens, cenários, menu', chipP) + cartao('nova', 'Nuvem reserva', 'Conta nova · banco D1, entra quando a principal enche', chipR, extraR) + cartao('reserva', 'Reserva da reserva', 'Conta antiga · sons, Shorts e último caso', chipA, extraA)
     + `<div class="nvd-rod"><span>${c ? `Medido ${new Date(c.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (sozinho de 30 em 30 min) · ` : ''}o limite zera às 21h de Brasília (em ${falta(j.volta)}).</span>
       <button class="btn sm" type="button" id="nvd-medir" style="margin-left:auto" ${nvMedindo ? 'disabled' : ''} title="Mede o gasto de hoje agora (leva cerca de 1 minuto)">${nvMedindo ? '<span class="spin"></span>Medindo…' : 'Medir agora'}</button></div>`;
   const bt = $('#nvd-medir'); if (bt) bt.onclick = () => medirUsoDia(c?.em || 0);

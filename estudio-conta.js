@@ -45,7 +45,7 @@
   // nuvem dos SONS (conta antiga: sons, Shorts, modelos) no limite — separada da da equipe
   const sons = () => { try { const t = +localStorage.getItem(KS); return t > Date.now() ? t : 0; } catch { return 0; } };
   const MSG_SONS = t => `A nuvem dos sons (sons, Shorts e modelos) chegou ao limite de hoje. Volta sozinha às ${horaTxt(t)}. O resto do Estúdio continua normal.`;
-  // marca = { t: quando a principal volta, r: está usando a nuvem reserva (conta antiga da Cloudflare) }
+  // marca = { t: quando a principal volta, r: está usando a nuvem reserva }
   const le = () => { try { const v = localStorage.getItem(K) || ''; const o = v[0] === '{' ? JSON.parse(v) : { t: +v }; return o.t > Date.now() ? o : null; } catch { return null; } };
   const marcado = () => le()?.t || 0, naReserva = () => !!le()?.r;
   const marca = (t, r = false) => { if (!(t > Date.now())) t = proxima(); const a = le(); if (a?.r && Math.abs(a.t - t) < 6e4) r = true; /* a reserva já entrou hoje: o aviso continua "em uso" até a principal voltar (não pisca para o amarelo) */ if (a && a.t === t && !!a.r === !!r) return; try { localStorage.setItem(K, JSON.stringify({ t, r: !!r })); } catch { } selo(); };
@@ -76,7 +76,7 @@
         el.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 6.5 19z"/><path d="m9 13 2 2 4-4"/></svg>' + (el._mini ? '<span>voltando</span>' : '<span>Nuvem principal de volta · o que ficou na reserva está voltando</span>');
         el.style.opacity = el._mini ? '.45' : '.72'; return; }
       const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
-      const r = naReserva(); el.title = (r ? `A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : MSG) + ' (clique para encolher)';
+      const r = naReserva(); el.title = (r ? `A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : MSG) + ' (clique para encolher)';
       el.style.borderColor = r ? 'rgba(47,208,168,.55)' : 'rgba(255,255,255,.12)'; el.style.color = r ? '#9df0db' : '#cfd3dc'; // nuvem reserva = verde-água
       el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
