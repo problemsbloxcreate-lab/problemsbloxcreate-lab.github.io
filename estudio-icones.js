@@ -76,9 +76,12 @@
   async function busca() { try { const r = await fetch('/icones', { cache: 'no-cache', credentials: 'same-origin' }); if (!r.ok) return; const j = await r.json(); troca(j.icones || {}, 'nuvem'); } catch { } }
   let bc = null; try { bc = new BroadcastChannel('estudio-icones'); bc.onmessage = e => troca(e.data?.m, 'outra aba'); } catch { }
   addEventListener('storage', e => { if (e.key === K) { try { troca(JSON.parse(e.newValue || 'null')?.m, 'outra aba'); } catch { } } });
-  if (location.protocol.startsWith('http')) busca();
+  // a tela de carregamento espera os ícones de agora (é rápido; o desenho já sai do que está guardado neste navegador)
+  const pronto = location.protocol.startsWith('http') ? busca() : Promise.resolve();
+  const naTarefa = () => { try { window.EstudioProgresso?.tarefa?.(pronto, 'Ícones dos programas'); } catch { } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', naTarefa, { once: true }); else naTarefa();
   window.EstudioIcones = {
-    PADRAO: copia(PADRAO), IDS, svg, url, pinta,
+    PADRAO: copia(PADRAO), IDS, svg, url, pinta, pronto,
     config: () => copia(cfg), padrao: id => copia(PADRAO[id]),
     usar(id) { atual = id; favicon(); },
     atual: () => atual,

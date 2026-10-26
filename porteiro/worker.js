@@ -171,9 +171,11 @@ async function repassa(req, url, p, env, s) {
     const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
     // ícone da aba: cada programa usa o próprio logo; o do menu só entra nas páginas que não têm ícone nenhum
     const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
-    const extra = (h.includes('estudio-icones.js') ? '' : '<script src="/estudio-icones.js"></script>') + carregando + icone + // ícones dos programas (aba, cabeçalho, carregamento)
+    const extra = carregando + icone +
        (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
     h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h; }
+    // ícones dos programas (aba, cabeçalho, carregamento): TODA página (entra por último logo depois do <head>, então roda ANTES da tela de carregamento) de programa, até as sem conta/nuvem (ex.: Animador)
+    if (!h.includes('estudio-icones.js')) { const m0 = h.match(/<head[^>]*>/i), ic = '<script src="/estudio-icones.js"></script>'; h = m0 ? h.slice(0, m0.index + m0[0].length) + ic + h.slice(m0.index + m0[0].length) : ic + h; }
     try { h = await comVersoes(env, h, url.href, s); } catch { }
     out.delete('content-length'); out.delete('content-encoding'); out.delete('etag'); out.delete('last-modified');
     // ETag da página já montada: se o navegador já tem esta versão, responde "não mudou" (304) e ele não baixa de novo
