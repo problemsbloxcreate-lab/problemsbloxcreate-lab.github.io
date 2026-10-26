@@ -150,6 +150,7 @@ async function repassa(req, url, p, env, s) {
   // GitHub Pages guarda cada arquivo por 10 min no cache dele: um número que muda a cada 30 s faz a atualização chegar logo para todo mundo
   if (!p.servico && req.method === 'GET' && /\.github\.io$/.test(alvo.hostname)) alvo.searchParams.set('_at', String(Math.floor(Date.now() / 30000)));
   const h = new Headers(req.headers); h.delete('cookie'); h.delete('host'); h.delete('x-porteiro-passe');
+  if (s.dispositivo) h.delete('authorization'); // o token do PC não sai do porteiro
   if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
   const pedido = new Request(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
   // worker da mesma conta: só dá para chamar pela ligação direta (Service Binding); os outros, pela internet
@@ -773,6 +774,16 @@ async function leDispositivo(env, token) {
   return { id, ...d };
 }
 // quem está pedindo: token de dispositivo (Authorization: Bearer) ou a sessão do navegador
+/* Shorts no PC (26/10/2026): o estúdio do Shorts exporta cada cena como está (CINE_EXPORT) e o serviço local (token de dispositivo,
+   sem navegador) a renderiza no Minecraft daquele PC e grava o vídeo para a linha do tempo — pelo /nuvem/, SÓ na rota rev/img e SÓ
+   nas chaves de cinema do vídeo: <id>-cinexp e <id>-cinemundo (ler) | <id>-mine e <id>-cinest (ler e gravar).
+   Qualquer outra coisa continua pedindo o login do menu. */
+async function nuvemDispositivo(req, env, url, p) {
+  if (!/^Bearer /.test(req.headers.get('authorization') || '') || p.resto !== 'rev/img') return null;
+  const m = (url.searchParams.get('id') || '').match(/^[a-z0-9][a-z0-9-]{0,100}-(cinexp|cinemundo|cinest|mine)$/);
+  if (!m || !['GET', 'PUT'].includes(req.method) || (req.method === 'PUT' && !['mine', 'cinest'].includes(m[1]))) return null;
+  const q = await quemPede(req, env); return q?.dispositivo ? { e: q.email, dispositivo: true } : null;
+}
 async function quemPede(req, env) {
   const auth = req.headers.get('authorization') || '';
   if (auth) { const m = auth.match(/^Bearer ([\w-]+)$/); const d = m && await leDispositivo(env, m[1]); return d ? { email: d.email, adm: !!d.adm, dispositivo: d } : null; }
@@ -1002,7 +1013,7 @@ export default {
     if (p) {
       if (p.para) return Response.redirect(new URL(p.para.replace(/\/?$/, '/') + (p.resto || '') + url.search, url).href, 302);
       if (p.redirecionar) return Response.redirect(new URL(p.pref.replace(/\/?$/, '/') + url.search, url).href, 302);
-      const s = await leSessao(env, req);
+      const s = (await leSessao(env, req)) || (p.pref === '/nuvem/' ? await nuvemDispositivo(req, env, url, p) : null);
       if (!s) {
         const pagina = req.method === 'GET' && (req.headers.get('accept') || '').includes('text/html');
         if (pagina) return new Response(null, { status: 302, headers: { location: '/?volta=' + encodeURIComponent(caminho + url.search), 'cache-control': 'no-store' } });
