@@ -16,14 +16,25 @@
     an: { nome: 'Animador', let: 'An', fg: '#3fd6f2', bg: '#062832', borda: 1, bc: '#3fd6f2', raio: 22 },
     at: { nome: 'Ateliê', let: 'At', fg: '#ffb04a', bg: '#2e1804', borda: 1, bc: '#ffb04a', raio: 22 },
     md: { nome: 'Modelador', let: 'Md', fg: '#4fe08f', bg: '#0a2a17', borda: 1, bc: '#4fe08f', raio: 22 },
+    cn: { nome: 'Cenários', let: 'Cn', fg: '#7fd1ff', bg: '#0a1e33', borda: 1, bc: '#7fd1ff', raio: 22, parte: 'Animador' }, // parte de um programa (botão Cenários do Animador)
   };
-  const K = 'ep-icones-v1', IDS = Object.keys(PADRAO);
+  /* ÍCONES NOVOS (ADM › Ícones › "+ Ícone novo", ou um botão novo do menu): id "x-<nome>", com nome e, se quiser, o começo do
+     endereço do projeto (caminho, ex.: "/jogos/") — nessa página a aba do navegador e o data-estudio-icone="auto" usam ele. */
+  const ehNovo = id => /^x-[a-z0-9-]{1,30}$/.test(id);
+  const K = 'ep-icones-v1', BASE = Object.keys(PADRAO); let IDS = [...BASE];
   const copia = o => JSON.parse(JSON.stringify(o));
   const cor = (c, d) => /^#[0-9a-f]{6}$/i.test(c || '') ? c : d;
   // junta o que a ADM mudou com o padrão (o que faltar ou vier errado fica como o padrão)
+  const PALETA = [['#ffd36b', '#2e2304'], ['#ff8f6b', '#2e1206'], ['#7fd1ff', '#0a1e33'], ['#c99bff', '#1d0f33'], ['#6bffc8', '#06291f'], ['#ff6bd0', '#2e0622'], ['#b6ff6b', '#1a2e06']];
+  // ícone novo: letras e cor saem do nome (o mesmo nome dá sempre a mesma cor)
+  function novoPadrao(nome) { const t = String(nome || 'Novo').trim().split(/\s+/).filter(Boolean), g = t.filter(w => w.length > 2 || /^[A-Z0-9]/.test(w)), p = g.length ? g : t, l = p.length > 1 ? p[0][0].toUpperCase() + p[1][0].toLowerCase() : (p[0] || 'Nv').slice(0, 2).replace(/^./, c => c.toUpperCase());
+    let h = 0; for (const ch of String(nome)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const [fg, bg] = PALETA[h % PALETA.length];
+    return { nome: String(nome || 'Novo').slice(0, 40), let: l, fg, bg, borda: 1, bc: fg, raio: 22, novo: true }; }
   function junta(m) {
-    const out = copia(PADRAO);
+    const out = copia(PADRAO); IDS = [...BASE];
+    for (const id of Object.keys(m || {})) if (ehNovo(id) && m[id] && typeof m[id].nome === 'string' && m[id].nome.trim()) { out[id] = novoPadrao(m[id].nome.trim()); IDS.push(id); }
     for (const id of IDS) { const x = m?.[id]; if (!x || typeof x !== 'object') continue; const o = out[id];
+      if (o.novo) { if (typeof x.nome === 'string' && x.nome.trim()) o.nome = x.nome.trim().slice(0, 40); if (typeof x.caminho === 'string' && /^\/[a-z0-9/_-]{1,60}$/i.test(x.caminho)) o.caminho = x.caminho; if (typeof x.botao === 'string') o.botao = x.botao.slice(0, 40); }
       if (typeof x.let === 'string' && x.let.trim()) o.let = x.let.trim().slice(0, 3);
       o.fg = cor(x.fg, o.fg); o.bg = cor(x.bg, o.bg); o.bc = cor(x.bc, o.bc);
       if (x.borda === 0 || x.borda === 1) o.borda = x.borda;
@@ -49,7 +60,8 @@
   const url = id => 'data:image/svg+xml,' + encodeURIComponent(svg(id, 64));
   // programa desta página pelo endereço (o Ateliê troca com usar('at'))
   const p = location.pathname, porCaminho = p.startsWith('/shorts') ? 'sh' : p.startsWith('/editor') ? 'ed' : p.startsWith('/animador') ? (/[?&]atelie=/.test(location.search) ? 'at' : 'an') : p.startsWith('/modelador') ? 'md' : null;
-  let atual = porCaminho;
+  const doCaminho = () => porCaminho || IDS.find(id => cfg[id]?.caminho && p.startsWith(cfg[id].caminho)) || null; // projeto novo: pelo caminho que a ADM ligou
+  let atual = doCaminho();
   function favicon() {
     if (!atual || !document.head) return; const u = url(atual);
     let ls = [...document.head.querySelectorAll('link[rel~="icon"]')];
@@ -60,7 +72,8 @@
   function antigo(src) { src = String(src || ''); for (const [re, id] of ANTIGOS) if (re.test(src)) return id; return /^(\.\/)?icone\.svg$/.test(src) ? atual : null; } // "icone.svg" solto = o do programa desta página
   function pinta(raiz) {
     favicon();
-    (raiz || document).querySelectorAll?.('[data-estudio-icone]').forEach(el => { const id = el.getAttribute('data-estudio-icone'), ch = JSON.stringify(cfg[id] || '') + id;
+    if (!porCaminho && !atual) atual = doCaminho();
+    (raiz || document).querySelectorAll?.('[data-estudio-icone]').forEach(el => { let id = el.getAttribute('data-estudio-icone'); if (id === 'auto') id = atual || 'an'; const ch = JSON.stringify(cfg[id] || '') + id;
       if (el._epIc === ch) return; el._epIc = ch; el.innerHTML = svg(id); });
     // <img data-estudio-icone-img="an"> (telas de carregamento): troca a imagem pela de agora
     // imagens com os ícones ANTIGOS em qualquer lugar (botões, menus…): viram o ícone de agora (o mesmo da ADM)
@@ -73,7 +86,7 @@
   if (document.readyState === 'loading') { favicon(); document.addEventListener('DOMContentLoaded', liga, { once: true }); } else liga();
   function troca(m, de) { // m = o que a ADM salvou (só o que difere do padrão)
     const novo = junta(m); if (JSON.stringify(novo) === JSON.stringify(cfg)) return;
-    cfg = novo; try { localStorage.setItem(K, JSON.stringify({ m: m || {}, t: Date.now() })); } catch { }
+    cfg = novo; if (!porCaminho) atual = doCaminho() || atual; try { localStorage.setItem(K, JSON.stringify({ m: m || {}, t: Date.now() })); } catch { }
     pinta(); try { dispatchEvent(new CustomEvent('estudio-icones', { detail: { de } })); } catch { }
   }
   // confere o que está salvo no porteiro (uma vez por abertura; guardado neste navegador para já abrir certo)
@@ -85,8 +98,8 @@
   const naTarefa = () => { try { window.EstudioProgresso?.tarefa?.(pronto, 'Ícones dos programas'); } catch { } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', naTarefa, { once: true }); else naTarefa();
   window.EstudioIcones = {
-    PADRAO: copia(PADRAO), IDS, svg, url, pinta, pronto,
-    config: () => copia(cfg), padrao: id => copia(PADRAO[id]),
+    PADRAO: copia(PADRAO), get IDS() { return [...IDS]; }, BASE: [...BASE], svg, url, pinta, pronto, ehNovo, novoPadrao,
+    config: () => copia(cfg), padrao: id => copia(PADRAO[id] || cfg[id] || novoPadrao('Novo')),
     usar(id) { atual = id; favicon(); },
     atual: () => atual,
     // só a ADM: salva para toda a equipe (o porteiro confere se é ADM)

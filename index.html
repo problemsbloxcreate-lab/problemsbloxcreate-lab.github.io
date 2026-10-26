@@ -136,7 +136,7 @@ svg{display:block;flex:none}
 @media (max-width:700px){.ic-adm{grid-template-columns:1fr}}
 .ic-lista{display:flex;flex-direction:column;gap:6px}.ic-lista button{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--bd2);background:var(--bg2);color:var(--tx);cursor:pointer;text-align:left;font:inherit}
 .ic-lista button[aria-selected=true]{border-color:var(--ac);background:rgba(var(--ac-rgb),.12)}.ic-lista button i{font-style:normal;margin-left:auto;font-size:11px;color:var(--tx3)}
-.ic-f{display:grid;grid-template-columns:130px 1fr;gap:10px 12px;align-items:center}.ic-f>label{color:var(--tx2);font-size:13px}
+.ic-f{display:grid;grid-template-columns:130px 1fr;gap:10px 12px;align-items:center}.ic-novo[hidden],#ic-apagar[hidden]{display:none!important}.ic-novo{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bd)}.ic-f .ic-largo{width:min(320px,100%)!important;font-weight:500!important;background:var(--bg0);color:var(--tx);border:1px solid var(--bd2);border-radius:8px;padding:7px 10px;font:inherit}.ic-grupo{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);margin:8px 2px 0}.ic-grupo:first-child{margin-top:0}.ic-lista .ic-add{justify-content:center;border-style:dashed;color:var(--tx2)}.ic-lista .ic-sug{border-style:dashed;opacity:.85}.ic-lista .ic-sug small{margin-left:auto;font-size:11px;color:var(--ac)}.ic-f>label{color:var(--tx2);font-size:13px}
 .ic-f input[type=text]{background:var(--bg0);color:var(--tx);border:1px solid var(--bd2);border-radius:8px;padding:7px 10px;width:110px;font-weight:700}
 .ic-f input[type=color]{width:44px;height:30px;border:1px solid var(--bd2);border-radius:6px;background:none;padding:2px;cursor:pointer}.ic-f input[type=range]{width:180px}
 .ic-cx{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -331,7 +331,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <button role="tab" data-aba="botoes"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span><b>Botões</b><small>os projetos do menu</small></span></button>
     <button role="tab" data-aba="mensagens"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span><b>Mensagens</b><small>saudação e frases</small></span></button>
     <button role="tab" data-aba="fundo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span><b>Fundo</b><small>imagem ou vídeo da tela</small></span></button>
-    <button role="tab" data-aba="icones"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M8 15.5V9.5h3M8 12.5h2.5M14 9.5v6M14 12.5c0-1.7 3-1.9 3 0v3"/></svg><span><b>Ícones</b><small>Sh, Ed, An, At, Md dos programas</small></span></button>
+    <button role="tab" data-aba="icones"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M8 15.5V9.5h3M8 12.5h2.5M14 9.5v6M14 12.5c0-1.7 3-1.9 3 0v3"/></svg><span><b>Ícones</b><small>Sh, Ed, An, At, Md e os novos</small></span></button>
     <button role="tab" data-aba="acesso" id="aba-acesso" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg><span><b>Quem pode entrar</b><small>liberar e tirar e-mails</small></span></button>
     <button role="tab" data-aba="nuvem" id="aba-nuvem" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span><b>Nuvem</b><small>o que está guardado e o espaço</small></span></button>
     <button role="tab" data-aba="conversas" id="aba-conversas" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/><path d="M12 8v4.5"/><path d="M12 15.6v.1"/></svg><span><b>Conversas</b><small>denúncias e mensagens</small></span><b class="adm-aba-alerta" id="aba-conversas-n" hidden></b></button>
@@ -352,6 +352,11 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <p class="adm-desc">O ícone de cada programa: aparece no menu, na tela de carregamento, no cabeçalho e na aba do navegador. Vale para toda a equipe assim que salvar.</p>
     <div class="ic-adm"><div class="ic-lista" id="ic-lista"></div>
       <div class="ic-ed">
+        <div class="ic-f ic-novo" id="ic-novo" hidden>
+          <label for="ic-nome">Nome</label><input type="text" id="ic-nome" maxlength="40" autocomplete="off" class="ic-largo">
+          <label for="ic-botao">Botão do menu</label><select id="ic-botao" class="ic-largo"></select>
+          <label for="ic-caminho">Endereço do projeto</label><input type="text" id="ic-caminho" maxlength="60" autocomplete="off" class="ic-largo" placeholder="/meu-projeto/">
+        </div>
         <div class="ic-f">
           <label for="ic-let">Letras</label><input type="text" id="ic-let" maxlength="3" autocomplete="off">
           <label for="ic-fg">Cor das letras</label><div class="ic-cx"><input type="color" id="ic-fg"></div>
@@ -361,7 +366,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
           <label>Imagem / SVG</label><div class="ic-cx"><button type="button" class="btn sm" id="ic-img">Escolher arquivo…</button><button type="button" class="btn sm" id="ic-semimg" hidden>Voltar às letras</button></div>
         </div>
         <div class="ic-prev" id="ic-prev"></div>
-        <div class="ic-cx" style="margin-top:14px"><button type="button" class="btn sm" id="ic-padrao">Voltar ao padrão</button><span class="hint" id="ic-st"></span><span style="flex:1"></span><button type="button" class="btn sm primary" id="ic-salvar" disabled>Salvar</button></div>
+        <div class="ic-cx" style="margin-top:14px"><button type="button" class="btn sm" id="ic-padrao">Voltar ao padrão</button><button type="button" class="btn sm danger" id="ic-apagar" hidden>Apagar este ícone</button><span class="hint" id="ic-st"></span><span style="flex:1"></span><button type="button" class="btn sm primary" id="ic-salvar" disabled>Salvar</button></div>
       </div></div>
   </div>
   <div class="adm-pag" data-pag="fundo">
@@ -602,9 +607,12 @@ function cardHtml(l, tag) {
 }
 // ícone pronto (SVG da lista) ou ícone próprio (SVG/PNG enviado). O próprio entra como <img>: assim um SVG
 // enviado nunca roda código na página.
+// botão do menu ligado a um ÍCONE NOVO da ADM (pelo nome do botão ou pelo endereço do projeto)
+function icNovoDe(l) { const EI = window.EstudioIcones; if (!EI) return null; const c = EI.config(); let cm = ''; try { const u = new URL(l.url || '', location.href); if (u.origin === location.origin) cm = u.pathname; } catch { }
+  return EI.IDS.find(id => EI.ehNovo(id) && (c[id].botao === l.nome || (c[id].caminho && cm && cm.startsWith(c[id].caminho)))) || null; }
 function pintarIcone(el, l) {
   const box = $('.ic', el); box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
-  const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone]); box.classList.toggle('prog', !!prog); box.classList.remove('nobox'); // o cartão de um programa SEMPRE usa o ícone dele (muda em ADM › Ícones) // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
+  const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone] || icNovoDe(l)); box.classList.toggle('prog', !!prog); box.classList.remove('nobox'); // o cartão de um programa SEMPRE usa o ícone dele (muda em ADM › Ícones) // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
   if (prog) { if (box.dataset.k !== 'ep:' + prog) { box.innerHTML = `<span data-estudio-icone="${prog}"></span>`; box.dataset.k = 'ep:' + prog; } return; }
   box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
   if (!l.iconeImg) { if (box.dataset.k !== 'p:' + l.icone) { box.innerHTML = prog ? `<span data-estudio-icone="${prog}"></span>` : (ICONES[l.icone] || ICONES.link)[1]; box.dataset.k = 'p:' + l.icone; } return; }
@@ -899,6 +907,8 @@ function atualizarTudo() {
   const extras = []; (DADOS?.links || []).forEach(l => { try { const u = new URL(l.url, location.href); if (u.origin === location.origin) extras.push(u.pathname); } catch { } });
   window.EstudioConta?.atualizarTudo(extras);
 }
+// ícones mudaram (ADM salvou, outra aba, nuvem): os cartões ligados a um ícone novo trocam na hora
+addEventListener('estudio-icones', () => { $$('#grid .card').forEach((el, i) => { const l = DADOS?.links?.[i]; if (l) pintarIcone(el, l); }); });
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
   const g = $('#grid'); g.innerHTML = '';
@@ -1566,15 +1576,34 @@ async function nvOnda(blob, cv, m) {
 function renderIcones() {
   const EI = window.EstudioIcones; if (!EI) { $('#ic-lista').innerHTML = '<div class="hint">Não carregou o /estudio-icones.js.</div>'; return; }
   const st = renderIcones.st || (renderIcones.st = { sel: 'sh', ed: EI.config(), salvo: JSON.stringify(EI.config()) });
-  const P = EI.PADRAO, ids = EI.IDS, cfg = () => ({ cfg: st.ed });
+  const P = EI.PADRAO, cfg = () => ({ cfg: st.ed }), novo = id => EI.ehNovo(id);
+  const ids = () => [...EI.BASE, ...Object.keys(st.ed).filter(novo)];
   const sujo = () => JSON.stringify(st.ed) !== st.salvo;
+  const NOMES = ['Projeto Cometa', 'Projeto Aurora', 'Projeto Faísca', 'Projeto Lumen', 'Projeto Órbita', 'Projeto Trovão', 'Projeto Neblina', 'Projeto Pixel'];
+  const slug = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || 'novo';
+  const idLivre = nome => { let b = 'x-' + slug(nome), id = b, n = 1; while (st.ed[id]) id = b + '-' + (++n); return id; };
+  const caminhoDe = u => { if (!u) return ''; try { const x = new URL(u, location.href); return x.origin === location.origin && x.pathname.length > 1 ? x.pathname.replace(/[^/]*$/, '') : ''; } catch { return ''; } };
+  // botões do menu que não são um programa e ainda não têm ícone do Estúdio: dá para criar o ícone deles
+  const semIcone = () => (EDIT?.links || DADOS?.links || []).filter(l => l.nome && !progDaUrl(l.url, l.nome) && !PROG_IC[l.icone] && !Object.values(st.ed).some(c => c.novo && c.botao === l.nome));
+  const cria = (nome, botao, url) => { const id = idLivre(nome), c = EI.novoPadrao(nome); if (botao) c.botao = botao; const cm = caminhoDe(url); if (cm) c.caminho = cm; st.ed[id] = c; st.sel = id; campos(); pinta(); setTimeout(() => { const i = $('#ic-nome'); i?.focus(); i?.select(); }, 30); };
+  const linha = id => `<button type="button" data-id="${id}" aria-selected="${id === st.sel}">${EI.svg(id, 28, cfg())}<span>${esc(st.ed[id].nome || P[id]?.nome || '')}</span>${novo(id) ? (JSON.stringify(st.ed[id]) !== JSON.stringify(JSON.parse(st.salvo)[id] || null) ? '<i>novo</i>' : '') : JSON.stringify(st.ed[id]) !== JSON.stringify(P[id]) ? '<i>mudado</i>' : ''}</button>`;
   const pinta = () => {
-    $('#ic-lista').innerHTML = ids.map(id => `<button type="button" data-id="${id}" aria-selected="${id === st.sel}">${EI.svg(id, 28, cfg())}<span>${esc(P[id].nome)}</span>${JSON.stringify(st.ed[id]) !== JSON.stringify(P[id]) ? '<i>mudado</i>' : ''}</button>`).join('');
-    $$('#ic-lista button').forEach(b => b.onclick = () => { st.sel = b.dataset.id; campos(); pinta(); });
+    const nv = ids().filter(novo), sug = semIcone();
+    $('#ic-lista').innerHTML = '<div class="ic-grupo">Programas</div>' + EI.BASE.filter(id => !P[id].parte).map(linha).join('')
+      + '<div class="ic-grupo">Partes de um programa</div>' + EI.BASE.filter(id => P[id].parte).map(linha).join('')
+      + '<div class="ic-grupo">Ícones novos</div>' + nv.map(linha).join('')
+      + sug.map((l, i) => `<button type="button" class="ic-sug" data-sug="${i}" title="Criar o ícone do Estúdio para este botão do menu">${EI.svg('x', 28, { cfg: { x: EI.novoPadrao(l.nome) } })}<span>${esc(l.nome)}</span><small>criar</small></button>`).join('')
+      + `<button type="button" class="ic-add" data-add>+ Ícone novo</button>`;
+    $$('#ic-lista [data-id]').forEach(b => b.onclick = () => { st.sel = b.dataset.id; campos(); pinta(); });
+    $$('#ic-lista [data-sug]').forEach(b => b.onclick = () => { const l = sug[+b.dataset.sug]; cria(l.nome, l.nome, l.url); });
+    $('#ic-lista [data-add]').onclick = () => cria(NOMES[Math.floor(Math.random() * NOMES.length)]);
     $('#ic-prev').innerHTML = [96, 48, 28, 16].map(px => EI.svg(st.sel, px, cfg())).join('');
     $('#ic-salvar').disabled = !sujo();
   };
-  const campos = () => { const c = st.ed[st.sel];
+  const campos = () => { if (!st.ed[st.sel]) st.sel = 'sh'; const c = st.ed[st.sel], ehN = novo(st.sel);
+    $('#ic-novo').hidden = !ehN; $('#ic-apagar').hidden = !ehN;
+    if (ehN) { $('#ic-nome').value = c.nome || ''; $('#ic-nome').placeholder = NOMES[st.sel.length % NOMES.length]; $('#ic-caminho').value = c.caminho || '';
+      const ls = (EDIT?.links || DADOS?.links || []).filter(l => l.nome); $('#ic-botao').innerHTML = '<option value="">Nenhum (só o projeto)</option>' + ls.map(l => `<option ${l.nome === c.botao ? 'selected' : ''}>${esc(l.nome)}</option>`).join('') + (c.botao && !ls.some(l => l.nome === c.botao) ? `<option selected>${esc(c.botao)}</option>` : ''); }
     $('#ic-let').value = c.let; $('#ic-fg').value = c.fg; $('#ic-bg').value = c.bg; $('#ic-bc').value = c.bc; $('#ic-raio').value = c.raio; $('#ic-raio-v').textContent = c.raio >= 50 ? 'redondo' : c.raio + '%';
     $$('#ic-borda button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === c.borda))); $('#ic-bc').style.visibility = c.borda ? 'visible' : 'hidden';
     $('#ic-semimg').hidden = !c.img; $('#ic-img').textContent = c.img ? 'Trocar a imagem…' : 'Escolher arquivo…';
@@ -1596,10 +1625,16 @@ function renderIcones() {
       g.drawImage(bm, (L - bm.width * k) / 2, (L - bm.height * k) / 2, bm.width * k, bm.height * k); u = cv.toDataURL('image/png'); }
     muda('img', u); campos(); };
   $('#ic-semimg').onclick = () => { delete st.ed[st.sel].img; campos(); pinta(); };
-  $('#ic-padrao').onclick = () => { st.ed[st.sel] = EI.padrao(st.sel); campos(); pinta(); };
+  $('#ic-padrao').onclick = () => { const c = st.ed[st.sel]; st.ed[st.sel] = novo(st.sel) ? Object.assign(EI.novoPadrao(c.nome), c.botao ? { botao: c.botao } : {}, c.caminho ? { caminho: c.caminho } : {}) : EI.padrao(st.sel); campos(); pinta(); };
+  $('#ic-nome').oninput = e => { const c = st.ed[st.sel], auto = EI.novoPadrao(c.nome); if (!c.img && c.let === auto.let) { const n = EI.novoPadrao(e.target.value || 'Novo'); c.let = n.let; $('#ic-let').value = n.let; } c.nome = e.target.value.slice(0, 40); $('#ic-st').textContent = ''; pinta(); };
+  $('#ic-nome').onblur = e => { if (!e.target.value.trim()) { st.ed[st.sel].nome = e.target.placeholder; campos(); pinta(); } }; // vazio = fica o nome sugerido
+  $('#ic-botao').onchange = e => { const c = st.ed[st.sel]; if (e.target.value) { c.botao = e.target.value; const l = (EDIT?.links || DADOS?.links || []).find(x => x.nome === c.botao); if (l && !c.caminho) { const cm = caminhoDe(l.url); if (cm) c.caminho = cm; } } else delete c.botao; campos(); pinta(); };
+  $('#ic-caminho').oninput = e => { const v = e.target.value.trim(); if (v) st.ed[st.sel].caminho = v.startsWith('/') ? v : '/' + v; else delete st.ed[st.sel].caminho; $('#ic-st').textContent = /^(\/[a-z0-9/_-]{1,60})?$/i.test(st.ed[st.sel].caminho || '') ? '' : 'Use só letras, números, - e / (ex.: /jogos/).'; pinta(); };
+  $('#ic-apagar').onclick = () => { if (!confirm(`Apagar o ícone "${st.ed[st.sel].nome}"? Os lugares que usam ele voltam ao ícone comum.`)) return; delete st.ed[st.sel]; st.sel = 'sh'; campos(); pinta(); };
   $('#ic-salvar').onclick = async () => {
     const b = $('#ic-salvar'); b.disabled = true; $('#ic-st').textContent = 'Salvando…';
-    const m = {}; for (const id of ids) { const o = {}; for (const [k, v] of Object.entries(st.ed[id])) if (k !== 'nome' && JSON.stringify(v) !== JSON.stringify(P[id][k])) o[k] = v; if (Object.keys(o).length) m[id] = o; } // só o que mudou do padrão
+    const m = {}; for (const id of ids()) { const o = {}, novoId = novo(id), ref = novoId ? {} : P[id]; if (novoId && !String(st.ed[id].nome || '').trim()) st.ed[id].nome = 'Projeto novo';
+      for (const [k, v] of Object.entries(st.ed[id])) if (k !== 'novo' && (novoId || (k !== 'nome' && k !== 'parte')) && JSON.stringify(v) !== JSON.stringify(ref[k])) o[k] = v; if (Object.keys(o).length) m[id] = o; } // os de sempre: só o que mudou do padrão; os novos: tudo
     try { await EI.salvar(m); st.salvo = JSON.stringify(st.ed); $('#ic-st').textContent = 'Salvo! Já vale para toda a equipe.'; }
     catch (e) { $('#ic-st').textContent = e.message; } pinta(); };
   campos(); pinta();

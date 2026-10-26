@@ -1052,7 +1052,10 @@ async function icones(req, env, url) {
   if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
   let b = {}; try { b = await req.json(); } catch { }
   const cor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : null, out = {};
-  for (const id of ['sh', 'ed', 'an', 'at', 'md']) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
+  // os de sempre + os NOVOS que a ADM criou ("x-<nome>": nome obrigatório, caminho do projeto e botão do menu opcionais; até 40)
+  const novos = Object.keys(b.icones || {}).filter(id => /^x-[a-z0-9-]{1,30}$/.test(id) && typeof b.icones[id]?.nome === 'string' && b.icones[id].nome.trim()).slice(0, 40);
+  for (const id of ['sh', 'ed', 'an', 'at', 'md', 'cn', ...novos]) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
+    if (id.startsWith('x-')) { o.nome = x.nome.trim().slice(0, 40); if (typeof x.caminho === 'string' && /^\/[a-z0-9/_-]{1,60}$/i.test(x.caminho)) o.caminho = x.caminho; if (typeof x.botao === 'string' && x.botao.trim()) o.botao = x.botao.trim().slice(0, 40); }
     if (typeof x.let === 'string' && x.let.trim()) o.let = x.let.trim().slice(0, 3);
     for (const k of ['fg', 'bg', 'bc']) if (cor(x[k])) o[k] = cor(x[k]);
     if (x.borda === 0 || x.borda === 1) o.borda = x.borda;
