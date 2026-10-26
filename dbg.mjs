@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+const LOG=[]; const _l=console.log; console.log=(...a)=>{LOG.push(a.map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' ')); _l(...a);}; process.on('exit',()=>{fs.mkdirSync('out',{recursive:true});fs.writeFileSync('out/log.txt',LOG.join('\n'));});
 const H = { 'accept-language': 'pt-BR,pt;q=0.9', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36', cookie: 'SOCS=CAI; CONSENT=YES+1' };
 const acha = (o, k, out = []) => { if (o && typeof o === 'object') { if (Array.isArray(o)) for (const v of o) acha(v, k, out); else { if (k in o) out.push(o[k]); for (const v of Object.values(o)) acha(v, k, out); } } return out; };
 const html = await (await fetch('https://www.youtube.com/@Torajo/videos', { headers: H })).text(), d = JSON.parse(html.match(/var ytInitialData = (\{.*?\});<\/script>/s)[1]);
