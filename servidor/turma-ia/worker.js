@@ -225,6 +225,7 @@ function reservaDe(env, auth) {
       let meta = {}; try { meta = JSON.parse(decodeURIComponent(r.headers.get('x-meta') || '%7B%7D')); } catch { } return { value: await r.arrayBuffer(), metadata: meta }; },
     async contaJa() { if (resConta && Date.now() - resConta.at < 300e3) return resConta.j; const j = await this.conta(); resConta = { at: Date.now(), j }; return j; },
     medir: () => call('/reserva/medir', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
+    ideias: () => call('/reserva/ideias', { method: 'POST' }).then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
     conta: () => call('/reserva/conta').then(r => r.ok ? r.json() : null).catch(() => null),
     fim: () => call('/reserva/fim', { method: 'POST' }).then(() => { resEstado = { at: Date.now(), ativo: false }; }),
     async fotoMapa() { if (fotoC && Date.now() - fotoC.at < 300e3) return fotoC.m; let m = null; try { m = await this.fotoLista(); } catch { } fotoC = { at: Date.now(), m }; return m; }, // foto da lista da principal (5 min)
@@ -484,6 +485,30 @@ export default {
       await env.EQUIPE.put('acesso/extras', JSON.stringify(ex));
       if (b.acao === 'del') ctx.waitUntil(aoVivoLimpa(env, true)); // quem saiu da lista sai também do "Trabalhar junto"
       return json({ ok: true, base, extras: ex, admins }, 200, cors);
+    }
+    // IDEIAS (aba Ideias do Animador): análise dos canais do YouTube + ideias da IA, para toda a equipe.
+    //   GET  /ideias                         → { analise, ideias, canais } (analise = Action "Analisar canais" do repo estudio-problems)
+    //   POST /ideias { acao:'atualizar', canais:['@x'] } → guarda os canais (se mudaram) e roda a Action já (máx. 1 vez a cada 2 min)
+    //   PUT  /ideias { ideias }               → guarda as ideias que a IA gerou no navegador (uma gravação)
+    if (p0 === '/ideias') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const le = async k => { try { return JSON.parse((await env.EQUIPE.get(k)) || 'null'); } catch { return null; } };
+      const grava = (k, v) => { const t = JSON.stringify(v); return env.EQUIPE.put(k, t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } }); };
+      if (req.method === 'GET') { const [analise, ideias, canais] = await Promise.all([le('ideias/analise.json'), le('ideias/ideias.json'), le('ideias/canais.json')]); return json({ analise, ideias, canais: canais?.canais || null }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
+      if (req.method === 'POST' && b?.acao === 'atualizar') {
+        if (Array.isArray(b.canais)) { const c = [...new Set(b.canais.map(x => String(x || '').trim()).map(x => x.startsWith('@') ? x : '@' + x).filter(x => /^@[\w.\-]{3,40}$/.test(x)))].slice(0, 8);
+          if (!c.length) return json({ error: { message: 'Ponha pelo menos um canal (@nome).' } }, 400, cors);
+          const ant = await le('ideias/canais.json'); if (JSON.stringify(ant?.canais || []) !== JSON.stringify(c)) await grava('ideias/canais.json', { canais: c }); }
+        const R4 = reservaDe(env, auth0); if (!R4) return json({ error: { message: 'O servidor não está ligado ao robô que analisa os canais.' } }, 503, cors);
+        const r = await R4.ideias(); return json(r?.erro ? { error: { message: 'Não consegui pedir a análise: ' + r.erro } } : { ok: true, ja: !!r?.ja }, r?.erro ? 502 : 200, cors);
+      }
+      if (req.method === 'PUT' && b?.ideias && typeof b.ideias === 'object') {
+        const t = JSON.stringify(b.ideias); if (t.length > 600000) return json({ error: { message: 'Ideias grandes demais.' } }, 413, cors);
+        await grava('ideias/ideias.json', b.ideias); return json({ ok: true }, 200, cors);
+      }
+      return json({ error: { message: 'Pedido inválido' } }, 400, cors);
     }
     // CENÁRIOS da equipe (KV EQUIPE, prefixo "cenarios/"): só entram quando alguém escolhe "Salvar na nuvem" no Animador.
     //   GET /cenarios → lista · GET/POST/DELETE /cenarios/arquivo?k=cenarios/<id>.<ext>[&nome=…]
