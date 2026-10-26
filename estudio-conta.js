@@ -36,9 +36,15 @@
    contagem regressiva (calculada aqui no computador, sem pedir nada para a nuvem). */
 (() => {
   if (window.EstudioLimite) return;
-  const K = 'estudio-limite-cf', MSG = 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
-  const MSG_TALVEZ = 'Não consegui falar com a nuvem da equipe. Se for o limite de hoje, ela volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.';
   const proxima = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
+  // hora em que volta NO RELÓGIO DESTE COMPUTADOR (no Brasil = 21h); fora do horário de Brasília diz as duas
+  const hh = (t, tz) => { const s = new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', ...(tz ? { timeZone: tz } : {}) }); return s.endsWith(':00') ? (+s.slice(0, 2)) + 'h' : s.replace(':', 'h'); };
+  const horaTxt = t => { const l = hh(t), b = hh(t, 'America/Sao_Paulo'); return l === b ? l : `${l} (${b} de Brasília)`; };
+  const K = 'estudio-limite-cf', KS = 'estudio-limite-sons', MSG = `A nuvem da equipe chegou ao limite de hoje. Volta sozinha às ${horaTxt(proxima())}. O que você fez continua guardado neste computador.`;
+  const MSG_TALVEZ = `Não consegui falar com a nuvem da equipe. Se for o limite de hoje, ela volta sozinha às ${horaTxt(proxima())}. O que você fez continua guardado neste computador.`;
+  // nuvem dos SONS (conta antiga: sons, Shorts, modelos) no limite — separada da da equipe
+  const sons = () => { try { const t = +localStorage.getItem(KS); return t > Date.now() ? t : 0; } catch { return 0; } };
+  const MSG_SONS = t => `A nuvem dos sons (sons, Shorts e modelos) chegou ao limite de hoje. Volta sozinha às ${horaTxt(t)}. O resto do Estúdio continua normal.`;
   // marca = { t: quando a principal volta, r: está usando a nuvem reserva (conta antiga da Cloudflare) }
   const le = () => { try { const v = localStorage.getItem(K) || ''; const o = v[0] === '{' ? JSON.parse(v) : { t: +v }; return o.t > Date.now() ? o : null; } catch { return null; } };
   const marcado = () => le()?.t || 0, naReserva = () => !!le()?.r;
@@ -50,7 +56,7 @@
   const KV = 'estudio-voltando', voltando = () => { try { return +localStorage.getItem(KV) > Date.now(); } catch { return false; } };
   function selo() {
     const t = marcado();
-    if (!t && !voltando()) { el?.remove(); el = null; clearInterval(iv); iv = 0; return; }
+    if (!t && !voltando() && !sons()) { el?.remove(); el = null; clearInterval(iv); iv = 0; return; }
     if (!document.body) return void document.addEventListener('DOMContentLoaded', selo, { once: true });
     if (!el) {
       el = document.createElement('div'); el.title = MSG + ' (clique para esconder)';
@@ -60,15 +66,19 @@
       document.body.appendChild(el);
     }
     const pinta = () => { const t2 = marcado();
-      if (!t2) { if (!voltando()) return selo();
+      if (!t2 && !voltando()) { const ts = sons(); if (!ts) return selo(); // só a nuvem dos sons no limite
+        el.title = MSG_SONS(ts) + ' (clique para encolher)'; el.style.borderColor = 'rgba(255,255,255,.12)'; el.style.color = '#cfd3dc';
+        el.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' + (el._mini ? `<span>sons · ${falta(ts)}</span>` : `<span>Nuvem dos sons no limite · volta em <b style="font-weight:600">${falta(ts)}</b> (${hh(ts)})</span>`);
+        el.style.opacity = el._mini ? '.45' : '.72'; return; }
+      if (!t2) {
         el.title = 'A nuvem principal já voltou. O que foi salvo na nuvem reserva durante o limite está voltando para ela sozinho; ninguém precisa fazer nada. (clique para encolher)';
         el.style.borderColor = 'rgba(47,208,168,.55)'; el.style.color = '#9df0db';
         el.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 6.5 19z"/><path d="m9 13 2 2 4-4"/></svg>' + (el._mini ? '<span>voltando</span>' : '<span>Nuvem principal de volta · o que ficou na reserva está voltando</span>');
         el.style.opacity = el._mini ? '.45' : '.72'; return; }
       const ic = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10.5a4.5 4.5 0 0 0 1.6-8.7M15.5 6.4A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18"/><path d="m3 3 18 18"/></svg>';
-      const r = naReserva(); el.title = (r ? 'A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (21h de Brasília) passa de volta sozinho.' : MSG) + ' (clique para encolher)';
+      const r = naReserva(); el.title = (r ? `A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva (a conta antiga) e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : MSG) + ' (clique para encolher)';
       el.style.borderColor = r ? 'rgba(47,208,168,.55)' : 'rgba(255,255,255,.12)'; el.style.color = r ? '#9df0db' : '#cfd3dc'; // nuvem reserva = verde-água
-      el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (21h)</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
+      el.innerHTML = ic + (el._mini ? `<span>${r ? 'reserva · ' : ''}${falta(t2)}</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
   }
   const f0 = window.fetch?.bind(window); if (!f0) return;
@@ -87,7 +97,10 @@
     else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'reserva' || (xn === 'limite' && naReserva() && r.ok));
     if (r.status === 503 || r.status === 429) {
       const tipo = r.headers.get('content-type') || '';
-      if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') marca(Date.parse(j.error.volta), false); } catch { } }
+      if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') { if (j.error.nuvem === 'sons') { const v = Date.parse(j.error.volta) > Date.now() ? Date.parse(j.error.volta) : proxima(); try { localStorage.setItem(KS, String(v)); } catch { } selo(); return new Response(JSON.stringify({ ...j, erro: MSG_SONS(v), error: { ...j.error, message: MSG_SONS(v) } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); } marca(Date.parse(j.error.volta), false);
+          // a frase do servidor diz "21h (horário de Brasília)": troca pela hora do relógio deste computador
+          const v = Date.parse(j.error.volta) > Date.now() ? Date.parse(j.error.volta) : proxima(), m2 = String(j.error.message || '').replace(/às 21h \(horário de Brasília\)/g, 'às ' + horaTxt(v));
+          if (m2 !== j.error.message) return new Response(JSON.stringify({ ...j, error: { ...j.error, message: m2 } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); } } catch { } }
       else if (!/event-stream/.test(tipo)) { // página de limite da própria Cloudflare (HTML): vira o mesmo aviso
         const txt = await r.clone().text().catch(() => '');
         if (/1027|limit|exceeded|rate.?limit/i.test(txt)) { marca(); return new Response(JSON.stringify({ error: { type: 'limite_cloudflare', message: MSG } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
@@ -95,8 +108,8 @@
     }
     return r;
   };
-  window.addEventListener('storage', e => { if (e.key === K || e.key === KV) selo(); });
-  window.EstudioLimite = { marcado, naReserva, voltando, marca, MSG, selo };
+  window.addEventListener('storage', e => { if (e.key === K || e.key === KV || e.key === KS) selo(); });
+  window.EstudioLimite = { marcado, naReserva, voltando, marca, MSG, selo, sons, horaTxt };
   selo();
 })();
 (() => {
