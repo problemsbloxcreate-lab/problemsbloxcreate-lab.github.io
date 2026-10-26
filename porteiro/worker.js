@@ -102,7 +102,7 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
    Ao entregar uma página, o porteiro troca  <script src="js/app.js">  por  js/app.js?_ev=<versão do arquivo>.
    Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
    quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
-const RAIZ_ASSETS = new Set(['/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
+const RAIZ_ASSETS = new Set(['/estudio-icones.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
 const VERS = new Map();
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
@@ -171,7 +171,8 @@ async function repassa(req, url, p, env, s) {
     const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
     // ícone da aba: cada programa usa o próprio logo; o do menu só entra nas páginas que não têm ícone nenhum
     const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
-    const extra = carregando + icone + (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
+    const extra = (h.includes('estudio-icones.js') ? '' : '<script src="/estudio-icones.js"></script>') + carregando + icone + // ícones dos programas (aba, cabeçalho, carregamento)
+       (p.nuvem ? NUVEM_JS : '') + (p.conta && !h.includes('estudio-conta.js') ? '<script src="/estudio-conta.js" defer></script>' : '');
     h = m ? h.slice(0, m.index + m[0].length) + extra + h.slice(m.index + m[0].length) : extra + h; }
     try { h = await comVersoes(env, h, url.href, s); } catch { }
     out.delete('content-length'); out.delete('content-encoding'); out.delete('etag'); out.delete('last-modified');
@@ -961,6 +962,7 @@ export default {
       try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { } if (env.CONVERSAS) { try { const em = String(j.email).toLowerCase(); await conversas(env, { op: 'pessoa', u: await codigoU(em), e: em }); } catch { } }
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email, j.adm === true), DURACAO) });
     }
+    if (caminho === '/icones') return icones(req, env, url); // ícones dos programas (ADM › Ícones): ver = qualquer um; mudar = ADM
     if (caminho === '/sair') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
     if (caminho === '/chave-publica') { const k = await chavesAssinatura(env); return k ? json(k.pub, 200, { 'cache-control': 'public, max-age=3600', 'access-control-allow-origin': '*' }) : json({ error: { message: 'sem chave' } }, 503); }
     // diagnóstico sem login: o porteiro consegue chegar em cada projeto? os portões aceitam o passe dele?
@@ -1024,10 +1026,39 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
-    if (caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
+    if (caminho === '/estudio-icones.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);
     return menu(env, url, 404, req);
   },
 };
+
+/* ---------- ÍCONES DOS PROGRAMAS (Sh, Ed, An, At, Md — ADM › Ícones) ----------
+   GET /icones: o que a ADM mudou (o resto é o padrão do /estudio-icones.js); aberto, até antes do login (tela de carregamento).
+   POST /icones (só ADM, pela sessão): { icones: { sh: { let, fg, bg, borda, bc, raio, img? }, … } }. Guardado no KV PERFIS
+   ("cfg:icones"): uma gravação por vez que a ADM salva. */
+const ICONES = { j: null, t: 0 };
+async function icones(req, env, url) {
+  if (req.method === 'GET') {
+    if (!ICONES.j || Date.now() - ICONES.t > 60e3) { try { ICONES.j = JSON.parse(await env.PERFIS?.get('cfg:icones', { cacheTtl: 60 }) || '{}'); ICONES.t = Date.now(); } catch { ICONES.j = ICONES.j || {}; } }
+    return json({ icones: ICONES.j || {} }, 200, { 'cache-control': 'no-cache' });
+  }
+  if (req.method !== 'POST') return json({ error: { message: 'Use GET ou POST.' } }, 405);
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  if (!s.a) return json({ error: { message: 'Só ADM muda os ícones.' } }, 403);
+  if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+  let b = {}; try { b = await req.json(); } catch { }
+  const cor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : null, out = {};
+  for (const id of ['sh', 'ed', 'an', 'at', 'md']) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
+    if (typeof x.let === 'string' && x.let.trim()) o.let = x.let.trim().slice(0, 3);
+    for (const k of ['fg', 'bg', 'bc']) if (cor(x[k])) o[k] = cor(x[k]);
+    if (x.borda === 0 || x.borda === 1) o.borda = x.borda;
+    if (Number.isFinite(+x.raio)) o.raio = Math.max(0, Math.min(50, Math.round(+x.raio)));
+    if (typeof x.img === 'string') { if (!/^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,[a-z0-9+/=]+$/i.test(x.img)) return json({ error: { message: 'Imagem inválida (use PNG, JPG, WEBP, GIF ou SVG).' } }, 400);
+      if (x.img.length > 600000) return json({ error: { message: 'A imagem do ícone ficou grande demais (até uns 400 KB).' } }, 413); o.img = x.img; }
+    if (Object.keys(o).length) out[id] = o; }
+  if (!env.PERFIS) return json({ error: { message: 'O porteiro está sem o KV PERFIS.' } }, 503);
+  await env.PERFIS.put('cfg:icones', JSON.stringify(out)); ICONES.j = out; ICONES.t = Date.now();
+  return json({ ok: true, icones: out });
+}
