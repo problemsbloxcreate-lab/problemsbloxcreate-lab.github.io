@@ -29,7 +29,7 @@ const rss = xml => [...String(xml || '').matchAll(/<entry>([\s\S]*?)<\/entry>/g)
 const pagina = async u => { const r = await fetch(u, { headers: H }); if (!r.ok) throw new Error(u + ' respondeu ' + r.status); return r.text(); };
 // "Populares": o próprio YouTube manda a lista ordenada por views pelo botão de ordem (continuação do browse)
 async function populares(d, html) {
-  const it = acha(d, 'listItemViewModel').find(x => /popular/i.test(x?.title?.content || '')); const tok = it && acha(it, 'continuationCommand')[0]?.token; if (!tok) return null;
+  const re = /popular|em alta/i, it = acha(d, 'listItemViewModel').find(x => re.test(x?.title?.content || '')) || acha(d, 'chipViewModel').find(x => re.test(x?.text || '')); const tok = it && acha(it, 'continuationCommand')[0]?.token; if (!tok) return null;
   const ver = (html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/) || [])[1] || '2.20261026.01.00';
   const r = await fetch('https://www.youtube.com/youtubei/v1/browse?prettyPrint=false', { method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ context: { client: { clientName: 'WEB', clientVersion: ver, hl: 'pt', gl: 'BR' } }, continuation: tok }) });
   return r.ok ? r.json() : null;
