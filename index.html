@@ -217,6 +217,7 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .nvd{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 8px}
 .nvd-c{border:1px solid var(--bd);background:var(--bg1);border-radius:16px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:14px}
 .nvd-h{display:flex;align-items:flex-start;gap:10px}.nvd-h>div{min-width:0}.nvd-h b{display:block;font-size:15px;line-height:1.25}.nvd-h small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
+.nvd-ic{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid;display:grid;place-items:center}
 .nvd-chip{margin-left:auto;flex:none;font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .nvd-chip:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .nvd-chip.ok{color:var(--ok);border-color:rgba(47,207,122,.35)}.nvd-chip.al{color:#ffb84d;border-color:rgba(255,184,77,.4)}.nvd-chip.er{color:#ff8a9a;border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.06)}.nvd-chip.az{color:var(--ac);border-color:rgba(var(--ac-rgb),.4)}.nvd-chip.res{color:#2fd0a8;border-color:rgba(47,208,168,.45);background:rgba(47,208,168,.07)}.nvd-aviso.res{border-color:rgba(47,208,168,.5);background:rgba(47,208,168,.08)}.nvd-aviso.res svg{color:#2fd0a8}
@@ -1308,8 +1309,10 @@ async function renderUsoDia(forcar) {
       : o.erro ? `<div class="nvd-p">${esc(o.erro)}</div>`
       : papel === 'nova' ? '<div class="nvd-g">' + barra('Gravações', o.d1.write, L.d1Write || 1e5) + barra('Leituras', o.d1.read, L.d1Read || 5e6) + barra('Pedidos', o.workers, L.workers) + (o.bytes != null ? barra('Espaço', o.bytes, L.d1Bytes || 524288000, nvFmt) : '') + '</div>'
       : '<div class="nvd-g">' + barra('Gravações', o.kv.write, L.write) + barra('Listas', o.kv.list, L.list) + barra('Apagadas', o.kv.delete, L.delete) + barra('Leituras', o.kv.read, L.read) + barra('Pedidos', o.workers, L.workers) + (o.bytes != null ? barra('Espaço', o.bytes, L.bytes, nvFmt) : '') + '</div>';
-    const res = papel !== 'principal'; // as reservas ficam em verde-água
-    return `<div class="nvd-c"><div class="nvd-h"><div><b${res ? ' style="color:#2fd0a8"' : ''}>${titulo}</b><small>${sub}</small></div>${chip}</div>${res ? linhas.replaceAll('background:var(--ac)', 'background:#2fd0a8') : linhas}${extra || ''}</div>`; };
+    // cor de cada nuvem (a mesma do círculo da nuvem no cabeçalho): principal roxa, reserva verde-água, reserva da reserva rosa
+    const cor = { principal: '#9b7bff', nova: '#2fd0a8', reserva: '#ff8fd1' }[papel] || 'var(--ac)';
+    const nuvemIc = `<span class="nvd-ic" style="color:${cor};background:color-mix(in srgb, ${cor} 14%, transparent);border-color:color-mix(in srgb, ${cor} 40%, transparent)" title="Cor desta nuvem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 6.5 19z"/></svg></span>`;
+    return `<div class="nvd-c"><div class="nvd-h">${nuvemIc}<div><b style="color:${cor}">${titulo}</b><small>${sub}</small></div>${chip}</div>${linhas.replaceAll('background:var(--ac)', 'background:' + cor)}${extra || ''}</div>`; };
   const pr = c && !velho ? c.contas?.principal : null, cheia = j.limite || (pr && !pr.erro && Math.max(pr.kv.write / L.write, pr.kv.list / L.list, pr.kv.delete / L.delete) >= 1);
   const chipP = cheia ? '<span class="nvd-chip er">no limite de hoje</span>' : pr && !pr.erro && Math.max(pr.kv.write / L.write, pr.kv.list / L.list, pr.kv.delete / L.delete) >= .7 ? '<span class="nvd-chip al">perto do limite</span>' : '<span class="nvd-chip ok">normal</span>';
   const R = j.reserva || {}, voltando = R.ativo && !cheia && !j.poupando; // a principal já voltou: o que sobrou na reserva está voltando para ela
