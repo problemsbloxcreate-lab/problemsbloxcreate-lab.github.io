@@ -441,6 +441,7 @@ const MENU_CONFIG = {
 /* SEGURANÇA: nada do menu nem da ADM aparece antes de (1) entrar com Google pelo Firebase e (2) o servidor
    (Cloudflare, rota /quem) confirmar que o e-mail está em EMAILS_PERMITIDOS. Links e fundos ficam no servidor
    (/menu-links, /menu-midia); só quem o servidor aceita como ADM consegue salvar. Não coloque e-mails aqui. */
+const progDaUrl = u => { let p = String(u || ''); try { const x = new URL(p, location.href); if (x.origin === location.origin) p = x.pathname + x.search; } catch { } return /^\/shorts(\/|$)/.test(p) ? 'sh' : /^\/editor(\/|$)/.test(p) ? 'ed' : /^\/animador(\/|$)/.test(p) ? (/atelie/.test(p) ? 'at' : 'an') : /^\/modelador(\/|$)/.test(p) ? 'md' : null; };
 const PROG_IC = { shorts: 'sh', editar: 'ed', animar: 'an', modelar: 'md', atelie: 'at' }; // ícone pronto → ícone do programa (/estudio-icones.js)
 const ICONES = {
   shorts: ['Shorts', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M10.6 9.2v5.6l4.4-2.8z" fill="currentColor"/><path d="M10.5 18.6h3"/></svg>'],
@@ -598,7 +599,9 @@ function cardHtml(l, tag) {
 // enviado nunca roda código na página.
 function pintarIcone(el, l) {
   const box = $('.ic', el); box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
-  const prog = !l.iconeImg && window.EstudioIcones && PROG_IC[l.icone]; box.classList.toggle('prog', !!prog); // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
+  const prog = window.EstudioIcones && (PROG_IC[l.icone] || progDaUrl(l.url)); box.classList.toggle('prog', !!prog); box.classList.remove('nobox'); // o cartão de um programa SEMPRE usa o ícone dele (muda em ADM › Ícones) // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
+  if (prog) { if (box.dataset.k !== 'ep:' + prog) { box.innerHTML = `<span data-estudio-icone="${prog}"></span>`; box.dataset.k = 'ep:' + prog; } return; }
+  box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
   if (!l.iconeImg) { if (box.dataset.k !== 'p:' + l.icone) { box.innerHTML = prog ? `<span data-estudio-icone="${prog}"></span>` : (ICONES[l.icone] || ICONES.link)[1]; box.dataset.k = 'p:' + l.icone; } return; }
   let img = $('.icimg', box);
   if (box.dataset.k !== 'c:' + l.iconeImg.src) { box.innerHTML = ''; img = document.createElement('img'); img.className = 'icimg'; img.alt = ''; img.draggable = false; box.appendChild(img); box.dataset.k = 'c:' + l.iconeImg.src;

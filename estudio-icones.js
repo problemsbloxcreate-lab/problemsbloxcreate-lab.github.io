@@ -60,9 +60,11 @@
     favicon();
     (raiz || document).querySelectorAll?.('[data-estudio-icone]').forEach(el => { const id = el.getAttribute('data-estudio-icone'), ch = JSON.stringify(cfg[id] || '') + id;
       if (el._epIc === ch) return; el._epIc = ch; el.innerHTML = svg(id); });
+    // <img data-estudio-icone-img="an"> (telas de carregamento): troca a imagem pela de agora
+    (raiz || document).querySelectorAll?.('img[data-estudio-icone-img]').forEach(im => { const u = url(im.getAttribute('data-estudio-icone-img')); if (im.src !== u) im.src = u; });
   }
   // elementos novos com data-estudio-icone (telas que montam depois) também ganham o ícone
-  const obs = new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.hasAttribute?.('data-estudio-icone') || n.querySelector?.('[data-estudio-icone]'))) { pinta(n.parentNode || n); return; } });
+  const obs = new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.hasAttribute?.('data-estudio-icone') || n.hasAttribute?.('data-estudio-icone-img') || n.querySelector?.('[data-estudio-icone],[data-estudio-icone-img]'))) { pinta(n.parentNode || n); return; } });
   const liga = () => { pinta(); if (document.body) obs.observe(document.body, { childList: true, subtree: true }); };
   if (document.readyState === 'loading') { favicon(); document.addEventListener('DOMContentLoaded', liga, { once: true }); } else liga();
   function troca(m, de) { // m = o que a ADM salvou (só o que difere do padrão)
