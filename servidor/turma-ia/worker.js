@@ -512,6 +512,21 @@ export default {
       }
       return json({ error: { message: 'Pedido inválido' } }, 400, cors);
     }
+    // GOSTO APRENDIDO da edição (legendas, decupagem…): o que o dono corrigiu vira regra para os próximos vídeos, para a equipe toda.
+    //   GET /gosto?de=animador → { gosto } · PUT /gosto?de=animador { gosto } (uma gravação, só quando o dono aprova uma etapa)
+    //   Cada programa tem o seu (decisão do dono, 26/10/2026: o 2D do Animador NÃO mistura com o Minecraft do Shorts).
+    if (p0 === '/gosto') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const de = String(new URL(req.url).searchParams.get('de') || ''); if (!/^[a-z0-9-]{2,30}$/.test(de)) return json({ error: { message: 'Programa inválido.' } }, 400, cors);
+      const k = 'gosto/' + de + '.json';
+      if (req.method === 'GET') { let g = null; try { g = JSON.parse((await env.EQUIPE.get(k)) || 'null'); } catch { } return json({ gosto: g }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'PUT') { let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
+        if (!b?.gosto || typeof b.gosto !== 'object') return json({ error: { message: 'Pedido inválido' } }, 400, cors);
+        const t = JSON.stringify(b.gosto); if (t.length > 200000) return json({ error: { message: 'Gosto grande demais.' } }, 413, cors);
+        await env.EQUIPE.put(k, t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } }); return json({ ok: true }, 200, cors); }
+      return json({ error: { message: 'Pedido inválido' } }, 400, cors);
+    }
     // CENÁRIOS da equipe (KV EQUIPE, prefixo "cenarios/"): só entram quando alguém escolhe "Salvar na nuvem" no Animador.
     //   GET /cenarios → lista · GET/POST/DELETE /cenarios/arquivo?k=cenarios/<id>.<ext>[&nome=…]
     if (p0 === '/cenarios' || p0 === '/cenarios/arquivo') {

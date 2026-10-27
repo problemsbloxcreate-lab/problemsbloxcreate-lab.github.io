@@ -102,7 +102,7 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
    Ao entregar uma página, o porteiro troca  <script src="js/app.js">  por  js/app.js?_ev=<versão do arquivo>.
    Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
    quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
-const RAIZ_ASSETS = new Set(['/estudio-icones.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
+const RAIZ_ASSETS = new Set(['/estudio-icones.js', '/estudio-edicao.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
 const VERS = new Map();
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
@@ -1028,7 +1028,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
-    if (caminho === '/estudio-icones.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
+    if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);
