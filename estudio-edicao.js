@@ -176,6 +176,18 @@
       /* tempo de cada palavra da fala (para a legenda): palavra do roteiro → palavra ouvida */
       lt.toks.forEach((t, k) => { const wi = r.map[k]; if (wi >= 0) pals[i].push([t, W[wi].a, W[wi].b]); });
     });
+    /* VOZ QUE SOBROU ENTRE DUAS FALAS (a pessoa falou diferente do roteiro e o reconhecedor não casou o fim de uma ou o começo da outra):
+       nenhuma voz gravada se perde. A sobra é dividida no MAIOR silêncio entre as duas; o lado de antes vai para o fim da fala anterior
+       (se as últimas palavras dela não foram ouvidas) e o de depois para o começo da seguinte (se as primeiras não foram ouvidas). */
+    const ultimo = i => { let k = -1; dono.forEach((d, j) => { if (d === i) k = j; }); return k; }, primeiro = i => dono.indexOf(i);
+    const falta = i => { const r = res[i]; if (!r) return { ini: 0, fim: 0 }; const ok = r.map.map((x, k) => x >= 0 ? k : -1).filter(k => k >= 0); return { ini: ok.length ? ok[0] : 0, fim: ok.length ? r.map.length - 1 - ok[ok.length - 1] : 0 }; };
+    for (let i = 0; i + 1 < falas.length; i++) { const ka = ultimo(i), kb = primeiro(i + 1); if (ka < 0 || kb < 0 || !cortes[ka] || !cortes[kb]) continue;
+      const fa = falta(i), fb = falta(i + 1); if (!fa.fim && !fb.ini) continue;
+      const A = cortes[ka][1], B = cortes[kb][0], meio = blobs.filter(q => q[0] >= A - 0.02 && q[1] <= B + 0.02 && q[1] > A + 0.05); if (!meio.length) continue;
+      const pts = [A, ...meio.flatMap(q => [q[0], q[1]]), B]; let mi = 0, mg = -1; for (let t = 0; t + 1 < pts.length; t += 2) { const g = pts[t + 1] - pts[t]; if (g > mg) { mg = g; mi = t; } }
+      const corteA = pts[mi], corteB = pts[mi + 1]; // o maior silêncio vai de corteA a corteB
+      if (fa.fim && corteA > A) cortes[ka][1] = corteA;
+      if (fb.ini && corteB < B) cortes[kb][0] = corteB; }
     for (let k = 0; k < cortes.length; k++) { const c = cortes[k]; if (!c) continue; c[0] = snapA(c[0]); c[1] = snapB(c[1]);
       const nx = cortes[k + 1]; if (nx && dono[k + 1] === dono[k] && c[1] > nx[0]) { const m = (c[1] + nx[0]) / 2; c[1] = m; nx[0] = m; } if (c[1] < c[0] + 0.15) c[1] = c[0] + 0.15; }
     return { cortes, dono, ouvido, nota, palavras: pals, notaFala: res.map(r => r ? +r.score.toFixed(2) : 0), modo: 'whisper' };
