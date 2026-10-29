@@ -42,7 +42,7 @@ const ehAdmin = (env, email) => (env.ADMINS || '').split(',').map(s => s.trim().
 const baseFixa = env => (env.EMAILS_PERMITIDOS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 async function extrasAcesso(env) { try { const v = await env.EQUIPE?.get('acesso/extras', { type: 'json', cacheTtl: 60 }); return Array.isArray(v) ? v.filter(x => x && typeof x.email === 'string') : []; } catch { return []; } }
 // espaço da equipe (KV grátis da Cloudflare: 1 GB por conta; EQUIPE_LIMITE_MB muda o limite)
-const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || 1024) * 1048576;
+const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 1048576;
 let usoEq = null; // conta guardada por 1 min (listar a nuvem toda a cada imagem gasta a cota de listagens do dia)
 async function usadoEquipe(env, mais = 0) {
   // sem lista (limite do dia, reserva ainda sem a foto da lista): usa a última conta que tiver (ou 0) — medir o espaço NÃO pode impedir de salvar na reserva
@@ -180,6 +180,63 @@ async function aoVivoLimpa(env, forcar) {
   } catch { }
 }
 
+/* ---- NUVEM PRINCIPAL NO D1 (decisão do dono, 29/10/2026) ----
+   O KV grátis só deixa gravar 1000 vezes por dia na conta toda; o D1 (banco da Cloudflare, mesma conta) deixa ~100 mil. Este
+   adaptador fala igual ao KV (get/getWithMetadata/put/delete/list), então o resto do servidor não muda. Liga quando o banco
+   EQUIPE_DB está ligado ao worker E a marca 'ativo' foi gravada nele (a Action "Principal no D1" grava depois de copiar
+   tudo do KV e conferir). Arquivo maior que 1,9 MB vai em pedaços (tabela parte), um pedaço por consulta. */
+const CH_D1 = 1900000, d1Est = { at: 0, on: false };
+async function d1Ligado(env) {
+  if (!env.EQUIPE_DB) return false; if (Date.now() - d1Est.at < 60e3) return d1Est.on;
+  try { const r = await env.EQUIPE_DB.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first(); d1Est.on = r?.v === '1'; } catch { d1Est.on = false; }
+  d1Est.at = Date.now(); return d1Est.on;
+}
+const bytesDe = async v => v == null ? new Uint8Array(0) : typeof v === 'string' ? new TextEncoder().encode(v) : v instanceof ArrayBuffer ? new Uint8Array(v) : ArrayBuffer.isView(v) ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : new Uint8Array(await new Response(v).arrayBuffer());
+async function d1Grava(db, k, buf, meta) {
+  await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); let n = 0;
+  for (let i = 0; i < buf.byteLength; i += CH_D1, n++) await db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(k, n, buf.subarray(i, i + CH_D1)).run();
+  await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now()).run();
+}
+async function d1Le(db, k) {
+  const a = await db.prepare('SELECT meta, n FROM arq WHERE k = ?').bind(k).first(); if (!a) return null;
+  let corpo = new Uint8Array(0);
+  if (a.n) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(k).all(); const ps = (results || []).map(x => new Uint8Array(x.v)); corpo = new Uint8Array(ps.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of ps) { corpo.set(p, o); o += p.length; } }
+  let meta = null; try { meta = JSON.parse(a.meta || 'null'); } catch { } return { buf: corpo, meta: meta && Object.keys(meta).length ? meta : null };
+}
+function kvD1(db) {
+  const como = (buf, o) => { const t = typeof o === 'string' ? o : o?.type || 'text'; if (t === 'arrayBuffer') return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength); if (t === 'stream') return new Response(buf).body;
+    const s = new TextDecoder().decode(buf); return t === 'json' ? JSON.parse(s) : s; };
+  return {
+    async get(k, o) { const r = await d1Le(db, k); return r ? como(r.buf, o) : null; },
+    async getWithMetadata(k, o) { const r = await d1Le(db, k); return r ? { value: como(r.buf, o), metadata: r.meta } : { value: null, metadata: null }; },
+    async put(k, v, o) { await d1Grava(db, k, await bytesDe(v), o?.metadata); },
+    async delete(k) { await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)]); },
+    async deleteLote(ks) { const st = []; for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400)); },
+    // a lista vem inteira de uma vez (o servidor já guarda na memória por 5 min); cursor = depois desta chave
+    async list(o = {}) { const pre = o.prefix || '', lim = Math.min(+o.limit || 100000, 100000), de = o.cursor || '';
+      const { results } = await db.prepare('SELECT k, meta FROM arq WHERE substr(k, 1, ?) = ? AND k > ? ORDER BY k LIMIT ?').bind(pre.length, pre, de, lim + 1).all();
+      const rs = results || [], mais = rs.length > lim, keys = rs.slice(0, lim).map(x => { let m = null; try { m = JSON.parse(x.meta || 'null'); } catch { } return { name: x.k, ...(m && Object.keys(m).length ? { metadata: m } : {}) }; });
+      return { keys, list_complete: !mais, cursor: mais ? keys[keys.length - 1].name : undefined }; },
+  };
+}
+// ROBÔS (Actions do repo estudio-problems, com a senha dos robôs = segredo ROBO): copiar o KV para o D1, ligar, cópia de segurança e devolver a reserva
+async function robo(req, env) {
+  const u = new URL(req.url), rota = u.pathname.slice(6), k = u.searchParams.get('k') || '', db = env.EQUIPE_DB;
+  const js = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+  const ok = !!env.ROBO && String(req.headers.get('x-senha') || '') === env.ROBO; if (!ok) return js({ erro: 'senha' }, 401);
+  if (!db) return js({ erro: 'sem o banco EQUIPE_DB' }, 501);
+  if (rota === 'estado') { const a = await db.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first().catch(() => null), n = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq').first().catch(() => null); return js({ ativo: a?.v === '1', n: n?.n || 0, bytes: n?.b || 0 }); }
+  if (rota === 'ligar' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1'; await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('ativo', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, ativo: v === '1' }); }
+  if (rota === 'lista') { const out = []; let cur; do { const r = await kvD1(db).list({ prefix: u.searchParams.get('prefix') || '', cursor: cur }); out.push(...r.keys); cur = r.list_complete ? null : r.cursor; } while (cur); return js({ keys: out }); }
+  if (rota === 'arq' && k && k.length <= 512) {
+    if (req.method === 'GET') { const r = await d1Le(db, k); return r ? new Response(r.buf, { headers: { 'x-meta': encodeURIComponent(JSON.stringify(r.meta || {})), 'cache-control': 'no-store' } }) : js({ erro: 'não achei' }, 404); }
+    if (req.method === 'PUT') { let meta = null; try { meta = JSON.parse(decodeURIComponent(req.headers.get('x-meta') || 'null')); } catch { } const buf = new Uint8Array(await req.arrayBuffer()); if (buf.byteLength > 25 * 1048576) return js({ erro: 'grande' }, 413); await d1Grava(db, k, buf, meta); kvLista = null; return js({ ok: true }); }
+    if (req.method === 'DELETE') { await kvD1(db).delete(k); kvLista = null; return js({ ok: true }); }
+  }
+  if (rota === 'apaga' && req.method === 'POST') { let o = {}; try { o = await req.json(); } catch { } const ks = (Array.isArray(o.k) ? o.k : []).filter(x => typeof x === 'string' && x && x.length <= 512).slice(0, 2000); await kvD1(db).deleteLote(ks); kvLista = null; return js({ ok: true, n: ks.length }); }
+  return js({ erro: 'pedido desconhecido' }, 400);
+}
+
 /* ---- LISTA DO KV GUARDADA NA MEMÓRIA (plano grátis da Cloudflare: só 1000 "list" por DIA na conta toda) ----
    Toda lista do KV EQUIPE (personagens, cenários, espaço usado…) sai de UMA lista completa guardada aqui por 5 min; o que
    este servidor grava ou apaga já entra na lista guardada na hora (put/delete passam por aqui). Antes cada abertura da
@@ -280,6 +337,7 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
           ks = ks.filter(k => f.has(k)); if (!ks.length) { usou(); for (const k of real) kvLista?.m.delete(k); return; } for (const k of real) kvLista?.m.delete(k); } }
       if (R && emLimite()) { await res(() => pasta ? R.delPasta(pasta) : R.delMuitos(ks, true)); usou(); for (const k of ks) kvLista?.m.delete(k); if (pasta && kvLista) for (const n of [...kvLista.m.keys()]) if (n.startsWith(pasta)) kvLista.m.delete(n); return; }
       if (await ativa()) { let ri = null; try { ri = await R.indice(); } catch { } const la = ks.filter(k => ri?.get(k) && !ri.get(k).metadata?._del); if (la.length) { await R.delMuitos(la, false); usou(); } }
+      if (kv.deleteLote) { try { await kv.deleteLote(ks); for (const k of ks) kvLista?.m.delete(k); return; } catch (e) { if (!R || !marca(e)) throw e; return W.deleteMuitos(ks, pasta); } }
       for (let i = 0; i < ks.length; i++) { try { await kv.delete(ks[i]); kvLista?.m.delete(ks[i]); } catch (e) { if (!R || !marca(e)) throw e; return W.deleteMuitos(ks.slice(i), pasta); } }
     },
     async list(o = {}) {
@@ -325,7 +383,7 @@ async function migra(kv, R) {
 
 // limite grátis da Cloudflare acabou (KV: 1000 gravações/listas/apagadas por dia na conta): em vez de "Failed to fetch",
 // responde um aviso claro (com CORS, para o navegador conseguir ler) e quando volta (00:00 UTC = 21h de Brasília)
-const ehLimite = e => /10048|free usage limit|limit exceeded for the day|for today|daily limit/i.test(String(e?.message || e));
+const ehLimite = e => /10048|free usage limit|limit exceeded for the day|for today|daily limit|daily row (read|write) limit|exceeded D1's free tier/i.test(String(e?.message || e));
 function avisoLimite(req, e) {
   const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const m = String(e?.message || e), duas = /RESERVA_NO_LIMITE/.test(m), semRes = /RESERVA_SEM_RESPOSTA/.test(m), lim = duas || ehLimite(e);
   if (semRes) return new Response(JSON.stringify({ error: { type: 'reserva', message: 'A nuvem da equipe está no limite de hoje e a nuvem reserva não respondeu agora. Tente de novo em alguns segundos. O que você fez continua guardado neste computador.' } }), { status: 503,
@@ -337,6 +395,9 @@ function avisoLimite(req, e) {
 
 export default {
   async fetch(req, env, ctx) {
+    if (new URL(req.url).pathname.startsWith('/robo/')) { try { return await robo(req, env); } catch (e) { return new Response(JSON.stringify({ erro: String(e?.message || e).slice(0, 200) }), { status: ehLimite(e) ? 503 : 500, headers: { 'content-type': 'application/json' } }); } }
+    // a nuvem principal no D1 (depois de ligada): o resto do servidor continua falando "KV" com o adaptador
+    if (await d1Ligado(env)) env = { ...env, EQUIPE: kvD1(env.EQUIPE_DB), _kvAntigo: env.EQUIPE, _d1: true };
     const flag = { reserva: false }; let r;
     try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
     if (flag.reserva && !emLimite()) { // a principal JÁ VOLTOU e o que sobrou na reserva está voltando para ela: o site tira o aviso
@@ -397,7 +458,7 @@ export default {
     if (p0 === '/equipe' || p0 === '/equipe/arquivo') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
-      const q = new URL(req.url).searchParams, LIM = (+env.EQUIPE_LIMITE_MB || 1024) * 1048576;
+      const q = new URL(req.url).searchParams, LIM = (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 1048576;
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const k of r.keys) out.push(await semEmail({ k: k.name, ...(k.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/equipe/arquivo') {
         const k = q.get('k') || ''; if (!/^(equipe|conhecimento)\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
@@ -616,7 +677,7 @@ export default {
           const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
           if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB (limite da nuvem). Para vídeos grandes, use "colar link".' } }, 413, cors);
           let usado = 0, cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const k of r.keys) usado += +(k.metadata?.tam) || 0; cur = r.list_complete ? null : r.cursor; } while (cur);
-          if (usado + buf.byteLength > (+env.EQUIPE_LIMITE_MB || 1024) * 1048576) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+          if (usado + buf.byteLength > (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 1048576) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
           const k = `menu/midia/${Date.now()}_${nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.\- ]+/g, '_').slice(-80)}`;
           await env.EQUIPE.put(k, buf, { metadata: { nome, tipo, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
           return json({ ok: true, k }, 200, cors);

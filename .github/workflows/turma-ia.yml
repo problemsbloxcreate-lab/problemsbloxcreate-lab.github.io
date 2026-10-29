@@ -43,13 +43,15 @@ jobs:
           set -euo pipefail
           [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Faltam os segredos CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID."; exit 1; }
           curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/turma-ia/settings" > settings.json
+          # banco D1 "equipe" (nuvem principal no D1, criado pela Action "Principal no D1" do repo estudio-problems): liga como EQUIPE_DB
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database?per_page=50" > d1.json || echo '{}' > d1.json
           node - <<'EOF'
           const fs = require('fs'), j = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
           if (!j.success) { console.log('::error::Não consegui ler o worker turma-ia: ' + JSON.stringify(j.errors || j).slice(0, 300)); process.exit(1); }
           const r = j.result || {}, b = r.bindings || [];
           // só os NOMES e tipos aparecem no log (nunca os valores)
           console.log('ligações atuais:', b.map(x => x.name + ':' + x.type).join(', '));
-          const conhecidos = ['plain_text', 'secret_text', 'kv_namespace', 'json', 'ai'];
+          const conhecidos = ['plain_text', 'secret_text', 'kv_namespace', 'json', 'ai', 'd1'];
           const outros = b.filter(x => !conhecidos.includes(x.type));
           if (outros.length) { console.log('::error::O turma-ia tem ligações que esta Action não sabe manter (' + outros.map(x => x.name + ':' + x.type).join(', ') + '). Nada foi publicado.'); process.exit(1); }
           if (!b.some(x => x.name === 'EMAILS_PERMITIDOS')) { console.log('::error::O turma-ia está sem EMAILS_PERMITIDOS na Cloudflare. Nada foi publicado (para ninguém ficar trancado para fora).'); process.exit(1); }
@@ -60,7 +62,10 @@ jobs:
           t += `workers_dev = true\nkeep_vars = true\n`;
           for (const k of kv) t += `\n[[kv_namespaces]]\nbinding = "${k.name}"\nid = "${k.namespace_id}"\n`;
           const ai = b.find(x => x.type === 'ai'); if (ai) t += `\n[ai]\nbinding = "${ai.name}"\n`; // IA da Cloudflare (transcrição)
-          fs.writeFileSync('wrangler.toml', t); console.log(t.replace(/id = "[0-9a-f]+"/g, 'id = "…"'));
+          let d1 = b.filter(x => x.type === 'd1').map(x => ({ name: x.name, id: x.id || x.database_id }));
+          if (!d1.some(x => x.name === 'EQUIPE_DB')) { let l = {}; try { l = JSON.parse(fs.readFileSync('d1.json', 'utf8')); } catch { } const e = (l.result || []).find(x => x.name === 'equipe'); if (e) { d1.push({ name: 'EQUIPE_DB', id: e.uuid }); console.log('ligando o banco D1 equipe como EQUIPE_DB'); } }
+          for (const x of d1) t += `\n[[d1_databases]]\nbinding = "${x.name}"\ndatabase_name = "${x.name === 'EQUIPE_DB' ? 'equipe' : x.name.toLowerCase()}"\ndatabase_id = "${x.id}"\n`;
+          fs.writeFileSync('wrangler.toml', t); console.log(t.replace(/id = "[0-9a-f-]+"/g, 'id = "…"'));
           EOF
       - name: Testar a publicação (sem publicar)
         run: $WR deploy --dry-run --outdir /tmp/turma-dry 2>&1 | tail -20
