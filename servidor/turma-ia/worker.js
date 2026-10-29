@@ -194,7 +194,7 @@ let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
 // reserva ANTIGA (sons-problems, conta antiga) só quando também chega no limite — o contrato /reserva/* é o mesmo
 const RESERVA_URL = 'https://reserva-problems.problemsraizz.workers.dev';
 const fimDoDia = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
-let fotoC = null, limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0, bkMan = null, resConta = null, cheioVisto = 0;
+let tercAte = 0, fotoC = null, limiteAte = 0, resEstado = { at: 0, ativo: false }, resIdx = { at: 0, m: null }, fotoListaEm = 0, migraEm = 0, bkMan = null, resConta = null, cheioVisto = 0;
 // PROTEÇÃO: com 85% das gravações, listas ou apagadas do dia já gastas (medida de 15 em 15 min), a principal é poupada até as 21h
 // (como se tivesse acabado): sobra folga para a última foto da lista e para a cópia de segurança, e nada para no meio.
 const SEGURO = 0.85;
@@ -202,7 +202,9 @@ const emLimite = () => Date.now() < limiteAte;
 function reservaDe(env, auth) {
   if (!auth || env.RESERVA === 'nao') return null; const base = (env.RESERVA_URL || RESERVA_URL).replace(/\/+$/, '');
   const call = async (path, o = {}, ms = 9000) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
-    try { return await fetch(base + path, { ...o, headers: { authorization: auth, ...(o.headers || {}) }, signal: ac.signal }); } finally { clearTimeout(t); } };
+    try { const r = await fetch(base + path, { ...o, headers: { authorization: auth, ...(o.headers || {}) }, signal: ac.signal });
+      if (r.headers.get('x-reserva') === 'antiga') tercAte = fimDoDia(); // a reserva passou para a TERCIÁRIA (encheu também): o site fica rosa até as 21h
+      return r; } finally { clearTimeout(t); } };
   const ok = async r => { if (!r.ok) { let j = null; try { j = await r.clone().json(); } catch { } throw new Error(j?.erro === 'limite' ? 'RESERVA_NO_LIMITE' : 'a nuvem reserva respondeu ' + r.status); } return r; };
   return {
     async ativa() { if (Date.now() - resEstado.at < 120e3) return resEstado.ativo;
@@ -328,7 +330,7 @@ function avisoLimite(req, e) {
   const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const m = String(e?.message || e), duas = /RESERVA_NO_LIMITE/.test(m), semRes = /RESERVA_SEM_RESPOSTA/.test(m), lim = duas || ehLimite(e);
   if (semRes) return new Response(JSON.stringify({ error: { type: 'reserva', message: 'A nuvem da equipe está no limite de hoje e a nuvem reserva não respondeu agora. Tente de novo em alguns segundos. O que você fez continua guardado neste computador.' } }), { status: 503,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
-  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: duas ? 'A nuvem da equipe E a nuvem reserva chegaram ao limite de hoje. Voltam sozinhas às 21h (horário de Brasília). O que você fez continua guardado neste computador.' : 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: duas ? 'A nuvem da equipe, a reserva e a terciária chegaram ao limite de hoje. Voltam sozinhas às 21h (horário de Brasília). O que você fez continua guardado neste computador.' : 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
     : { type: 'servidor', message: 'O servidor da nuvem teve um erro: ' + String(e?.message || e).slice(0, 160) } }), { status: lim ? 503 : 500,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
 }
@@ -340,7 +342,7 @@ export default {
     if (flag.reserva && !emLimite()) { // a principal JÁ VOLTOU e o que sobrou na reserva está voltando para ela: o site tira o aviso
       const h = new Headers(r.headers); h.set('x-nuvem', 'voltando'); h.set('access-control-expose-headers', 'x-nuvem'); r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     } else if (flag.reserva || emLimite()) { // o site mostra "usando a nuvem reserva" (ou só o aviso do limite)
-      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? 'reserva' : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial');
+      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? (Date.now() < tercAte ? 'terciaria' : 'reserva') : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial');
       r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
     return r;
@@ -382,7 +384,10 @@ export default {
       out.seguro = SEGURO; out.poupando = emLimite();
       if (R2) { const [cfg, bk] = await Promise.all([R2.bkcfg(), (bkMan = null, R2.bkman().catch(() => null))]); out.copia = { prefixos: cfg?.prefixos || ['personagens/'], em: bk?.em || null, n: bk?.n || 0, bytes: bk?.bytes || 0, falta: bk?.falta || 0 };
         const raizes = new Set(); try { for (const k of (await env.EQUIPE.list({})).keys) raizes.add(k.name.split('/')[0] + '/'); } catch { } out.copia.raizes = [...raizes].sort(); }
-      if (R2) { out.conta = await R2.conta(); try { resEstado.at = 0; out.reserva.ativo = await R2.ativa(); if (out.reserva.ativo) for (const it of (await R2.indice(true)).values()) { if (it.metadata?._del) out.reserva.apagadas++; else { out.reserva.n++; out.reserva.bytes += +it.metadata?.tam || 0; } } } catch { out.reserva.erro = true; } }
+      if (R2) { out.conta = await R2.conta(); try { resEstado.at = 0; out.reserva.ativo = await R2.ativa(); out.terc = { n: 0, bytes: 0, apagadas: 0, emUso: Date.now() < tercAte };
+          if (out.reserva.ativo) for (const it of (await R2.indice(true)).values()) { const q = it.metadata?._ant ? out.terc : out.reserva; // _ant = está na terciária
+            if (it.metadata?._del) q.apagadas++; else { q.n++; q.bytes += +it.metadata?.tam || 0; } }
+          if (out.terc.n || out.terc.apagadas) out.terc.emUso = true; } catch { out.reserva.erro = true; } }
       return json(out, 200, { ...cors, 'cache-control': 'no-store' });
     }
     if (new URL(req.url).pathname === '/confere') return new URL(req.url).searchParams.get('adm') && !ehAdmin(env, login.email) ? json({ error: { type: 'adm' } }, 403, cors) : json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); // a nuvem reserva confere se o login é da equipe (sem e-mail na resposta)
