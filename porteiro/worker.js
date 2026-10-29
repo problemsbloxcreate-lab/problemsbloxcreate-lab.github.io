@@ -779,12 +779,13 @@ async function leDispositivo(env, token) {
 // quem está pedindo: token de dispositivo (Authorization: Bearer) ou a sessão do navegador
 /* Shorts no PC (26/10/2026): o estúdio do Shorts exporta cada cena como está (CINE_EXPORT) e o serviço local (token de dispositivo,
    sem navegador) a renderiza no Minecraft daquele PC e grava o vídeo para a linha do tempo — pelo /nuvem/, SÓ na rota rev/img e SÓ
-   nas chaves de cinema do vídeo: <id>-cinexp e <id>-cinemundo (ler) | <id>-mine e <id>-cinest (ler e gravar).
+   nas chaves de cinema do vídeo: <id>-cinexp e <id>-cinemundo (ler) | <id>-mine, <id>-cinest e <id>-cinefeito (ler e gravar;
+   cinefeito = cenas já feitas, 29/10, para refazer só as que mudaram).
    Qualquer outra coisa continua pedindo o login do menu. */
 async function nuvemDispositivo(req, env, url, p) {
   if (!/^Bearer /.test(req.headers.get('authorization') || '') || p.resto !== 'rev/img') return null;
-  const m = (url.searchParams.get('id') || '').match(/^[a-z0-9][a-z0-9-]{0,100}-(cinexp|cinemundo|cinest|mine)$/);
-  if (!m || !['GET', 'PUT'].includes(req.method) || (req.method === 'PUT' && !['mine', 'cinest'].includes(m[1]))) return null;
+  const m = (url.searchParams.get('id') || '').match(/^[a-z0-9][a-z0-9-]{0,100}-(cinexp|cinemundo|cinest|cinefeito|mine)$/);
+  if (!m || !['GET', 'PUT'].includes(req.method) || (req.method === 'PUT' && !['mine', 'cinest', 'cinefeito'].includes(m[1]))) return null;
   const q = await quemPede(req, env); return q?.dispositivo ? { e: q.email, dispositivo: true } : null;
 }
 async function quemPede(req, env) {
