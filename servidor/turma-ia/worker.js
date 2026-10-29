@@ -461,6 +461,50 @@ export default {
       }
       return json({ error: { message: 'Método não aceito.' } }, 405, cors);
     }
+    // ANIMAÇÕES do Animador na nuvem da equipe (KV EQUIPE, prefixo "animacoes/"; decisão do dono, 28/10/2026: os Shorts não podem
+    // mais ficar só no navegador). Cada animação = animacoes/<id>/animacao.json (+ miniatura.jpg); imagens/áudios ficam UMA vez só
+    // em animacoes/arq/<sha-256 do conteúdo> (a mesma voz usada em 10 animações ou salva 100 vezes = 1 gravação).
+    //   GET    /animacoes                       → lista { itens: [{ id, nome, mod, por, em, tam }] } (só as animacao.json)
+    //   GET    /animacoes/arquivo?k=…           → o arquivo
+    //   PUT    /animacoes/arquivo?k=…[&nome=…]  → salva (json até 10 MB; mídia até 24 MB; arq/ que já existe não grava de novo)
+    //   DELETE /animacoes/arquivo?k=animacoes/<id>/ → tira a animação (só ADM; as mídias ficam, podem ser de outras animações)
+    if (p0 === '/animacoes' || p0 === '/animacoes/arquivo') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const q = new URL(req.url).searchParams, k = q.get('k') || '';
+      const KA = /^animacoes\/([a-z0-9][a-z0-9-]{1,40}\/(animacao\.json|miniatura\.jpg)|arq\/[a-f0-9]{64})$/, KAD = /^animacoes\/[a-z0-9][a-z0-9-]{1,40}\/$/;
+      if (p0 === '/animacoes') {
+        if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
+        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'animacoes/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^animacoes\/([a-z0-9-]+)\/animacao\.json$/); if (m && !x.metadata?._del) out.push(await semEmail({ id: m[1], k: x.name, ...(x.metadata || {}) })); } cur = r.list_complete ? null : r.cursor; } while (cur);
+        return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' });
+      }
+      if (req.method === 'GET') {
+        if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        return new Response(r.value, { status: 200, headers: { ...cors, 'content-type': r.metadata?.tipo || 'application/octet-stream', 'cache-control': k.includes('/arq/') ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff' } });
+      }
+      if (req.method === 'PUT' || req.method === 'POST') {
+        if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const ehJson = k.endsWith('.json'), ehArq = k.includes('/arq/');
+        if (ehArq) { try { const ja = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (ja.value) { try { await ja.value.cancel(); } catch { } return json({ ok: true, k, ja: true }, 200, cors); } } catch { } }
+        const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (buf.byteLength > (ehArq ? 24 : 10) * 1048576) return json({ error: { message: ehArq ? 'Arquivo maior que 24 MB.' : 'Animação maior que 10 MB.' } }, 413, cors);
+        if (ehArq) { const h = [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map(b => b.toString(16).padStart(2, '0')).join(''); if (k !== 'animacoes/arq/' + h) return json({ error: { message: 'O nome do arquivo não bate com o conteúdo.' } }, 400, cors); }
+        if (!ehJson && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+        const tipo = ehJson ? 'application/json' : k.endsWith('.jpg') ? 'image/jpeg' : String(req.headers.get('content-type') || 'application/octet-stream').slice(0, 80);
+        let m0 = null; if (ehJson) { try { const o = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); try { await o.value?.cancel(); } catch { } m0 = o.metadata || null; } catch { } }
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(ehJson ? { nome: String(q.get('nome') || '').slice(0, 80), w: +q.get('w') || 0, h: +q.get('h') || 0, dur: +q.get('dur') || 0 } : {}), tam: buf.byteLength, mod: Date.now(), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        return json({ ok: true, k }, 200, cors);
+      }
+      if (req.method === 'DELETE') {
+        if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors);
+        if (!KAD.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const ks = [k + 'animacao.json', k + 'miniatura.jpg'];
+        if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks); else for (const x of ks) await env.EQUIPE.delete(x);
+        return json({ ok: true }, 200, cors);
+      }
+      return json({ error: { message: 'Método não aceito.' } }, 405, cors);
+    }
     // ACESSO (tela ADM › Acesso, pelo porteiro): ver, adicionar e tirar e-mails liberados.
     // SEGURANÇA (não remover): só os e-mails da variável ADMINS (precisa existir); a base EMAILS_PERMITIDOS não muda por aqui.
     if (p0 === '/acesso') {
