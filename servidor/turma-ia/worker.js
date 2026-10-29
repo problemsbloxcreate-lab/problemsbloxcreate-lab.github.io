@@ -357,7 +357,7 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
 async function confereCheio(kv, R) {
   if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
   const c = await R.contaJa(), o = c?.contas?.principal, L = c?.limites; if (!o?.kv || !L || c.dia !== new Date().toISOString().slice(0, 10)) return;
-  const pct = Math.max(o.kv.write / L.write, o.kv.list / L.list, o.kv.delete / L.delete); if (pct < SEGURO) return;
+  const pct = o.d1ativo && o.d1 ? o.d1.write / (L.d1Write || 1e5) : Math.max(o.kv.write / L.write, o.kv.list / L.list, o.kv.delete / L.delete); if (pct < SEGURO) return; // no D1 conta as linhas gravadas
   // última foto da lista antes de poupar (se ainda dá para listar) e a cópia de segurança do que mudou
   if (o.kv.list / L.list < 0.97 && Date.now() - fotoListaEm > 30 * 60e3) { try { kvLista = null; fotoListaEm = 0; await kv.list({}); } catch { } }
   limiteAte = fimDoDia(); R.copiar().catch(() => { });
