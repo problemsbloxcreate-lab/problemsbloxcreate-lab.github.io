@@ -46,7 +46,7 @@ const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 
 let usoEq = null; // conta guardada por 1 min (listar a nuvem toda a cada imagem gasta a cota de listagens do dia)
 async function usadoEquipe(env, mais = 0) {
   // sem lista (limite do dia, reserva ainda sem a foto da lista): usa a última conta que tiver (ou 0) — medir o espaço NÃO pode impedir de salvar na reserva
-  if (!usoEq || Date.now() - usoEq.at > 60e3) { try { let u = 0, cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const k of r.keys) u += +(k.metadata?.tam) || 0; cur = r.list_complete ? null : r.cursor; } while (cur); usoEq = { u, at: Date.now() }; } catch { usoEq = { u: usoEq?.u || 0, at: Date.now() }; } }
+  if (!usoEq || Date.now() - usoEq.at > 300e3) { // 5 min: cada conta lê TODAS as linhas da nuvem (no D1 cada linha lida conta no limite do dia); o que entra nesse meio-tempo já é somado por `mais` try { let u = 0, cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const k of r.keys) u += +(k.metadata?.tam) || 0; cur = r.list_complete ? null : r.cursor; } while (cur); usoEq = { u, at: Date.now() }; } catch { usoEq = { u: usoEq?.u || 0, at: Date.now() }; } }
   const u = usoEq.u; usoEq.u += mais; return u;
 }
 const EMAIL_OK = /^[^\s@,;<>"']{1,64}@[^\s@,;<>"']{1,190}\.[a-z]{2,24}$/i;
