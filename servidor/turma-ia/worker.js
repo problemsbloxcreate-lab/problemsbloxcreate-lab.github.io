@@ -214,7 +214,7 @@ function kvD1(db) {
     async deleteLote(ks) { const st = []; for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400)); },
     // a lista vem inteira de uma vez (o servidor já guarda na memória por 5 min); cursor = depois desta chave
     async list(o = {}) { const pre = o.prefix || '', lim = Math.min(+o.limit || 100000, 100000), de = o.cursor || '';
-      const { results } = await db.prepare('SELECT k, meta FROM arq WHERE substr(k, 1, ?) = ? AND k > ? ORDER BY k LIMIT ?').bind(pre.length, pre, de, lim + 1).all();
+      const { results } = await db.prepare('SELECT k, meta FROM arq WHERE k >= ? AND k < ? AND k > ? ORDER BY k LIMIT ?').bind(pre, pre + '\uffff', de, lim + 1).all(); // faixa pelo índice da chave: lê só as linhas do começo pedido (substr lia a tabela inteira)
       const rs = results || [], mais = rs.length > lim, keys = rs.slice(0, lim).map(x => { let m = null; try { m = JSON.parse(x.meta || 'null'); } catch { } return { name: x.k, ...(m && Object.keys(m).length ? { metadata: m } : {}) }; });
       return { keys, list_complete: !mais, cursor: mais ? keys[keys.length - 1].name : undefined }; },
   };
