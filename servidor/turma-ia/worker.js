@@ -604,7 +604,7 @@ export default {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const q = new URL(req.url).searchParams, k = q.get('k') || '';
-      const KA = /^animacoes\/[A-Za-z0-9_-]{2,40}\/(projeto\.json|thumb\.jpg|arq\/[A-Za-z0-9._~%-]{1,300})$/, KAD = /^animacoes\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KA = /^animacoes\/(pastas\.json|[A-Za-z0-9_-]{2,40}\/(projeto\.json|thumb\.jpg|arq\/[A-Za-z0-9._~%-]{1,300}))$/, // pastas.json = pastas das animações da nuvem (toda a equipe muda) KAD = /^animacoes\/[A-Za-z0-9_-]{2,40}\/$/;
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/animacoes') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
         const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar('animacoes/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
@@ -627,7 +627,9 @@ export default {
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
-        if (KAD.test(k)) { if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar uma animação da nuvem. Peça para um ADM apagar.' } }, 403, cors);
+        // REMOVER DA NUVEM (decisão do dono, 30/10/2026): quem mandou a animação para a nuvem ou um ADM
+        if (KAD.test(k)) { const dono = await env.EQUIPE.getWithMetadata(k + 'projeto.json', { type: 'stream' }).then(async o => { try { await o.value?.cancel(); } catch { } return o.metadata?.por || ''; }).catch(() => '');
+          if (!ehAdmin(env, login.email) && String(dono).toLowerCase() !== String(login.email).toLowerCase()) return json({ error: { type: 'adm', message: 'Só quem mandou esta animação para a nuvem (ou um ADM) pode tirar ela de lá.' } }, 403, cors);
           const ks = (await listar(k)).map(x => x.k); if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x); return json({ ok: true, apagados: ks.length }, 200, cors); }
         if (!KA.test(k) || !/\/arq\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors); // arquivos que a animação já não usa: qualquer um da equipe (limpeza do envio)
         await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors);
