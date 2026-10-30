@@ -604,7 +604,7 @@ export default {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const q = new URL(req.url).searchParams, k = q.get('k') || '';
-      const KA = /^animacoes\/(pastas\.json|[A-Za-z0-9_-]{2,40}\/(projeto\.json|thumb\.jpg|arq\/[A-Za-z0-9._~%-]{1,300}))$/, // pastas.json = pastas das animações da nuvem (toda a equipe muda) KAD = /^animacoes\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KA = /^animacoes\/(pastas\.json|[A-Za-z0-9_-]{2,40}\/(projeto\.json|thumb\.jpg|arq\/[A-Za-z0-9._~%-]{1,300}))$/, /* pastas.json = pastas das animações da nuvem (toda a equipe muda) */ KAD = /^animacoes\/[A-Za-z0-9_-]{2,40}\/$/;
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/animacoes') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
         const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar('animacoes/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
