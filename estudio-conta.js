@@ -56,8 +56,11 @@
   let el = null, iv = 0;
   // VOLTANDO: a principal já voltou e o que ficou na reserva está voltando para ela (aviso verde-água por alguns minutos)
   const KV = 'estudio-voltando', voltando = () => { try { return +localStorage.getItem(KV) > Date.now(); } catch { return false; } };
+  // AVISO SÓ QUANDO MUDA ALGO (decisão do dono, 29/10/2026): "limite" sem reserva em uso (nível 0) não aparece — nada muda
+  // para a equipe (o que for gravado vai sozinho para a reserva e aí sim o aviso aparece)
+  const visivel = () => naReserva() ? marcado() : 0;
   function selo() {
-    const t = marcado();
+    const t = visivel();
     if (!t && !voltando() && !sons()) { el?.remove(); el = null; clearInterval(iv); iv = 0; return; }
     if (!document.body) return void document.addEventListener('DOMContentLoaded', selo, { once: true });
     if (!el) {
@@ -67,7 +70,7 @@
       el.onclick = () => { el._mini = !el._mini; pinta(); };
       document.body.appendChild(el);
     }
-    const pinta = () => { const t2 = marcado();
+    const pinta = () => { const t2 = visivel();
       if (!t2 && !voltando()) { const ts = sons(); if (!ts) return selo(); // só a nuvem dos sons no limite
         el.title = MSG_SONS(ts) + ' (clique para encolher)'; el.style.borderColor = 'rgba(255,255,255,.12)'; el.style.color = '#cfd3dc';
         el.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' + (el._mini ? `<span>sons · ${falta(ts)}</span>` : `<span>Nuvem dos sons no limite · volta em <b style="font-weight:600">${falta(ts)}</b> (${hh(ts)})</span>`);
@@ -97,6 +100,9 @@
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
     if (xn === 'voltando') { const tinha = !!le(); try { localStorage.removeItem(K); localStorage.setItem(KV, String(Date.now() + 10 * 6e4)); } catch { } selo(); if (tinha) avisaCirculo(); } // a principal já voltou (o que sobrou na reserva está voltando para ela)
     else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'terciaria' ? 2 : xn === 'reserva' ? 1 : (xn === 'limite' && naReserva() && r.ok ? nivel() : 0));
+    // o servidor da nuvem respondeu NORMAL (sem x-nuvem): a marca "só limite" (nível 0, sem reserva em uso) sai na hora —
+    // antes ela ficava presa neste navegador até as 21h, mesmo atualizando a página
+    else if (r.ok && le() && !naReserva()) { try { const h = new URL(url, location.href).hostname; if (/^turma-ia\./.test(h)) { localStorage.removeItem(K); selo(); avisaCirculo(); } } catch { } }
     if (r.status === 503 || r.status === 429) {
       const tipo = r.headers.get('content-type') || '';
       if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') { if (j.error.nuvem === 'sons') { const v = Date.parse(j.error.volta) > Date.now() ? Date.parse(j.error.volta) : proxima(); try { localStorage.setItem(KS, String(v)); } catch { } selo(); return new Response(JSON.stringify({ ...j, erro: MSG_SONS(v), error: { ...j.error, message: MSG_SONS(v) } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); } marca(Date.parse(j.error.volta), false);
