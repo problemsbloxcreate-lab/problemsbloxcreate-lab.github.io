@@ -595,6 +595,45 @@ export default {
     }
     // CENÁRIOS da equipe (KV EQUIPE, prefixo "cenarios/"): só entram quando alguém escolhe "Salvar na nuvem" no Animador.
     //   GET /cenarios → lista · GET/POST/DELETE /cenarios/arquivo?k=cenarios/<id>.<ext>[&nome=…]
+    // ANIMAÇÕES do Animador na nuvem da equipe (decisão do dono, 30/10/2026): cada animação é uma pasta "animacoes/<id>/" com
+    // projeto.json (o projeto sem a miniatura), thumb.jpg e arq/<chave> (imagens e áudios que só existem nela; as dos personagens
+    // da equipe ficam em personagens/). Toda a equipe lê e salva; apagar a animação inteira só ADM.
+    //   GET    /animacoes                → { itens: [{ id, nome, mod, por, em, tam }] }
+    //   GET    /animacoes/arquivo?k=…    → o arquivo · PUT/POST → salva (até 25 MB) · DELETE → apaga (pasta inteira = só ADM)
+    if (p0 === '/animacoes' || p0 === '/animacoes/arquivo') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const q = new URL(req.url).searchParams, k = q.get('k') || '';
+      const KA = /^animacoes\/[A-Za-z0-9_-]{2,40}\/(projeto\.json|thumb\.jpg|arq\/[A-Za-z0-9._~%-]{1,300})$/, KAD = /^animacoes\/[A-Za-z0-9_-]{2,40}\/$/;
+      const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
+      if (p0 === '/animacoes') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
+        const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar('animacoes/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
+        const todos = await listar('animacoes/'), tam = {}, out = [];
+        for (const x of todos) { const id = x.k.split('/')[1]; tam[id] = (tam[id] || 0) + (+x.tam || 0); }
+        for (const x of todos) { const m = x.k.match(/^animacoes\/([^/]+)\/projeto\.json$/); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0 })); }
+        return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') {
+        if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        return new Response(r.value, { status: 200, headers: { ...cors, 'content-type': k.endsWith('.json') ? 'application/json' : 'application/octet-stream', 'cache-control': /\/arq\//.test(k) ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+      }
+      if (req.method === 'PUT' || req.method === 'POST') {
+        if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB.' } }, 413, cors);
+        if (!k.endsWith('.json') && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+        const ant = k.endsWith('projeto.json') ? await env.EQUIPE.getWithMetadata(k, { type: 'stream' }).then(async o => { try { await o.value?.cancel(); } catch { } return o.metadata; }).catch(() => null) : null;
+        await env.EQUIPE.put(k, buf, { metadata: { tam: buf.byteLength, mod: Date.now(), ...(q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), por: ant?.por || login.email, em: ant?.em || new Date().toISOString() } });
+        return json({ ok: true, k }, 200, cors);
+      }
+      if (req.method === 'DELETE') {
+        if (KAD.test(k)) { if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar uma animação da nuvem. Peça para um ADM apagar.' } }, 403, cors);
+          const ks = (await listar(k)).map(x => x.k); if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x); return json({ ok: true, apagados: ks.length }, 200, cors); }
+        if (!KA.test(k) || !/\/arq\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors); // arquivos que a animação já não usa: qualquer um da equipe (limpeza do envio)
+        await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors);
+      }
+      return json({ error: { message: 'Pedido desconhecido.' } }, 405, cors);
+    }
     if (p0 === '/cenarios' || p0 === '/cenarios/arquivo') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
