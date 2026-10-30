@@ -610,7 +610,7 @@ export default {
         const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar('animacoes/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
         const todos = await listar('animacoes/'), tam = {}, out = [];
         for (const x of todos) { const id = x.k.split('/')[1]; tam[id] = (tam[id] || 0) + (+x.tam || 0); }
-        for (const x of todos) { const m = x.k.match(/^animacoes\/([^/]+)\/projeto\.json$/); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0 })); }
+        for (const x of todos) { const m = x.k.match(/^animacoes\/([^/]+)\/projeto\.json$/); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0, quem: x.quem || null })); } /* quem = quem criou/editou (códigos u…, nomes; foto vem do /pessoa) */
         return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'GET') {
         if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
@@ -623,7 +623,8 @@ export default {
         if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB.' } }, 413, cors);
         if (!k.endsWith('.json') && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
         const ant = k.endsWith('projeto.json') ? await env.EQUIPE.getWithMetadata(k, { type: 'stream' }).then(async o => { try { await o.value?.cancel(); } catch { } return o.metadata; }).catch(() => null) : null;
-        await env.EQUIPE.put(k, buf, { metadata: { tam: buf.byteLength, mod: Date.now(), ...(q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), por: ant?.por || login.email, em: ant?.em || new Date().toISOString() } });
+        let quem = null; try { const o = JSON.parse(q.get('quem') || 'null'); const P = x => x && /^u[0-9a-f]{16}$/.test(x.i) ? { i: x.i, n: String(x.n || '').replace(/[<>]/g, '').slice(0, 40), t: +x.t || 0 } : null; if (o) quem = { a: P(o.a), e: (Array.isArray(o.e) ? o.e : []).map(P).filter(Boolean).slice(-6) }; } catch { }
+        await env.EQUIPE.put(k, buf, { metadata: { tam: buf.byteLength, mod: Date.now(), ...(q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), ...(quem ? { quem } : ant?.quem ? { quem: ant.quem } : {}), por: ant?.por || login.email, em: ant?.em || new Date().toISOString() } });
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
