@@ -57,9 +57,9 @@
 #estudio-porta .ep-nm{font:800 26px/1.05 'Segoe UI',system-ui,sans-serif;letter-spacing:1.5px}
 #estudio-porta .ep-sb{color:#9aa0ab;font-size:12.5px;letter-spacing:.4px}
 #estudio-porta .ep-jd{display:flex;gap:10px;align-items:baseline;font:600 30px/1.1 'Rubik','Segoe UI',system-ui,sans-serif;letter-spacing:.5px}
-#estudio-porta .ep-jd-j{display:inline-flex}#estudio-porta .ep-jd-j i{font-style:normal;color:#fff;opacity:0;display:inline-block;animation:epJdLetra .9s cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--i) * .07s)}
-#estudio-porta .ep-jd-d{font-weight:700;background:linear-gradient(90deg,#ffb3c7,#ffd6a5,#fdffb6,#caffbf,#9bf6ff,#a0c4ff,#bdb2ff,#ffc6ff);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;filter:blur(6px);animation:epJdDreams 1.1s ease .65s both}
-#estudio-porta .ep-jd-selo{margin-top:6px;font:800 10px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:1.6px;padding:4px 9px;border-radius:20px;color:#1b1206;background:linear-gradient(135deg,#ffd29a,#ffb3c7);opacity:0;animation:epJdSelo .5s ease 1.2s forwards}
+#estudio-porta .ep-jd-j{display:inline-flex}#estudio-porta .ep-jd-j i{font-style:normal;color:#fff;opacity:0;display:inline-block;animation:epJdLetra .42s cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--i) * .03s)}
+#estudio-porta .ep-jd-d{font-weight:700;background:linear-gradient(90deg,#ffb3c7,#ffd6a5,#fdffb6,#caffbf,#9bf6ff,#a0c4ff,#bdb2ff,#ffc6ff);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;filter:blur(6px);animation:epJdDreams .5s ease .28s both}
+#estudio-porta .ep-jd-selo{margin-top:6px;font:800 10px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:1.6px;padding:4px 9px;border-radius:20px;color:#1b1206;background:linear-gradient(135deg,#ffd29a,#ffb3c7);opacity:0;animation:epJdSelo .3s ease .55s forwards}
 @keyframes epJdLetra{0%{opacity:0;transform:translateX(calc(var(--i) * -0.62em)) scale(.85)}35%{opacity:.75}100%{opacity:.92;transform:none}}
 @keyframes epJdDreams{to{opacity:1;filter:none}}@keyframes epJdSelo{to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#estudio-porta .ep-jd-j i,#estudio-porta .ep-jd-d,#estudio-porta .ep-jd-selo{animation:none;opacity:1;filter:none;transform:none}}
