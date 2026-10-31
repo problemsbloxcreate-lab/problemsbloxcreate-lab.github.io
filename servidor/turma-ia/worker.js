@@ -600,17 +600,20 @@ export default {
     // da equipe ficam em personagens/). Toda a equipe lê e salva; apagar a animação inteira só ADM.
     //   GET    /animacoes                → { itens: [{ id, nome, mod, por, em, tam }] }
     //   GET    /animacoes/arquivo?k=…    → o arquivo · PUT/POST → salva (até 25 MB) · DELETE → apaga (pasta inteira = só ADM)
-    if (p0 === '/animacoes' || p0 === '/animacoes/arquivo') {
+    // JESTER DREAMS (programa de TESTE, decisão do dono, 31/10/2026): mesmas regras das animações, na pasta "jester/<id>/"
+    //   (GET /jester, /jester/arquivo?k=jester/<id>/projeto.json …) — separado das animações do Animador.
+    if (p0 === '/animacoes' || p0 === '/animacoes/arquivo' || p0 === '/jester' || p0 === '/jester/arquivo') {
+      const BA = p0.startsWith('/jester') ? 'jester' : 'animacoes';
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const q = new URL(req.url).searchParams, k = q.get('k') || '';
-      const KA = /^animacoes\/(pastas\.json|[A-Za-z0-9_-]{2,40}\/(projeto\.json|thumb\.jpg|arq\/[A-Za-z0-9._~%-]{1,300}))$/, /* pastas.json = pastas das animações da nuvem (toda a equipe muda) */ KAD = /^animacoes\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KA = new RegExp('^' + BA + '\\/(pastas\\.json|[A-Za-z0-9_-]{2,40}\\/(projeto\\.json|thumb\\.jpg|arq\\/[A-Za-z0-9._~%-]{1,300}))$'), /* pastas.json = pastas das animações da nuvem (toda a equipe muda) */ KAD = new RegExp('^' + BA + '\\/[A-Za-z0-9_-]{2,40}\\/$');
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
-      if (p0 === '/animacoes') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
-        const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar('animacoes/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
-        const todos = await listar('animacoes/'), tam = {}, out = [];
+      if (p0 === '/' + BA) { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
+        const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar(BA + '/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
+        const todos = await listar(BA + '/'), tam = {}, out = [];
         for (const x of todos) { const id = x.k.split('/')[1]; tam[id] = (tam[id] || 0) + (+x.tam || 0); }
-        for (const x of todos) { const m = x.k.match(/^animacoes\/([^/]+)\/projeto\.json$/); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0, quem: x.quem || null })); } /* quem = quem criou/editou (códigos u…, nomes; foto vem do /pessoa) */
+        for (const x of todos) { const m = x.k.match(new RegExp('^' + BA + '\\/([^/]+)\\/projeto\\.json$')); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0, quem: x.quem || null })); } /* quem = quem criou/editou (códigos u…, nomes; foto vem do /pessoa) */
         return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'GET') {
         if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
