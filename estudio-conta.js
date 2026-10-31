@@ -578,9 +578,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // bancos do navegador (IndexedDB) de cada programa: nome do banco → programa e endereço
   const BANCOS = {
     'animador-v2': ['Animador', '/animador/'], 'turma-studios': ['Animador antigo', '/animador/', 'animações da versão antiga'], 'ep-edicao': ['Editor', '/editor/'], 'ep-whisper-edicao': ['Editor', '/editor/', 'transcrição guardada'],
-    'estudio-problems': ['Shorts', '/shorts/'], 'ep-gravacao': ['Shorts', '/shorts/gravacao/'], 'ep-menu': ['Menu', '/', 'fundo próprio'],
+    'estudio-problems': ['Shorts', '/shorts/'], 'ep-gravacao': ['Shorts', '/shorts/gravacao/'], 'ep-menu': ['Menu', '/', 'fundo próprio'], 'jester-dreams': ['Jester Dreams (teste)', '/jester/'],
   };
-  const PROGRAMAS = { '/animador/': 'Animador', '/editor/': 'Editor', '/shorts/': 'Shorts', '/modelador/': 'Modelador' };
+  const PROGRAMAS = { '/animador/': 'Animador', '/jester/': 'Jester Dreams (teste)', '/editor/': 'Editor', '/shorts/': 'Shorts', '/modelador/': 'Modelador' };
   const fmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
   const dataTxt = t => { if (!t) return ''; const d = new Date(t); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
   function anel(pct) {
@@ -823,7 +823,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
      o anel fica metade roxo, metade amarelo). Sem som. O porteiro apaga sozinho o que tem mais de 7 dias.
      Ninguém recebe e-mail de ninguém: as pessoas vão pelo código (u…) e o nome/foto vêm de /pessoa?u=. */
   const MSG = { mencoes: 0, nao: 0, eu: null, ultimo: 0, res: null, pessoas: [], conv: null, ligado: false, ultimaVolta: 0, abertoEm: 0 };
-  const NOME_PROG_ON = { MENU: 'no menu', ADM: 'na tela ADM', ANIMADOR: 'no Animador', EDITOR: 'no Editor', SHORTS: 'nos Shorts', MODELADOR: 'no Modelador', BLOCKBENCH: 'no Blockbench' };
+  const NOME_PROG_ON = { MENU: 'no menu', ADM: 'na tela ADM', ANIMADOR: 'no Animador', 'JESTER DREAMS': 'no Jester Dreams (teste)', EDITOR: 'no Editor', SHORTS: 'nos Shorts', MODELADOR: 'no Modelador', BLOCKBENCH: 'no Blockbench' };
   const QUEMU = new Map();
   const NOMES = new Map(); // código → nome (para achar @Nome escrito à mão)
   // nomes e fotos ficam guardados neste navegador (30 min): abrir as mensagens não pede de novo um por um

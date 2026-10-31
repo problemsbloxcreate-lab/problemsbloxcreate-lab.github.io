@@ -39,6 +39,7 @@ PROJETOS = '''{
   "/animador/":  "https://problemsbloxcreate-lab.github.io/animador/",
   "/shorts/":    { "origem": "https://estudio-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "SHORTS", "nuvem": true, "conta": true },
   "/modelador/": { "origem": "https://problemsbloxcreate-lab.github.io/modelador/", "nuvem": true, "conta": true },
+  "/jester/":    { "origem": "https://problemsbloxcreate-lab.github.io/jester-dreams/", "conta": true },
   "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR", "nuvem": true, "conta": true },
   "/nuvem/":     { "origem": "https://sons-problems.problemsbloxcreate.workers.dev/", "assinar": true }
 }'''
