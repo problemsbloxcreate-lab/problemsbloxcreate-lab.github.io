@@ -41,6 +41,10 @@
   const LOGO_PROG = { ANIMADOR: '/animador/icones/simbolo.svg', 'JESTER DREAMS': '/jester/icone.svg', EDITOR: '/editor/icone.svg', MODELADOR: '/modelador/icone.svg', SHORTS: '/shorts/icone-shorts-180.png', BLOCKBENCH: '/modelador/icone.svg' }[NOME_PROG] || '';
   const LOGO_EP = window.EstudioIcones?.atual?.() ? window.EstudioIcones.url(window.EstudioIcones.atual()) : ''; // ícone novo do programa (Sh, Ed, An, Md; ADM › Ícones)
   const logoHtml = () => ((LOGO_EP || LOGO_PROG) ? '<img class="ep-img" alt=""' + (LOGO_EP ? ' data-estudio-icone-img="' + window.EstudioIcones.atual() + '"' : '') + ' src="' + (LOGO_EP || LOGO_PROG) + '" onerror="this.parentNode.classList.remove(\'ep-prog\');this.remove()">' : '') + '<svg class="ep-cam" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5" fill="#fff" fill-opacity=".18"/><path d="m15.5 10.2 5-3v9.6l-5-3z" fill="#fff"/></svg>';
+  // JESTER DREAMS (programa de TESTE): "Jester" sai do mesmo canto e cada letra vai para o seu lugar; depois "Dreams" aparece com
+  // as cores do arco-íris bem claras, e um selo "em testes". O resto (logo, barra, o que está carregando) é igual aos outros.
+  const nomeHtml = () => NOME_PROG !== 'JESTER DREAMS' ? `<div class="ep-nm">${esc(NOME_PROG)}</div>`
+    : `<div class="ep-nm ep-jd"><span class="ep-jd-j">${[...'Jester'].map((c, i) => `<i style="--i:${i}">${c}</i>`).join('')}</span><span class="ep-jd-d">Dreams</span></div><div class="ep-jd-selo">EM TESTES</div>`;
   root.classList.add('estudio-trancado');
   const st = document.createElement('style');
   // tela de carregamento padrão de todos os programas (logo, NOME do programa, barra andando e a mensagem); entra e sai com fade.
@@ -52,6 +56,13 @@
 #estudio-porta .ep-lg{width:68px;height:68px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,#3d8bff,#19d3f0);box-shadow:0 14px 40px rgba(61,139,255,.35);margin-bottom:12px;animation:epPulso 1.6s ease-in-out infinite}
 #estudio-porta .ep-nm{font:800 26px/1.05 'Segoe UI',system-ui,sans-serif;letter-spacing:1.5px}
 #estudio-porta .ep-sb{color:#9aa0ab;font-size:12.5px;letter-spacing:.4px}
+#estudio-porta .ep-jd{display:flex;gap:10px;align-items:baseline;font:600 30px/1.1 'Rubik','Segoe UI',system-ui,sans-serif;letter-spacing:.5px}
+#estudio-porta .ep-jd-j{display:inline-flex}#estudio-porta .ep-jd-j i{font-style:normal;color:#fff;opacity:0;display:inline-block;animation:epJdLetra .9s cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--i) * .07s)}
+#estudio-porta .ep-jd-d{font-weight:700;background:linear-gradient(90deg,#ffb3c7,#ffd6a5,#fdffb6,#caffbf,#9bf6ff,#a0c4ff,#bdb2ff,#ffc6ff);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;filter:blur(6px);animation:epJdDreams 1.1s ease .65s both}
+#estudio-porta .ep-jd-selo{margin-top:6px;font:800 10px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:1.6px;padding:4px 9px;border-radius:20px;color:#1b1206;background:linear-gradient(135deg,#ffd29a,#ffb3c7);opacity:0;animation:epJdSelo .5s ease 1.2s forwards}
+@keyframes epJdLetra{0%{opacity:0;transform:translateX(calc(var(--i) * -0.62em)) scale(.85)}35%{opacity:.75}100%{opacity:.92;transform:none}}
+@keyframes epJdDreams{to{opacity:1;filter:none}}@keyframes epJdSelo{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#estudio-porta .ep-jd-j i,#estudio-porta .ep-jd-d,#estudio-porta .ep-jd-selo{animation:none;opacity:1;filter:none;transform:none}}
 #estudio-porta .ep-br{width:180px;height:4px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;margin:18px 0 8px;position:relative}
 #estudio-porta .ep-br>i{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:4px;background:linear-gradient(90deg,#3d8bff,#19d3f0);transition:width .2s linear}
 #estudio-porta .ep-br::after{content:'';position:absolute;top:0;bottom:0;left:0;width:30%;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:epBarra 1.3s ease-in-out infinite}
@@ -67,7 +78,7 @@
   const menuUrl = volta => { const u = new URL(CFG.menu, location.href); if (volta) u.searchParams.set('volta', location.href); return u.href; };
   const porta = () => {
     let el = document.getElementById('estudio-porta');
-    if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(NOME_PROG)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m></div></div>`; (document.body || root).appendChild(el); if (!document.body) addEventListener('DOMContentLoaded', () => { if (el.isConnected && el.parentNode !== document.body) document.body.appendChild(el); }, { once: true }); }
+    if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div>${nomeHtml()}<div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m></div></div>`; (document.body || root).appendChild(el); if (!document.body) addEventListener('DOMContentLoaded', () => { if (el.isConnected && el.parentNode !== document.body) document.body.appendChild(el); }, { once: true }); }
     return el;
   };
   let aberto = false; // depois de liberar, nenhuma mensagem atrasada recria a tela de espera por cima da página
