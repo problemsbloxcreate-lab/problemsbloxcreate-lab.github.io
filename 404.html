@@ -87,6 +87,7 @@ svg{display:block;flex:none}
 .card.soon{cursor:default;opacity:.55}
 .card.soon:hover{transform:none;border-color:var(--bd);box-shadow:none}
 .card .tag{position:absolute;top:10px;right:10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:20px;background:rgba(0,0,0,.45);color:#ddd}
+.card .tag.teste{z-index:2;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#fde68a,#fbcfe8);color:#3b1d0a}
 @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @media (max-width:720px){
   .grid{flex-direction:column;align-items:stretch;width:100%;max-width:340px}
@@ -917,7 +918,7 @@ function showMenu() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, ok ? '' : '<span class="tag">em breve</span>'); montarCard(el, l); g.appendChild(el);
+    el.innerHTML = cardHtml(l, ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>'); montarCard(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
   });
   if (!DADOS.links.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
