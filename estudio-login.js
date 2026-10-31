@@ -121,7 +121,7 @@
       }
       API.email = j.email;
       // a página aparece por baixo e a tela de carregamento some com fade (só visual: o acesso já foi conferido acima)
-      const abre = () => { aberto = true; const pt = document.getElementById('estudio-porta'); root.classList.remove('estudio-trancado'); if (pt) requestAnimationFrame(() => requestAnimationFrame(() => { pt.classList.add('ep-saindo'); setTimeout(() => pt.remove(), 380); })); /* espera o programa desenhar por baixo */ document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
+      const abre = () => { if (NOME_PROG === 'JESTER DREAMS' && performance.now() < 950) { setTimeout(abre, 950 - performance.now()); return; } aberto = true; const pt = document.getElementById('estudio-porta'); root.classList.remove('estudio-trancado'); if (pt) requestAnimationFrame(() => requestAnimationFrame(() => { pt.classList.add('ep-saindo'); setTimeout(() => pt.remove(), 380); })); /* espera o programa desenhar por baixo */ document.dispatchEvent(new CustomEvent('estudio-login', { detail: { email: j.email } }));
         API.perfil().then(p => document.dispatchEvent(new CustomEvent('estudio-perfil', { detail: p }))); };
       // espera também as imagens e arquivos que ainda estão baixando (porcentagem na tela; no máximo 12 s)
       const abreTudo = async () => { try { await window.EstudioProgresso?.esperarTudo(12000); } catch { } abre(); };
