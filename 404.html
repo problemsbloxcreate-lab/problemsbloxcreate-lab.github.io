@@ -82,6 +82,14 @@ svg{display:block;flex:none}
 .card .ic.nobox{background:none!important;border-color:transparent!important;backdrop-filter:none}
 .card .ic.nobox .icimg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
 .card .txt{display:flex;flex-direction:column;gap:4px}
+.subprog{position:absolute;top:10px;right:10px;z-index:3;display:flex;gap:6px;opacity:0;transform:translateY(-4px);transition:opacity .18s ease,transform .18s ease;pointer-events:none}
+.card:hover .subprog,.card:focus-within .subprog{opacity:1;transform:none;pointer-events:auto}
+.subprog .sp-it{position:relative;display:block;width:32px;height:32px;border-radius:9px;cursor:pointer;transition:transform .15s ease}
+.subprog .sp-it:hover,.subprog .sp-it:focus-visible{transform:scale(1.1);outline:none}.subprog .sp-it:focus-visible{box-shadow:0 0 0 2px #19d3f0}
+.subprog .sp-it>span,.subprog .sp-it svg,.subprog .sp-it img{display:block;width:32px;height:32px}
+.subprog .sp-it i{position:absolute;top:calc(100% + 6px);right:0;font-style:normal;font-size:11.5px;font-weight:600;white-space:nowrap;padding:3px 8px;border-radius:7px;background:rgba(10,12,18,.88);color:#f1f2f4;border:1px solid rgba(255,255,255,.12);opacity:0;transform:translateY(-3px);transition:opacity .15s ease,transform .15s ease;pointer-events:none}
+.subprog .sp-it:hover i,.subprog .sp-it:focus-visible i{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.subprog,.subprog .sp-it,.subprog .sp-it i{transition:none}}
 .qe-on{position:absolute;top:10px;left:10px;z-index:2;display:flex;align-items:center;padding:3px 4px 3px 7px;border-radius:20px;background:rgba(10,12,18,.72);border:1px solid rgba(123,216,143,.4);backdrop-filter:blur(6px)}
 .qe-on>b{width:7px;height:7px;border-radius:50%;background:#7bd88f;margin-right:6px;box-shadow:0 0 0 2px rgba(123,216,143,.18)}
 .qe-av{position:relative;width:22px;height:22px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#3a3f55;color:#fff;font:700 10px/1 system-ui,sans-serif;box-shadow:0 0 0 2px rgba(10,12,18,.9)}
@@ -934,6 +942,17 @@ function atualizarTudo() {
 }
 // ícones mudaram (ADM salvou, outra aba, nuvem): os cartões ligados a um ícone novo trocam na hora
 addEventListener('estudio-icones', () => { $$('#grid .card').forEach((el, i) => { const l = DADOS?.links?.[i]; if (l) pintarIcone(el, l); }); });
+// partes de dentro de um programa (decisão do dono, 02/11/2026): no cartão ANIMAR, com o mouse em cima, aparecem os ícones do
+// ATELIÊ e dos CENÁRIOS; com o mouse no ícone aparece o nome; o clique abre direto aquela parte do Animador
+const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios']] };
+function subProgs(el, l) {
+  const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone]); const sub = SUBPROGS[prog]; if (!sub) return;
+  const box = document.createElement('span'); box.className = 'subprog';
+  box.innerHTML = sub.map(([id, nome, url]) => `<span class="sp-it" role="link" tabindex="0" data-url="${url}" aria-label="${nome}"><span data-estudio-icone="${id}"></span><i>${nome}</i></span>`).join('');
+  box.querySelectorAll('.sp-it').forEach(it => { const vai = e => { e.preventDefault(); e.stopPropagation(); location.href = it.dataset.url; };
+    it.addEventListener('click', vai); it.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') vai(e); }); });
+  el.appendChild(box); try { window.EstudioIcones?.pinta?.(box); } catch { }
+}
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
   const g = $('#grid'); g.innerHTML = '';
@@ -941,7 +960,7 @@ function showMenu() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, l); if (ok) subProgs(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
   });
   if (!DADOS.links.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   quemEsta.liga();
