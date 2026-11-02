@@ -548,9 +548,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // "Ctrl+F5 para todos os sites": baixa de novo (sem a memória do navegador) as páginas e os arquivos do menu e de cada projeto.
   // NÃO apaga nada guardado no navegador: projetos, rascunhos e preferências (IndexedDB/localStorage) não são tocados.
   async function atualizarTudo(extras = []) {
-    const aviso = document.createElement('div'); aviso.className = 'ep-conta-aviso'; aviso.setAttribute('role', 'status'); document.body.appendChild(aviso);
+    // tela no meio do site (igual à de carregamento): bloqueia cliques e teclas enquanto baixa, com a barra, a % e quantos arquivos faltam
+    const aviso = document.createElement('div'); aviso.id = 'ep-atualizando'; aviso.setAttribute('role', 'status'); aviso.setAttribute('aria-live', 'polite');
+    aviso.innerHTML = '<div class="ep-at-c"><svg width="84" height="84" viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg><div class="ep-at-br"><i></i></div><div class="ep-at-pc"><b>0%</b><span>Atualizando os sites…</span></div></div>';
+    const est = document.createElement('style'); est.textContent = '#ep-atualizando{position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;align-items:center;justify-content:center;font:14px/1.5 \'Segoe UI\',system-ui,sans-serif;color:#e9ebef;cursor:progress;-webkit-user-select:none;user-select:none;animation:epAtEntra .25s ease both}#ep-atualizando .ep-at-c{display:grid;justify-items:center}#ep-atualizando .ep-at-br{width:200px;height:5px;border-radius:3px;background:rgba(255,255,255,.16);margin:46px 0 12px;overflow:hidden}#ep-atualizando .ep-at-br>i{display:block;height:100%;width:0;background:#e8e9ec;border-radius:3px;transition:width .35s ease}#ep-atualizando .ep-at-pc{display:flex;gap:8px;align-items:baseline;font-size:11.5px;color:#7d8089}#ep-atualizando .ep-at-pc b{color:#c3c6cc;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}#ep-atualizando .ep-at-pc span{font-variant-numeric:tabular-nums;white-space:nowrap}@keyframes epAtEntra{from{opacity:0}}@media (prefers-reduced-motion:reduce){#ep-atualizando{animation:none}}';
+    document.head.appendChild(est); document.body.appendChild(aviso); try { document.activeElement?.blur?.(); } catch { }
+    const trava = e => { e.preventDefault(); e.stopPropagation(); }; for (const t of ['keydown', 'keypress', 'keyup', 'wheel', 'contextmenu']) addEventListener(t, trava, { capture: true, passive: false });
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
-    const diz = t => { aviso.textContent = t; };
+    const diz = (t, pct) => { aviso.querySelector('.ep-at-pc span').textContent = t; if (pct != null) { const p = Math.max(0, Math.min(100, Math.round(pct))); aviso.querySelector('.ep-at-pc b').textContent = p + '%'; aviso.querySelector('.ep-at-br>i').style.width = p + '%'; } };
     diz('Atualizando os sites…');
     try {
       if (navigator.serviceWorker?.getRegistrations) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.update(); } catch { } }
@@ -569,8 +574,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         }
       };
       // contagem real: quantos já baixou de quantos achou até agora (as páginas vêm primeiro e dizem quais arquivos usam, então o total para de crescer logo)
-      while (fila.length) { await Promise.all(fila.splice(0, 6).map(pega)); const total = feitos.size + new Set(fila.filter(c => !feitos.has(c))).size; diz(`Atualizando os sites… ${feitos.size} de ${total} arquivos`); }
-      diz('Pronto! Tudo atualizado. Recarregando…');
+      while (fila.length) { await Promise.all(fila.splice(0, 6).map(pega)); const total = feitos.size + new Set(fila.filter(c => !feitos.has(c))).size; diz(`${feitos.size} de ${total} arquivos`, feitos.size / Math.max(1, total) * 100); }
+      diz('Pronto, recarregando…', 100);
     } catch (e) { diz('Não consegui atualizar tudo: ' + e.message); }
     setTimeout(() => location.reload(), 900);
   }
