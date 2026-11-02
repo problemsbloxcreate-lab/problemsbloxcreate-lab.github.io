@@ -165,6 +165,10 @@ async function repassa(req, url, p, env, s) {
   const out = new Headers(r.headers);
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
   if (url.searchParams.has('_ev') && r.ok) out.set('cache-control', IMUTAVEL); // arquivo com carimbo de versão: guarda de vez
+  // ECONOMIA DE PEDIDOS (limite grátis: 100 mil por dia na conta): arquivos FIXOS dos sites (scripts, estilos, imagens, fontes) ficam 10 min
+  // no navegador sem perguntar de novo — antes cada página aberta conferia uns 100 arquivos (cada conferência = 1 pedido do porteiro).
+  // Página (HTML), versao.json e as APIs continuam conferindo sempre; Ctrl+F5 e "Atualizar todos os sites" baixam tudo de novo na hora.
+  else if (r.ok && !p.servico && req.method === 'GET' && /\.(js|mjs|css|svg|png|jpe?g|webp|gif|woff2?|ttf|mp3|wav|ogg|json)$/i.test(alvo.pathname) && !/versao\.json$/i.test(alvo.pathname)) out.set('cache-control', 'private, max-age=600');
   if (r.ok && (out.get('content-type') || '').includes('text/html')) {
     let h = await r.text();
     if (p.nuvem || p.conta) { const m = h.match(/<head[^>]*>/i);
@@ -426,7 +430,7 @@ export class Presenca { // cada aba conta separado (e-mail|aba); guarda no armaz
   async fetch(req) {
     const agora = Date.now(), m = (await this.state.storage.get('m')) || {};
     let mudou = false;
-    for (const k of Object.keys(m)) if (agora - m[k].t > 150e3) { delete m[k]; mudou = true; }
+    for (const k of Object.keys(m)) if (agora - m[k].t > 200e3) { delete m[k]; mudou = true; }
     if (req.method === 'POST') {
       const b = await req.json(), k = b.e + '|' + String(b.aba || '').slice(0, 20);
       if (b.prog) m[k] = { prog: b.prog, t: agora }; else delete m[k];
@@ -1048,7 +1052,7 @@ export default {
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
     if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
-      if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
+      if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', r.ok ? 'private, max-age=300' : 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);
     return menu(env, url, 404, req);
   },
