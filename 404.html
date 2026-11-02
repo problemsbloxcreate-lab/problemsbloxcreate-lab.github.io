@@ -91,6 +91,7 @@ svg{display:block;flex:none}
 .card.soon{cursor:default;opacity:.55}
 .card.soon:hover{transform:none;border-color:var(--bd);box-shadow:none}
 .card .tag{position:absolute;top:10px;right:10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:20px;background:rgba(0,0,0,.45);color:#ddd}
+.card .tag-adm{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:2;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;padding:2px 8px;border-radius:20px;background:rgba(61,139,255,.85);color:#fff}
 .card .tag.teste{z-index:2;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#fde68a,#fbcfe8);color:#3b1d0a}
 @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @media (max-width:720px){
@@ -922,7 +923,7 @@ function showMenu() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>'); montarCard(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
   });
   if (!DADOS.links.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   quemEsta.liga();
@@ -1046,6 +1047,7 @@ function renderLinks() {
         </div>
         <label class="f full"><span>Descrição (opcional)</span><input type="text" maxlength="80" data-k="desc" value="${esc(l.desc)}"></label>
         <label class="f full"><span>Endereço do site</span><input type="url" maxlength="500" placeholder="https://..." data-k="url" value="${esc(l.url || '')}"></label>
+        <label class="f full chk"><input type="checkbox" data-k="soAdm" ${l.soAdm ? 'checked' : ''}><span><b>Só para ADMs</b>: só quem é ADM vê este programa no menu (para os outros ele nem aparece). Desmarque quando for liberar para todos.</span></label>
         <label class="f full chk"><input type="checkbox" data-k="embreve" ${l.embreve || !l.url ? 'checked' : ''} ${l.url ? '' : 'disabled'}><span><b>Em breve</b>: o botão aparece apagado, com a etiqueta "em breve", e não abre nada${l.url ? ' (o endereço fica guardado para quando você desligar)' : ' (sempre ligado enquanto não tiver endereço)'}.</span></label>
         ${l.fundo ? `<label class="f full"><span>Como o fundo toca</span><select data-k="modo">${Object.entries(MODOS).map(([k, v]) => `<option value="${k}" ${k === (l.modo || 'sempre') ? 'selected' : ''}>${v}</option>`).join('')}</select></label>`
           + rng('Zoom do fundo', l.fundo.zoom, 1, 4, .01, vez, 'zoom') + rng('Escurecer o fundo', l.escurecer ?? .45, 0, .9, .01, pct, 'escurecer')
@@ -1072,6 +1074,7 @@ function renderLinks() {
       else if (k === 'escurecer') { l.escurecer = +inp.value; inp.nextElementSibling.textContent = pct(inp.value); }
       else if (k === 'url') { const tinha = !!l.url; l.url = normUrl(inp.value) || null; inp.classList.toggle('bad', !urlOk(inp.value.trim())); if (tinha !== !!l.url) { mudou(); return renderLinks(); } }
       else if (k === 'embreve') l.embreve = inp.checked;
+      else if (k === 'soAdm') l.soAdm = inp.checked;
       else if (k === 'modo') { l.modo = inp.value; mudou(); return renderLinks(); }
       else if (k === 'blur') { l.fundo.blur = +inp.value; inp.nextElementSibling.textContent = px(inp.value); }
       else if (k === 'iconeTam') { l.iconeTam = +inp.value; inp.nextElementSibling.textContent = inp.value + '%'; }
