@@ -151,6 +151,9 @@ async function repassa(req, url, p, env, s) {
   if (!p.servico && req.method === 'GET' && /\.github\.io$/.test(alvo.hostname)) alvo.searchParams.set('_at', String(Math.floor(Date.now() / 30000)));
   const h = new Headers(req.headers); h.delete('cookie'); h.delete('host'); h.delete('x-porteiro-passe');
   if (s.dispositivo) h.delete('authorization'); // o token do PC não sai do porteiro
+  // config.js leva a chave do Firebase trocada aqui: o pedido sempre vai inteiro para a origem (sem If-Modified-Since/If-None-Match),
+  // senão a origem responde 304 e o navegador continua usando a cópia antiga (com o marcador, sem chave) — o Animador voltava para o menu
+  const ehConfig = req.method === 'GET' && /\/js\/config\.js$/.test(alvo.pathname); if (ehConfig) { h.delete('if-none-match'); h.delete('if-modified-since'); }
   if (p.assinar) { const ps = await passe(env, s.e, alvo.host); if (!ps) return new Response('O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.', { status: 503 }); h.set('x-porteiro-passe', ps); }
   const pedido = new Request(alvo, { method: req.method, headers: h, body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body, redirect: 'manual' });
   // worker da mesma conta: só dá para chamar pela ligação direta (Service Binding); os outros, pela internet
@@ -162,7 +165,7 @@ async function repassa(req, url, p, env, s) {
     if (loc.origin === raiz.origin && loc.pathname.startsWith(raiz.pathname)) return Response.redirect(new URL(p.pref.replace(/\/?$/, '/') + loc.pathname.slice(raiz.pathname.length) + loc.search, url).href, 302);
     return r;
   }
-  if (r.ok && req.method === 'GET' && /\/js\/config\.js$/.test(alvo.pathname)) { const h2 = new Headers(r.headers); h2.set('cache-control', 'private, no-cache'); h2.delete('content-length'); h2.delete('content-encoding'); h2.delete('etag'); return new Response(comChaveFb(env, await r.text()), { status: 200, headers: h2 }); } // chave do Firebase (ver comChaveFb)
+  if (r.ok && ehConfig) { const h2 = new Headers(r.headers); h2.set('cache-control', 'private, no-store'); h2.delete('content-length'); h2.delete('content-encoding'); h2.delete('etag'); h2.delete('last-modified'); return new Response(comChaveFb(env, await r.text()), { status: 200, headers: h2 }); } // chave do Firebase (ver comChaveFb)
   const out = new Headers(r.headers);
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
   if (url.searchParams.has('_ev') && r.ok) out.set('cache-control', IMUTAVEL); // arquivo com carimbo de versão: guarda de vez
