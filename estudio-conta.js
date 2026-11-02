@@ -52,7 +52,7 @@
   // avisa o círculo da nuvem do cabeçalho (e as outras abas pelo storage) para mudar a cor NA HORA, sem precisar clicar
   const avisaCirculo = () => { try { dispatchEvent(new CustomEvent('estudio-nuvem-estado')); } catch { } };
   const marca = (t, r = 0) => { r = +r || 0; if (!(t > Date.now())) t = proxima(); const a = le(); if (a?.r && Math.abs(a.t - t) < 6e4) r = Math.max(r, +a.r || 0); /* a reserva já entrou hoje: o aviso continua "em uso" até a principal voltar (não pisca para o amarelo) */ if (a && a.t === t && (+a.r || 0) === r) return; try { localStorage.setItem(K, JSON.stringify({ t, r })); } catch { } selo(); avisaCirculo(); };
-  const nosso = u => { try { const x = new URL(u, location.href); return x.origin === location.origin || /(^|\.)problemsraiz\.workers\.dev$/.test(x.hostname); } catch { return false; } };
+  const nosso = u => { try { const x = new URL(u, location.href); return x.origin === location.origin || /(^|\.)problemsraiz\.workers\.dev$/.test(x.hostname) || /^turma-reserva\./.test(x.hostname); } catch { return false; } };
   const falta = t => { const m = Math.max(0, Math.ceil((t - Date.now()) / 60e3)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
   let el = null, iv = 0;
   // VOLTANDO: a principal já voltou e o que ficou na reserva está voltando para ela (aviso verde-água por alguns minutos)
@@ -88,6 +88,39 @@
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
   }
   const f0 = window.fetch?.bind(window); if (!f0) return;
+  /* PORTA RESERVA (decisão do dono, 02/11/2026): a conta principal passou dos pedidos do dia (erro 1027 da Cloudflare: o porteiro e o
+     turma-ia param até as 21h). Quem está com o Estúdio aberto vai sozinho para o MESMO lugar na porta reserva (outra conta, outro
+     endereço), que usa a cópia de segurança e grava na nuvem reserva. Só neste computador = o navegador guarda separado por endereço. */
+  const PRINCIPAL = 'estudio.problemsraiz.workers.dev', PORTA = 'https://estudio-reserva.editorcustomizado.workers.dev';
+  let portaJa = false;
+  async function confere1027(r) {
+    if (portaJa || location.hostname !== PRINCIPAL) return;
+    if (!r) { try { r = await f0('/favicon.svg?_p=' + Date.now(), { cache: 'no-store' }); } catch { return; } }
+    if (!r || r.status !== 429) return; let t = ''; try { t = await r.clone().text(); } catch { }
+    if (!/1027|rate limited|plan limits/i.test(t)) return; portaJa = true; vaiPraPorta();
+  }
+  function vaiPraPorta() {
+    const alvo = PORTA + location.pathname + location.search + location.hash; let n = 5;
+    const o = document.createElement('div'); o.id = 'ep-porta-reserva'; o.setAttribute('role', 'alertdialog');
+    o.innerHTML = '<div class="pr-c"><div class="pr-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><b>Abrindo a porta reserva</b><span>O Estúdio passou do limite de pedidos de hoje e volta às 21h. Enquanto isso, tudo da nuvem continua pela reserva.</span><span class="pr-n"></span><button type="button">Ficar aqui</button></div>';
+    const st = document.createElement('style'); st.textContent = '#ep-porta-reserva{position:fixed;inset:0;z-index:2147483647;background:rgba(8,9,12,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;font:14px/1.5 \'Segoe UI\',system-ui,sans-serif;color:#f1f2f4;padding:16px}#ep-porta-reserva .pr-c{display:grid;justify-items:center;gap:8px;max-width:380px;text-align:center}#ep-porta-reserva b{font-size:17px;font-weight:600;margin-top:14px}#ep-porta-reserva span{font-size:12.5px;color:#a3a7ae}#ep-porta-reserva button{margin-top:8px;padding:8px 18px;border-radius:999px;background:rgba(255,255,255,.1);color:#f1f2f4;border:1px solid rgba(255,255,255,.16);font:500 13px inherit;cursor:pointer}'
+      + '#ep-porta-reserva .pr-sp{position:relative;width:46px;height:46px}#ep-porta-reserva .pr-sp i{position:absolute;inset:0;opacity:0;animation:epPrGira 4.4s infinite}#ep-porta-reserva .pr-sp i::after{content:\'\';position:absolute;top:0;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff}'
+      + [0, 1, 2, 3, 4].map(k => `#ep-porta-reserva .pr-sp i:nth-child(${k + 1}){animation-delay:${(k * .22).toFixed(2)}s}`).join('')
+      + '@keyframes epPrGira{0%{transform:rotate(180deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(300deg);animation-timing-function:linear}30%{transform:rotate(470deg);animation-timing-function:ease-in-out}39%{transform:rotate(645deg);animation-timing-function:linear}70%{transform:rotate(770deg);animation-timing-function:ease-out}75%{transform:rotate(900deg);opacity:1}76%,100%{transform:rotate(900deg);opacity:0}}@media (prefers-reduced-motion:reduce){#ep-porta-reserva .pr-sp i{animation-duration:8s}}';
+    document.head.appendChild(st); document.body.appendChild(o);
+    const pn = o.querySelector('.pr-n'), tick = () => { pn.textContent = n > 0 ? `em ${n} s…` : 'abrindo…'; if (n-- <= 0) { clearInterval(iv); location.href = alvo; } }, iv = setInterval(tick, 1000); tick();
+    o.querySelector('button').onclick = () => { clearInterval(iv); o.remove(); };
+  }
+  // na porta reserva: selo discreto embaixo à direita; depois das 21h (a principal voltou) vira o link de volta
+  if (location.hostname !== PRINCIPAL && /^estudio-reserva\./.test(location.hostname)) addEventListener('DOMContentLoaded', () => {
+    const b = document.createElement('a'); b.id = 'ep-na-porta'; b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2147483000;padding:6px 12px;border-radius:999px;background:rgba(10,12,18,.85);border:1px solid rgba(255,143,209,.5);color:#ffc2e6;font:500 12px system-ui,sans-serif;text-decoration:none';
+    // a hora em que a principal volta (00:00 UTC = 21h de Brasília) fica guardada desta aba: depois dela o selo vira o link de volta
+    let volta = 0; try { volta = +sessionStorage.getItem('ep-porta-volta') || 0; } catch { }
+    if (!volta) { const d = new Date(); d.setUTCHours(24, 0, 0, 0); volta = +d; try { sessionStorage.setItem('ep-porta-volta', String(volta)); } catch { } }
+    const pinta = () => { const ja = Date.now() >= volta;
+      b.textContent = ja ? 'A principal voltou · voltar para o endereço de sempre' : 'Porta reserva · a principal volta às ' + new Date(volta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      if (ja) b.href = 'https://' + PRINCIPAL + location.pathname + location.search; else b.removeAttribute('href'); };
+    pinta(); setInterval(pinta, 60e3); document.body.appendChild(b); });
   window.fetch = async function (input, init) {
     const url = typeof input === 'string' ? input : input?.url || String(input);
     if (!nosso(url)) return f0(input, init);
@@ -95,9 +128,11 @@
     try { r = await f0(input, init); }
     catch (e) {
       if (e?.name === 'AbortError' || !/fetch|network|load failed/i.test(String(e?.message))) throw e;
+      confere1027(null); // pedido para a nossa nuvem falhou: será o erro 1027 (conta principal sem pedidos)? confere no próprio endereço
       if (navigator.onLine === false) throw new TypeError('Sem internet agora. O que você fez continua guardado neste computador.');
       throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
     }
+    if (r.status === 429) confere1027(r);
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
     if (xn === 'voltando') { const tinha = !!le(); try { localStorage.removeItem(K); localStorage.setItem(KV, String(Date.now() + 10 * 6e4)); } catch { } selo(); if (tinha) avisaCirculo(); } // a principal já voltou (o que sobrou na reserva está voltando para ela)
     else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'terciaria' ? 2 : xn === 'reserva' ? 1 : (xn === 'limite' && naReserva() && r.ok ? nivel() : 0));

@@ -393,8 +393,26 @@ function avisoLimite(req, e) {
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
 }
 
+/* PORTA RESERVA (decisão do dono, 02/11/2026): este mesmo código roda numa conta reserva (PORTA = '1') para o Estúdio não sair do ar
+   quando a conta principal estoura os 100 mil pedidos do dia (erro 1027, os Workers de lá param). Lá a principal NÃO existe: tudo
+   funciona como "principal no limite" — a lista sai da foto guardada na reserva (ou da cópia de segurança), ler sai da reserva e da
+   cópia de segurança (bk:), gravar e apagar vão para a reserva (o devolve-reserva leva para a principal depois). Sem IA (a chave fica
+   na principal). TROCA_DE/TROCA_PARA: endereços da principal trocados pelos da porta reserva nas respostas (links do menu). */
+const principalFora = () => { const no = async () => { throw new Error('PORTA_RESERVA: a nuvem principal está fora do ar (porta reserva)'); };
+  return { get: no, getWithMetadata: no, put: no, delete: no, list: no }; };
+const trocas = env => { try { return env.TROCA_DE ? JSON.parse(env.TROCA_DE).map((de, i) => [de, JSON.parse(env.TROCA_PARA)[i]]).filter(([a, b]) => a && b) : []; } catch { return []; } };
+async function comTrocas(env, r) {
+  const ts = trocas(env); if (!ts.length || !/json/.test(r.headers.get('content-type') || '')) return r;
+  let t = await r.text(); for (const [a, b] of ts) t = t.split(a).join(b); const h = new Headers(r.headers); h.delete('content-length');
+  return new Response(t, { status: r.status, statusText: r.statusText, headers: h });
+}
+
 export default {
   async fetch(req, env, ctx) {
+    if (env.PORTA === '1') { limiteAte = Date.now() + 864e5; env = { ...env, EQUIPE: principalFora(), _porta: true }; const r = await this.fetch2(req, env, ctx); return comTrocas(env, r); }
+    return this.fetch2(req, env, ctx);
+  },
+  async fetch2(req, env, ctx) {
     if (new URL(req.url).pathname.startsWith('/robo/')) { try { return await robo(req, env); } catch (e) { return new Response(JSON.stringify({ erro: String(e?.message || e).slice(0, 200) }), { status: ehLimite(e) ? 503 : 500, headers: { 'content-type': 'application/json' } }); } }
     // a nuvem principal no D1 (depois de ligada): o resto do servidor continua falando "KV" com o adaptador
     if (await d1Ligado(env)) env = { ...env, EQUIPE: kvD1(env.EQUIPE_DB), _kvAntigo: env.EQUIPE, _d1: true };
@@ -421,12 +439,12 @@ export default {
     // aberto direto na barra do navegador (sem "origin"): mostra que está funcionando e o uso
     if (!origin && req.method === 'GET' && (path0 === '/' || path0 === '/uso')) return json({ ok: 'Servidor da IA da turma funcionando', login: env.FIREBASE_PROJECT_ID ? 'ligado (' + env.FIREBASE_PROJECT_ID + ')' : 'DESLIGADO — falta FIREBASE_PROJECT_ID', emails: (env.EMAILS_PERMITIDOS || '').split(',').filter(x => x.trim()).length, app: env.APP_KEY ? 'protegido (APP_KEY ok)' : 'falta APP_KEY', chave_ia: env.ANTHROPIC_API_KEY ? 'ok' : 'falta ANTHROPIC_API_KEY' }, 200, cors);
     else if (!liberado) return json({ error: { type: 'origem', message: 'Este site não está liberado no servidor da turma.' } }, 403, cors);
-    if (!env.ANTHROPIC_API_KEY) return json({ error: { type: 'config', message: 'O servidor está sem a chave (ANTHROPIC_API_KEY).' } }, 500, cors);
+    if (!env.ANTHROPIC_API_KEY && !env._porta) return json({ error: { type: 'config', message: 'O servidor está sem a chave (ANTHROPIC_API_KEY).' } }, 500, cors);
 
     const login = await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
-    if (R && login.email) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
-    if (R && login.email) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
+    if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
+    if (R && login.email && !env._porta) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
     // RESUMO para o círculo da nuvem quando a principal não deixa listar (limite do dia): o espaço medido pela Cloudflare
     // (Action "Uso da nuvem") + o que está na reserva agora. Qualquer conta da equipe; sem e-mails (semEmail)
     if (new URL(req.url).pathname === '/nuvem-resumo') {

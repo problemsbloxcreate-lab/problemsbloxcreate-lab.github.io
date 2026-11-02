@@ -955,8 +955,20 @@ function perfisCom(kv) {
         LISTAS_P.set(pre, { t: Date.now(), keys }); return { keys, list_complete: true }; }
       catch (e) { if (c) return { keys: c.keys, list_complete: true }; throw e; } } };
 }
+/* PORTA RESERVA (decisão do dono, 02/11/2026): este mesmo porteiro roda numa conta reserva, com outro endereço, para quando a conta
+   principal passa dos pedidos do dia (erro 1027). Lá, TROCA_DE/TROCA_PARA trocam nas páginas e scripts os endereços da principal
+   (o menu e o turma-ia) pelos da porta reserva, para tudo falar com ela. Fora da porta reserva, nada muda. */
+const TIPOS_TROCA = /text\/html|javascript|json|text\/css/;
+async function comTrocasP(env, r) {
+  if (!env.TROCA_DE || !r || r.status !== 200 || !TIPOS_TROCA.test(r.headers.get('content-type') || '')) return r;
+  let ts = []; try { const de = JSON.parse(env.TROCA_DE), para = JSON.parse(env.TROCA_PARA); ts = de.map((x, i) => [x, para[i]]).filter(([x, y]) => x && y); } catch { return r; }
+  let t = await r.text(); for (const [x, y] of ts) t = t.split(x).join(y); const h = new Headers(r.headers); h.delete('content-length'); h.delete('content-encoding');
+  return new Response(t, { status: r.status, statusText: r.statusText, headers: h });
+}
+
 export default {
-  async fetch(req, env, ctx) {
+  async fetch(req, env, ctx) { const r = await this.fetch0(req, env, ctx); return env.TROCA_DE ? comTrocasP(env, r) : r; },
+  async fetch0(req, env, ctx) {
     if (env.PERFIS && !env.PERFIS._comLista) env = { ...env, PERFIS: perfisCom(env.PERFIS) }; try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
   async atende(req, env) {
     const url = new URL(req.url), caminho = url.pathname;
