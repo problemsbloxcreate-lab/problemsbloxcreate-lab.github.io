@@ -81,3 +81,14 @@
   https://estudio-problems-fbe08-default-rtdb.firebaseio.com com regras: `aovivo` só para quem está em `equipe/<uid>`, que o turma-ia marca).
 - Chave web: segredo `FIREBASE_API_KEY` do GitHub (Action do porteiro). Conta de serviço: segredo `FIREBASE_CONTA` do GitHub → a Action
   do turma-ia põe no Worker. `FIREBASE_PROJECT_ID`/`FIREBASE_DB_URL` do turma-ia vêm da Action (`[vars]`).
+
+## Porta reserva (decisão do dono, 02/11/2026)
+- Erro 1027 = a CONTA problemsraiz passou dos 100 mil pedidos de Workers do dia: o porteiro e o turma-ia param até as 21h (a Cloudflare barra antes do código; as reservas de arquivos não ajudam nisso).
+- PORTA RESERVA = o MESMO código publicado na 4ª conta (T4/A4) pela Action `porta-reserva.yml` do repo estudio-problems (no push dela, à mão e todo dia 03:40 UTC):
+  `https://estudio-reserva.editorcustomizado.workers.dev` (porteiro) + `https://turma-reserva.editorcustomizado.workers.dev` (turma-ia com `PORTA=1`).
+- turma-ia `PORTA=1`: a principal não existe (`principalFora`), tudo funciona como "principal no limite": lista pela foto da lista guardada na reserva (ou `bkman`), lê da reserva e da CÓPIA DE SEGURANÇA (`bk:`), grava/apaga na reserva (o devolve-reserva leva para a principal depois). Sem IA, sem migra/confereCheio. `TROCA_DE`/`TROCA_PARA` trocam os endereços da principal pelos da porta nas respostas JSON (links do menu).
+- Porteiro com `TROCA_DE`/`TROCA_PARA` (`comTrocasP`): troca os endereços da principal pelos da porta em html/js/json/css. Sem Shorts/Editor (Workers na conta principal), sem Mensagens (objeto durável da principal), "só neste computador" não aparece (o navegador guarda por endereço).
+- EMAILS_PERMITIDOS/ADMINS vêm do turma-ia principal pela API e vão como SEGREDOS na porta. A chave web do Firebase vem do segredo FIREBASE_API_KEY do repo estudio-problems ou da página do Estúdio principal (no ar). Domínio da porta autorizado no Firebase e na restrição da chave.
+- A reserva (`worker/reserva2`) confere o login no turma-ia principal e, se ele responder 429/5xx, no `TURMA_PORTA_URL`.
+- `estudio-conta.js`: no endereço principal, um 429 com "1027" (ou falha de rede + `/favicon.svg` 429) abre "Abrindo a porta reserva" (5 s, "Ficar aqui") e leva para o MESMO caminho na porta. Na porta: selo rosa embaixo à direita; depois das 21h vira o link de volta.
+- A cópia de segurança tem os começos marcados no ADM (hoje personagens/, acesso/, menu/): o que não estiver nela (ex.: animacoes/) não abre pela porta.
