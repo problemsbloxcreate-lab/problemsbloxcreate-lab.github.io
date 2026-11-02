@@ -541,9 +541,10 @@ export default {
       let b = {}; try { b = await req.json(); } catch { }
       const alvo = String(b.email || '').trim().toLowerCase();
       if (!EMAIL_OK.test(alvo)) return json({ error: { message: 'Escreva um e-mail válido (ex.: nome@gmail.com).' } }, 400, cors);
-      const ex = (await extrasAcesso(env)).filter(x => x.email !== alvo);
+      const todos = await extrasAcesso(env), ex = todos.filter(x => x.email !== alvo);
       if (b.acao === 'add') {
-        if (base.includes(alvo)) return json({ error: { message: 'Esse e-mail já está liberado (lista fixa da Cloudflare).' } }, 400, cors);
+        if (base.includes(alvo)) return json({ error: { type: 'ja_cadastrado', message: 'Esse e-mail já está cadastrado (lista fixa da Cloudflare).' } }, 409, cors);
+        if (todos.length !== ex.length) return json({ error: { type: 'ja_cadastrado', message: 'Esse e-mail já está cadastrado.' } }, 409, cors);
         if (ex.length >= 300) return json({ error: { message: 'Limite de 300 e-mails adicionados pela tela.' } }, 400, cors);
         ex.push({ email: alvo, por: eu, em: new Date().toISOString() });
       } else if (b.acao === 'del') {

@@ -130,6 +130,7 @@
     seta: svg('<path d="m9 6 6 6-6 6"/>'),
     nuvem: svg('<path d="M7 18h10.5a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 10.1 4 4 0 0 0 7 18z"/>'),
     adm: svg('<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>'),
+    chave: svg('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),
     inicio: svg('<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z"/>'),
     msg: svg('<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/>'),
     equipe: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2a5 5 0 0 1 5.5 5.3"/>'),
@@ -201,7 +202,7 @@
 .ep-conta-pop .it{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;color:#e9ebef;text-decoration:none;font-size:13.5px;line-height:1.3}
 .ep-conta-pop .it:hover,.ep-conta-pop .it:focus-visible{background:#3a3c43;outline:none}
 .ep-conta-pop .it svg{flex:none;width:16px;height:16px;color:#a9adb7}
-.ep-conta-head b{display:flex;align-items:center;gap:6px}.ep-selo{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff;font-style:normal}.ep-selo svg{width:12px;height:12px}
+.ep-chave{display:inline-grid;place-items:center;vertical-align:-2px;margin-left:5px;width:15px;height:15px;border-radius:4px;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff;font-style:normal;flex:none}.ep-chave svg{width:10px;height:10px;stroke-width:2.4}.ep-conta-head b{display:flex;align-items:center;gap:6px}.ep-selo{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff;font-style:normal}.ep-selo svg{width:12px;height:12px}
 .ep-conta-pop .sep{height:1px;background:#1f2024;margin:4px 0}
 .ep-conta-pop .it.sair,.ep-conta-pop .it.sair svg{color:#ff8a9a}.ep-conta-pop .it.sair:hover,.ep-conta-pop .it.sair:focus-visible{background:rgba(214,58,82,.16)}
 .ep-pg{position:fixed;inset:0;z-index:2147483003;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:#e9ebef;animation:epPgF .16s ease-out both}
@@ -468,7 +469,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       let ex = []; try { ex = (typeof CFG.extras === 'function' ? CFG.extras() : CFG.extras) || []; } catch { }
       ex = ex.filter(Boolean);
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
-      pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.adm}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
+      pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm && MSG.denuncias ? `<a class="it denun" href="/adm#denuncias" target="_blank" rel="noopener" role="menuitem">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></a>` : ''}
@@ -916,6 +917,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const codigosMenc = t => [...String(t || '').matchAll(MENC)].map(m => m[1]);
   const semMenc = (t, nomes = {}) => String(t || '').replace(MENC, (_, u) => '@' + (nomes[u] || 'alguém'));
   const textoMsg = (t, nomes = {}, eu = MSG.eu) => esc(t).replace(/&lt;@(u[0-9a-f]{16})&gt;/g, (_, u) => `\u0001${u}\u0001`).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`).replace(/\u0001(u[0-9a-f]{16})\u0001/g, (_, u) => `<b class="epm-ment${u === eu ? ' epm-eu' : ''}">@${esc(nomes[u] || 'alguém')}</b>`);
+  // ADM aparece com a CHAVE INGLESA ao lado do nome (Mensagens, conta); q.adm vem do /pessoa do porteiro
+  const chaveAdm = q => q?.adm ? `<i class="ep-chave" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : '';
   const nomeU = (u, q, M = MSG) => { const n = q?.nome || 'Alguém', a = M.res?.apelidos?.[u]; return a ? `${n} (${a})` : n; };
   const avU = (q, cls = 'epm-av') => `<span class="${cls}">${q?.foto ? `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer">` : esc(((q?.nome || '?')[0] || '?').toUpperCase())}</span>`;
   // citação: o programa chama EstudioConta.citar({ prog, titulo, sub, mini, url | abrir + arquivo, parte }) → escolhe para quem → escreve → envia
@@ -1133,7 +1136,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const alvo = M.escolha ? M.escolha.alvos.some(a => a.id === c.id) : false;
         return `<button type="button" class="epm-pes${!M.escolha && M.conv?.id === c.id ? ' epm-sel' : ''}${alvo ? ' epm-alvo' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">${M.escolha ? `<span class="epm-ck">${alvo ? ICONES.ok : ''}</span>` : ''}
           <span class="epm-avw">${geral ? geralAv() : grupo ? grupoAv(grupo) : avU(c.q)}${on ? '<i class="epm-on"></i>' : ''}</span>
-          <span class="epm-tx"><b>${geral ? esc(geralNome()) : grupo ? esc(grupo.nome) : esc(nomeU(c.u, c.q, M))}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
+          <span class="epm-tx"><b>${geral ? esc(geralNome()) : grupo ? esc(grupo.nome) : esc(nomeU(c.u, c.q, M)) + chaveAdm(c.q)}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
           ${on ? `<em class="epm-onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${mc ? '<b class="epm-cont epm-arroba" title="Citaram você">@</b>' : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
       const geralC = convs[0];
       grupos.sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || a.g.nome.localeCompare(b.g.nome));
@@ -1152,7 +1155,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (c.u === 'geral') { tit.innerHTML = `${geralAv()}<span style="min-width:0"><b>${esc(geralNome())}</b><small>Conversa geral · todo mundo da equipe vê</small></span>${M.res?.adm ? `<button class="epm-bt epm-edg" type="button" title="Só ADM: mudar o nome e a foto da conversa geral">${ICONES.lapis} Editar</button>` : ''}`;
         tit.querySelector('.epm-edg')?.addEventListener('click', editaGeral); return; }
       const q = await quemU(c.u), on = pessoaDe(c.u)?.on;
-      tit.innerHTML = `<span class="epm-avw">${avU(q)}${on ? '<i class="epm-on"></i>' : ''}</span><span style="min-width:0"><b>${esc(nomeU(c.u, q, M))}</b><small>${on ? 'Online agora ' + esc(NOME_PROG_ON[on] || '') : 'Conversa privada · só vocês dois veem'}</small></span><button class="epm-bt epm-edg" type="button" title="Dar um apelido (só você vê, entre parênteses)">${ICONES.lapis} Apelido</button>`;
+      tit.innerHTML = `<span class="epm-avw">${avU(q)}${on ? '<i class="epm-on"></i>' : ''}</span><span style="min-width:0"><b>${esc(nomeU(c.u, q, M))}${chaveAdm(q)}</b><small>${on ? 'Online agora ' + esc(NOME_PROG_ON[on] || '') : 'Conversa privada · só vocês dois veem'}</small></span><button class="epm-bt epm-edg" type="button" title="Dar um apelido (só você vê, entre parênteses)">${ICONES.lapis} Apelido</button>`;
       tit.querySelector('.epm-edg').onclick = () => editaApelido(c.u, q);
     }
     async function desenhaConversa() {
@@ -1166,7 +1169,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const dd = diaTxt(m.em); if (dd !== dia) { h += `<div class="epm-dia"><span>${esc(dd)}</span></div>`; dia = dd; ant = null; }
         const meu = m.de === M.eu, junto = ant && ant.de === m.de && m.em - ant.em < 5 * 6e4, q = qs[m.de];
         const prame = !meu && String(m.texto || '').includes('<@' + M.eu + '>');
-        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}${m.apagada ? (M.como ? ' epm-apagadaAdm' : ' epm-apagada') : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-avvz"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && (c.u === 'geral' || c.u.startsWith('g:')) ? `<b>${esc(nomeU(m.de, q, M))}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.apagada ? `<div class="epm-apg">${ICONES.lixo} ${M.como ? 'Apagada para todos · ' + esc(new Date(m.apagada).toLocaleString('pt-BR')) : 'Mensagem apagada'}</div>` : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM, M.eu)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}${meu && !m.apagada ? `<span class="epm-tk" data-tk="${m.id}"></span>` : ''}</time></div>${m.apagada && !M.como ? '' : meu ? `<button type="button" class="epm-denuncia" data-apaga="${m.id}" title="Apagar para todos">${ICONES.lixo}</button>` : `<button type="button" class="epm-denuncia" data-den="${m.id}" title="Denunciar esta mensagem para os ADMs">${ICONES.bandeira}</button>`}</div>`;
+        h += `<div class="epm-m${meu ? ' epm-meu' : ''}${junto ? ' epm-junto' : ''}${prame ? ' epm-prame' : ''}${m.apagada ? (M.como ? ' epm-apagadaAdm' : ' epm-apagada') : ''}">${meu ? '' : (junto ? '<span class="epm-av epm-avvz"></span>' : avU(q))}<div class="epm-b">${!meu && !junto && (c.u === 'geral' || c.u.startsWith('g:')) ? `<b>${esc(nomeU(m.de, q, M))}${chaveAdm(q)}</b>` : ''}${m.cita ? (() => { try { const c = JSON.parse(m.cita); cits.push(c); return citaHtml(c, cits.length - 1, true); } catch { return ''; } })() : ''}${m.apagada ? `<div class="epm-apg">${ICONES.lixo} ${M.como ? 'Apagada para todos · ' + esc(new Date(m.apagada).toLocaleString('pt-BR')) : 'Mensagem apagada'}</div>` : ''}${m.texto ? `<p>${textoMsg(m.texto, nomesM, M.eu)}</p>` : ''}<time title="${esc(new Date(m.em).toLocaleString('pt-BR'))}">${horaTxt(m.em)}${meu && !m.apagada ? `<span class="epm-tk" data-tk="${m.id}"></span>` : ''}</time></div>${m.apagada && !M.como ? '' : meu ? `<button type="button" class="epm-denuncia" data-apaga="${m.id}" title="Apagar para todos">${ICONES.lixo}</button>` : `<button type="button" class="epm-denuncia" data-den="${m.id}" title="Denunciar esta mensagem para os ADMs">${ICONES.bandeira}</button>`}</div>`;
         ant = m;
       }
       fala.innerHTML = h + (c.pend || []).map(pendHtml).join(''); ligaPend(fala);
@@ -1230,7 +1233,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (!sugL.length) return fechaSug();
       sugI = Math.min(sugI, sugL.length - 1);
       if (!sug) { sug = document.createElement('div'); sug.className = 'epm-sugere'; form.appendChild(sug); }
-      sug.innerHTML = sugL.map((x, i) => `<button type="button" class="${i === sugI ? 'epm-sel' : ''}" data-i="${i}">${avU(x.q)}<span>${esc(nomeU(x.u, x.q, M))}</span></button>`).join('');
+      sug.innerHTML = sugL.map((x, i) => `<button type="button" class="${i === sugI ? 'epm-sel' : ''}" data-i="${i}">${avU(x.q)}<span>${esc(nomeU(x.u, x.q, M))}${chaveAdm(x.q)}</span></button>`).join('');
       sug.querySelectorAll('[data-i]').forEach(b => b.onmousedown = e => { e.preventDefault(); escolheSug(+b.dataset.i); });
     }
     function escolheSug(i) {

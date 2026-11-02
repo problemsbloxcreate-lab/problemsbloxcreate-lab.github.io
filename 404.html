@@ -82,6 +82,10 @@ svg{display:block;flex:none}
 .card .ic.nobox{background:none!important;border-color:transparent!important;backdrop-filter:none}
 .card .ic.nobox .icimg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
 .card .txt{display:flex;flex-direction:column;gap:4px}
+.qe-on{position:absolute;top:10px;left:10px;z-index:2;display:flex;align-items:center;padding:3px 4px 3px 7px;border-radius:20px;background:rgba(10,12,18,.72);border:1px solid rgba(123,216,143,.4);backdrop-filter:blur(6px)}
+.qe-on>b{width:7px;height:7px;border-radius:50%;background:#7bd88f;margin-right:6px;box-shadow:0 0 0 2px rgba(123,216,143,.18)}
+.qe-av{position:relative;width:22px;height:22px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#3a3f55;color:#fff;font:700 10px/1 system-ui,sans-serif;box-shadow:0 0 0 2px rgba(10,12,18,.9)}
+.qe-av+.qe-av{margin-left:-6px}.qe-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.qe-mais{background:#2b2f3d;font-size:9px;width:auto;min-width:22px;padding:0 5px;border-radius:11px}
 .card b{font-size:17px;font-weight:800;letter-spacing:.2px}
 .card small{color:var(--tx2);font-size:12.5px}
 .card.soon{cursor:default;opacity:.55}
@@ -921,8 +925,26 @@ function showMenu() {
     el.innerHTML = cardHtml(l, ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>'); montarCard(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
   });
   if (!DADOS.links.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
+  quemEsta.liga();
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
 }
+
+/* QUEM ESTÁ EM CADA PROGRAMA AGORA (porteiro /online, a mesma presença do ADM): fotinhos no canto do cartão, como o "ao vivo" do Ateliê/Animador.
+   Nunca vem e-mail; confere de minuto em minuto só com o menu à vista. */
+const quemEsta = {
+  PROG: [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR']],
+  progDe(url) { let p = ''; try { const u = new URL(url, location.href); if (u.origin !== location.origin) return null; p = u.pathname; } catch { return null; } return this.PROG.find(([k]) => p.startsWith(k))?.[1] || null; },
+  liga() { this.pinta(); this.busca(); if (this._t) return; this._t = setInterval(() => { if (!document.hidden && !$('#menu').hidden) this.busca(); }, 60e3); addEventListener('visibilitychange', () => { if (!document.hidden && !$('#menu').hidden) this.busca(); }); },
+  async busca() { try { const r = await fetch('/online', { credentials: 'same-origin', cache: 'no-store' }); if (!r.ok) return; this.lista = (await r.json()).pessoas || []; this.pinta(); } catch { } },
+  pinta() {
+    const L = this.lista || [];
+    $$('#grid .card').forEach((el, i) => { const l = DADOS?.links?.[i], prog = l && this.progDe(l.url || ''); el.querySelector('.qe-on')?.remove();
+      const gs = prog ? L.filter(x => x.prog === prog).sort((a, b) => (b.eu ? 1 : 0) - (a.eu ? 1 : 0)) : []; if (!gs.length) return;
+      const n = gs.length <= 3 ? 3 : 2, mini = g => `<span class="qe-av" title="${esc(g.nome)}${g.eu ? ' (você)' : ''}">${g.foto ? `<img src="${esc(g.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<i>${esc((g.nome || '?')[0].toUpperCase())}</i></span>`;
+      const d = document.createElement('span'); d.className = 'qe-on'; d.title = 'Agora aqui: ' + gs.map(x => x.nome + (x.eu ? ' (você)' : '')).join(', ');
+      d.innerHTML = '<b></b>' + gs.slice(0, n).map(mini).join('') + (gs.length > n ? `<span class="qe-av qe-mais">+${gs.length - n}</span>` : ''); el.appendChild(d); });
+  },
+};
 
 /* ======================= ADM ======================= */
 let EDIT = null, sujo = false;

@@ -353,7 +353,7 @@ async function acesso(req, env, url) {
       if (r.ok && b.acao === 'add') { await env.PERFIS.delete('r:' + email); TIRADOS.delete(email); }
     } else { r = await turma('GET'); j = await r.json().catch(() => ({})); }
   } catch (e) { if (/10048|free usage limit|limit exceeded for the day|for today/i.test(String(e?.message || e))) return avisoLimitePorteiro(e); return json({ error: { message: 'O porteiro não conseguiu falar com o servidor do Estúdio Problems.' } }, 502); }
-  if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404].includes(r.status) ? r.status : 502);
+  if (!r.ok) return json({ error: j.error || { message: 'Sem permissão para gerenciar o acesso.' } }, [400, 401, 403, 404, 409].includes(r.status) ? r.status : 502);
   // monta a lista com nome/foto da conta (personalizado e original do Google)
   const admins = new Set(j.admins || []), base = j.base || [], extras = j.extras || [], itens = [];
   const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {};
@@ -385,6 +385,13 @@ async function emailDoCodigo(env, u) {
   return COD.get(u) || null;
 }
 const PESSOA_MEM = new Map(), GERAL = { t: 0, fora: [], semeado: 0 };
+/* quem é ADM (para a chave inglesa ao lado do nome nas Mensagens etc.): os CÓDIGOS (u…) no KV PERFIS "cfg:adms";
+   muda só quando um ADM entra pela 1ª vez ou deixa de ser ADM (quase nunca grava) */
+const ADMS_MEM = { t: 0, s: null };
+async function admsDe(env, novo) { if (!novo && ADMS_MEM.s && Date.now() - ADMS_MEM.t < 300e3) return ADMS_MEM.s;
+  let l = []; try { l = (await env.PERFIS?.get('cfg:adms', { type: 'json' })) || []; } catch { } ADMS_MEM.s = new Set(Array.isArray(l) ? l : []); ADMS_MEM.t = Date.now(); return ADMS_MEM.s; }
+async function marcaAdm(env, email, adm) { if (!env.PERFIS) return; const u = await codigoU(String(email).toLowerCase()), st = await admsDe(env, true); if (st.has(u) === !!adm) return;
+  adm ? st.add(u) : st.delete(u); await env.PERFIS.put('cfg:adms', JSON.stringify([...st])); }
 async function pessoa(req, env, url) {
   const s = await leSessao(env, req);
   if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
@@ -404,7 +411,8 @@ async function pessoa(req, env, url) {
   }
   if (!p.google && !p.nome) return json({ nome: porCodigo ? null : mascara(em), foto: null, conta: false }, 200, { 'cache-control': 'private, max-age=300' });
   const nomeG = p.google?.nome || (porCodigo ? null : mascara(em));
-  return json({ nome: p.nome || nomeG, foto: p.fotoV ? (porCodigo ? '/pessoa/foto?u=' + encodeURIComponent(u) : '/pessoa/foto?e=' + encodeURIComponent(em)) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
+  const adm = (await admsDe(env)).has(await codigoU(em));
+  return json({ adm, nome: p.nome || nomeG, foto: p.fotoV ? (porCodigo ? '/pessoa/foto?u=' + encodeURIComponent(u) : '/pessoa/foto?e=' + encodeURIComponent(em)) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
 }
 /* ---------- quem está online (objeto durável "Presenca": só memória, some sozinho em ~2,5 min sem aviso) ---------- */
 const PROGS = ['MENU', 'ADM', 'ANIMADOR', 'EDITOR', 'SHORTS', 'MODELADOR', 'BLOCKBENCH'];
@@ -962,7 +970,7 @@ export default {
       if (r.status === 401 || r.status === 403) return json({ error: { message: j.error?.message || 'Esta conta não tem acesso ao Estúdio Problems.' } }, 403);
       if (!r.ok || !j.email) return json({ error: { message: `O porteiro não conseguiu conferir o login no servidor do Estúdio Problems (resposta ${r.status}). Tente de novo em instantes.` } }, 502);
       // nome e foto do Google (vêm no próprio token, que o servidor do Estúdio Problems acabou de conferir): viram o padrão da conta
-      try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { } if (env.CONVERSAS) { try { const em = String(j.email).toLowerCase(); await conversas(env, { op: 'pessoa', u: await codigoU(em), e: em }); } catch { } }
+      try { const g = JSON.parse(new TextDecoder().decode(deB64u(token.split('.')[1]))); await guardaGoogle(env, j.email, g.name, g.picture); } catch { } try { await marcaAdm(env, j.email, j.adm === true); } catch { } if (env.CONVERSAS) { try { const em = String(j.email).toLowerCase(); await conversas(env, { op: 'pessoa', u: await codigoU(em), e: em }); } catch { } }
       return json({ ok: true, email: j.email, ate: Date.now() + DURACAO * 1000 }, 200, { 'set-cookie': cookie(await criaSessao(env, j.email, j.adm === true), DURACAO) });
     }
     if (caminho === '/icones') return icones(req, env, url); // ícones dos programas (ADM › Ícones): ver = qualquer um; mudar = ADM
@@ -992,6 +1000,15 @@ export default {
     if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
     if (caminho === '/mensagens' || caminho === '/mensagens/anexo') return mensagens(req, env, url);
+    if (caminho === '/online') { // MENU: quem está em cada programa agora (foto + nome + código, NUNCA o e-mail); só para quem está logado
+      const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);
+      const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {}, eu = s.e.toLowerCase(), pessoas = [];
+      for (const [em, v] of Object.entries(on)) { if (!v?.prog || v.prog === 'MENU' || v.prog === 'ADM') continue;
+        let p = {}; const c = PESSOA_MEM.get(em); if (c && Date.now() - c.t < 120e3) p = c.p; else { p = await lePerfil(env, em); PESSOA_MEM.set(em, { p, t: Date.now() }); if (PESSOA_MEM.size > 500) PESSOA_MEM.clear(); }
+        const u = await codigoU(em);
+        pessoas.push({ u, eu: em === eu, adm: (await admsDe(env)).has(u), prog: v.prog, nome: p.nome || p.google?.nome || 'Alguém da equipe', foto: p.fotoV ? '/pessoa/foto?u=' + u + '&v=' + p.fotoV : (p.google?.foto || null) }); }
+      return json({ pessoas }, 200, { 'cache-control': 'no-store' });
+    }
     if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);
