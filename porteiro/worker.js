@@ -162,6 +162,7 @@ async function repassa(req, url, p, env, s) {
     if (loc.origin === raiz.origin && loc.pathname.startsWith(raiz.pathname)) return Response.redirect(new URL(p.pref.replace(/\/?$/, '/') + loc.pathname.slice(raiz.pathname.length) + loc.search, url).href, 302);
     return r;
   }
+  if (r.ok && req.method === 'GET' && /\/js\/config\.js$/.test(alvo.pathname)) { const h2 = new Headers(r.headers); h2.set('cache-control', 'private, no-cache'); h2.delete('content-length'); h2.delete('content-encoding'); h2.delete('etag'); return new Response(comChaveFb(env, await r.text()), { status: 200, headers: h2 }); } // chave do Firebase (ver comChaveFb)
   const out = new Headers(r.headers);
   out.set('cache-control', 'private, no-cache'); out.set('x-robots-tag', 'noindex'); out.delete('set-cookie');
   if (url.searchParams.has('_ev') && r.ok) out.set('cache-control', IMUTAVEL); // arquivo com carimbo de versão: guarda de vez
@@ -426,7 +427,7 @@ export class Presenca { // cada aba conta separado (e-mail|aba); guarda no armaz
   async fetch(req) {
     const agora = Date.now(), m = (await this.state.storage.get('m')) || {};
     let mudou = false;
-    for (const k of Object.keys(m)) if (agora - m[k].t > 150e3) { delete m[k]; mudou = true; }
+    for (const k of Object.keys(m)) if (agora - m[k].t > 200e3) { delete m[k]; mudou = true; }
     if (req.method === 'POST') {
       const b = await req.json(), k = b.e + '|' + String(b.aba || '').slice(0, 20);
       if (b.prog) m[k] = { prog: b.prog, t: agora }; else delete m[k];
@@ -914,12 +915,17 @@ async function contaEmUso(req, env, url) {
 }
 
 // o menu (index.html) é público: é a tela de login. Qualquer endereço desconhecido também mostra o menu.
+/* CHAVE DO FIREBASE (login do Google): NÃO fica nos repositórios (são públicos; o Google SUSPENDEU a chave antiga depois que o GitHub
+   avisou que ela estava exposta). O código traz o marcador __FIREBASE_API_KEY__ e o porteiro troca pela chave guardada no segredo
+   FIREBASE_API_KEY do Worker (posto pela Action a partir do segredo do GitHub de mesmo nome) na hora de entregar a página/arquivo. */
+const MARCA_FB = '__FIREBASE_API_KEY__';
+const comChaveFb = (env, t) => env.FIREBASE_API_KEY && t.includes(MARCA_FB) ? t.split(MARCA_FB).join(env.FIREBASE_API_KEY) : t;
 async function menu(env, url, status = 200, req = null) {
   const r = await env.ASSETS.fetch(new Request(new URL('/', url)));
   const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); h.set('x-robots-tag', 'noindex');
   if (!r.ok) return new Response(r.body, { status, headers: h });
   // scripts do menu com carimbo de versão (o navegador guarda de vez) + "não mudou" (304) quando a página é a mesma
-  let t = await r.text(); try { t = await comVersoes(env, t, url.href, null); } catch { }
+  let t = comChaveFb(env, await r.text()); try { t = await comVersoes(env, t, url.href, null); } catch { }
   const et = '"epm-' + [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(t)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('') + '"';
   const lm = dataDaVersao(et.slice(5)); h.delete('content-length'); h.delete('content-encoding'); h.set('etag', et); h.set('last-modified', lm);
   if (status === 200 && req && naoMudou(req, et, lm)) return new Response(null, { status: 304, headers: h });
@@ -1046,7 +1052,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
-    if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
+    if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { if (caminho === '/estudio-login.js') { const r0 = await env.ASSETS.fetch(new Request(new URL(caminho, url))); if (r0.ok) return new Response(comChaveFb(env, await r0.text()), { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } }); } const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);

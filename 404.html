@@ -440,7 +440,7 @@ const MENU_CONFIG = {
   servidor: 'https://turma-ia.problemsraiz.workers.dev',
   // Firebase (só login com Google). Estes dados são PÚBLICOS por natureza — a segurança está no servidor.
   firebase: {
-    apiKey: 'AIzaSyAi04-Bbe-1yUG6xi9S2Ef26nImJUi6q60',
+    apiKey: '__FIREBASE_API_KEY__',
     authDomain: 'problems-estudios.firebaseapp.com',
     projectId: 'problems-estudios',
     storageBucket: 'problems-estudios.firebasestorage.app',
@@ -935,7 +935,7 @@ function showMenu() {
 const quemEsta = {
   PROG: [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR']],
   progDe(url) { let p = ''; try { const u = new URL(url, location.href); if (u.origin !== location.origin) return null; p = u.pathname; } catch { return null; } return this.PROG.find(([k]) => p.startsWith(k))?.[1] || null; },
-  liga() { this.pinta(); this.busca(); if (this._t) return; this._t = setInterval(() => { if (!document.hidden && !$('#menu').hidden) this.busca(); }, 60e3); addEventListener('visibilitychange', () => { if (!document.hidden && !$('#menu').hidden) this.busca(); }); },
+  liga() { this.pinta(); this.busca(); if (this._t) return; this._t = setInterval(() => { if (!document.hidden && !$('#menu').hidden) this.busca(); }, 90e3); addEventListener('visibilitychange', () => { if (!document.hidden && !$('#menu').hidden) this.busca(); }); },
   async busca() { try { const r = await fetch('/online', { credentials: 'same-origin', cache: 'no-store' }); if (!r.ok) return; this.lista = (await r.json()).pessoas || []; this.pinta(); } catch { } },
   pinta() {
     const L = this.lista || [];

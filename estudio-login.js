@@ -27,7 +27,7 @@
     servidor: 'https://turma-ia.problemsraiz.workers.dev',       // servidor que confere o e-mail (/quem)
     sdk: 'https://www.gstatic.com/firebasejs/10.14.1/',
     firebase: { // dados PÚBLICOS por natureza; a segurança está no servidor
-      apiKey: 'AIzaSyAi04-Bbe-1yUG6xi9S2Ef26nImJUi6q60',
+      apiKey: '__FIREBASE_API_KEY__',
       authDomain: 'problems-estudios.firebaseapp.com',
       projectId: 'problems-estudios',
       storageBucket: 'problems-estudios.firebasestorage.app',

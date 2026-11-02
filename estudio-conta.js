@@ -536,7 +536,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const aba = Math.random().toString(36).slice(2, 12); // cada aba avisa por si: fechar uma não tira a pessoa do "online" se outra estiver aberta
     const avisa = saiu => fetch('/presenca', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ programa: programaAqui(), aba, saiu: !!saiu }) }).catch(() => { });
     const vez = () => { if (document.visibilityState === 'visible') avisa(); };
-    vez(); setInterval(vez, 45e3);
+    vez(); setInterval(vez, 90e3); // a cada 90 s (economia de pedidos: 100 mil por dia na conta toda; o porteiro esquece em 200 s)
     document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' ? avisa() : avisa(true));
     addEventListener('pagehide', () => avisa(true));
   }
@@ -815,7 +815,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   function vigiaSessao() {
     if (vigiando) return; vigiando = true;
-    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 60000) confereSessao(); }, 15000);
+    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 120000) confereSessao(); }, 15000); // de 2 em 2 min (economia de pedidos)
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 10000) confereSessao(); });
   }
 
@@ -904,7 +904,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       await Promise.all([...(MSG.res?.grupos || []).map(g => preImg(g.foto)), preImg(MSG.res?.geral?.foto)]); MSG.abertoEm = Date.now(); })();
     window.EstudioProgresso?.tarefa(pre, 'Carregando nomes e fotos da equipe');
     setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: a cada 60 s
-      const t = Date.now(), passo = document.visibilityState !== 'visible' ? 60000 : MSG.janela ? 4000 : 40000; // escondida: confere devagar (para o @ tocar em qualquer site)
+      const t = Date.now(), passo = document.visibilityState !== 'visible' ? 120000 : MSG.janela ? 4000 : 60000; // escondida: confere devagar (para o @ tocar em qualquer site)
       if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
       puxaMensagens(!!MSG.janela && t - MSG.abertoEm > 60000 && (MSG.abertoEm = t));
     }, 2000);
@@ -1475,7 +1475,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (VERSAO.nova || VERSAO.rodando) return; VERSAO.rodando = true; VERSAO.ultima = Date.now();
     try {
       // ao abrir: só a página e os scripts comuns (leve, não disputa com o carregamento); o resto entra 20 s depois
-      const lista = primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : [...new Set([...recursosDaPagina(), ...SITES])];
+      // ANIMADOR: o versao.json muda a cada publicação (Action versao.yml), então basta ele + a página + o estudio-conta.js (economia de pedidos:
+      // antes eram até 30 arquivos a cada conferência, por aba; cada um = 1 pedido do porteiro, limite de 100 mil por dia na conta)
+      const anim = location.pathname.startsWith('/animador/');
+      const lista = anim ? [location.pathname + location.search, '/estudio-conta.js', '/animador/versao.json'] : primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : [...new Set([...recursosDaPagina(), ...SITES])];
       for (const u of lista) {
         if (VERSAO.instavel.has(u) || VERSAO.nova) continue;
         let agora; try { agora = await digital(u, 'no-cache'); } catch { continue; }
