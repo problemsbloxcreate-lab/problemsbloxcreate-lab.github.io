@@ -9,7 +9,7 @@
      CONFERIR           (Text, opcional) 'sim' (padrão: depois de aplicar, a IA olha o resultado e corrige) ou 'nao'
      PERIODO            (Text, opcional) 'total' (padrão: conta até zerar, bom para créditos) ou 'mes' (recomeça todo mês)
      ORIGENS            (Text)    sites que podem usar, ex.: https://naoentendinada.github.io  (só o domínio; vírgula para vários)
-     FIREBASE_PROJECT_ID (Text) problems-estudios — liga o login com Google: sem login, nada funciona (nem abrir o editor)
+     FIREBASE_PROJECT_ID (Text) estudio-problems-fbe08 — liga o login com Google: sem login, nada funciona (nem abrir o editor)
      EMAILS_PERMITIDOS  (Text) e-mails liberados, separados por vírgula (ex.: fulano@gmail.com,ciclano@gmail.com) — os e-mails reais ficam SÓ aqui na Cloudflare, nunca no código
      ADMINS             (Text) e-mails que podem abrir a tela ADM (mudar o menu e quem entra). Vazio = ninguém.
                         Gerenciar QUEM ENTRA (tela ADM › Acesso) exige esta variável: só os e-mails dela podem; vazia = ninguém.

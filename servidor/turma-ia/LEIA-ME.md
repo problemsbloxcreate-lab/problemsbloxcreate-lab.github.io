@@ -31,7 +31,7 @@ Só para contas de **organização** (conta individual não tem chave de Admin �
 Opcionais: `MAX_TOKENS` (tamanho máximo de cada resposta; padrão 64000 — o servidor ajusta sozinho se o modelo aceitar menos), `PENSAR` = `nao` (desliga o "pensar antes"), `CONFERIR` = `nao` (desliga a conferência do resultado), `PERIODO` = `mes` (zera todo mês).
 
 7. No topo do worker, copie o endereço: `https://turma-ia.<seu-nome>.workers.dev`.
-8. Teste abrindo `https://turma-ia.<seu-nome>.workers.dev/uso` no navegador — deve aparecer `{"ok":"Servidor da IA da turma funcionando","login":"ligado (problems-estudios)",...}` — ele mostra o que falta configurar (não mostra e-mails).
+8. Teste abrindo `https://turma-ia.<seu-nome>.workers.dev/uso` no navegador — deve aparecer `{"ok":"Servidor da IA da turma funcionando","login":"ligado (estudio-problems-fbe08)",...}` — ele mostra o que falta configurar (não mostra e-mails).
 
 ## Parte 3 — Ligar no editor
 Abra `js/config.js` e coloque o endereço:
@@ -45,7 +45,7 @@ Veja o passo a passo completo em `../SEGURANCA.md` e na conversa. Variáveis nov
 
 | Nome | Tipo | Valor |
 |---|---|---|
-| `FIREBASE_PROJECT_ID` | Text | `problems-estudios` |
+| `FIREBASE_PROJECT_ID` | Text | `estudio-problems-fbe08` |
 | `EMAILS_PERMITIDOS` | Text | os e-mails liberados, separados por vírgula (ficam **só aqui**, nunca no código) |
 | `APP_KEY` | **Secret** | o conteúdo de `ferramentas/CHAVE-DO-APP.txt` |
 

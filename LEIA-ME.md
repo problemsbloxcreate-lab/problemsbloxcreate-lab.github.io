@@ -45,7 +45,7 @@ Arquivos de até 25 MB são guardados no servidor (espaço da equipe na Cloudfla
 1. Atualize o worker `turma-ia` com o `servidor/worker.js` novo (é o mesmo arquivo de `servidor-ia/worker.js` do Animador) (ele ganhou as rotas `/menu-links` e `/menu-midia`): dash.cloudflare.com → Workers & Pages → `turma-ia` → Edit code → colar → Deploy.
 2. O worker precisa do KV `EQUIPE` (o mesmo da mídia da equipe). Se já existe, não precisa fazer nada.
 3. Opcional: variável `ADMINS` com os e-mails que podem mexer na ADM (separados por vírgula). Sem ela, qualquer conta liberada pode mexer.
-4. No Firebase (projeto `problems-estudios` → Authentication → Settings → Authorized domains), adicione o domínio onde o menu ficar.
+4. No Firebase (projeto `estudio-problems-fbe08` → Authentication → Settings → Authorized domains), adicione o domínio onde o menu ficar.
 5. Se a variável `ORIGENS` do worker não for `*`, inclua o endereço do menu nela.
 
 ## Quem pode entrar

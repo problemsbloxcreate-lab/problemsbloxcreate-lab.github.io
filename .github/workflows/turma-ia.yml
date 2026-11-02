@@ -60,6 +60,8 @@ jobs:
           let t = `name = "turma-ia"\nmain = "worker.js"\ncompatibility_date = "${r.compatibility_date || '2024-09-23'}"\n`;
           if ((r.compatibility_flags || []).length) t += `compatibility_flags = ${JSON.stringify(r.compatibility_flags)}\n`;
           t += `workers_dev = true\nkeep_vars = true\n`;
+          // Firebase NOVO (02/11/2026: o projeto antigo problems-estudios caiu junto com a conta do Google dele): projeto e banco do ao vivo
+          t += `\n[vars]\nFIREBASE_PROJECT_ID = "estudio-problems-fbe08"\nFIREBASE_DB_URL = "https://estudio-problems-fbe08-default-rtdb.firebaseio.com"\n`;
           for (const k of kv) t += `\n[[kv_namespaces]]\nbinding = "${k.name}"\nid = "${k.namespace_id}"\n`;
           const ai = b.find(x => x.type === 'ai'); if (ai) t += `\n[ai]\nbinding = "${ai.name}"\n`; // IA da Cloudflare (transcrição)
           let d1 = b.filter(x => x.type === 'd1').map(x => ({ name: x.name, id: x.id || x.database_id }));
@@ -71,6 +73,12 @@ jobs:
         run: $WR deploy --dry-run --outdir /tmp/turma-dry 2>&1 | tail -20
       - name: Publicar
         run: $WR deploy 2>&1 | tail -15
+      - name: Conta de serviço do Firebase (segredo FIREBASE_CONTA do GitHub → turma-ia)
+        env:
+          FIREBASE_CONTA: ${{ secrets.FIREBASE_CONTA }}
+        run: |
+          if [ -n "${FIREBASE_CONTA:-}" ]; then printf '%s' "$FIREBASE_CONTA" | $WR secret put FIREBASE_CONTA -c wrangler.toml > ../fc.log 2>&1 && echo "FIREBASE_CONTA posto no turma-ia" || { echo "::error::Não consegui pôr o FIREBASE_CONTA"; tail -5 ../fc.log | sed 's/[A-Za-z0-9+\/=_-]\{40,\}/…/g'; exit 1; }
+          else echo "::warning::Sem o segredo FIREBASE_CONTA no GitHub: o ao vivo (Realtime Database) não libera ninguém até ele ser posto."; fi
       - name: Conferir depois de publicar
         run: |
           sleep 5
