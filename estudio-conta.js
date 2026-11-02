@@ -29,6 +29,7 @@
    API: EstudioConta.montar(alvo?), EstudioConta.recarregar(), EstudioConta.atualizarTudo(), EstudioConta.perfil(), EstudioConta.ICONES
    ⚠ Isto é só a cara da conta: quem decide quem entra é o porteiro + o servidor do Estúdio Problems. Não ponha senhas aqui. */
 'use strict';
+// atualização de teste (02/11/2026 18:33): só para conferir o aviso de versão nova e a tela "Atualizando"
 /* ---------- LIMITE GRÁTIS DA CLOUDFLARE: aviso claro em vez de "Failed to fetch", em TODOS os programas ----------
    O plano grátis da Cloudflare tem um limite por dia (volta às 00:00 UTC = 21h de Brasília). Quando o servidor responde
    { error: { type: 'limite_cloudflare' } } (ou a Cloudflare devolve a página de limite dela), fica marcado neste navegador
