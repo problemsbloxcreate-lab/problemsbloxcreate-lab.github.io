@@ -42,7 +42,7 @@ const ehAdmin = (env, email) => (env.ADMINS || '').split(',').map(s => s.trim().
 const baseFixa = env => (env.EMAILS_PERMITIDOS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 async function extrasAcesso(env) { try { const v = await env.EQUIPE?.get('acesso/extras', { type: 'json', cacheTtl: 60 }); return Array.isArray(v) ? v.filter(x => x && typeof x.email === 'string') : []; } catch { return []; } }
 // espaço da equipe (KV grátis da Cloudflare: 1 GB por conta; EQUIPE_LIMITE_MB muda o limite)
-const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 1048576;
+const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 + (d1Est.arq ? ARQUIVOS_MB : 0) : 1024)) * 1048576; // com a nuvem dos arquivos: a principal + os bancos de lá
 let usoEq = null; // conta guardada por 1 min (listar a nuvem toda a cada imagem gasta a cota de listagens do dia)
 async function usadoEquipe(env, mais = 0) {
   // sem lista (limite do dia, reserva ainda sem a foto da lista): usa a última conta que tiver (ou 0) — medir o espaço NÃO pode impedir de salvar na reserva
@@ -184,34 +184,62 @@ async function aoVivoLimpa(env, forcar) {
    O KV grátis só deixa gravar 1000 vezes por dia na conta toda; o D1 (banco da Cloudflare, mesma conta) deixa ~100 mil. Este
    adaptador fala igual ao KV (get/getWithMetadata/put/delete/list), então o resto do servidor não muda. Liga quando o banco
    EQUIPE_DB está ligado ao worker E a marca 'ativo' foi gravada nele (a Action "Principal no D1" grava depois de copiar
-   tudo do KV e conferir). Arquivo maior que 1,9 MB vai em pedaços (tabela parte), um pedaço por consulta. */
-const CH_D1 = 1900000, d1Est = { at: 0, on: false };
+   tudo do KV e conferir). Arquivo maior que 1,9 MB vai em pedaços (tabela parte), um pedaço por consulta.
+   NUVEM DOS ARQUIVOS (decisão do dono, 03/11/2026): o D1 da principal aguenta muitos pedidos mas só tem ~480 MB. Com a marca
+   'arquivos' ligada (Action "Nuvem dos arquivos" do repo estudio-problems), o CONTEÚDO de arquivo a partir de 32 KB vai para o
+   Worker arquivos-problems (3ª conta, bancos D1 só para guardar); aqui fica a linha (nome, metadata, tamanho) com onde = 'a', e
+   listas, JSONs pequenos, gravações e leituras continuam passando por aqui. Ler de lá que falhar cai na CÓPIA DE SEGURANÇA da
+   reserva (ler em kvComLista), que é a reserva de leitura. */
+const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false }, ARQ_MIN = 32 * 1024, ARQUIVOS_MB = 940;
+const ARQUIVOS_URL = 'https://arquivos-problems.problemsraizz.workers.dev';
 async function d1Ligado(env) {
   if (!env.EQUIPE_DB) return false; if (Date.now() - d1Est.at < 60e3) return d1Est.on;
-  try { const r = await env.EQUIPE_DB.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first(); d1Est.on = r?.v === '1'; } catch { d1Est.on = false; }
+  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1'; } catch { d1Est.on = false; }
   d1Est.at = Date.now(); return d1Est.on;
 }
-const bytesDe = async v => v == null ? new Uint8Array(0) : typeof v === 'string' ? new TextEncoder().encode(v) : v instanceof ArrayBuffer ? new Uint8Array(v) : ArrayBuffer.isView(v) ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : new Uint8Array(await new Response(v).arrayBuffer());
-async function d1Grava(db, k, buf, meta) {
-  await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); let n = 0;
-  for (let i = 0; i < buf.byteLength; i += CH_D1, n++) await db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(k, n, buf.subarray(i, i + CH_D1)).run();
-  await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now()).run();
+// Worker da nuvem dos arquivos (senha dos robôs = segredo ROBO): grava/lê/apaga só o conteúdo, sem metadata nem e-mails
+function arquivosDe(env) {
+  if (!env.ROBO || env.ARQUIVOS === 'nao') return null; const base = (env.ARQUIVOS_URL || ARQUIVOS_URL).replace(/\/+$/, '');
+  const call = async (path, o = {}, ms = 20000) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+    try { return await fetch(base + path, { ...o, headers: { 'x-senha': env.ROBO, ...(o.headers || {}) }, signal: ac.signal }); } finally { clearTimeout(t); } };
+  const ok = async r => { if (!r.ok) { let j = null; try { j = await r.clone().json(); } catch { } throw new Error(j?.erro === 'cheio' ? 'ARQUIVOS_CHEIO' : 'a nuvem dos arquivos respondeu ' + r.status); } return r; };
+  return {
+    async grava(k, buf) { await ok(await call('/arq?k=' + encodeURIComponent(k), { method: 'PUT', body: buf }, 60000)); },
+    async le(k) { const r = await ok(await call('/arq?k=' + encodeURIComponent(k))); return new Uint8Array(await r.arrayBuffer()); },
+    async apaga(ks) { for (let i = 0; i < ks.length; i += 500) await ok(await call('/apaga', { method: 'POST', body: JSON.stringify({ k: ks.slice(i, i + 500) }), headers: { 'content-type': 'application/json' } }, 25000)); },
+    estado: () => call('/estado').then(r => r.json()).catch(e => ({ erro: String(e?.message || e) })),
+  };
 }
-async function d1Le(db, k) {
-  const a = await db.prepare('SELECT meta, n FROM arq WHERE k = ?').bind(k).first(); if (!a) return null;
+const bytesDe = async v => v == null ? new Uint8Array(0) : typeof v === 'string' ? new TextEncoder().encode(v) : v instanceof ArrayBuffer ? new Uint8Array(v) : ArrayBuffer.isView(v) ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : new Uint8Array(await new Response(v).arrayBuffer());
+async function d1Grava(db, k, buf, meta, A) {
+  const fora = !!A && d1Est.arq && buf.byteLength >= ARQ_MIN; // arquivo grande: o conteúdo vai para a nuvem dos arquivos
+  const ant = d1Est.arq ? await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first() : null;
+  await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); let n = 0;
+  if (fora) await A.grava(k, buf);
+  else for (let i = 0; i < buf.byteLength; i += CH_D1, n++) await db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(k, n, buf.subarray(i, i + CH_D1)).run();
+  if (d1Est.arq) await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em, onde) VALUES (?, ?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now(), fora ? 'a' : null).run();
+  else await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now()).run();
+  if (!fora && ant?.onde === 'a' && A) await A.apaga([k]).catch(() => { }); // ficou pequeno: o conteúdo velho sai de lá
+}
+async function d1Le(db, k, A) {
+  const a = await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first(); if (!a) return null;
   let corpo = new Uint8Array(0);
-  if (a.n) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(k).all(); const ps = (results || []).map(x => new Uint8Array(x.v)); corpo = new Uint8Array(ps.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of ps) { corpo.set(p, o); o += p.length; } }
+  if (a.onde === 'a') { if (!A) throw new Error('sem a nuvem dos arquivos'); corpo = await A.le(k); }
+  else if (a.n) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(k).all(); const ps = (results || []).map(x => new Uint8Array(x.v)); corpo = new Uint8Array(ps.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of ps) { corpo.set(p, o); o += p.length; } }
   let meta = null; try { meta = JSON.parse(a.meta || 'null'); } catch { } return { buf: corpo, meta: meta && Object.keys(meta).length ? meta : null };
 }
-function kvD1(db) {
+function kvD1(db, A) {
   const como = (buf, o) => { const t = typeof o === 'string' ? o : o?.type || 'text'; if (t === 'arrayBuffer') return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength); if (t === 'stream') return new Response(buf).body;
     const s = new TextDecoder().decode(buf); return t === 'json' ? JSON.parse(s) : s; };
   return {
-    async get(k, o) { const r = await d1Le(db, k); return r ? como(r.buf, o) : null; },
-    async getWithMetadata(k, o) { const r = await d1Le(db, k); return r ? { value: como(r.buf, o), metadata: r.meta } : { value: null, metadata: null }; },
-    async put(k, v, o) { await d1Grava(db, k, await bytesDe(v), o?.metadata); },
-    async delete(k) { await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)]); },
-    async deleteLote(ks) { const st = []; for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400)); },
+    async get(k, o) { const r = await d1Le(db, k, A); return r ? como(r.buf, o) : null; },
+    async getWithMetadata(k, o) { const r = await d1Le(db, k, A); return r ? { value: como(r.buf, o), metadata: r.meta } : { value: null, metadata: null }; },
+    async put(k, v, o) { await d1Grava(db, k, await bytesDe(v), o?.metadata, A); },
+    async delete(k) { const a = d1Est.arq ? await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first() : null;
+      await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)]);
+      if (a?.onde === 'a' && A) await A.apaga([k]).catch(() => { }); },
+    async deleteLote(ks) { const st = []; for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400));
+      if (d1Est.arq && A && ks.length) await A.apaga(ks).catch(() => { }); }, // o que não estiver lá é ignorado
     // a lista vem inteira de uma vez (o servidor já guarda na memória por 5 min); cursor = depois desta chave
     async list(o = {}) { const pre = o.prefix || '', lim = Math.min(+o.limit || 100000, 100000), de = o.cursor || '';
       const { results } = await db.prepare('SELECT k, meta FROM arq WHERE k >= ? AND k < ? AND k > ? ORDER BY k LIMIT ?').bind(pre, pre + '\uffff', de, lim + 1).all(); // faixa pelo índice da chave: lê só as linhas do começo pedido (substr lia a tabela inteira)
@@ -225,15 +253,32 @@ async function robo(req, env) {
   const js = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
   const ok = !!env.ROBO && String(req.headers.get('x-senha') || '') === env.ROBO; if (!ok) return js({ erro: 'senha' }, 401);
   if (!db) return js({ erro: 'sem o banco EQUIPE_DB' }, 501);
-  if (rota === 'estado') { const a = await db.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first().catch(() => null), n = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq').first().catch(() => null); return js({ ativo: a?.v === '1', n: n?.n || 0, bytes: n?.b || 0 }); }
+  d1Est.at = 0; await d1Ligado(env); const A = arquivosDe(env);
+  if (rota === 'estado') { const a = await db.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first().catch(() => null), n = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq').first().catch(() => null);
+    const f = d1Est.arq ? await db.prepare("SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde = 'a'").first().catch(() => null) : null;
+    return js({ ativo: a?.v === '1', n: n?.n || 0, bytes: n?.b || 0, arquivos: d1Est.arq, fora: f?.n || 0, foraBytes: f?.b || 0 }); }
+  // NUVEM DOS ARQUIVOS: ligar (cria a coluna onde) / desligar; desligar só deixa de mandar arquivos NOVOS para lá (ler continua)
+  if (rota === 'arquivos' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1';
+    if (v === '1') { if (!A) return js({ erro: 'sem ROBO ou ARQUIVOS=nao no turma-ia' }, 409); const e = await A.estado(); if (e.erro || !e.ok) return js({ erro: 'a nuvem dos arquivos não respondeu: ' + JSON.stringify(e).slice(0, 120) }, 502);
+      try { await db.prepare('ALTER TABLE arq ADD COLUMN onde TEXT').run(); } catch (x) { if (!/duplicate column/i.test(String(x?.message || x))) throw x; } }
+    await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('arquivos', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, arquivos: v === '1' }); }
+  // passa para a nuvem dos arquivos o conteúdo grande que ainda está aqui (poucos por pedido: o Worker grátis tem pouco tempo de CPU)
+  if (rota === 'mover' && req.method === 'POST') { if (!A || !d1Est.arq) return js({ erro: 'nuvem dos arquivos desligada' }, 409);
+    const lim = Math.min(Math.max(+u.searchParams.get('n') || 5, 1), 20); let n = 0, b = 0;
+    const { results } = await db.prepare('SELECT k, em FROM arq WHERE onde IS NULL AND tam >= ? ORDER BY tam DESC LIMIT ?').bind(ARQ_MIN, lim).all();
+    for (const x of results || []) { const r = await d1Le(db, x.k, A); if (!r) continue; await A.grava(x.k, r.buf);
+      const up = await db.prepare("UPDATE arq SET onde = 'a', n = 0 WHERE k = ? AND em = ? AND onde IS NULL").bind(x.k, x.em).run(); // mudou no meio? fica aqui (vai na próxima)
+      if (up.meta?.changes) { await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run(); n++; b += r.buf.byteLength; } }
+    const resta = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde IS NULL AND tam >= ?').bind(ARQ_MIN).first();
+    kvLista = null; return js({ ok: true, movidos: n, bytes: b, resta: resta?.n || 0, restaBytes: resta?.b || 0 }); }
   if (rota === 'ligar' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1'; await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('ativo', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, ativo: v === '1' }); }
   if (rota === 'lista') { const out = []; let cur; do { const r = await kvD1(db).list({ prefix: u.searchParams.get('prefix') || '', cursor: cur }); out.push(...r.keys); cur = r.list_complete ? null : r.cursor; } while (cur); return js({ keys: out }); }
   if (rota === 'arq' && k && k.length <= 512) {
-    if (req.method === 'GET') { const r = await d1Le(db, k); return r ? new Response(r.buf, { headers: { 'x-meta': encodeURIComponent(JSON.stringify(r.meta || {})), 'cache-control': 'no-store' } }) : js({ erro: 'não achei' }, 404); }
-    if (req.method === 'PUT') { let meta = null; try { meta = JSON.parse(decodeURIComponent(req.headers.get('x-meta') || 'null')); } catch { } const buf = new Uint8Array(await req.arrayBuffer()); if (buf.byteLength > 25 * 1048576) return js({ erro: 'grande' }, 413); await d1Grava(db, k, buf, meta); kvLista = null; return js({ ok: true }); }
-    if (req.method === 'DELETE') { await kvD1(db).delete(k); kvLista = null; return js({ ok: true }); }
+    if (req.method === 'GET') { const r = await d1Le(db, k, A); return r ? new Response(r.buf, { headers: { 'x-meta': encodeURIComponent(JSON.stringify(r.meta || {})), 'cache-control': 'no-store' } }) : js({ erro: 'não achei' }, 404); }
+    if (req.method === 'PUT') { let meta = null; try { meta = JSON.parse(decodeURIComponent(req.headers.get('x-meta') || 'null')); } catch { } const buf = new Uint8Array(await req.arrayBuffer()); if (buf.byteLength > 25 * 1048576) return js({ erro: 'grande' }, 413); await d1Grava(db, k, buf, meta, A); kvLista = null; return js({ ok: true }); }
+    if (req.method === 'DELETE') { await kvD1(db, A).delete(k); kvLista = null; return js({ ok: true }); }
   }
-  if (rota === 'apaga' && req.method === 'POST') { let o = {}; try { o = await req.json(); } catch { } const ks = (Array.isArray(o.k) ? o.k : []).filter(x => typeof x === 'string' && x && x.length <= 512).slice(0, 2000); await kvD1(db).deleteLote(ks); kvLista = null; return js({ ok: true, n: ks.length }); }
+  if (rota === 'apaga' && req.method === 'POST') { let o = {}; try { o = await req.json(); } catch { } const ks = (Array.isArray(o.k) ? o.k : []).filter(x => typeof x === 'string' && x && x.length <= 512).slice(0, 2000); await kvD1(db, A).deleteLote(ks); kvLista = null; return js({ ok: true, n: ks.length }); }
   return js({ erro: 'pedido desconhecido' }, 400);
 }
 
@@ -415,7 +460,7 @@ export default {
   async fetch2(req, env, ctx) {
     if (new URL(req.url).pathname.startsWith('/robo/')) { try { return await robo(req, env); } catch (e) { return new Response(JSON.stringify({ erro: String(e?.message || e).slice(0, 200) }), { status: ehLimite(e) ? 503 : 500, headers: { 'content-type': 'application/json' } }); } }
     // a nuvem principal no D1 (depois de ligada): o resto do servidor continua falando "KV" com o adaptador
-    if (await d1Ligado(env)) env = { ...env, EQUIPE: kvD1(env.EQUIPE_DB), _kvAntigo: env.EQUIPE, _d1: true };
+    if (await d1Ligado(env)) env = { ...env, EQUIPE: kvD1(env.EQUIPE_DB, arquivosDe(env)), _kvAntigo: env.EQUIPE, _d1: true };
     const flag = { reserva: false }; let r;
     try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
     if (flag.reserva && !emLimite()) { // a principal JÁ VOLTOU e o que sobrou na reserva está voltando para ela: o site tira o aviso
@@ -476,7 +521,7 @@ export default {
     if (p0 === '/equipe' || p0 === '/equipe/arquivo') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
-      const q = new URL(req.url).searchParams, LIM = (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 1048576;
+      const q = new URL(req.url).searchParams, LIM = limiteEquipe(env);
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const k of r.keys) out.push(await semEmail({ k: k.name, ...(k.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/equipe/arquivo') {
         const k = q.get('k') || ''; if (!/^(equipe|conhecimento)\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
@@ -741,7 +786,7 @@ export default {
           const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
           if (buf.byteLength > 25 * 1048576) return json({ error: { message: 'Arquivo maior que 25 MB (limite da nuvem). Para vídeos grandes, use "colar link".' } }, 413, cors);
           let usado = 0, cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const k of r.keys) usado += +(k.metadata?.tam) || 0; cur = r.list_complete ? null : r.cursor; } while (cur);
-          if (usado + buf.byteLength > (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 : 1024)) * 1048576) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+          if (usado + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
           const k = `menu/midia/${Date.now()}_${nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.\- ]+/g, '_').slice(-80)}`;
           await env.EQUIPE.put(k, buf, { metadata: { nome, tipo, tam: buf.byteLength, por: login.email, em: new Date().toISOString() } });
           return json({ ok: true, k }, 200, cors);
@@ -751,7 +796,7 @@ export default {
       // SÓ ADM (decisão do dono, 02/11/2026): programa marcado "só para ADMs" nem sai daqui para quem não é ADM. Antes de alguém salvar o
       // menu com a caixinha, o Jester Dreams já conta como marcado.
       const soAdmDe = l => l.soAdm ?? /jester\s*dreams/i.test(l.nome || '');
-      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); const ls = v?.links ? v.links.map(l => ({ ...l, soAdm: soAdmDe(l) })).filter(l => adm || !l.soAdm) : null; return json({ links: ls, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); const ls = v?.links ? v.links.map(l => ({ ...l, soAdm: soAdmDe(l) })).filter(l => adm || (!l.soAdm && !l.invisivel)) : null; /* invisível: nem sai para quem não é ADM (o ADM recebe só para a ADM › Menu; o menu esconde) */ return json({ links: ls, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'PUT' || req.method === 'POST') {
         if (!adm) return semAdm();
         let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
@@ -766,7 +811,7 @@ export default {
           const nome = txt(l?.nome, 40), url = txt(l?.url, 500);
           if (!nome) return json({ error: { message: 'Todo link precisa de um nome.' } }, 400, cors);
           if (url && !okUrl(url)) return json({ error: { message: `Endereço inválido em "${nome}". Use https://...` } }, 400, cors);
-          links.push({ nome, soAdm: !!l?.soAdm, desc: txt(l?.desc, 80), url: url || null, icone: ICS.includes(l?.icone) ? l.icone : 'link', embreve: !!l?.embreve, modo: ['sempre', 'blur', 'blurHover', 'hover'].includes(l?.modo) ? l.modo : 'sempre', iconeImg: (m => m && { src: m.src })(midia(l?.iconeImg)), iconeTam: num(l?.iconeTam, 30, 100, 62), iconeCaixa: l?.iconeCaixa !== false, fundo: midia(l?.fundo), escurecer: num(l?.escurecer, 0, .9, .45), ...(txt(l?.etiqueta, 20) ? { etiqueta: txt(l.etiqueta, 20) } : {}) }); // etiqueta: ex. "em testes" (Jester Dreams)
+          links.push({ nome, soAdm: !!l?.soAdm, ...(l?.invisivel ? { invisivel: true } : {}), desc: txt(l?.desc, 80), url: url || null, icone: ICS.includes(l?.icone) ? l.icone : 'link', embreve: !!l?.embreve, modo: ['sempre', 'blur', 'blurHover', 'hover'].includes(l?.modo) ? l.modo : 'sempre', iconeImg: (m => m && { src: m.src })(midia(l?.iconeImg)), iconeTam: num(l?.iconeTam, 30, 100, 62), iconeCaixa: l?.iconeCaixa !== false, fundo: midia(l?.fundo), escurecer: num(l?.escurecer, 0, .9, .45), ...(txt(l?.etiqueta, 20) ? { etiqueta: txt(l.etiqueta, 20) } : {}) }); // etiqueta: ex. "em testes" (Jester Dreams)
         }
         const f = b.fundo || {}, fundo = { modo: ['nenhum', 'um', 'slideshow', 'aleatorio'].includes(f.modo) ? f.modo : 'nenhum', intervalo: num(f.intervalo, 2, 120, 8), escurecer: num(f.escurecer, 0, .9, .55), itens: (Array.isArray(f.itens) ? f.itens : []).slice(0, 20).map(midia).filter(Boolean) };
         const mg = b.mensagens || {}, mensagens = { boasVindas: txt(mg.boasVindas, 160), intervalo: num(mg.intervalo, 3, 60, 7),
