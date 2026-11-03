@@ -190,11 +190,15 @@ async function aoVivoLimpa(env, forcar) {
    Worker arquivos-problems (3ª conta, bancos D1 só para guardar); aqui fica a linha (nome, metadata, tamanho) com onde = 'a', e
    listas, JSONs pequenos, gravações e leituras continuam passando por aqui. Ler de lá que falhar cai na CÓPIA DE SEGURANÇA da
    reserva (ler em kvComLista), que é a reserva de leitura. */
-const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false }, ARQ_MIN = 32 * 1024, ARQUIVOS_MB = 3290; // 7 bancos de ~470 MB (BANCOS no arquivos.yml)
+/* LISTA SÓ COM O QUE MUDOU (decisão do dono, 03/11/2026, depois de estourar as 5 milhões de leituras do dia): cada parte do
+   servidor carregava a tabela inteira (~10 mil linhas) de 5 em 5 min. Agora carrega inteira só na 1ª vez (e de 6 em 6 h) e depois,
+   de 30 em 30 s, só as linhas gravadas desde a última vez (índice arq_em) e as apagadas (tabela apagados, guarda 3 dias). */
+const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false, prep: false, poda: 0 }, ARQ_MIN = 32 * 1024, ARQUIVOS_MB = 3290; // 7 bancos de ~470 MB (BANCOS no arquivos.yml)
 const ARQUIVOS_URL = 'https://arquivos-problems.problemsraizz.workers.dev';
 async function d1Ligado(env) {
   if (!env.EQUIPE_DB) return false; if (Date.now() - d1Est.at < 60e3) return d1Est.on;
-  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1'; }
+  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1';
+    if (d1Est.on && !d1Est.prep) { const db = env.EQUIPE_DB; await db.batch([db.prepare('CREATE TABLE IF NOT EXISTS apagados (k TEXT PRIMARY KEY, em INTEGER NOT NULL)'), db.prepare('CREATE INDEX IF NOT EXISTS arq_em ON arq (em)'), db.prepare('CREATE INDEX IF NOT EXISTS apagados_em ON apagados (em)')]); d1Est.prep = true; } }
   catch (e) { // D1 no limite do dia (03/11/2026: antes caía no KV ANTIGO, com dados velhos): continua no D1 e o kvComLista passa para a reserva/cópia
     if (ehLimite(e)) { d1Est.on = true; d1Est.arq = true; limiteAte = fimDoDia(); } else if (!d1Est.at) d1Est.on = false; }
   d1Est.at = Date.now(); return d1Est.on;
@@ -221,6 +225,7 @@ async function d1Grava(db, k, buf, meta, A) {
   else for (let i = 0; i < buf.byteLength; i += CH_D1, n++) await db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(k, n, buf.subarray(i, i + CH_D1)).run();
   if (d1Est.arq) await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em, onde) VALUES (?, ?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now(), fora ? 'a' : null).run();
   else await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now()).run();
+  if (d1Est.prep) await db.prepare('DELETE FROM apagados WHERE k = ?').bind(k).run(); // voltou a existir
   if (!fora && ant?.onde === 'a' && A) await A.apaga([k]).catch(() => { }); // ficou pequeno: o conteúdo velho sai de lá
 }
 async function d1Le(db, k, A) {
@@ -238,10 +243,15 @@ function kvD1(db, A) {
     async getWithMetadata(k, o) { const r = await d1Le(db, k, A); return r ? { value: como(r.buf, o), metadata: r.meta } : { value: null, metadata: null }; },
     async put(k, v, o) { await d1Grava(db, k, await bytesDe(v), o?.metadata, A); },
     async delete(k) { const a = d1Est.arq ? await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first() : null;
-      await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)]);
+      await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k), ...(d1Est.prep ? [db.prepare('INSERT OR REPLACE INTO apagados (k, em) VALUES (?, ?)').bind(k, Date.now())] : [])]);
       if (a?.onde === 'a' && A) await A.apaga([k]).catch(() => { }); },
-    async deleteLote(ks) { const st = []; for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k)); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400));
+    async deleteLote(ks) { const st = [], em = Date.now(); for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k), ...(d1Est.prep ? [db.prepare('INSERT OR REPLACE INTO apagados (k, em) VALUES (?, ?)').bind(k, em)] : [])); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400));
       if (d1Est.arq && A && ks.length) await A.apaga(ks).catch(() => { }); }, // o que não estiver lá é ignorado
+    // só o que foi gravado/apagado depois de `desde` (null = ainda sem as tabelas/índices: o kvComLista carrega inteira)
+    async mudancas(desde) { if (!d1Est.prep) return null;
+      if (Date.now() - d1Est.poda > 3600e3) { d1Est.poda = Date.now(); await db.prepare('DELETE FROM apagados WHERE em < ?').bind(Date.now() - 3 * 864e5).run(); }
+      const [a, b] = await db.batch([db.prepare('SELECT k, meta FROM arq WHERE em > ?').bind(desde), db.prepare('SELECT k FROM apagados WHERE em > ?').bind(desde)]);
+      return { mudou: (a.results || []).map(x => { let m = null; try { m = JSON.parse(x.meta || 'null'); } catch { } return { name: x.k, ...(m && Object.keys(m).length ? { metadata: m } : {}) }; }), apagou: (b.results || []).map(x => x.k) }; },
     // a lista vem inteira de uma vez (o servidor já guarda na memória por 5 min); cursor = depois desta chave
     async list(o = {}) { const pre = o.prefix || '', lim = Math.min(+o.limit || 100000, 100000), de = o.cursor || '';
       const { results } = await db.prepare('SELECT k, meta FROM arq WHERE k >= ? AND k < ? AND k > ? ORDER BY k LIMIT ?').bind(pre, pre + '\uffff', de, lim + 1).all(); // faixa pelo índice da chave: lê só as linhas do começo pedido (substr lia a tabela inteira)
@@ -357,9 +367,12 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
   const pastaApagada = (ri, k) => { for (const [n, it] of ri) if (n.endsWith('/') && it.metadata?._del && k.startsWith(n)) return true; return false; };
   const naReserva = async k => { if (!(await ativa())) return null; try { const ri = await R.indice(); return ri.get(k) || (pastaApagada(ri, k) ? { name: k, metadata: { _del: 1 } } : null); } catch { return null; } };
   const carrega = async () => {
-    if (kvLista && Date.now() - kvLista.at < (forcar ? 30e3 : KV_LISTA_MS)) return kvLista.m;
-    const m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
-    kvLista = { m, at: Date.now() };
+    if (kvLista && Date.now() - kvLista.at < (forcar || kv.mudancas ? 30e3 : KV_LISTA_MS)) return kvLista.m;
+    if (kvLista?.desde && kv.mudancas && Date.now() - kvLista.cheia < 6 * 3600e3) { // D1: só o que mudou (2 minutos de folga para relógios diferentes)
+      const t = Date.now(), d = await kv.mudancas(kvLista.desde);
+      if (d) { for (const x of d.mudou) kvLista.m.set(x.name, x); for (const k of d.apagou) kvLista.m.delete(k); kvLista.at = t; kvLista.desde = t - 120e3; return kvLista.m; } }
+    const t0 = Date.now(), m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
+    kvLista = { m, at: Date.now(), cheia: Date.now(), desde: kv.mudancas ? t0 - 120e3 : 0 };
     if (R && Date.now() - fotoListaEm > 15 * 60e3) { fotoListaEm = Date.now(); bg(R.guardaLista(m).catch(() => { })); } // foto da lista guardada na reserva (de 15 em 15 min: se a principal acabar de repente, a lista continua abrindo pela reserva)
     return m;
   };
