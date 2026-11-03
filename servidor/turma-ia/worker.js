@@ -194,7 +194,9 @@ const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false }, ARQ_MIN = 32 * 
 const ARQUIVOS_URL = 'https://arquivos-problems.problemsraizz.workers.dev';
 async function d1Ligado(env) {
   if (!env.EQUIPE_DB) return false; if (Date.now() - d1Est.at < 60e3) return d1Est.on;
-  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1'; } catch { d1Est.on = false; }
+  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1'; }
+  catch (e) { // D1 no limite do dia (03/11/2026: antes caía no KV ANTIGO, com dados velhos): continua no D1 e o kvComLista passa para a reserva/cópia
+    if (ehLimite(e)) { d1Est.on = true; d1Est.arq = true; limiteAte = fimDoDia(); } else if (!d1Est.at) d1Est.on = false; }
   d1Est.at = Date.now(); return d1Est.on;
 }
 // Worker da nuvem dos arquivos (senha dos robôs = segredo ROBO): grava/lê/apaga só o conteúdo, sem metadata nem e-mails
@@ -270,13 +272,13 @@ async function robo(req, env) {
       const up = await db.prepare("UPDATE arq SET onde = 'a', n = 0 WHERE k = ? AND em = ? AND onde IS NULL").bind(x.k, x.em).run(); // mudou no meio? fica aqui (vai na próxima)
       if (up.meta?.changes) { await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run(); n++; b += r.buf.byteLength; } }
     const resta = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde IS NULL AND tam >= ?').bind(ARQ_MIN).first();
-    kvLista = null; return js({ ok: true, movidos: n, bytes: b, resta: resta?.n || 0, restaBytes: resta?.b || 0 }); }
+    /* sem kvLista = null: a lista não muda (onde não entra nela) e limpar fazia o site reler a tabela toda a cada arquivo (estourou as leituras do D1 em 03/11/2026) */ return js({ ok: true, movidos: n, bytes: b, resta: resta?.n || 0, restaBytes: resta?.b || 0 }); }
   // o mesmo, um arquivo por pedido (o mover acima passa do tempo de CPU do plano grátis com arquivos grandes): a Action lê por
   // /robo/arq, grava direto na nuvem dos arquivos e marca aqui; só marca se a linha não mudou desde a lista (em)
   if (rota === 'faltam') { const { results } = await db.prepare('SELECT k, em, tam FROM arq WHERE onde IS NULL AND tam >= ? ORDER BY k LIMIT 500').bind(ARQ_MIN).all(); return js({ itens: results || [] }); }
   if (rota === 'marcar' && req.method === 'POST' && k) { if (!d1Est.arq) return js({ erro: 'nuvem dos arquivos desligada' }, 409);
     const up = await db.prepare("UPDATE arq SET onde = 'a', n = 0 WHERE k = ? AND em = ? AND onde IS NULL").bind(k, +u.searchParams.get('em') || 0).run();
-    if (up.meta?.changes) await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); kvLista = null; return js({ ok: true, marcou: !!up.meta?.changes }); }
+    if (up.meta?.changes) await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); return js({ ok: true, marcou: !!up.meta?.changes }); }
   if (rota === 'ligar' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1'; await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('ativo', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, ativo: v === '1' }); }
   if (rota === 'lista') { const out = []; let cur; do { const r = await kvD1(db).list({ prefix: u.searchParams.get('prefix') || '', cursor: cur }); out.push(...r.keys); cur = r.list_complete ? null : r.cursor; } while (cur); return js({ keys: out }); }
   if (rota === 'arq' && k && k.length <= 512) {
