@@ -117,6 +117,7 @@
     mostra('<span class="s"></span>Conferindo seu acesso…');
     try {
       if (!window.firebase?.auth) { await carrega('firebase-app-compat.js'); await carrega('firebase-auth-compat.js'); }
+      try { await window.EstudioPasse?.pronto; } catch { } // veio do outro endereço com o login junto (estudio-conta.js)
       if (!firebase.apps.length) firebase.initializeApp(CFG.firebase);
       auth = firebase.auth();
       await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);

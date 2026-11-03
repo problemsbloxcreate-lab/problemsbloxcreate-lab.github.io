@@ -35,6 +35,26 @@
    { error: { type: 'limite_cloudflare' } } (ou a Cloudflare devolve a página de limite dela), fica marcado neste navegador
    até a hora de voltar: os erros de rede para a nossa nuvem viram a frase explicada e aparece um selo discreto com a
    contagem regressiva (calculada aqui no computador, sem pedir nada para a nuvem). */
+/* MESMO LOGIN NOS DOIS ENDEREÇOS (decisão do dono, 02/11/2026): ao trocar entre o endereço principal e a porta reserva, o login do
+   Google vai junto no fragmento do endereço (#ep-conta=…, que não sai do navegador nem vai para nenhum servidor) e entra no lugar
+   onde o Firebase guarda a sessão neste endereço (IndexedDB firebaseLocalStorageDb). O fragmento é apagado da barra na hora. */
+window.EstudioPasse ||= (() => {
+  const m = location.hash.match(/(?:^#|&)ep-conta=([^&]+)/); if (!m) return { pronto: Promise.resolve(false) };
+  try { const h = location.hash.replace(/(^#|&)ep-conta=[^&]+/, '$1').replace(/^#&?$/, ''); history.replaceState(history.state, '', location.pathname + location.search + h); } catch { }
+  const pronto = (async () => {
+    const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/'), u = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0))));
+    if (!u?.uid || !u.apiKey || !u.stsTokenManager?.refreshToken) return false;
+    const db = await new Promise((ok, no) => { const q = indexedDB.open('firebaseLocalStorageDb', 1); q.onupgradeneeded = () => { if (!q.result.objectStoreNames.contains('firebaseLocalStorage')) q.result.createObjectStore('firebaseLocalStorage', { keyPath: 'fbase_key' }); }; q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+    const k = 'firebase:authUser:' + u.apiKey + ':[DEFAULT]';
+    await new Promise((ok, no) => { const tx = db.transaction('firebaseLocalStorage', 'readwrite'); tx.objectStore('firebaseLocalStorage').put({ fbase_key: k, value: u }); tx.oncomplete = ok; tx.onerror = () => no(tx.error); });
+    db.close(); return true;
+  })().catch(() => false);
+  return { pronto };
+})();
+// o login do Google desta aba, pronto para ir junto para o outro endereço ('' quando não tem)
+window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.length && window.firebase.auth().currentUser; if (!u) return '';
+  const j = new TextEncoder().encode(JSON.stringify(u.toJSON())); let t = ''; for (const c of j) t += String.fromCharCode(c);
+  return 'ep-conta=' + btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); } catch { return ''; } };
 (() => {
   if (window.EstudioLimite) return;
   const proxima = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
@@ -100,7 +120,7 @@
     if (!/1027|rate limited|plan limits/i.test(t)) return; portaJa = true; vaiPraPorta();
   }
   function vaiPraPorta() {
-    const alvo = PORTA + location.pathname + location.search + location.hash; let n = 5;
+    const v = new Date(); v.setUTCHours(24, 0, 0, 0); const fr = window.EstudioPasse?.fragmento?.() || '', alvo = PORTA + location.pathname + location.search + '#' + (fr ? fr + '&' : '') + 'ep-1027=' + (+v); let n = 5;
     const o = document.createElement('div'); o.id = 'ep-porta-reserva'; o.setAttribute('role', 'alertdialog');
     o.innerHTML = '<div class="pr-c"><div class="pr-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><b>Abrindo a porta reserva</b><span>O Estúdio passou do limite de pedidos de hoje e volta às 21h. Enquanto isso, tudo da nuvem continua pela reserva.</span><span class="pr-n"></span><button type="button">Ficar aqui</button></div>';
     const st = document.createElement('style'); st.textContent = '#ep-porta-reserva{position:fixed;inset:0;z-index:2147483647;background:rgba(8,9,12,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;font:14px/1.5 \'Segoe UI\',system-ui,sans-serif;color:#f1f2f4;padding:16px}#ep-porta-reserva .pr-c{display:grid;justify-items:center;gap:8px;max-width:380px;text-align:center}#ep-porta-reserva b{font-size:17px;font-weight:600;margin-top:14px}#ep-porta-reserva span{font-size:12.5px;color:#a3a7ae}#ep-porta-reserva button{margin-top:8px;padding:8px 18px;border-radius:999px;background:rgba(255,255,255,.1);color:#f1f2f4;border:1px solid rgba(255,255,255,.16);font:500 13px inherit;cursor:pointer}'
@@ -115,11 +135,12 @@
   if (location.hostname !== PRINCIPAL && /^estudio-reserva\./.test(location.hostname)) addEventListener('DOMContentLoaded', () => {
     const b = document.createElement('a'); b.id = 'ep-na-porta'; b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2147483000;padding:6px 12px;border-radius:999px;background:rgba(10,12,18,.85);border:1px solid rgba(255,143,209,.5);color:#ffc2e6;font:500 12px system-ui,sans-serif;text-decoration:none';
     // a hora em que a principal volta (00:00 UTC = 21h de Brasília) fica guardada desta aba: depois dela o selo vira o link de volta
+    // veio pela troca automática (erro 1027 na principal): até a hora de voltar mostra a hora; aberta direto: já mostra o link de volta
     let volta = 0; try { volta = +sessionStorage.getItem('ep-porta-volta') || 0; } catch { }
-    if (!volta) { const d = new Date(); d.setUTCHours(24, 0, 0, 0); volta = +d; try { sessionStorage.setItem('ep-porta-volta', String(volta)); } catch { } }
+    const m1027 = location.hash.match(/(?:^#|&)ep-1027=(\d+)/); if (m1027) { volta = +m1027[1]; try { sessionStorage.setItem('ep-porta-volta', String(volta)); history.replaceState(history.state, '', location.pathname + location.search + location.hash.replace(/(^#|&)ep-1027=\d+/, '$1').replace(/^#&?$/, '')); } catch { } }
     const pinta = () => { const ja = Date.now() >= volta;
       b.textContent = ja ? 'A principal voltou · voltar para o endereço de sempre' : 'Porta reserva · a principal volta às ' + new Date(volta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      if (ja) b.href = 'https://' + PRINCIPAL + location.pathname + location.search; else b.removeAttribute('href'); };
+      if (ja) { b.href = 'https://' + PRINCIPAL + location.pathname + location.search; b.onclick = () => { const fr = window.EstudioPasse?.fragmento?.(); if (fr) b.href = 'https://' + PRINCIPAL + location.pathname + location.search + '#' + fr; }; } else b.removeAttribute('href'); };
     pinta(); setInterval(pinta, 60e3); document.body.appendChild(b); });
   window.fetch = async function (input, init) {
     const url = typeof input === 'string' ? input : input?.url || String(input);
