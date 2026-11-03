@@ -190,7 +190,7 @@ async function aoVivoLimpa(env, forcar) {
    Worker arquivos-problems (3ª conta, bancos D1 só para guardar); aqui fica a linha (nome, metadata, tamanho) com onde = 'a', e
    listas, JSONs pequenos, gravações e leituras continuam passando por aqui. Ler de lá que falhar cai na CÓPIA DE SEGURANÇA da
    reserva (ler em kvComLista), que é a reserva de leitura. */
-const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false }, ARQ_MIN = 32 * 1024, ARQUIVOS_MB = 940;
+const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false }, ARQ_MIN = 32 * 1024, ARQUIVOS_MB = 3290; // 7 bancos de ~470 MB (BANCOS no arquivos.yml)
 const ARQUIVOS_URL = 'https://arquivos-problems.problemsraizz.workers.dev';
 async function d1Ligado(env) {
   if (!env.EQUIPE_DB) return false; if (Date.now() - d1Est.at < 60e3) return d1Est.on;
