@@ -271,6 +271,12 @@ async function robo(req, env) {
       if (up.meta?.changes) { await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run(); n++; b += r.buf.byteLength; } }
     const resta = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde IS NULL AND tam >= ?').bind(ARQ_MIN).first();
     kvLista = null; return js({ ok: true, movidos: n, bytes: b, resta: resta?.n || 0, restaBytes: resta?.b || 0 }); }
+  // o mesmo, um arquivo por pedido (o mover acima passa do tempo de CPU do plano grátis com arquivos grandes): a Action lê por
+  // /robo/arq, grava direto na nuvem dos arquivos e marca aqui; só marca se a linha não mudou desde a lista (em)
+  if (rota === 'faltam') { const { results } = await db.prepare('SELECT k, em, tam FROM arq WHERE onde IS NULL AND tam >= ? ORDER BY k LIMIT 500').bind(ARQ_MIN).all(); return js({ itens: results || [] }); }
+  if (rota === 'marcar' && req.method === 'POST' && k) { if (!d1Est.arq) return js({ erro: 'nuvem dos arquivos desligada' }, 409);
+    const up = await db.prepare("UPDATE arq SET onde = 'a', n = 0 WHERE k = ? AND em = ? AND onde IS NULL").bind(k, +u.searchParams.get('em') || 0).run();
+    if (up.meta?.changes) await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); kvLista = null; return js({ ok: true, marcou: !!up.meta?.changes }); }
   if (rota === 'ligar' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1'; await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('ativo', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, ativo: v === '1' }); }
   if (rota === 'lista') { const out = []; let cur; do { const r = await kvD1(db).list({ prefix: u.searchParams.get('prefix') || '', cursor: cur }); out.push(...r.keys); cur = r.list_complete ? null : r.cursor; } while (cur); return js({ keys: out }); }
   if (rota === 'arq' && k && k.length <= 512) {
