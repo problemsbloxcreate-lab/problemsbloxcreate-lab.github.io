@@ -379,7 +379,9 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
   const ler = async (k, o, meta) => { const it = await naReserva(k);
     if (it) { usou(); if (it.metadata?._del) return meta ? { value: null, metadata: null } : null; const g = await R.get(k); return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); }
     try { return meta ? await kv.getWithMetadata(k, o) : await kv.get(k, o); }
-    catch (e) { if (!R) throw e; const g = await R.bkget(k).catch(() => ({ value: null })); if (g.value == null) throw e; usou(); flag.copia = true; return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); } };
+    // falha de um instante (fora do limite): a cópia de segurança entrega o arquivo SEM marcar "reserva" — senão o site mostrava
+    // "a nuvem principal já voltou" sem nada ter saído do ar (04/11/2026)
+    catch (e) { if (!R) throw e; const g = await R.bkget(k).catch(() => ({ value: null })); if (g.value == null) throw e; console.log('leitura pela cópia:', String(e?.message || e).slice(0, 120)); if (emLimite()) usou(); flag.copia = true; return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); } };
   const W = {
     get: (k, o) => ler(k, o, false), getWithMetadata: (k, o) => ler(k, o, true),
     async put(k, v, o) {
