@@ -124,3 +124,9 @@
 
 ## ERROS EXPLICADOS (pedido do dono, 04/11/2026)
 Erro da nuvem nunca aparece só como "erro 500/503". O servidor (avisoLimite no turma-ia) responde error.message com uma frase dizendo o que houve e o que fazer: limite, sobrecarga (503 type instavel), espaço cheio (507) ou problema inesperado (500, com o detalhe técnico no fim). O fetch do estudio-conta.js troca a página de erro HTML da Cloudflare (5xx) pela mesma frase. Nos programas, mostre sempre error.message antes do número.
+
+## VERSÃO DOS PERSONAGENS (04/11/2026: Clara e Melzinha "voltavam")
+- Servidor: numa falha de leitura, a cópia de segurança (bk) só é entregue no limite do dia ou se for a mesma versão da lista; senão tenta a principal de novo e dá erro claro. GET /personagens/arquivo manda x-mod e recusa (503) uma versão mais velha que a lista; ?so=mod devolve só a versão.
+- POST do personagem.json que já existe exige ?base=<mod> (sem base = aba com site antigo: 409 versao_antiga, pede F5); base diferente da atual = 409 conflito; ?forcar=1 = a pessoa escolheu sobrescrever.
+- Ateliê (animador/js/atelie.js): modNuvem é a versão-base da aba (vem do x-mod, vai no rascunho e na sala ao vivo). No 409 o envio automático para e pergunta (Abrir a versão nova / Salvar a minha por cima). Ao voltar para a aba confere a versão. Guardião da sala só entre gente ativa.
+- Ao vivo (aovivo.js): sala que nasceu de versão mais velha que a da nuvem é recriada da nuvem.
