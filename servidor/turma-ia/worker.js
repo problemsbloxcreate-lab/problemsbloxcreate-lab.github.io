@@ -708,7 +708,7 @@ export default {
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/' + BA) { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
         const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar(BA + '/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
-        const g = LISTA_ANIM.get(BA); if (q.get('menu') === '1' && g && Date.now() - g.t < 300e3) return json(g.j, 200, { ...cors, 'cache-control': 'no-store', 'x-lista': 'guardada' });
+        const g = LISTA_ANIM.get(BA); if (q.get('menu') === '1' && q.get('novo') !== '1' && g && Date.now() - g.t < 300e3) return json(g.j, 200, { ...cors, 'cache-control': 'no-store', 'x-lista': 'guardada' });
         const todos = await listar(BA + '/'), tam = {}, out = [];
         for (const x of todos) { const id = x.k.split('/')[1]; tam[id] = (tam[id] || 0) + (+x.tam || 0); }
         for (const x of todos) { const m = x.k.match(new RegExp('^' + BA + '\\/([^/]+)\\/projeto\\.json$')); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0, quem: x.quem || null })); } /* quem = quem criou/editou (códigos u…, nomes; foto vem do /pessoa) */

@@ -390,6 +390,7 @@ input,textarea,[contenteditable],code,pre,.selecionavel,.nv-txt,.ac-orig,.bolha{
 .rec .rt{padding:9px 10px 10px;min-width:0}
 .rec b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rec small{display:block;color:var(--tx2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .vz{padding:14px;color:var(--tx3);font-size:12px}
+.rec-atu{display:inline-grid;place-items:center;width:28px;height:28px;margin-left:6px;border-radius:8px;border:.5px solid rgba(255,255,255,.08);background:rgba(0,0,0,.28);color:var(--tx);cursor:pointer}.rec-atu:hover{background:rgba(255,255,255,.12)}.rec-atu:disabled{cursor:default;opacity:.7}.rec-atu.girando svg{animation:giraAtu .8s linear infinite}
 /* AO VIVO (03/11/2026): salas abertas agora no Animador/Ateliê (Firebase Realtime Database, o mesmo do "Trabalhar junto") */
 .pt-vivo{display:inline-block;width:7px;height:7px;border-radius:50%;background:#30d158;margin-right:6px;vertical-align:1px;box-shadow:0 0 0 0 rgba(48,209,88,.6)}
 [data-rec=aovivo][aria-pressed=true] .pt-vivo{animation:epPulsa 1.6s ease-out infinite}
@@ -604,7 +605,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <!-- redesign: as animações da nuvem da equipe mexidas por último (turma-ia /animacoes), com quem editou -->
   <section class="recentes" id="recentes" hidden>
     <div class="rec-cab"><h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span id="rec-tit">Recentes na nuvem</span></h4><span class="sp"></span>
-      <span class="seg" role="group" aria-label="De quem"><button type="button" data-rec="todos" aria-pressed="true">Todos</button><button type="button" data-rec="meus" aria-pressed="false">Só os meus</button><button type="button" data-rec="aovivo" aria-pressed="false" title="Quem está trabalhando junto agora no Animador e no Ateliê"><i class="pt-vivo" aria-hidden="true"></i>Ao vivo</button></span></div>
+      <span class="seg" role="group" aria-label="De quem"><button type="button" data-rec="todos" aria-pressed="true">Todos</button><button type="button" data-rec="meus" aria-pressed="false">Só os meus</button><button type="button" data-rec="aovivo" aria-pressed="false" title="Quem está trabalhando junto agora no Animador e no Ateliê"><i class="pt-vivo" aria-hidden="true"></i>Ao vivo</button></span><button type="button" class="rec-atu" id="rec-atu" title="Atualizar os recentes (busca de novo na nuvem, sem F5)" aria-label="Atualizar os recentes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
     <div class="rec" id="rec"></div>
   </section>
   <nav data-estudio-dock aria-label="Abas abertas e atalhos"></nav><!-- redesign: o /estudio-conta.js preenche o Dock -->
@@ -1397,11 +1398,17 @@ const recentes = {
     $$('[data-rec]', box).forEach(b => b.onclick = () => { this.quem = b.dataset.rec; $$('[data-rec]', box).forEach(x => x.setAttribute('aria-pressed', String(x === b))); this.pinta(); });
     try { const e = String(fb?.currentUser?.email || '').trim().toLowerCase(); // o mesmo código (u…) que o servidor dá para cada pessoa
       if (e) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + e))); this.eu = 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } } catch { }
+    // botão ATUALIZAR (pedido do dono, 04/11/2026): busca de novo na nuvem, sem a lista guardada de 15 min e sem F5
+    const bt = $('#rec-atu'); if (bt) bt.onclick = async () => { if (bt.disabled) return; bt.disabled = true; bt.classList.add('girando');
+      try { if (this.quem === 'aovivo') { aoVivo.para(); aoVivo.mostra($('#rec')); } else await this.carrega(true); } finally { bt.disabled = false; bt.classList.remove('girando'); } };
+    await this.carrega(false); box.hidden = false;
+  },
+  async carrega(forcar) {
     const K = 'ep-recentes-v1'; let j = null;
-    try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 15 * 6e4) j = c.j; } catch { }
-    if (!j) { try { j = await api('/animacoes?menu=1'); localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { j = null; } }
+    if (!forcar) try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 15 * 6e4) j = c.j; } catch { }
+    if (!j) { try { j = await api('/animacoes?menu=1' + (forcar ? '&novo=1' : '')); localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { j = forcar ? { itens: this.lista || [] } : null; } }
     this.lista = (j?.itens || []).filter(x => x.id).sort((a, b) => (b.mod || 0) - (a.mod || 0)).slice(0, 30);
-    box.hidden = false; this.pinta();
+    this.pinta();
   },
   editou(x) { const q = x.quem || {}, e = Array.isArray(q.e) ? q.e : []; const ult = e.slice().sort((a, b) => (b.t || 0) - (a.t || 0))[0] || q.a; return ult?.i ? { u: ult.i, nome: ult.n } : x.por ? { u: x.por, nome: '' } : null; },
   meu(x) { const q = x.quem || {}; return !!this.eu && [x.por, q.a?.i, ...(q.e || []).map(p => p.i)].includes(this.eu); },
