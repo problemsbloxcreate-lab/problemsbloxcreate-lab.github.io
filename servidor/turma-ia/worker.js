@@ -473,6 +473,11 @@ async function comTrocas(env, r) {
   return new Response(t, { status: r.status, statusText: r.statusText, headers: h });
 }
 
+/* ECONOMIA (03/11/2026): a lista inteira de /animacoes (e /jester) gasta LISTAS do KV, o limite mais apertado do plano grátis
+   (1000 por dia na conta). Para o MENU (Recentes na nuvem, ?menu=1) ela fica 5 min guardada aqui na memória do servidor, sem
+   gravar nada; é jogada fora quando alguém salva um projeto ou tira uma animação da nuvem. O Animador continua pedindo sem ?menu=1
+   e sempre recebe a lista na hora (ex.: logo depois de salvar). */
+const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
     if (env.PORTA === '1') { limiteAte = Date.now() + 864e5; env = { ...env, EQUIPE: principalFora(), _porta: true }; const r = await this.fetch2(req, env, ctx); return comTrocas(env, r); }
@@ -696,10 +701,11 @@ export default {
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
       if (p0 === '/' + BA) { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
         const so = q.get('id') || ''; if (so) { if (!/^[A-Za-z0-9_-]{2,40}$/.test(so)) return json({ error: { message: 'Animação inválida' } }, 400, cors); return json({ itens: (await listar(BA + '/' + so + '/')).map(x => ({ k: x.k, tam: x.tam || 0, mod: x.mod || 0 })) }, 200, { ...cors, 'cache-control': 'no-store' }); }
+        const g = LISTA_ANIM.get(BA); if (q.get('menu') === '1' && g && Date.now() - g.t < 300e3) return json(g.j, 200, { ...cors, 'cache-control': 'no-store', 'x-lista': 'guardada' });
         const todos = await listar(BA + '/'), tam = {}, out = [];
         for (const x of todos) { const id = x.k.split('/')[1]; tam[id] = (tam[id] || 0) + (+x.tam || 0); }
         for (const x of todos) { const m = x.k.match(new RegExp('^' + BA + '\\/([^/]+)\\/projeto\\.json$')); if (m) out.push(await semEmail({ id: m[1], nome: x.nome || '', mod: x.mod || 0, por: x.por, em: x.em, tam: tam[m[1]] || 0, quem: x.quem || null })); } /* quem = quem criou/editou (códigos u…, nomes; foto vem do /pessoa) */
-        return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
+        const j = { itens: out }; LISTA_ANIM.set(BA, { t: Date.now(), j }); return json(j, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'GET') {
         if (!KA.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
@@ -713,13 +719,14 @@ export default {
         const ant = k.endsWith('projeto.json') ? await env.EQUIPE.getWithMetadata(k, { type: 'stream' }).then(async o => { try { await o.value?.cancel(); } catch { } return o.metadata; }).catch(() => null) : null;
         let quem = null; try { const o = JSON.parse(q.get('quem') || 'null'); const P = x => x && /^u[0-9a-f]{16}$/.test(x.i) ? { i: x.i, n: String(x.n || '').replace(/[<>]/g, '').slice(0, 40), t: +x.t || 0 } : null; if (o) quem = { a: P(o.a), e: (Array.isArray(o.e) ? o.e : []).map(P).filter(Boolean).slice(-6) }; } catch { }
         await env.EQUIPE.put(k, buf, { metadata: { tam: buf.byteLength, mod: Date.now(), ...(q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), ...(quem ? { quem } : ant?.quem ? { quem: ant.quem } : {}), por: ant?.por || login.email, em: ant?.em || new Date().toISOString() } });
+        if (k.endsWith('projeto.json')) LISTA_ANIM.delete(BA); // a lista guardada ficou velha: o menu busca de novo
         return json({ ok: true, k }, 200, cors);
       }
       if (req.method === 'DELETE') {
         // REMOVER DA NUVEM (decisão do dono, 30/10/2026): quem mandou a animação para a nuvem ou um ADM
         if (KAD.test(k)) { const dono = await env.EQUIPE.getWithMetadata(k + 'projeto.json', { type: 'stream' }).then(async o => { try { await o.value?.cancel(); } catch { } return o.metadata?.por || ''; }).catch(() => '');
           if (!ehAdmin(env, login.email) && String(dono).toLowerCase() !== String(login.email).toLowerCase()) return json({ error: { type: 'adm', message: 'Só quem mandou esta animação para a nuvem (ou um ADM) pode tirar ela de lá.' } }, 403, cors);
-          const ks = (await listar(k)).map(x => x.k); if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x); return json({ ok: true, apagados: ks.length }, 200, cors); }
+          const ks = (await listar(k)).map(x => x.k); if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x); LISTA_ANIM.delete(BA); return json({ ok: true, apagados: ks.length }, 200, cors); }
         if (!KA.test(k) || !/\/arq\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors); // arquivos que a animação já não usa: qualquer um da equipe (limpeza do envio)
         await env.EQUIPE.delete(k); return json({ ok: true }, 200, cors);
       }

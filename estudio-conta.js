@@ -412,7 +412,118 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
 .ep-esp .bt svg{width:15px;height:15px}
 .ep-esp .vazio{padding:14px;text-align:center;color:#a9adb7;border:1px dashed #4a4c55;border-radius:10px}
 .ep-esp .pe{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}.ep-esp .pe .sp{flex:1}
-@media (max-width:560px){.ep-conta-menu span{display:none}.ep-conta .ep-conta-menu{padding:0 10px!important}}`;
+.ep-conta-menu span{display:none}.ep-conta .ep-conta-menu{padding:0 10px!important}
+/* ===== REDESIGN (03/11/2026, aprovado pelo dono): pegada macOS — fonte do sistema, cantos maiores, azul do sistema, sem desfoque pesado.
+   Só muda a cara: as regras de cima continuam valendo para o que não for trocado aqui. ===== */
+.ep-conta,.ep-pg,.ep-msgs,.ep-esp,.ep-cal,.ep-notif,.ep-dock,.ep-admj{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+.ep-conta .ep-conta-btn{width:36px;height:36px;font-size:15px;box-shadow:0 0 0 2px #1b1c21}
+.ep-conta-fw::before{inset:-2px}
+.ep-conta .ep-conta-nuvem,.ep-conta .ep-conta-espaco{width:38px;height:38px}
+.ep-conta-nuvem svg,.ep-conta-espaco svg{width:32px;height:32px}
+.ep-conta-pop{top:46px;width:280px;padding:5px;background:rgba(40,40,44,.98);border:.5px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 22px 60px rgba(0,0,0,.55);animation:epPop .14s ease-out}
+@keyframes epPop{from{opacity:0;transform:translateY(-4px) scale(.98)}}
+.ep-conta-head{border-bottom:.5px solid rgba(255,255,255,.12);padding:8px 9px 10px}
+.ep-conta-pop .it{padding:6px 9px;border-radius:6px;font-size:13px}
+.ep-conta-pop .it:hover,.ep-conta-pop .it:focus-visible{background:#0a84ff;color:#fff}.ep-conta-pop .it:hover svg,.ep-conta-pop .it:hover small,.ep-conta-pop .it:focus-visible svg{color:#fff}
+.ep-conta-pop .sep{background:rgba(255,255,255,.12);margin:5px 9px}
+.ep-conta-pop .it.sair:hover,.ep-conta-pop .it.sair:focus-visible{background:#ff453a;color:#fff}.ep-conta-pop .it.sair:hover svg{color:#fff}
+/* janelas (pergunta, espaço, nuvem, mensagens): fundo sólido escuro, cantos 14, sombra do sistema */
+.ep-pg,.ep-esp,.ep-msgs{background:rgba(0,0,0,.5)}
+.ep-pg .cx,.ep-esp .cx,.ep-msgs .cx{background:#1e1e21;border:.5px solid rgba(255,255,255,.12);border-radius:14px;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.6)}
+.ep-pg button,.ep-esp .bt,.ep-msgs .epm-bt{border-radius:7px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);font-weight:500}
+.ep-pg button:hover,.ep-esp .bt:hover,.ep-msgs .epm-bt:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.2)}
+.ep-pg button.sim.azul,.ep-msgs .epm-bt.epm-pri,.ep-msgs .epm-envia{background:linear-gradient(180deg,#2a92ff,#0a7aff);border-color:transparent;color:#fff}
+.ep-pg button.sim{background:#ff453a;border-color:transparent}
+.ep-pg .quem{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+/* espaço no navegador / nuvem: listas agrupadas */
+.ep-esp h2{font-size:15px}.ep-esp h3{font-size:11.5px;text-transform:none;letter-spacing:0;color:#a1a1a6;margin:16px 2px 6px}
+.ep-esp .linha{border:0;border-radius:0;margin:0;background:rgba(255,255,255,.045);padding:9px 12px}
+.ep-esp .linha:first-of-type{border-radius:10px 10px 0 0}.ep-esp .linha+.linha{border-top:.5px solid rgba(255,255,255,.07)}
+.ep-esp .linha:last-of-type{border-radius:0 0 10px 10px}.ep-esp .linha:only-of-type{border-radius:10px}
+.ep-esp .linha.aqui{background:rgba(10,132,255,.14)}.ep-esp.nuvem .linha.aqui{background:rgba(155,123,255,.14)}
+.ep-esp .barra{height:6px;background:rgba(255,255,255,.1)}
+.ep-esp details,.ep-esp details.grp{border:.5px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.035)}
+.ep-esp details .linha,.ep-esp .grp-l .linha{border-radius:0;margin:0}
+.ep-esp .vazio{border:.5px dashed rgba(255,255,255,.2)}
+.ep-esp .bt.perigo{background:transparent;color:#ff6961;border-color:rgba(255,69,58,.4)}.ep-esp .bt.perigo:hover{background:rgba(255,69,58,.18)}
+/* MENSAGENS: estilo do app Mensagens */
+.ep-msgs .cx{width:min(980px,100%);height:min(660px,calc(100vh - 32px));grid-template-columns:300px 1fr;overflow:hidden}
+.ep-msgs aside{background:rgba(0,0,0,.18);border-right:.5px solid rgba(0,0,0,.6)}
+.ep-msgs h2{font-size:15px;font-weight:700;padding:14px 12px 8px}
+.ep-msgs h3{font-size:11px;text-transform:none;letter-spacing:0;color:#6e6e73;margin:12px 8px 4px}
+.ep-msgs .epm-pes{padding:8px 10px;border-radius:9px}.ep-msgs .epm-pes:hover{background:rgba(255,255,255,.05)}
+.ep-msgs .epm-pes.epm-sel{background:#0a84ff;box-shadow:none;color:#fff}.ep-msgs .epm-pes.epm-sel small,.ep-msgs .epm-pes.epm-sel .epm-tx b{color:#fff!important}
+.ep-msgs .epm-pes.epm-tem .epm-tx b{color:#fff}
+.ep-msgs .epm-av{width:40px;height:40px}.ep-msgs .epm-m .epm-av{width:28px;height:28px}
+.ep-msgs .epm-cont{background:#0a84ff;color:#fff}.ep-msgs .epm-pes.epm-sel .epm-cont{background:#fff;color:#0a84ff}
+.ep-msgs header{border-bottom:.5px solid rgba(0,0,0,.5);background:rgba(255,255,255,.025)}
+.ep-msgs section{background:rgba(0,0,0,.12)}
+.ep-msgs .epm-dia span{background:none;color:#6e6e73;font-weight:500}
+.ep-msgs .epm-m .epm-b{background:#3a3a3c;border-radius:18px;padding:7px 12px}
+.ep-msgs .epm-m.epm-meu .epm-b{background:linear-gradient(180deg,#2a92ff,#0a7aff);border-radius:18px}
+.ep-msgs .epm-prame .epm-b{box-shadow:0 0 0 1.5px #ffd60a}
+.ep-msgs .epm-escreve{border-top:0;padding:10px 14px 14px}
+.ep-msgs .epm-escreve textarea{border-radius:18px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.16);padding:8px 14px}
+.ep-msgs .epm-envia{width:36px;height:36px;border-radius:50%}
+.ep-msgs .epm-sugere,.ep-msgs .epm-gcx{background:#2c2c30;border:.5px solid rgba(255,255,255,.14);border-radius:12px}
+.ep-msgs .epm-sugere button:hover{background:#0a84ff;color:#fff}
+.ep-chave{background:none;color:#7cc0ff}
+/* anel de carregamento estilo Windows 11 (arco que gira, cresce e diminui) — fotos e miniaturas que ainda não chegaram */
+.anel11,.ep-carr::after{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%237cc0ff' stroke-width='2.6' stroke-linecap='round' stroke-dasharray='1 57'%3E%3Canimate attributeName='stroke-dasharray' values='1 57;40 57;1 57' dur='1.6s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-8;-56' dur='1.6s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='2s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/svg%3E") center/contain no-repeat}
+.anel11{display:inline-block;width:24px;height:24px}
+.ep-carr{position:relative}.ep-carr>img{opacity:0}.ep-carr::after{content:'';position:absolute;left:50%;top:50%;width:60%;height:60%;max-width:24px;max-height:24px;transform:translate(-50%,-50%);pointer-events:none}
+/* relógio do menu + calendário pessoal + notificação na hora */
+.ep-relogio{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border:0;border-radius:8px;background:none;color:inherit;font-family:inherit;font-size:13px;font-weight:500;line-height:1;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ep-relogio:hover,.ep-relogio:focus-visible{background:rgba(255,255,255,.1);outline:none}.ep-relogio .dt{opacity:.65}.ep-relogio .pt{width:7px;height:7px;border-radius:50%;background:#ffcc33}
+@media (max-width:820px){.ep-relogio .dt{display:none}.ep-relogio{padding:0 6px}}
+.ep-cal{position:fixed;z-index:2147483004;top:52px;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 20px));max-height:calc(100% - 64px);display:grid;grid-template-columns:300px 1fr;border-radius:14px;overflow:hidden;background:#242428;color:#f5f5f7;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.6);border:.5px solid rgba(255,255,255,.12);font-size:13px;animation:epPop .16s ease-out}
+.ep-cal *{box-sizing:border-box}.ep-cal button{font:inherit;color:inherit}
+.ep-cal .m{padding:14px;border-right:.5px solid rgba(255,255,255,.08)}
+.ep-cal .cab{display:flex;align-items:center;gap:4px;margin-bottom:10px}.ep-cal .cab b{flex:1;font-size:14px}
+.ep-cal .bt{height:24px;min-width:24px;padding:0 9px;border-radius:6px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);cursor:pointer;font-size:12px}
+.ep-cal .bt:hover{background:rgba(255,255,255,.16)}.ep-cal .bt.pri{background:linear-gradient(180deg,#2a92ff,#0a7aff);border-color:transparent;color:#fff}
+.ep-cal .bt.perigo{color:#ff6961}.ep-cal .bt svg{width:13px;height:13px;vertical-align:-2px}
+.ep-cal .g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.ep-cal .g .sem{font-size:10.5px;color:#6e6e73;padding:4px 0;font-weight:600}
+.ep-cal .g button{position:relative;aspect-ratio:1;border:0;border-radius:50%;background:none;font-size:12.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+.ep-cal .g button:hover{background:rgba(255,255,255,.08)}.ep-cal .g button.fora{color:#6e6e73}.ep-cal .g button.hoje{color:#ff453a;font-weight:700}.ep-cal .g button.sel{background:#0a84ff;color:#fff}
+.ep-cal .g .pts{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);display:flex;gap:2px}.ep-cal .g .pts i{width:4px;height:4px;border-radius:50%}
+.ep-cal .leg{margin:12px 2px 0;display:flex;gap:12px;flex-wrap:wrap;color:#a1a1a6;font-size:11.5px}.ep-cal .leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.ep-cal .d{display:flex;flex-direction:column;min-height:0;min-width:0}
+.ep-cal .dc{display:flex;align-items:center;gap:8px;padding:14px 14px 8px}.ep-cal .dc b{flex:1;font-size:14px}
+.ep-cal .l{flex:1;overflow:auto;padding:0 14px 10px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.ep-cal .ev{display:flex;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border-left:3px solid #ffcc33}.ep-cal .ev.meta{border-left-color:#30d158}.ep-cal .ev.alvo{box-shadow:0 0 0 1.5px #0a84ff}
+.ep-cal .ev .hr{font-size:12px;color:#a1a1a6;width:40px;flex:none;font-variant-numeric:tabular-nums}.ep-cal .ev .tx{flex:1;min-width:0}.ep-cal .ev .tx b{display:block}.ep-cal .ev .tx p{margin:2px 0 4px;color:#a1a1a6;font-size:12px;-webkit-user-select:text;user-select:text}.ep-cal .ev .tx small{color:#a1a1a6;font-size:11.5px}
+.ep-cal .vz{margin:auto;color:#6e6e73;font-size:12px;padding:20px 0}
+.ep-cal form{padding:10px 14px 14px;border-top:.5px solid rgba(255,255,255,.08);display:grid;gap:8px}
+.ep-cal input[type=text],.ep-cal input[type=time]{height:28px;background:rgba(0,0,0,.25);border:.5px solid rgba(255,255,255,.14);border-radius:6px;padding:0 9px;color:#f5f5f7;outline:none;font:inherit}
+.ep-cal input:focus{border-color:#0a84ff;box-shadow:0 0 0 3px rgba(10,132,255,.35)}
+.ep-cal .lin{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ep-cal .lin .sp{flex:1}.ep-cal label{display:flex;align-items:center;gap:6px;font-size:12px}
+.ep-cal .seg{display:inline-flex;padding:2px;border-radius:8px;background:rgba(0,0,0,.28)}.ep-cal .seg button{height:22px;padding:0 10px;border:0;border-radius:6px;background:none;cursor:pointer;font-size:12px}.ep-cal .seg button.on{background:rgba(255,255,255,.18)}
+@media (max-width:820px){.ep-cal{top:auto;bottom:0;left:0;right:0;transform:none;width:100%;max-height:88%;grid-template-columns:1fr;border-radius:14px 14px 0 0;overflow:auto}.ep-cal .m{border-right:0;border-bottom:.5px solid rgba(255,255,255,.08)}.ep-cal .g button{aspect-ratio:auto;height:36px;border-radius:9px}}
+.ep-notif{position:fixed;z-index:2147483005;top:56px;right:12px;width:min(370px,calc(100% - 24px));display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:rgba(44,44,48,.97);color:#f5f5f7;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 18px 50px rgba(0,0,0,.55);border:.5px solid rgba(255,255,255,.14);cursor:pointer;animation:epNotif .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes epNotif{from{opacity:0;transform:translateX(30px)}}
+.ep-notif .di{width:44px;flex:none;border-radius:9px;overflow:hidden;background:#fff;color:#1c1c1e;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.ep-notif .di small{display:block;background:#ff453a;color:#fff;font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 0}.ep-notif .di b{display:block;font-size:20px;line-height:26px}
+.ep-notif .tx{flex:1;min-width:0}.ep-notif .tx small{display:block;font-size:11px;color:#a1a1a6}.ep-notif .tx b{display:block;font-size:13px}.ep-notif .tx span{display:block;font-size:11.5px;color:#a1a1a6;margin-top:2px}
+.ep-notif .x{position:absolute;top:-7px;left:-7px;width:20px;height:20px;border-radius:50%;border:.5px solid rgba(255,255,255,.2);background:#3a3a3d;color:#a1a1a6;display:grid;place-items:center;cursor:pointer;opacity:0;padding:0}.ep-notif:hover .x{opacity:1}
+/* DOCK do menu: abas do Estúdio abertas + Mensagens, Perfil e ADM */
+.ep-dock{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:40;display:flex;align-items:flex-end;gap:8px;padding:8px 10px;border-radius:20px;background:rgba(40,40,44,.55);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid rgba(255,255,255,.14);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.ep-dock .di{position:relative;display:block;border:0;background:none;padding:0;cursor:pointer;color:#fff;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.ep-dock .di:hover,.ep-dock .di:focus-visible{transform:translateY(-6px) scale(1.12);outline:none}
+.ep-dock .ic{width:46px;height:46px;display:grid;place-items:center;border-radius:22%;overflow:hidden;font-size:19px;font-weight:700;line-height:1}.ep-dock .ic>*{width:100%;height:100%}.ep-dock .ic.fx svg{width:25px;height:25px}
+.ep-dock .ic .meu{display:grid;place-items:center;background:linear-gradient(135deg,#25476d,#163449);color:#fff}.ep-dock .ic .meu svg{width:26px;height:26px}.ep-dock .ic .meu img{width:70%;height:70%;object-fit:contain}
+.ep-dock .uso{position:absolute;left:7px;right:7px;bottom:5px;height:4px;border-radius:2px;background:rgba(0,0,0,.45);overflow:hidden;pointer-events:none}.ep-dock .uso::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--u);border-radius:2px;background:var(--c)}
+.ep-dock .sep{width:.5px;align-self:stretch;margin:4px 3px;background:rgba(255,255,255,.22)}
+.ep-dock .n{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#48484b;font-size:10px;font-weight:700;display:grid;place-items:center;border:1.5px solid #2a2a2d}.ep-dock .n.vm{background:#ff453a;min-width:18px;height:18px;font-size:11px}
+.ep-dock [data-dica]:hover::before{content:attr(data-dica);position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);font-size:11.5px;padding:3px 9px;border-radius:6px;background:rgba(30,30,32,.94);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+@media (max-width:820px){.ep-dock{gap:6px;padding:6px 8px;border-radius:16px}.ep-dock .ic{width:40px;height:40px}}
+/* ADM como janela por cima (fora do menu): a página /adm?embed=1 num quadro */
+.ep-admj{position:fixed;inset:0;z-index:2147483002;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:24px;animation:epPgF .18s ease}
+.ep-admj .cx{position:relative;width:min(1100px,100%);height:100%;border-radius:14px;overflow:hidden;background:#1e1e21;border:.5px solid rgba(255,255,255,.12);box-shadow:0 24px 70px rgba(0,0,0,.6)}
+.ep-admj iframe{width:100%;height:100%;border:0;display:block}
+.ep-admj .x{position:absolute;top:10px;right:12px;z-index:1;width:28px;height:28px;border-radius:7px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);color:#f5f5f7;display:grid;place-items:center;cursor:pointer}
+@media (max-width:820px){.ep-admj{padding:0}.ep-admj .cx{border-radius:0;border:0}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
   // (conversa da IA do Animador, pedidos do Modelador, texto do roteiro dos Shorts)
@@ -516,7 +627,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
 
   function caixa(p) {
     const box = document.createElement('div'); box.className = 'ep-conta' + (MSG.denuncias ? ' ep-denuncia' : '') + (VERSAO.nova ? ' ep-novo' : '') + (MSG.mencoes ? ' ep-mencao' : MSG.nao ? ' ep-msg' : '');
-    const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems">${ICONES.inicio}<span>Menu</span></a>`;
+    // redesign (03/11/2026): só a casinha, na mesma pílula, em todos os programas (o nome fica para leitores de tela e na dica)
+    const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems" aria-label="Voltar ao menu">${ICONES.inicio}</a>`;
     const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
     box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i><i class="a" title="Citaram você com @">@</i><i class="d" title="Tem denúncia para os ADMs verem">!</i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
@@ -529,8 +641,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
-        ${p.adm && MSG.denuncias ? `<a class="it denun" href="/adm#denuncias" target="_blank" rel="noopener" role="menuitem">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></a>` : ''}
-        ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<a class="it" href="/adm" target="_blank" rel="noopener" role="menuitem">${ICONES.adm}ADM</a>`) : ''}
+        ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
+        ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<button class="it" type="button" role="menuitem" data-a="adm">${ICONES.adm}ADM</button>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
@@ -539,6 +651,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else abrirMinhaConta(); };
       pop.querySelectorAll('a.it[href="/"]').forEach(a => a.onclick = ev => { fecha(); irAoMenu(ev); });
       pop.querySelector('[data-a=msgs]').onclick = () => { fecha(); painelMensagens(); };
+      pop.querySelector('[data-a=adm]')?.addEventListener('click', ev => { fecha(); abrirAdm(ev.currentTarget.dataset.aba); }); // janela por cima, sem trocar de aba
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
         const temQueSalvar = salvadores().length > 0;
@@ -580,22 +693,45 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     if (alvo) poe(typeof alvo === 'string' ? document.querySelector(alvo) : alvo); else procura();
     online();
+    redesignLiga();
     if (!montar.obs) { // telas que se redesenham: o marcador novo ganha os botões de novo
-      montar.obs = new MutationObserver(() => { if (document.querySelector('[data-estudio-conta]:not([data-ep-montado])')) procura(); });
+      montar.obs = new MutationObserver(() => { if (document.querySelector('[data-estudio-conta]:not([data-ep-montado])')) procura();
+        if (document.querySelector('[data-estudio-relogio]:not([data-ep-montado]),[data-estudio-dock]:not([data-ep-montado])')) poeMarcas(); });
       montar.obs.observe(document.body, { childList: true, subtree: true });
     }
   }
-  // "online · PROGRAMA" na tela ADM › Quem pode entrar: avisa o porteiro a cada minuto, só com a aba à vista
+  /* ECONOMIA DE PEDIDOS (03/11/2026): as abas do Estúdio deste navegador combinam qual delas é a LÍDER (navigator.locks).
+     Só a líder fala com o porteiro sobre as Mensagens e repassa o resultado às outras pelo BroadcastChannel 'ep-msgs'.
+     A líder deixa aberta a conexão AO VIVO (/mensagens/ao-vivo): o porteiro avisa quando algo muda e só então ela busca.
+     A presença ("online · PROGRAMA") de todas as abas também vai por essa conexão, sem um pedido por aba a cada 90 s.
+     Sem conexão ao vivo (ou navegador sem locks), volta ao jeito de antes: cada aba confere sozinha. */
+  const CANAL = (() => { try { return new BroadcastChannel('ep-msgs'); } catch { return null; } })();
+  const VIVO = { lider: !(navigator.locks && CANAL), ws: null, aberto: false, tentativas: 0, outraVisivel: 0, bate: Date.now(), abas: new Map(), tp: 0 };
+  const manda = d => { try { CANAL?.postMessage(d); } catch { } };
+  function mandaPresenca() { // só a líder: junta as abas e manda de uma vez (1 s depois do último aviso)
+    clearTimeout(VIVO.tp); VIVO.tp = setTimeout(() => {
+      const t = Date.now(); for (const [k, v] of VIVO.abas) if (t - v.t > 200e3) VIVO.abas.delete(k);
+      if (!VIVO.aberto || !VIVO.abas.size) return;
+      try { VIVO.ws.send(JSON.stringify({ on: [...VIVO.abas].map(([aba, v]) => ({ aba, prog: v.prog })) })); } catch { return; }
+      for (const [k, v] of VIVO.abas) if (!v.prog) VIVO.abas.delete(k); // "saiu" já foi avisado
+    }, 1000);
+  }
+  // "online · PROGRAMA" na tela ADM › Quem pode entrar: avisa a cada 90 s, só com a aba à vista
   const programaAqui = () => { const p = location.pathname;
     return /^\/adm\/?$/i.test(p) ? 'ADM' : p === '/' ? 'MENU' : [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR']].find(([k]) => p.startsWith(k))?.[1] || null; };
   function online() {
     if (online.ligado || !programaAqui()) return; online.ligado = true;
     const aba = Math.random().toString(36).slice(2, 12); // cada aba avisa por si: fechar uma não tira a pessoa do "online" se outra estiver aberta
-    const avisa = saiu => fetch('/presenca', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ programa: programaAqui(), aba, saiu: !!saiu }) }).catch(() => { });
+    const porPedido = saiu => fetch('/presenca', { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ programa: programaAqui(), aba, saiu: !!saiu }) }).catch(() => { });
+    const avisa = saiu => { // com a conexão ao vivo: vai por ela (sem pedido); sem ela: um pedido, como antes
+      if (!VIVO.aberto) return porPedido(saiu);
+      const prog = saiu ? null : programaAqui();
+      if (VIVO.lider) { VIVO.abas.set(aba, { prog, t: Date.now() }); mandaPresenca(); } else manda({ on: { aba, prog } });
+    };
     const vez = () => { if (document.visibilityState === 'visible') avisa(); };
-    vez(); setInterval(vez, 90e3); // a cada 90 s (economia de pedidos: 100 mil por dia na conta toda; o porteiro esquece em 200 s)
+    vez(); setInterval(vez, 90e3); // a cada 90 s (o porteiro esquece em 200 s)
     document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' ? avisa() : avisa(true));
-    addEventListener('pagehide', () => avisa(true));
+    addEventListener('pagehide', () => porPedido(true)); // fechando a aba: pedido com keepalive (chega mesmo com a página saindo)
   }
   async function recarregar() { // depois de trocar nome ou foto
     P = await perfil(true); if (!P) return;
@@ -925,6 +1061,17 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const r = await fetch('/mensagens?desde=' + M.ultimo + (comPessoas ? '&pessoas=1' : '') + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' });
       if (r.status === 401) { if (M === MSG) confereSessao(); return; }
       if (!r.ok) return; const j = await r.json();
+      if (M === MSG) manda({ j }); // as outras abas recebem o mesmo resultado (não precisam pedir)
+      aplicaMsgs(j, M);
+    } catch { } finally { M.puxando = false; }
+  }
+  // ✓✓ da conversa aberta (um pedido só mesmo se vierem vários avisos juntos)
+  function pedeVistos(M) {
+    clearTimeout(M.tv); M.tv = setTimeout(() => { const cv = M.conv; if (!M.janela || !cv?.id || cv.multi || !cv.msgs?.some(m => m.de === M.eu)) return;
+      fetch('/mensagens?vistos=1&conv=' + encodeURIComponent(cv.id) + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v?.part && M.conv === cv) { cv.vistos = v; M.janela?.pintaTicks(); } }).catch(() => { }); }, 300);
+  }
+  function aplicaMsgs(j, M = MSG) {
+    {
       const primeira = !M.res; M.eu = j.eu; M.res = j; if (j.pessoas) M.pessoas = j.pessoas;
       if (!primeira && M.conv && j.novas?.length) {
         const daqui = j.novas.filter(m => m.conv === M.conv.id);
@@ -936,8 +1083,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       M.ultimo = j.ultimo || M.ultimo;
       M.nao = Object.values(j.nao || {}).reduce((a, b) => a + b, 0); M.mencoes = Object.values(j.mencoes || {}).reduce((a, b) => a + b, 0); M.denuncias = +j.denuncias || 0;
       if (M === MSG) { pintaAvisoMsg(); tocaMencao(j.mencaoId); } M.janela?.desenhaLista();
-      const cv = M.conv; if (M.janela && cv?.id && !cv.multi && cv.msgs?.some(m => m.de === M.eu)) fetch('/mensagens?vistos=1&conv=' + encodeURIComponent(cv.id) + (M.como ? '&como=' + encodeURIComponent(M.como) : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v?.part && M.conv === cv) { cv.vistos = v; M.janela?.pintaTicks(); } }).catch(() => { });
-    } catch { } finally { M.puxando = false; }
+      // ✓✓: ao vivo, só quando chegou algo nesta conversa (ou o aviso "lida"/"entregue"); sem conexão ao vivo, a cada conferência como antes
+      const cv = M.conv; if (M.janela && cv?.id && (!VIVO.aberto || M.como || j.novas?.some(m => m.conv === cv.id))) pedeVistos(M);
+    }
   }
   function marcaLida(conv, M = MSG) {
     if (M.como) return; // ADM vendo como outra pessoa: só olha, não marca nada
@@ -970,12 +1118,47 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const pre = (async () => { await puxaMensagens(true); await Promise.all(MSG.pessoas.map(async p => { const q = await quemU(p.u); await preImg(q?.foto); }));
       await Promise.all([...(MSG.res?.grupos || []).map(g => preImg(g.foto)), preImg(MSG.res?.geral?.foto)]); MSG.abertoEm = Date.now(); })();
     window.EstudioProgresso?.tarefa(pre, 'Carregando nomes e fotos da equipe');
-    setInterval(() => { // aberta: a cada 4 s; fechada: a cada 40 s; aba escondida: a cada 60 s
-      const t = Date.now(), passo = document.visibilityState !== 'visible' ? 120000 : MSG.janela ? 4000 : 60000; // escondida: confere devagar (para o @ tocar em qualquer site)
+    // o que as outras abas mandam: resultado da conferência, aviso ao vivo, presença, "estou à vista", estado da conexão
+    if (CANAL) CANAL.onmessage = ({ data: d }) => { if (!d) return;
+      if (d.j || d.ev || d.bate || 'estado' in d) VIVO.bate = Date.now(); // sinal de que a líder está viva
+      if (d.vivo) VIVO.outraVisivel = Date.now();
+      if (d.j) aplicaMsgs(d.j, MSG);
+      else if (d.ev) eventoVivo(d.ev);
+      else if (d.on && VIVO.lider) { VIVO.abas.set(String(d.on.aba), { prog: d.on.prog || null, t: Date.now() }); mandaPresenca(); }
+      else if ('estado' in d) { if (!VIVO.lider) VIVO.aberto = !!d.estado; }
+      else if (d.quem && VIVO.lider) manda({ estado: VIVO.aberto ? 1 : 0 }); };
+    manda({ quem: 1 }); // aba nova: pergunta à líder se a conexão ao vivo está aberta
+    if (!VIVO.lider) navigator.locks.request('ep-msgs-lider', () => new Promise(() => { VIVO.lider = true; VIVO.aberto = false; MSG.ultimaVolta = 0; abreVivo(); })); // fica com a vez até a aba fechar
+    else abreVivo();
+    setInterval(() => {
+      const t = Date.now(), vis = document.visibilityState === 'visible';
+      if (CANAL && t - (VIVO.avisei || 0) > 30000 && (vis || VIVO.lider)) { VIVO.avisei = t; manda({ vivo: vis ? 1 : 0, bate: VIVO.lider ? 1 : 0 }); } // "estou à vista" e/ou "a líder está viva"
+      const sozinha = !VIVO.lider && t - VIVO.bate > 180000; // a líder sumiu (aba congelada pelo navegador): esta confere por si até ela voltar
+      let passo;
+      if (VIVO.aberto && !sozinha) passo = MSG.janela ? 90000 : VIVO.lider ? 600000 : Infinity; // ao vivo: só os nomes/online (janela aberta) e uma conferência de segurança
+      else if (!VIVO.lider && !sozinha) passo = MSG.janela ? 4000 : Infinity; // a líder confere por esta aba
+      else passo = MSG.janela ? 4000 : vis || t - VIVO.outraVisivel < 45000 ? 60000 : 120000; // como antes (escondida: devagar, para o @ tocar em qualquer site)
       if (t - MSG.ultimaVolta < passo) return; MSG.ultimaVolta = t;
       puxaMensagens(!!MSG.janela && t - MSG.abertoEm > 60000 && (MSG.abertoEm = t));
     }, 2000);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { MSG.ultimaVolta = Date.now(); puxaMensagens(); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') return; manda({ vivo: 1 });
+      if (!VIVO.aberto && (VIVO.lider || !CANAL)) { MSG.ultimaVolta = Date.now(); puxaMensagens(); } });
+  }
+  // aviso da conexão ao vivo (na líder, direto; nas outras abas, repassado pelo canal)
+  function eventoVivo(ev) {
+    if (ev.t === 'nova' && VIVO.lider) { clearTimeout(VIVO.tn); VIVO.tn = setTimeout(() => { MSG.ultimaVolta = Date.now(); puxaMensagens(); }, 250); } // vários avisos juntos = uma busca
+    if ((ev.t === 'lida' || ev.t === 'entregue') && MSG.janela && MSG.conv && (!ev.conv || ev.conv === MSG.conv.id)) pedeVistos(MSG);
+  }
+  // conexão ao vivo da líder: hiberna parada (não gasta), "ping" a cada 50 s, volta sozinha se cair; sem ela, o jeito de antes
+  function abreVivo() {
+    if (!VIVO.lider || VIVO.ws || !('WebSocket' in window)) return;
+    let ws; try { ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/mensagens/ao-vivo'); } catch { return; }
+    VIVO.ws = ws;
+    ws.onopen = () => { VIVO.aberto = true; VIVO.tentativas = 0; manda({ estado: 1 }); MSG.ultimaVolta = Date.now(); puxaMensagens(); mandaPresenca();
+      VIVO.ping = setInterval(() => { try { ws.send('ping'); } catch { } }, 50000); };
+    ws.onmessage = e => { if (e.data === 'pong') return; let ev; try { ev = JSON.parse(e.data); } catch { return; } eventoVivo(ev); manda({ ev }); };
+    ws.onclose = () => { clearInterval(VIVO.ping); VIVO.ws = null; if (VIVO.aberto) { VIVO.aberto = false; manda({ estado: 0 }); MSG.ultimaVolta = 0; }
+      const n = ++VIVO.tentativas; setTimeout(abreVivo, n > 6 ? 600000 : Math.min(60000, 2000 * 2 ** n)); }; // não conseguiu várias vezes: tenta de novo daqui a 10 min
   }
   const horaTxt = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const diaTxt = t => { const d = new Date(t), h = new Date(); const um = 864e5, ini = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
@@ -1571,8 +1754,146 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); });
   }
 
+  /* ===================== REDESIGN (03/11/2026): relógio + calendário pessoal, Dock, ADM por cima, anel de carregamento =====================
+     Nada disto pede coisa à nuvem: o calendário fica no localStorage ('ep-calendario'); o Dock só tem atalhos.
+     No menu: <span data-estudio-relogio></span> (meio do cabeçalho) e <span data-estudio-dock></span>. */
+  const poeCss = () => { if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); } };
+  ICONES.cal = svg('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>');
+  // ---- anel de carregamento: foto ou miniatura que ainda não chegou ganha o anel (estilo Windows 11) até carregar ----
+  const SEL_CARR = '.ep-conta,.ep-msgs,.ep-esp,.ep-pg,.ep-dock';
+  const marcaCarr = raiz => raiz?.querySelectorAll?.('img').forEach(im => { if (im.complete || im.dataset.epCarr) return; im.dataset.epCarr = '1';
+    const p = im.parentElement; if (!p) return; p.classList.add('ep-carr'); const sai = () => p.classList.remove('ep-carr'); im.addEventListener('load', sai, { once: true }); im.addEventListener('error', sai, { once: true }); });
+  new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches?.(SEL_CARR) || n.closest?.(SEL_CARR))) marcaCarr(n.tagName === 'IMG' ? n.parentElement : n); })
+    .observe(document.documentElement, { childList: true, subtree: true }); // só olha o que entra nas nossas janelas (o resto da página é ignorado na hora)
+
+  // ---- RELÓGIO + CALENDÁRIO PESSOAL (lembretes e metas só seus, neste computador; a notificação aparece em qualquer programa) ----
+  const CAL_LS = 'ep-calendario', CAL_AV = 'ep-cal-avisados';
+  const leCal = () => { try { const v = JSON.parse(localStorage.getItem(CAL_LS) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const gravaCal = l => { try { localStorage.setItem(CAL_LS, JSON.stringify(l.slice(-500))); } catch { } };
+  const mesmoDia = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+  const horaCal = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const corCal = t => t === 'meta' ? '#30d158' : '#ffcc33';
+  function pintaRelogios() {
+    const d = new Date(), ev = leCal();
+    document.querySelectorAll('.ep-relogio').forEach(b => {
+      b.querySelector('.dt').textContent = d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+      b.querySelector('.hr').textContent = horaCal(d); b.querySelector('.pt').hidden = !ev.some(e => mesmoDia(e.em, d) && e.em >= d - 6e4); });
+  }
+  const CAL = { mes: null, sel: null, alvo: null };
+  function calendario(ev) { // abre o calendário por cima (ev = o lembrete que deve aparecer destacado)
+    poeCss(); document.querySelector('.ep-cal')?.remove();
+    const base = ev ? new Date(ev.em) : new Date(); CAL.sel = new Date(base); CAL.sel.setHours(0, 0, 0, 0); CAL.mes = new Date(base.getFullYear(), base.getMonth(), 1); CAL.alvo = ev?.id || null;
+    const c = document.createElement('div'); c.className = 'ep-cal'; c.setAttribute('role', 'dialog'); c.setAttribute('aria-label', 'Seu calendário'); document.body.appendChild(c); pintaCal();
+    const fora = e => { if (!c.isConnected) return tira(); if (!e.target.closest('.ep-cal,.ep-relogio,.ep-notif')) { c.remove(); tira(); } };
+    const esc1 = e => { if (e.key === 'Escape') { c.remove(); tira(); } };
+    const tira = () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc1); };
+    setTimeout(() => { document.addEventListener('mousedown', fora); document.addEventListener('keydown', esc1); });
+  }
+  function pintaCal() {
+    const c = document.querySelector('.ep-cal'); if (!c) return; const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const EV = leCal(), ini = new Date(CAL.mes); ini.setDate(1 - ini.getDay()); const dias = [];
+    for (let i = 0; i < 42; i++) { const d = new Date(ini); d.setDate(ini.getDate() + i); dias.push(d); }
+    const doDia = d => EV.filter(e => mesmoDia(e.em, d)).sort((a, b) => a.em - b.em), lista = doDia(CAL.sel);
+    c.innerHTML = `<div class="m"><div class="cab"><b>${esc(CAL.mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^./, x => x.toUpperCase()))}</b><button class="bt" type="button" data-m="-1" title="Mês anterior">‹</button><button class="bt" type="button" data-hoje>Hoje</button><button class="bt" type="button" data-m="1" title="Próximo mês">›</button></div>
+        <div class="g">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(s => `<span class="sem">${s}</span>`).join('')}${dias.map((d, i) => { const e = doDia(d); return `<button type="button" data-d="${i}" class="${d.getMonth() !== CAL.mes.getMonth() ? 'fora' : ''}${+d === +hoje ? ' hoje' : ''}${+d === +CAL.sel ? ' sel' : ''}">${d.getDate()}${e.length ? `<span class="pts">${e.slice(0, 3).map(x => `<i style="background:${corCal(x.tipo)}"></i>`).join('')}</span>` : ''}</button>`; }).join('')}</div>
+        <p class="leg"><span><i style="background:#ffcc33"></i>Lembrete</span><span><i style="background:#30d158"></i>Meta</span><span>Só você vê · fica neste computador</span></p></div>
+      <div class="d"><div class="dc"><b>${esc(CAL.sel.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }))}</b><button class="bt" type="button" data-fx>Fechar</button></div>
+        <div class="l">${lista.map(e => `<div class="ev ${e.tipo === 'meta' ? 'meta' : ''}${e.id === CAL.alvo ? ' alvo' : ''}"><span class="hr">${horaCal(e.em)}</span><div class="tx"><b>${esc(e.t)}</b>${e.txt ? `<p>${esc(e.txt)}</p>` : ''}<small>${e.tipo === 'meta' ? 'Meta' : 'Lembrete'}${e.avisar ? ' · avisa na hora' : ''}</small></div><button class="bt perigo" type="button" data-apg="${e.id}" title="Apagar">${ICONES.lixo}</button></div>`).join('') || '<div class="vz">Nada marcado neste dia.</div>'}</div>
+        <form><input type="text" name="t" required maxlength="80" placeholder="Novo lembrete ou meta…"><div class="lin"><span class="seg"><button type="button" data-v="aviso" class="on">Lembrete</button><button type="button" data-v="meta">Meta</button></span><input type="time" name="h" value="${new Date(Date.now() + 36e5).toTimeString().slice(0, 5)}"><label><input type="checkbox" name="av" checked> Avisar na hora</label><span class="sp"></span><button class="bt pri" type="submit">Adicionar</button></div></form></div>`;
+    c.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { CAL.mes.setMonth(CAL.mes.getMonth() + +b.dataset.m); pintaCal(); });
+    c.querySelector('[data-hoje]').onclick = () => { CAL.sel = new Date(hoje); CAL.mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1); pintaCal(); };
+    c.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { CAL.sel = dias[+b.dataset.d]; if (CAL.sel.getMonth() !== CAL.mes.getMonth()) CAL.mes = new Date(CAL.sel.getFullYear(), CAL.sel.getMonth(), 1); CAL.alvo = null; pintaCal(); });
+    c.querySelector('[data-fx]').onclick = () => c.remove();
+    c.querySelectorAll('[data-apg]').forEach(b => b.onclick = () => { gravaCal(leCal().filter(e => String(e.id) !== b.dataset.apg)); pintaCal(); pintaRelogios(); });
+    let tipo = 'aviso'; c.querySelectorAll('.seg button').forEach(b => b.onclick = () => { tipo = b.dataset.v; c.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b)); });
+    c.querySelector('form').onsubmit = e => { e.preventDefault(); const f = e.target, [h, m] = f.h.value.split(':').map(Number), d = new Date(CAL.sel); d.setHours(h || 0, m || 0, 0, 0);
+      gravaCal([...leCal(), { id: Date.now(), tipo, t: f.t.value.trim(), txt: '', em: d.getTime(), avisar: f.av.checked }]); pintaCal(); pintaRelogios(); };
+  }
+  // notificação da hora marcada (em QUALQUER programa): uma vez só, na aba que estiver à vista
+  function notificaCal(ev) {
+    poeCss(); document.querySelector('.ep-notif')?.remove(); const d = new Date(ev.em), n = document.createElement('div'); n.className = 'ep-notif'; n.setAttribute('role', 'alert');
+    n.innerHTML = `<button class="x" type="button" title="Dispensar">×</button><span class="di"><small>${esc(d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''))}</small><b>${d.getDate()}</b></span><span class="tx"><small>${ev.tipo === 'meta' ? 'Meta' : 'Lembrete'} · ${horaCal(ev.em)}</small><b>${esc(ev.t)}</b>${ev.txt ? `<span>${esc(ev.txt)}</span>` : ''}</span>`;
+    document.body.appendChild(n);
+    n.querySelector('.x').onclick = e => { e.stopPropagation(); n.remove(); };
+    n.onclick = () => { n.remove(); calendario(ev); };
+    setTimeout(() => n.isConnected && n.remove(), 30000);
+  }
+  function confereLembretes() {
+    if (document.visibilityState !== 'visible') return;
+    let av = {}; try { av = JSON.parse(localStorage.getItem(CAL_AV) || '{}') || {}; } catch { }
+    const t = Date.now(); for (const k of Object.keys(av)) if (t - av[k] > 8 * 864e5) delete av[k];
+    const e = leCal().find(x => x.avisar && !av[x.id] && x.em <= t && t - x.em < 30 * 6e4); if (!e) return;
+    av[e.id] = t; try { localStorage.setItem(CAL_AV, JSON.stringify(av)); } catch { } notificaCal(e); // marcado: as outras abas não repetem
+  }
+  addEventListener('storage', e => { if (e.key === CAL_LS) { pintaRelogios(); pintaCal(); } }); // mudou em outra aba (outro programa)
+
+  // ---- DOCK do menu: Mensagens, Personalizar o perfil e ADM (só ADM) + espaço na nuvem e no navegador, tudo como janela por cima ----
+  // (as abas abertas no Dock foram tiradas a pedido do dono, 03/11/2026: o Dock é só de atalhos)
+  let DOCK_PC = null, DOCK_PC_T = 0; // uso do espaço deste computador (0–1), medido no navegador
+  function pintaDock() {
+    const dk = document.querySelector('.ep-dock'); if (!dk) return;
+    const fixos = [['msgs', 'Mensagens', ICONES.msg, 'linear-gradient(180deg,#3ad466,#1fae47)', MSG.nao ? `<b class="n vm">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''],
+      ['conta', 'Personalizar o perfil', ICONES.conta, 'linear-gradient(180deg,#5e9bff,#2f6be6)', ''],
+      ...(P?.adm ? [['adm', 'ADM', ICONES.adm, 'linear-gradient(180deg,#8e8e93,#5a5a5f)', MSG.denuncias ? '<b class="n vm">!</b>' : '']] : [])];
+    // espaço: abrir o painel não pede nada a mais do que o círculo do cabeçalho já pede (a nuvem usa a medida guardada de 5 min)
+    const espacos = [...(CFG.nuvem ? [['nuvem', 'Espaço na nuvem da equipe', ICONES.nuvem, 'linear-gradient(180deg,#a98bff,#7b5cf0)']] : []),
+      ['pc', 'Espaço neste computador', svg('<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/>'), 'linear-gradient(180deg,#4f8dff,#2459d6)']]; // computador, como no círculo do cabeçalho
+    // quanto já foi usado, à vista: barrinha embaixo do ícone (verde → amarela com 60% → vermelha com 85%), sem pedir nada à nuvem:
+    // a nuvem usa a última medida guardada pelo círculo do cabeçalho ('ep-nuvem-uso'); o computador, o navigator.storage.estimate()
+    let usoNv = null; try { const j = JSON.parse(localStorage.getItem('ep-nuvem-uso') || 'null')?.j; if (j?.limite) usoNv = j.total / j.limite; } catch { }
+    const barra = p => p == null ? '' : `<i class="uso" style="--u:${Math.max(4, Math.min(100, p * 100)).toFixed(0)}%;--c:${p > .85 ? '#ff453a' : p > .6 ? '#ffcc33' : '#30d158'}"></i>`;
+    const dica = (k, n) => k === 'nuvem' && usoNv != null ? `${n} · ${Math.round(usoNv * 100)}% usado` : k === 'pc' && DOCK_PC != null ? `${n} · ${Math.round(DOCK_PC * 100)}% usado` : n;
+    const bt = ([k, n, ic, bg, extra = '']) => `<button class="di" type="button" data-fixo="${k}" data-dica="${dica(k, n)}" aria-label="${dica(k, n)}"><span class="ic fx" style="background:${bg}">${ic}</span>${k === 'nuvem' ? barra(usoNv) : k === 'pc' ? barra(DOCK_PC) : ''}${extra}</button>`;
+    // programas que a pessoa FIXOU no Dock pelo "Organizar" do menu (localStorage 'ep-dock-fixos', só neste navegador)
+    let meus = []; try { meus = JSON.parse(localStorage.getItem('ep-dock-fixos') || '[]'); if (!Array.isArray(meus)) meus = []; } catch { }
+    const icMeu = x => { try { if (x.prog && window.EstudioIcones?.svg) return window.EstudioIcones.svg(x.prog); } catch { }
+      return x.ic ? `<span class="meu">${x.ic}</span>` : `<span style="display:grid;place-items:center;background:#3a3a3c;font-size:16px">${esc(String(x.nome || '?').slice(0, 2))}</span>`; }; // ícone do cartão: com o quadradinho de fundo do menu
+    const meuBt = (x, i) => `<button class="di prog" type="button" data-meu="${i}" data-dica="${esc(x.nome)}" aria-label="${esc(x.nome)} (clique direito: tirar do Dock)"><span class="ic">${icMeu(x)}</span></button>`;
+    dk.innerHTML = (meus.length ? meus.map(meuBt).join('') + '<span class="sep" aria-hidden="true"></span>' : '') + fixos.map(bt).join('') + '<span class="sep" aria-hidden="true"></span>' + espacos.map(bt).join('');
+    dk.querySelectorAll('[data-meu]').forEach(b => { const x = meus[+b.dataset.meu];
+      b.onclick = () => { const ev = new CustomEvent('estudio-abrir-prog', { detail: { url: x.url }, cancelable: true }); dispatchEvent(ev); if (!document.getElementById('grid')) location.href = x.url; }; // no menu, ele abre com o escurecer de sempre
+      b.oncontextmenu = e => { e.preventDefault(); try { localStorage.setItem('ep-dock-fixos', JSON.stringify(meus.filter(y => y !== x))); } catch { } dispatchEvent(new Event('estudio-dock-fixos')); }; });
+    if (DOCK_PC == null || Date.now() - DOCK_PC_T > 60e3) { DOCK_PC_T = Date.now(); estimativa().then(e => { if (e.quota) { DOCK_PC = e.usage / e.quota; pintaDock(); } }); } // o do computador: no máximo uma medida por minuto
+    dk.querySelector('[data-fixo=msgs]').onclick = () => painelMensagens();
+    dk.querySelector('[data-fixo=conta]').onclick = () => { if (CFG.conta) CFG.conta(); else abrirMinhaConta(); };
+    dk.querySelector('[data-fixo=adm]')?.addEventListener('click', () => abrirAdm());
+    dk.querySelector('[data-fixo=nuvem]')?.addEventListener('click', () => painelNuvem());
+    dk.querySelector('[data-fixo=pc]').onclick = () => painelEspaco();
+  }
+  // ---- ADM como janela por cima: no menu, o próprio menu abre (evento); fora dele, a página /adm?embed=1 num quadro ----
+  function abrirAdm(aba) {
+    if (!P?.adm) return;
+    if (location.pathname === '/' || /^\/adm\/?$/i.test(location.pathname)) return dispatchEvent(new CustomEvent('estudio-abrir-adm', { detail: { aba: aba || null } }));
+    poeCss(); document.querySelector('.ep-admj')?.remove();
+    const d = document.createElement('div'); d.className = 'ep-admj'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'ADM');
+    d.innerHTML = `<div class="cx"><button class="x" type="button" title="Fechar (Esc)" aria-label="Fechar">${ICONES.fechar}</button><iframe src="/adm?embed=1${aba ? '#' + encodeURIComponent(aba) : ''}" title="ADM"></iframe></div>`;
+    document.body.appendChild(d);
+    const fechar = () => { d.remove(); removeEventListener('message', ouve); document.removeEventListener('keydown', esc1); };
+    const ouve = e => { if (e.origin === location.origin && e.data?.estudioAdm === 'fechar') fechar(); };
+    const esc1 = e => { if (e.key === 'Escape') fechar(); };
+    addEventListener('message', ouve); document.addEventListener('keydown', esc1);
+    d.onclick = e => { if (e.target === d) fechar(); }; d.querySelector('.x').onclick = fechar;
+  }
+  // marcadores do menu: relógio no meio do cabeçalho e o Dock
+  function poeMarcas() {
+    document.querySelectorAll('[data-estudio-relogio]:not([data-ep-montado])').forEach(el => { el.dataset.epMontado = '1';
+      el.innerHTML = '<button class="ep-relogio" type="button" title="Seu calendário (lembretes e metas)"><span class="pt" title="Tem lembrete hoje"></span><span class="dt"></span><span class="hr"></span></button>';
+      el.querySelector('button').onclick = () => document.querySelector('.ep-cal') ? document.querySelector('.ep-cal').remove() : calendario(); });
+    document.querySelectorAll('[data-estudio-dock]:not([data-ep-montado])').forEach(el => { el.dataset.epMontado = '1'; el.innerHTML = '<nav class="ep-dock" aria-label="Atalhos do Estúdio"></nav>'; });
+    pintaRelogios(); pintaDock();
+  }
+  function redesignLiga() {
+    poeCss(); poeMarcas(); if (redesignLiga.ok) return; redesignLiga.ok = true;
+    setInterval(() => { pintaRelogios(); if (document.querySelector('.ep-dock')) pintaDock(); confereLembretes(); }, 20000);
+    setTimeout(confereLembretes, 2500); document.addEventListener('visibilitychange', confereLembretes);
+    addEventListener('estudio-mensagens', () => { if (document.querySelector('.ep-dock')) pintaDock(); }); // contagem das Mensagens no Dock
+    addEventListener('estudio-dock-fixos', () => pintaDock()); // fixou/tirou pelo menu
+    addEventListener('storage', e => { if (e.key === 'ep-dock-fixos') pintaDock(); }); // ...ou em outra aba
+  }
+
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
-    preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
+    calendario: ev => calendario(ev), dock: { atualizar: () => pintaDock() },
+    preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas, abrir: abrirAdm }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
     nuvem: { atualizar: () => { try { localStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }

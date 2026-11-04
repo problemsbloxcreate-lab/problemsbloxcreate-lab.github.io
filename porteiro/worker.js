@@ -432,8 +432,9 @@ export class Presenca { // cada aba conta separado (e-mail|aba); guarda no armaz
     let mudou = false;
     for (const k of Object.keys(m)) if (agora - m[k].t > 200e3) { delete m[k]; mudou = true; }
     if (req.method === 'POST') {
-      const b = await req.json(), k = b.e + '|' + String(b.aba || '').slice(0, 20);
-      if (b.prog) m[k] = { prog: b.prog, t: agora }; else delete m[k];
+      const b = await req.json(); // um aviso { e, aba, prog } ou vários { lista: [...] } (as abas de uma pessoa juntas, vindas pela conexão ao vivo das Mensagens)
+      for (const x of Array.isArray(b.lista) ? b.lista.slice(0, 20) : [b]) { const k = x.e + '|' + String(x.aba || '').slice(0, 20);
+        if (x.prog) m[k] = { prog: x.prog, t: agora }; else delete m[k]; }
       await this.state.storage.put('m', m); return Response.json({ ok: true });
     }
     if (mudou) await this.state.storage.put('m', m);
@@ -449,8 +450,13 @@ const convDe = (eu, para) => para === 'geral' ? 'geral' : /^g:[a-z0-9]{10}$/.tes
 const minhaConv = (u, c) => c === 'geral' || (c.startsWith('p:') && c.slice(2).split('|').includes(u)); // grupos: o objeto confere (this.minha)
 const paraValido = (u, p) => p === 'geral' || /^g:[a-z0-9]{10}$/.test(p) || (/^u[0-9a-f]{16}$/.test(p) && p !== u);
 export class Conversas {
-  constructor(state) {
+  constructor(state, env) {
+    this.ctx = state; this.env = env;
     this.st = state.storage; this.sql = state.storage.sql; this.limpo = 0;
+    // AO VIVO (economia de pedidos, 03/11/2026): cada navegador deixa UMA conexão aberta (a aba "líder" do estudio-conta.js).
+    // A conexão hiberna: parada não gasta nada; o "ping" de 50 s é respondido pela Cloudflare sem acordar o objeto.
+    // Quando algo muda, o objeto manda só um aviso curto ({ t, conv }, sem o texto) e a aba busca o que mudou.
+    try { state.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong')); } catch { }
     this.sql.exec(`CREATE TABLE IF NOT EXISTS pessoas(u TEXT PRIMARY KEY, e TEXT, v INTEGER);
       CREATE TABLE IF NOT EXISTS msgs(id INTEGER PRIMARY KEY AUTOINCREMENT, conv TEXT, de TEXT, texto TEXT, em INTEGER);
       CREATE INDEX IF NOT EXISTS msgs_conv ON msgs(conv, id);
@@ -470,7 +476,29 @@ export class Conversas {
   minhas(u) { return `(conv = 'geral' OR conv LIKE 'p:' || '${u}' || '|%' OR conv LIKE 'p:%|' || '${u}' OR conv IN (SELECT 'g:' || id FROM grupos WHERE membros LIKE '%"${u}"%'))`; } // u já conferido: u + 16 hex
   minha(u, c) { if (minhaConv(u, c)) return true; const m = /^g:([a-z0-9]{10})$/.exec(c); return !!m && this.sql.exec('SELECT 1 FROM grupos WHERE id = ? AND membros LIKE ?', m[1], '%"' + u + '"%').toArray().length > 0; }
   grupo(g) { let membros = []; try { membros = JSON.parse(g.membros || '[]'); } catch { } return { id: 'g:' + g.id, nome: g.nome, foto: g.foto || null, membros }; }
+  // avisa as conexões ao vivo de quem participa da conversa (conv = null: todo mundo)
+  avisa(conv, msg) {
+    const txt = JSON.stringify(msg);
+    for (const ws of this.ctx.getWebSockets()) { const [u] = this.ctx.getTags(ws); if (!conv || this.minha(u, conv)) { try { ws.send(txt); } catch { } } }
+  }
+  // pela conexão ao vivo chega a PRESENÇA das abas daquela pessoa ({ on: [{ aba, prog }] }): repassa ao objeto Presenca
+  // sem passar pelo porteiro (antes cada aba fazia um pedido a cada 90 s)
+  async webSocketMessage(ws, data) {
+    let b; try { b = JSON.parse(data); } catch { return; }
+    const [, e] = this.ctx.getTags(ws); if (!e || !Array.isArray(b.on) || !this.env?.PRESENCA) return;
+    const lista = b.on.slice(0, 20).map(x => ({ e, aba: String(x.aba || '').slice(0, 20), prog: PROGS.includes(x.prog) ? x.prog : null })).filter(x => x.aba);
+    if (lista.length) await this.env.PRESENCA.get(this.env.PRESENCA.idFromName('todos')).fetch('https://presenca/', { method: 'POST', body: JSON.stringify({ lista }) }).catch(() => null);
+  }
+  webSocketClose(ws, code) { try { ws.close(code === 1005 ? 1000 : code, 'fim'); } catch { } }
+  webSocketError(ws) { try { ws.close(1011, 'erro'); } catch { } }
   async fetch(req) {
+    if (req.headers.get('upgrade') === 'websocket') { // o porteiro já conferiu a sessão e mandou o código (x-u) e o e-mail (x-e, fica só aqui)
+      const u = req.headers.get('x-u') || '', e = req.headers.get('x-e') || '';
+      if (!/^u[0-9a-f]{16}$/.test(u) || !e) return new Response('sem pessoa', { status: 400 });
+      if (this.ctx.getWebSockets(u).length >= 6) for (const velho of this.ctx.getWebSockets(u).slice(0, -5)) { try { velho.close(1000, 'troca'); } catch { } } // no máximo 6 por pessoa (navegadores/PCs)
+      const par = new WebSocketPair(); this.ctx.acceptWebSocket(par[1], [u, e]);
+      return new Response(null, { status: 101, webSocket: par[0] });
+    }
     const b = await req.json(), agora = Date.now(); this.limpa();
     const u = /^u[0-9a-f]{16}$/.test(b.u || '') ? b.u : null;
     if (b.op === 'pessoa') { if (u && b.e) this.sql.exec('INSERT INTO pessoas(u,e,v) VALUES(?,?,?) ON CONFLICT(u) DO UPDATE SET e=excluded.e, v=excluded.v', u, b.e, agora); return Response.json({ ok: true }); }
@@ -492,7 +520,7 @@ export class Conversas {
       const desde = Math.max(0, +b.desde || 0);
       const novas = desde ? this.sql.exec(`SELECT * FROM msgs WHERE (id > ? OR apagada > ?) AND ${M} ORDER BY id LIMIT 300`, desde, agora - 120000).toArray().map(r => this.vis(r, b.ver)) : []; // apagadas há pouco voltam para a tela trocar
       const ultimo = this.sql.exec('SELECT MAX(id) AS m FROM msgs').toArray()[0]?.m || 0;
-      if (!b.ver && ultimo) this.sql.exec('INSERT INTO entregas(u,ate) VALUES(?,?) ON CONFLICT(u) DO UPDATE SET ate=excluded.ate WHERE excluded.ate > entregas.ate', u, ultimo); // recebeu tudo até aqui
+      if (!b.ver && ultimo && this.sql.exec('INSERT INTO entregas(u,ate) VALUES(?,?) ON CONFLICT(u) DO UPDATE SET ate=excluded.ate WHERE excluded.ate > entregas.ate', u, ultimo).rowsWritten > 0) this.avisa(null, { t: 'entregue' }); // recebeu tudo até aqui (✓✓ cinza de quem mandou muda na hora)
       let geral = null; try { geral = JSON.parse(this.sql.exec("SELECT v FROM cfg WHERE k = 'geral'").toArray()[0]?.v || 'null'); } catch { }
       const apelidos = Object.fromEntries(this.sql.exec('SELECT alvo, nick FROM apelidos WHERE u = ?', u).toArray().map(r => [r.alvo, r.nick]));
       const grupos = this.sql.exec('SELECT * FROM grupos WHERE membros LIKE ? ORDER BY nome', '%"' + u + '"%').toArray().map(g => this.grupo(g));
@@ -524,7 +552,7 @@ export class Conversas {
     }
     if (b.op === 'lida') {
       const conv = String(b.conv || ''); if (!this.minha(u, conv)) return Response.json({ ok: false });
-      this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, +b.ate || 0);
+      if (this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate) WHERE excluded.ate > lidas.ate', u, conv, +b.ate || 0).rowsWritten > 0) this.avisa(conv, { t: 'lida', conv }); // ✓✓ azul na hora
       return Response.json({ ok: true });
     }
     if (b.op === 'apelido') {
@@ -535,7 +563,7 @@ export class Conversas {
     if (b.op === 'apagar') { // apagar para todos: só quem enviou (ou um ADM)
       const m = this.sql.exec('SELECT * FROM msgs WHERE id = ?', +b.id || 0).toArray()[0];
       if (!m || (m.de !== u && !b.adm)) return Response.json({ erro: 'Só quem enviou apaga para todos.' }, { status: 403 });
-      this.sql.exec('UPDATE msgs SET apagada = ? WHERE id = ? AND apagada IS NULL', agora, m.id); return Response.json({ ok: true, apagada: agora });
+      this.sql.exec('UPDATE msgs SET apagada = ? WHERE id = ? AND apagada IS NULL', agora, m.id); this.avisa(m.conv, { t: 'nova', conv: m.conv }); return Response.json({ ok: true, apagada: agora });
     }
     if (b.op === 'denunciar') {
       const m = this.sql.exec('SELECT * FROM msgs WHERE id = ?', +b.id || 0).toArray()[0];
@@ -562,6 +590,7 @@ export class Conversas {
       if (alvo === 'todas') { this.sql.exec('DELETE FROM msgs'); this.sql.exec('DELETE FROM lidas'); }
       else if (alvo === 'geral' || /^g:[a-z0-9]{10}$/.test(alvo) || /^p:u[0-9a-f]{16}\|u[0-9a-f]{16}$/.test(alvo)) { this.sql.exec('DELETE FROM msgs WHERE conv = ?', alvo); this.sql.exec('DELETE FROM lidas WHERE conv = ?', alvo); }
       else return Response.json({ erro: 'Qual conversa?' }, { status: 400 });
+      this.avisa(null, { t: 'nova' });
       return Response.json({ ok: true });
     }
     if (b.op === 'conversas-todas') { // ADM: lista das conversas que têm mensagens (para escolher qual limpar)
@@ -578,11 +607,12 @@ export class Conversas {
       const foto = typeof b.foto === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(b.foto) && b.foto.length < 70000 ? b.foto : null;
       const novoId = id || [...crypto.getRandomValues(new Uint8Array(10))].map(x => 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]).join('');
       this.sql.exec('INSERT INTO grupos(id,nome,foto,membros,por,em) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET nome=excluded.nome, foto=excluded.foto, membros=excluded.membros', novoId, nome, foto, JSON.stringify(membros), u, agora);
+      this.avisa(null, { t: 'nova' }); // a lista de grupos muda para quem entrou ou saiu
       return Response.json({ grupo: this.grupo(this.sql.exec('SELECT * FROM grupos WHERE id = ?', novoId).toArray()[0]) });
     }
     if (b.op === 'geral') { // o porteiro já conferiu que é ADM
       const g = { nome: String(b.nome || '').trim().slice(0, 40) || null, foto: typeof b.foto === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(b.foto) && b.foto.length < 70000 ? b.foto : null, por: u, em: agora };
-      this.sql.exec('INSERT INTO cfg(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v', 'geral', JSON.stringify(g)); return Response.json({ geral: g });
+      this.sql.exec('INSERT INTO cfg(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v', 'geral', JSON.stringify(g)); this.avisa(null, { t: 'nova' }); return Response.json({ geral: g });
     }
     if (b.op === 'enviar') {
       const para = String(b.para || '');
@@ -595,6 +625,7 @@ export class Conversas {
       if (b.conv && b.conv !== conv) return Response.json({ erro: 'O arquivo foi preparado para outra conversa.' }, { status: 400 });
       const m = this.sql.exec('INSERT INTO msgs(conv,de,texto,em,cita) VALUES(?,?,?,?,?) RETURNING *', conv, u, texto, agora, cita).toArray()[0];
       this.sql.exec('INSERT INTO lidas(u,conv,ate) VALUES(?,?,?) ON CONFLICT(u,conv) DO UPDATE SET ate=MAX(ate, excluded.ate)', u, conv, m.id);
+      this.avisa(conv, { t: 'nova', conv }); // quem está na conversa busca na hora (antes: até 60 s, ou 4 s com a janela aberta)
       return Response.json({ msg: m });
     }
     return Response.json({ erro: 'op?' }, { status: 400 });
@@ -651,6 +682,14 @@ async function mensagens(req, env, url) {
   if (!env.CONVERSAS) return json({ error: { message: 'As mensagens ainda não estão ligadas. Rode a Action de publicação de novo.' } }, 503);
   if (url.pathname === '/mensagens/anexo') return anexo(req, env, url, s);
   const e = String(s.e).toLowerCase(), eu = await codigoU(e);
+  // conexão AO VIVO (WebSocket) das Mensagens: só com sessão e só do próprio site; o e-mail vai para o objeto, nunca para o navegador
+  if (url.pathname === '/mensagens/ao-vivo') {
+    if (req.headers.get('upgrade') !== 'websocket') return json({ error: { message: 'Use a conexão ao vivo (WebSocket).' } }, 426);
+    if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+    if (!eu) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+    const h = new Headers(req.headers); h.set('x-u', eu); h.set('x-e', e);
+    return env.CONVERSAS.get(env.CONVERSAS.idFromName('estudio')).fetch('https://conversas/ao-vivo', { headers: h });
+  }
   // ADM: ?como=<código> = ver as conversas pela visão daquela pessoa (só leitura: só GET)
   const como = url.searchParams.get('como'); if (como && (!s.a || req.method !== 'GET' || !/^u[0-9a-f]{16}$/.test(como))) return json({ error: { message: 'Só um ADM vê as conversas de outra pessoa.' } }, 403);
   const u = como || eu;
@@ -1020,7 +1059,7 @@ export default {
     if (caminho === '/nuvem-uso/arq') return nuvemArq(req, env, url);
     if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
-    if (caminho === '/mensagens' || caminho === '/mensagens/anexo') return mensagens(req, env, url);
+    if (caminho === '/mensagens' || caminho === '/mensagens/anexo' || caminho === '/mensagens/ao-vivo') return mensagens(req, env, url);
     if (caminho === '/online') { // MENU: quem está em cada programa agora (foto + nome + código, NUNCA o e-mail); só para quem está logado
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);
       const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {}, eu = s.e.toLowerCase(), pessoas = [];

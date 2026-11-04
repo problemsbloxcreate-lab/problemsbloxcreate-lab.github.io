@@ -8,10 +8,15 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cg transform=%22translate(-9 -23.5) scale(.17)%22%3E%3Cpath d=%22M200.5 154 339 228V380L200.5 454 62 380V228Z%22 fill=%22%23fff%22 stroke=%22%23000%22 stroke-width=%2213%22 stroke-linejoin=%22round%22/%3E%3Cg fill=%22none%22 stroke=%22%23000%22 stroke-width=%229%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M202 224Q184 249 163 267%22/%3E%3Cpath d=%22M267 255Q254 279 239 298%22/%3E%3Cpath d=%22M116 307Q111 325 111.5 343%22/%3E%3C/g%3E%3C/g%3E%3Cg stroke=%22%23000%22 stroke-width=%222.2%22 stroke-linejoin=%22round%22%3E%3Crect x=%2226.5%22 y=%2237.5%22 width=%2224%22 height=%2220%22 rx=%224.5%22 fill=%22%2319d3f0%22/%3E%3Cpath d=%22M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z%22 fill=%22%2319d3f0%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="/icone-180.png">
-<script>/* Minha conta aberta dentro de outro programa (janela por cima, sem sair dele): só a janela da conta aparece */
-window.ESTUDIO_EMBED = window.parent !== window && /[?&]embed=1/.test(location.search); if (window.ESTUDIO_EMBED) document.documentElement.classList.add('embed');
-const avisaPai = t => { try { if (window.ESTUDIO_EMBED) parent.postMessage({ epConta: t }, location.origin); } catch { } };</script>
-<style>html.embed,html.embed body{background:transparent!important}html.embed body>*:not(.modal){display:none!important}html.embed .modal{animation:none}</style>
+<script>/* Minha conta aberta dentro de outro programa (janela por cima, sem sair dele): só a janela da conta aparece.
+   ADM aberta dentro de outro programa (/adm?embed=1, redesign 03/11/2026): só a janela da ADM aparece; ✕ / Esc avisam o programa para fechar */
+window.ESTUDIO_EMBED_ADM = window.parent !== window && /[?&]embed=1/.test(location.search) && /\/adm\/?$/i.test(location.pathname);
+window.ESTUDIO_EMBED = window.parent !== window && /[?&]embed=1/.test(location.search) && !window.ESTUDIO_EMBED_ADM; if (window.ESTUDIO_EMBED) document.documentElement.classList.add('embed');
+if (window.ESTUDIO_EMBED_ADM) document.documentElement.classList.add('embed-adm');
+const avisaPai = t => { try { if (window.ESTUDIO_EMBED) parent.postMessage({ epConta: t }, location.origin); } catch { } };
+const avisaAdm = t => { try { if (window.ESTUDIO_EMBED_ADM) parent.postMessage({ estudioAdm: t }, location.origin); } catch { } }; // 'pronto' · 'login' · 'fechar'</script>
+<style>html.embed,html.embed body{background:transparent!important}html.embed body>*:not(.modal){display:none!important}html.embed .modal{animation:none}
+html.embed-adm,html.embed-adm body{background:transparent!important}html.embed-adm #top,html.embed-adm #pagebg,html.embed-adm #menu,html.embed-adm #saida{display:none!important}</style>
 <script src="/estudio-icones.js"></script><!-- ícones dos programas (Sh, Ed, An, At, Md; ADM › Ícones) -->
 <script src="/estudio-carregando.js" data-so-progresso></script><!-- porcentagem e o que está carregando (a tela é a do próprio menu) -->
 <style>
@@ -310,6 +315,234 @@ textarea.frases{width:100%;min-height:120px;background:var(--bg0);border:1px sol
 .empty{padding:22px;text-align:center;color:var(--tx2);border:1px dashed var(--bd2);border-radius:12px;background:rgba(48,48,48,.6)}
 @media (max-width:720px){.lrow{grid-template-columns:1fr}.lrow .card{margin:0 auto}.fields{grid-template-columns:1fr}#bg-cfg{grid-template-columns:1fr!important}.adm{padding:4px 16px 40px}.savebar{padding:12px 16px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ===================== REDESIGN (03/11/2026, aprovado pelo dono): pegada macOS =====================
+   Tudo daqui para baixo é só visual, por cima do CSS de antes (para voltar: apagar este bloco e o HTML/JS marcados "redesign").
+   Desfoque só na barra de cima, nos menus que abrem e no Dock (os cartões e as janelas usam cor sólida: carrega mais leve). */
+:root{
+  --bg0:#1c1c1e;--bg1:#232326;--bg2:#2c2c2f;--bg3:#3a3a3d;--bg4:#48484b;--bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.14);
+  --tx:#f5f5f7;--tx2:#a1a1a6;--tx3:#6e6e73;--ac:#0a84ff;--ac-rgb:10,132,255;--err:#ff453a;--ok:#30d158;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --sombra:0 0 0 .5px rgba(0,0,0,.6),0 22px 70px rgba(0,0,0,.55);
+}
+html,body{font-size:13px}
+/* cara de programa: partes da interface não ficam selecionáveis; campos e textos para copiar continuam */
+body{-webkit-user-select:none;user-select:none}
+img,svg{-webkit-user-drag:none}
+input,textarea,[contenteditable],code,pre,.selecionavel,.nv-txt,.ac-orig,.bolha{-webkit-user-select:text;user-select:text}
+
+/* barra de cima (estilo barra de menus do macOS): nome à esquerda, relógio no meio, conta à direita */
+.top{position:sticky;top:0;max-width:none;height:48px;padding:0 12px 0 14px;gap:8px;background:rgba(28,28,30,.55);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-bottom:.5px solid rgba(255,255,255,.08)}
+.brand{gap:9px}.brand .logo{width:26px;height:26px}
+.brand .t{display:flex;flex-direction:column;line-height:1.05}.brand .t b{font-size:14px;font-weight:700;letter-spacing:.2px}.brand .t:has(small:not([hidden])) b{font-size:12.5px;letter-spacing:.3px}.brand .t small{font-size:10.5px;color:var(--tx2)}
+.badge{font-size:10px;font-weight:700;letter-spacing:.6px;padding:2px 7px;background:rgba(var(--ac-rgb),.22);color:#7cc0ff;border:.5px solid rgba(var(--ac-rgb),.5)}
+.top-centro{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center}
+.top-centro:empty{display:none}
+
+/* menu: tudo cabe no meio da tela (saudação, cartões numa fileira, recentes e o Dock) */
+.main{justify-content:center;padding:24px 20px 104px}
+.main h1{font-size:30px;font-weight:700;letter-spacing:-.4px;margin:0;text-shadow:0 2px 18px rgba(0,0,0,.45)}
+.main .sub{margin:4px 0 2px;font-size:14px;color:rgba(255,255,255,.8)}
+.frase{margin:6px 0 22px;padding:4px 14px;border-radius:20px;background:rgba(0,0,0,.3);color:rgba(255,255,255,.85);font-weight:500;font-size:12.5px;min-height:26px;text-shadow:none}
+.frase:empty{visibility:hidden}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;width:min(1120px,100%);max-width:none}
+.card{width:auto;min-height:204px;gap:10px;padding:34px 12px 18px;border-radius:18px;background:rgba(36,36,40,.78);border:.5px solid rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,background .2s}
+.card:hover,.card:focus-visible{transform:translateY(-3px) scale(1.02);border-color:rgba(255,255,255,.18);background:rgba(52,52,58,.85);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.card .ic{width:74px;height:74px;border-radius:18px;backdrop-filter:none}.card .ic svg{width:36px;height:36px}
+.card b{font-size:15px;font-weight:600;letter-spacing:0}.card small{font-size:12px;line-height:1.3}
+/* MUITOS PROGRAMAS (o menu escolhe pela quantidade, em showMenu): até 6 = uma fileira de cartões grandes;
+   7 a 12 = duas fileiras médias; mais de 12 = grade compacta estilo Launchpad (ícone + nome, a descrição vira dica) */
+.grid[data-densidade=media],.grid[data-densidade=compacta]{display:flex;flex-wrap:wrap;justify-content:center} /* a última fileira fica no meio */
+.grid[data-densidade=media]{gap:12px}.grid[data-densidade=media] .card{width:166px}
+.grid[data-densidade=media] .card{min-height:178px;padding:30px 10px 16px;gap:9px}.grid[data-densidade=media] .card .ic{width:64px;height:64px;border-radius:16px}
+.grid[data-densidade=compacta]{gap:10px}.grid[data-densidade=compacta] .card{width:124px}
+.grid[data-densidade=compacta] .card{min-height:136px;padding:26px 8px 12px;gap:7px;border-radius:16px}
+.grid[data-densidade=compacta] .card .ic{width:56px;height:56px;border-radius:14px}.grid[data-densidade=compacta] .card .ic:not(.prog) svg{width:28px;height:28px}.grid[data-densidade=compacta] .card .ic.prog svg,.grid[data-densidade=compacta] .card .ic.prog img{width:100%;height:100%}
+.grid[data-densidade=compacta] .card b{font-size:12.5px}.grid[data-densidade=compacta] .card small{display:none}
+.grid[data-densidade=compacta] .card .tag,.grid[data-densidade=compacta] .card .tag-adm{top:6px;right:6px;font-size:9px;padding:1px 6px}
+.grid[data-densidade=compacta] .card .tag-adm~.tag.teste,.grid[data-densidade=compacta] .card .tag.teste:has(~.tag-adm){top:24px}
+.grid[data-densidade=compacta] .card:has(.tag-adm):has(.tag.teste){padding-top:40px}
+.grid[data-densidade=compacta] .qe-on{top:6px;left:6px;transform:scale(.82);transform-origin:top left}
+.card .txt{gap:3px}
+.card .tag{top:10px;right:10px;font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;padding:2px 7px;background:rgba(255,255,255,.1);color:var(--tx2)}
+.card .tag-adm{top:10px;right:10px;bottom:auto;left:auto;transform:none;font-size:10px;font-weight:600;text-transform:none;letter-spacing:0;background:rgba(var(--ac-rgb),.2);color:#7cc0ff}
+.card .tag.teste{font-size:10px;letter-spacing:0;font-weight:700}.card .tag-adm~.tag.teste,.card .tag.teste:has(~.tag-adm){top:34px}
+.card:has(.tag-adm):has(.tag.teste){padding-top:52px} /* duas etiquetas empilhadas: o ícone desce para não ficar embaixo delas */
+/* quem está usando agora: a mesma pílula, com fotos maiores (28 px) */
+.qe-on{backdrop-filter:none;padding:3px 4px 3px 8px}
+.qe-av{width:28px;height:28px;font-size:12px}.qe-av+.qe-av{margin-left:-7px}.qe-mais{min-width:28px;font-size:10px;padding:0 6px;border-radius:14px}
+
+/* recentes na nuvem: miniatura do projeto, quem editou por último; o anel gira enquanto a miniatura não chega */
+.recentes{width:min(1120px,100%);margin-top:22px}
+.recentes[hidden]{display:none!important}
+.rec-cab{display:flex;align-items:center;gap:8px;margin:0 4px 10px;min-height:26px}
+.rec-cab h4{margin:0;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.88)}
+.seg{display:inline-flex;padding:2px;border-radius:8px;background:rgba(0,0,0,.28);border:.5px solid rgba(255,255,255,.08)}
+.seg button{height:24px;padding:0 12px;border:0;border-radius:6px;background:none;color:var(--tx);font-size:12.5px;cursor:pointer}
+.seg button[aria-pressed=true]{background:rgba(255,255,255,.18);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.rec{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.rec a{position:relative;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:rgba(36,36,40,.78);border:.5px solid rgba(255,255,255,.1);color:var(--tx);text-decoration:none;transition:transform .18s,background .18s}
+.rec a:hover,.rec a:focus-visible{transform:translateY(-2px);background:rgba(52,52,58,.85);outline:none}
+.rec .th{position:relative;height:62px;background:rgba(255,255,255,.04) center/cover no-repeat}
+.rec .th .pg{position:absolute;left:8px;bottom:8px;width:28px;height:28px}.rec .th .pg>span,.rec .th .pg svg,.rec .th .pg img{display:block;width:28px;height:28px}
+.rec .th .quem{position:absolute;right:8px;bottom:8px;width:30px;height:30px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:700;font-size:12px;color:#14151a;box-shadow:0 0 0 2px rgba(10,12,18,.9),0 2px 8px rgba(0,0,0,.5)}
+.rec .th .quem img{width:100%;height:100%;object-fit:cover}
+.rec .rt{padding:9px 10px 10px;min-width:0}
+.rec b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rec small{display:block;color:var(--tx2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .vz{padding:14px;color:var(--tx3);font-size:12px}
+/* carregando: anel que gira, aumenta e diminui (como o ProgressRing do Windows 11) */
+.anel11{position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;display:none}
+.carregando>.anel11{display:block}
+.anel11 svg{width:100%;height:100%;animation:gira11 2s linear infinite}
+.anel11 circle{fill:none;stroke:#7cc0ff;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:1 57;animation:arco11 1.6s ease-in-out infinite}
+@keyframes gira11{to{transform:rotate(360deg)}}
+@keyframes arco11{0%{stroke-dasharray:1 57;stroke-dashoffset:0}50%{stroke-dasharray:40 57;stroke-dashoffset:-8}100%{stroke-dasharray:1 57;stroke-dashoffset:-56}}
+[data-estudio-dock]:empty{display:none}
+
+/* botões e campos (macOS) */
+.btn{height:28px;padding:0 12px;border-radius:7px;border:.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.1);font-weight:500;box-shadow:0 1px 1px rgba(0,0,0,.2)}
+.btn:hover{background:rgba(255,255,255,.16)}
+.btn.primary{background:linear-gradient(180deg,#2a92ff,#0a7aff);border-color:transparent}
+.btn.danger{background:rgba(255,69,58,.12);border-color:rgba(255,69,58,.35);color:#ff7b72}.btn.danger:hover{background:rgba(255,69,58,.2);color:#ff9a92}
+.btn.sm{height:24px;padding:0 9px;border-radius:6px}
+.f input[type=text],.f input[type=url],.f input[type=number],.f select,.acesso-add input,textarea.frases,.ic-f input[type=text]{background:rgba(0,0,0,.25);border:.5px solid rgba(255,255,255,.14);border-radius:6px}
+.f input[type=text],.f input[type=url],.f input[type=number],.f select{height:28px}
+.f input:focus,.f select:focus,.acesso-add input:focus,textarea.frases:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(var(--ac-rgb),.35)}
+/* caixinhas viram a chave liga/desliga verde do macOS */
+.f.chk input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:34px;height:20px;border-radius:10px;background:rgba(255,255,255,.18);cursor:pointer;transition:background .18s;margin:0}
+.f.chk input[type=checkbox]::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .18s}
+.f.chk input[type=checkbox]:checked{background:var(--ok)}.f.chk input[type=checkbox]:checked::after{transform:translateX(14px)}
+.f.chk input[type=checkbox]:disabled{opacity:.45}
+.f.chk{align-items:center}
+
+/* ADM: estilo "Ajustes do Sistema" (barra lateral com busca e ícones coloridos, grupos com linhas) */
+#adm{padding:20px 22px}
+.adm{position:relative;max-width:1180px;padding:0;display:grid;grid-template-columns:250px minmax(0,1fr);border-radius:14px;overflow:hidden;background:#1e1e21;box-shadow:var(--sombra);min-height:calc(100vh - 90px)}
+.adm-abas{grid-column:1;grid-row:1;position:sticky;top:48px;align-self:start;display:flex;flex-direction:column;gap:1px;padding:10px 8px 14px;margin:0;max-height:calc(100vh - 90px);overflow:auto;background:rgba(20,20,22,.6);border-right:.5px solid rgba(0,0,0,.55);backdrop-filter:none;-webkit-backdrop-filter:none}
+.adm-abas .adm-cab{display:flex;align-items:center;gap:8px;padding:2px 4px 8px}.adm-abas .adm-cab b{flex:1;font-size:15px}
+.adm-x{width:26px;height:26px;border-radius:7px;border:.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:var(--tx);cursor:pointer;display:grid;place-items:center}
+.adm-x:hover{background:rgba(255,255,255,.16)}
+.adm-busca{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;margin:0 2px 6px;border-radius:7px;background:rgba(255,255,255,.07);color:var(--tx2)}
+.adm-busca input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:13px}
+.adm-abas h3{margin:12px 8px 4px;font-size:11px;font-weight:600;color:var(--tx3)}
+.adm-abas button{flex-direction:row;align-items:center;gap:9px;padding:5px 8px;border:0;border-radius:7px;background:none;min-width:0;box-shadow:none}
+.adm-abas button:hover{background:rgba(255,255,255,.06);border:0}
+.adm-abas button[aria-selected=true]{background:var(--ac);box-shadow:none}.adm-abas button[aria-selected=true] small{color:rgba(255,255,255,.8)}
+.adm-abas button svg{width:26px;height:26px;padding:5px;border-radius:7px;color:#fff!important;background:#8e8e93;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.18)}
+.adm-abas button b{font-size:13px;font-weight:500}.adm-abas button small{-webkit-line-clamp:1;font-size:11px;margin-top:0}
+.adm-abas button.fora{display:none}
+.adm-abas [data-aba=botoes]{order:1}.adm-abas [data-aba=botoes] svg{background:#0a84ff}
+.adm-abas [data-aba=mensagens]{order:2}.adm-abas [data-aba=mensagens] svg{background:#30d158}
+.adm-abas [data-aba=fundo]{order:3}.adm-abas [data-aba=fundo] svg{background:#ff9f0a}
+.adm-abas [data-aba=icones]{order:4}.adm-abas [data-aba=icones] svg{background:#bf5af2}
+.adm-abas h3.eq{order:5}.adm-abas [data-aba=acesso]{order:6}.adm-abas [data-aba=acesso] svg{background:#5e5ce6}
+.adm-abas [data-aba=conversas]{order:7}.adm-abas [data-aba=conversas] svg{background:#ff453a}
+.adm-abas h3.si{order:8}.adm-abas [data-aba=nuvem]{order:9}.adm-abas [data-aba=nuvem] svg{background:#64d2ff}
+.adm-abas [data-aba=dispositivos]{order:10}
+.adm-abas .adm-cab,.adm-abas .adm-busca{order:0}
+.adm>.adm-pag{grid-column:2;grid-row:1;min-width:0;padding:22px 28px 90px}
+.adm-desc{margin:0 0 16px;color:var(--tx2);font-size:12.5px;max-width:760px}
+.adm h2{font-size:12px;text-transform:none;letter-spacing:0;color:var(--tx2);font-weight:600;margin:18px 4px 8px}
+.box,.lrow{background:rgba(255,255,255,.045);border:.5px solid rgba(255,255,255,.07);border-radius:10px;backdrop-filter:none}
+.lrow{grid-template-columns:180px 1fr;gap:16px;padding:14px;margin-bottom:10px}
+.ac-l{border:0;border-radius:0;background:none;padding:9px 4px}.ac-l+.ac-l{border-top:.5px solid rgba(255,255,255,.07)}.acesso-lista{gap:0}
+.ic-adm{background:rgba(255,255,255,.045);border:.5px solid rgba(255,255,255,.07);border-radius:10px}
+.ic-lista button{border:0;background:none;border-radius:7px}.ic-lista button[aria-selected=true]{background:var(--ac);color:#fff}.ic-lista button[aria-selected=true] i{color:rgba(255,255,255,.8)}
+.nv-fontes button,.adm .empty{background:rgba(255,255,255,.045);border:.5px solid rgba(255,255,255,.07)}
+.nv-fontes button[aria-selected=true]{background:rgba(var(--ac-rgb),.18);box-shadow:inset 0 0 0 1px var(--ac)}
+/* ADM › Nuvem: gasto de hoje em cartões, um por nuvem, com todas as medidas e a % */
+.nvd-c{background:rgba(255,255,255,.045);border:.5px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px}
+.nvd-b{height:6px;background:rgba(255,255,255,.1)}
+/* barra Salvar: flutua embaixo e só aparece quando tem mudança */
+#adm .savebar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:40;width:auto;max-width:calc(100% - 24px);padding:8px 8px 8px 16px;border-radius:12px;border:.5px solid rgba(255,255,255,.12);background:rgba(44,44,48,.88);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);box-shadow:var(--sombra)}
+#adm .savebar:not(.sujo){display:none!important}
+#adm .savebar #btn-save{order:3}#adm .savebar #btn-undo{order:2}#adm .savebar .st{order:1;margin-right:4px}
+/* ADM por cima do menu (evento 'estudio-abrir-adm') ou dentro de outro programa (/adm?embed=1): janela com ✕ */
+html.adm-sobre #adm,html.embed-adm #adm{position:fixed;inset:48px 0 0 0;z-index:30;padding:20px 22px;background:rgba(0,0,0,.55);animation:fadeAdm .18s ease both}
+html.embed-adm #adm{inset:0;background:transparent;padding:16px}
+html.adm-sobre .adm,html.embed-adm .adm{height:100%;min-height:0;animation:folhaIn .22s cubic-bezier(.2,.8,.2,1)}
+html.adm-sobre .adm>.adm-pag,html.embed-adm .adm>.adm-pag{overflow:auto;max-height:100%}
+html.adm-sobre .adm-abas,html.embed-adm .adm-abas{position:static;max-height:100%}
+html:not(.adm-sobre):not(.embed-adm) .adm-x{display:none}
+html.adm-sobre body{overflow:hidden}
+html.embed-adm .login,html.embed-adm .login.cobrindo,html.embed-adm .login.boot{background:transparent}
+@keyframes fadeAdm{from{opacity:0}}
+@keyframes folhaIn{from{opacity:0;transform:translateY(-12px) scale(.98)}}
+
+/* janelas (Minha conta, perguntas): folha estilo macOS */
+.modal{background:rgba(0,0,0,.4)}
+.modal .mc{background:#28282c;border:.5px solid rgba(255,255,255,.12);border-radius:14px;box-shadow:var(--sombra);animation:folhaIn .22s cubic-bezier(.2,.8,.2,1)}
+.mc.conta{padding:0;gap:0;width:min(540px,100%);max-height:calc(100vh - 32px);overflow:auto}
+.conta .ct-topo{display:flex;flex-direction:column;align-items:center;gap:6px;padding:24px 22px 16px;text-align:center}
+.conta .ct-av{position:relative}
+.conta .ct-av .av{width:88px;height:88px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,#5e5ce6,#0a84ff);font:700 34px var(--font);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.conta .ct-av .av img{width:100%;height:100%;object-fit:cover}
+.conta .ct-lapis{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;border:2px solid #28282c;background:var(--ac);color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+.conta .ct-topo b{font-size:17px}.conta .ct-topo small{color:var(--tx2);font-size:12px}
+.conta .ct-corpo{padding:0 18px 6px;display:flex;flex-direction:column;gap:6px}
+.conta .ct-g{background:rgba(255,255,255,.045);border:.5px solid rgba(255,255,255,.07);border-radius:10px}
+.conta .ct-l{display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 14px}.conta .ct-l+.ct-l{border-top:.5px solid rgba(255,255,255,.07)}
+.conta .ct-l>span:first-child{flex:1;font-weight:500}
+.conta .ct-l input[type=text]{width:min(260px,60%);height:28px;background:rgba(0,0,0,.25);border:.5px solid rgba(255,255,255,.14);border-radius:6px;padding:0 9px;color:var(--tx);outline:none}
+.conta .ct-l input[type=text]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(var(--ac-rgb),.35)}
+.conta .ct-tit{margin:10px 4px 2px;font-size:12px;font-weight:600;color:var(--tx2)}
+.conta .fundos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px 14px}
+.conta .fundo-op{display:flex;flex-direction:column;gap:6px;align-items:center;cursor:pointer;font-size:12px;text-align:center}
+.conta .fundo-op input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.conta .fundo-op .tela{width:100%;aspect-ratio:16/10;border-radius:9px;border:2px solid transparent;box-shadow:0 0 0 .5px rgba(255,255,255,.18);display:grid;place-items:center;color:rgba(255,255,255,.85)}
+.conta .fundo-op:has(input:checked) .tela{border-color:var(--ac);box-shadow:0 0 0 3px rgba(var(--ac-rgb),.3)}
+.conta .fundo-op small{color:var(--tx2);font-size:10.5px;margin-top:-4px}
+.conta .fundo-op input[type=color]{width:34px;height:18px;border:.5px solid rgba(255,255,255,.2);border-radius:5px;background:none;padding:0;cursor:pointer}
+.conta .rng{width:min(260px,100%)}
+.conta .ct-pe{display:flex;align-items:center;gap:8px;padding:12px 18px;border-top:.5px solid rgba(255,255,255,.08);margin-top:8px}
+.conta .ct-pe [data-m]{flex:1}
+
+/* ORGANIZAR (03/11/2026): a ordem e os fixados no Dock são de cada pessoa e ficam só neste navegador (localStorage
+   'ep-menu-ordem' e 'ep-dock-fixos'): não gasta nada da nuvem. A ordem para todo mundo continua sendo a da ADM › Botões. */
+.progs-cab{width:min(1120px,100%);display:flex;align-items:center;gap:10px;margin:0 0 8px;min-height:26px}
+.progs-cab .hint{font-size:12px;color:var(--tx2)}
+.btn-org{height:26px;padding:0 12px;border-radius:13px;border:.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--tx);font:600 12px/1 var(--font);cursor:pointer}
+.btn-org:hover{background:rgba(255,255,255,.14)}.btn-org[aria-pressed=true]{background:var(--ac);border-color:transparent;color:#fff}
+.grid-caixa{width:min(1120px,100%);display:flex;justify-content:center}
+/* muitos programas: a caixa rola por dentro (o resto do menu fica parado) */
+.grid-caixa.rola{max-height:min(38vh,400px);overflow-y:auto;overscroll-behavior:contain;padding:6px 6px 14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;
+  -webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent)}
+.grid-caixa.rola.fim{-webkit-mask-image:none;mask-image:none}
+.grid.org .card{cursor:grab;animation:epTreme .26s ease-in-out infinite alternate}
+.grid.org .card:nth-child(2n){animation-delay:-.13s}
+.grid.org .card:hover{transform:none}
+@keyframes epTreme{from{rotate:-.8deg}to{rotate:.8deg}}
+.grid .card.arrastando{z-index:20;cursor:grabbing;animation:none;opacity:.92;box-shadow:0 24px 60px rgba(0,0,0,.55);transition:none;pointer-events:none}
+.grid .card.vaga{opacity:.35}
+.card .fixar{display:none;position:absolute;left:8px;top:8px;z-index:3;width:28px;height:28px;border-radius:50%;place-items:center;border:.5px solid rgba(255,255,255,.2);background:rgba(20,20,22,.8);color:var(--tx);cursor:pointer;padding:0}
+.card .fixar svg{width:15px;height:15px}.card .fixar[aria-pressed=true]{background:var(--ac);border-color:transparent;color:#fff}
+.grid.org .card .fixar{display:grid}
+.grid.org .qe-on{display:none} /* organizando: o alfinete fica no lugar das fotinhas de quem está usando */
+.grid[data-densidade=compacta] .card .fixar{left:6px;top:6px;width:24px;height:24px}.grid[data-densidade=compacta] .card .fixar svg{width:13px;height:13px}
+body.arrasta-dock .ep-dock{outline:2px dashed rgba(var(--ac-rgb),.8);outline-offset:4px}
+@media (prefers-reduced-motion:reduce){.grid.org .card{animation:none}}
+@media (max-width:720px){
+  .top .brand .t small,.top .badge{display:none}
+  .grid-caixa.rola{max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none;padding:0}
+  .main{padding:16px 14px 110px}.main h1{font-size:25px}
+  .grid,.grid[data-densidade]{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none;width:100%;flex-direction:initial}
+  .grid[data-densidade]{display:grid}.grid[data-densidade] .card{width:auto}
+  .grid[data-densidade=compacta]{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .main .grid .card{flex-direction:column;justify-content:center;text-align:center;min-height:150px;padding:26px 8px 14px;gap:8px}
+  .main .grid .card .ic{width:54px;height:54px;border-radius:14px}.main .grid .card .ic.prog svg,.main .grid .card .ic.prog img{width:100%;height:100%}
+  .top>.brand{order:-3}.top>.top-centro{position:static;transform:none;order:-2}.top>.sp{order:-1} /* a conta usa display:contents: os itens dela ficam na ordem 0, depois do espaço */
+  .rec{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #adm{padding:0}
+  .adm{grid-template-columns:1fr;border-radius:0;min-height:calc(100vh - 48px)}
+  .adm-abas{position:sticky;top:48px;z-index:3;flex-direction:row;overflow-x:auto;max-height:none;border-right:0;border-bottom:.5px solid rgba(0,0,0,.55);padding:8px;background:#1b1b1e}
+  .adm-abas .adm-busca,.adm-abas h3{display:none}.adm-abas .adm-cab{padding:0 4px}.adm-abas .adm-cab b{display:none}
+  .adm-abas button{flex:none}.adm-abas button small{display:none}
+  .adm>.adm-pag{grid-column:1;grid-row:2;padding:16px 14px 100px}
+  html.adm-sobre #adm,html.embed-adm #adm{padding:0}
+  html.adm-sobre .adm,html.embed-adm .adm{grid-template-rows:auto minmax(0,1fr)}
+  .lrow{grid-template-columns:1fr}
+  .conta .fundos{gap:8px;padding:12px 10px}
+}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -343,8 +576,9 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 
 <!-- topo (menu e ADM) -->
 <header class="top view" id="top" hidden>
-  <div class="brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg></span><b>Estúdio Problems</b><span class="badge" id="badge-adm" hidden>ADM</span></div>
+  <div class="brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg></span><span class="t"><b id="top-nome">Estúdio Problems</b><small id="top-sub" hidden>Estúdio Problems</small></span><span class="badge" id="badge-adm" hidden>ADM</span></div>
   <span class="sp"></span>
+  <span class="top-centro" data-estudio-relogio></span><!-- redesign: relógio + calendário pessoal (o /estudio-conta.js preenche) -->
   <a class="btn sm" id="btn-ver" hidden>Ver o menu</a>
   <span data-estudio-conta></span><!-- foto e conta: o mesmo componente de todos os projetos (/estudio-conta.js) -->
 </header>
@@ -354,13 +588,24 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <h1 id="hello">Olá!</h1>
   <p class="sub" id="boasvindas"></p>
   <p class="frase" id="frase" aria-live="polite"></p>
-  <nav class="grid" id="grid"></nav>
+  <div class="progs-cab" id="progs-cab"><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no Dock (ou arraste até ele)</span><span class="sp"></span><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no Dock (só para você, fica neste navegador)">Organizar</button></div>
+  <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div>
+  <!-- redesign: as animações da nuvem da equipe mexidas por último (turma-ia /animacoes), com quem editou -->
+  <section class="recentes" id="recentes" hidden>
+    <div class="rec-cab"><h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg>Recentes na nuvem</h4><span class="sp"></span>
+      <span class="seg" role="group" aria-label="De quem"><button type="button" data-rec="todos" aria-pressed="true">Todos</button><button type="button" data-rec="meus" aria-pressed="false">Só os meus</button></span></div>
+    <div class="rec" id="rec"></div>
+  </section>
+  <nav data-estudio-dock aria-label="Abas abertas e atalhos"></nav><!-- redesign: o /estudio-conta.js preenche o Dock -->
 </main>
 
 <!-- 3) ADM — abre com ?adm (ou /adm) e só depois do login -->
 <section class="view" id="adm" hidden>
   <div class="adm">
   <nav class="adm-abas" role="tablist" aria-label="Áreas da ADM">
+    <div class="adm-cab"><b>ADM</b><button type="button" class="adm-x" id="adm-x" title="Fechar (Esc)" aria-label="Fechar a ADM"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <label class="adm-busca"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="adm-busca" placeholder="Buscar" aria-label="Buscar nas áreas da ADM" autocomplete="off"></label>
+    <h3 class="eq" role="presentation">Equipe</h3><h3 class="si" role="presentation">Sistema</h3>
     <button role="tab" data-aba="botoes"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span><b>Botões</b><small>os projetos do menu</small></span></button>
     <button role="tab" data-aba="mensagens"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span><b>Mensagens</b><small>saudação e frases</small></span></button>
     <button role="tab" data-aba="fundo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span><b>Fundo</b><small>imagem ou vídeo da tela</small></span></button>
@@ -863,31 +1108,36 @@ function abrirConta() {
   const rasc = { nome: CONTA.nomeProprio ? CONTA.nome : '', fundo: LOCAL.ativo ? 'local' : CONTA.fundo, cor: CONTA.cor, local: null, blur: 0, escurecer: .45 };
   LOCAL.ler().then(v => { if (v) { rasc.local = v; rasc.blur = v.blur || 0; rasc.escurecer = v.escurecer ?? .45; if (d.isConnected) pinta(); } });
   const pinta = () => {
-    d.innerHTML = `<div class="mc" role="dialog" aria-label="Minha conta"><b style="font-size:16px">Minha conta</b><span class="hint">${esc(CONTA.email)} · vale para o menu e para todos os projetos.</span>
-      <div class="conta-foto"><span class="av">${avatarHtml(CONTA.foto, CONTA.nome)}</span><div class="acts">
-        <button class="btn sm" data-a="foto">Trocar foto</button>${CONTA.fotoPropria ? '<button class="btn sm" data-a="semfoto">Usar a foto do Google</button>' : ''}</div></div>
-      <label class="f"><span>Nome</span><input type="text" maxlength="40" data-k="nome" value="${esc(rasc.nome)}" placeholder="${esc(CONTA.nomeGoogle)} (do Google)"></label>
-      ${window.ESTUDIO_EMBED ? '' : `<div class="f"><span>Fundo do menu</span>
-        <label class="opcao"><input type="radio" name="fundo" value="padrao" ${rasc.fundo !== 'cor' ? 'checked' : ''}> Padrão do estúdio (o vídeo ou imagem da ADM)</label>
-        <label class="opcao"><input type="radio" name="fundo" value="cor" ${rasc.fundo === 'cor' ? 'checked' : ''}> Uma cor só <input type="color" data-k="cor" value="${esc(rasc.cor)}" style="margin-left:auto;width:44px;height:28px;border:1px solid var(--bd2);border-radius:6px;background:none"></label>
-        <label class="opcao" style="flex-wrap:wrap"><input type="radio" name="fundo" value="local" ${rasc.fundo === 'local' ? 'checked' : ''}> Imagem ou vídeo meu <small class="hint">(fica só neste computador)</small>
-          <button class="btn sm" data-a="local" style="margin-left:auto">${rasc.local ? 'Trocar arquivo' : 'Escolher arquivo'}</button>
-          ${rasc.local ? `<span class="hint" style="flex-basis:100%">${esc(rasc.local.nome || 'arquivo')} · ${(rasc.local.blob.size / 1048576).toFixed(1)} MB</span>
-            <span class="rng" style="flex-basis:100%"><span class="hint" style="width:70px">Blur</span><input type="range" min="0" max="30" step="1" value="${rasc.blur}" data-k="lblur"><output>${rasc.blur} px</output></span>
-            <span class="rng" style="flex-basis:100%"><span class="hint" style="width:70px">Escurecer</span><input type="range" min="0" max=".9" step=".01" value="${rasc.escurecer}" data-k="lesc"><output>${Math.round(rasc.escurecer * 100)}%</output></span>` : ''}</label></div>`}
-      <span class="hint" data-m></span>
-      <div class="acts"><span class="sp"></span><button class="btn sm" data-x>Fechar</button><button class="btn sm primary" data-ok>Salvar</button></div></div>`;
+    // redesign: folha estilo macOS (foto grande com lápis, nome, fundo do menu em 3 miniaturas); as mesmas chamadas de antes
+    const icF = d => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    d.innerHTML = `<div class="mc conta" role="dialog" aria-label="Minha conta">
+      <div class="ct-topo"><span class="ct-av"><span class="av">${avatarHtml(CONTA.foto, CONTA.nome)}</span><button class="ct-lapis" type="button" data-a="foto" title="Trocar foto" aria-label="Trocar foto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button></span>
+        <b>${esc(rasc.nome || CONTA.nomeGoogle || CONTA.nome || '')}</b><small>${esc(CONTA.email)} · vale para o menu e para todos os projetos.</small>
+        <div class="acts" style="margin-top:6px;justify-content:center"><button class="btn sm" data-a="foto">Trocar foto</button>${CONTA.fotoPropria ? '<button class="btn sm" data-a="semfoto">Usar a foto do Google</button>' : ''}</div></div>
+      <div class="ct-corpo">
+        <div class="ct-g"><label class="ct-l"><span>Nome</span><input type="text" maxlength="40" data-k="nome" value="${esc(rasc.nome)}" placeholder="${esc(CONTA.nomeGoogle)} (do Google)"></label></div>
+        ${window.ESTUDIO_EMBED ? '' : `<div class="ct-tit">Fundo do menu</div>
+        <div class="ct-g"><div class="fundos">
+          <label class="fundo-op"><input type="radio" name="fundo" value="padrao" ${rasc.fundo !== 'cor' && rasc.fundo !== 'local' ? 'checked' : ''}><span class="tela" style="background:radial-gradient(circle at 20% 20%,rgba(25,211,240,.6),transparent 60%),radial-gradient(circle at 90% 10%,rgba(10,132,255,.7),transparent 60%),radial-gradient(circle at 70% 100%,rgba(155,123,255,.6),transparent 60%),#121022">${icF('<rect x="3" y="5.5" width="13" height="13" rx="2"/><path d="m16 10 5-3v10l-5-3"/>')}</span>Padrão do estúdio<small>o vídeo ou imagem da ADM</small></label>
+          <label class="fundo-op"><input type="radio" name="fundo" value="cor" ${rasc.fundo === 'cor' ? 'checked' : ''}><span class="tela" style="background:${esc(rasc.cor || '#1b2a4a')}">${icF('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/>')}</span>Uma cor só<small><input type="color" data-k="cor" value="${esc(rasc.cor)}" aria-label="Cor do fundo"></small></label>
+          <label class="fundo-op"><input type="radio" name="fundo" value="local" ${rasc.fundo === 'local' ? 'checked' : ''}><span class="tela" style="background:${rasc.local ? 'linear-gradient(135deg,#ff9f0a,#ff375f)' : 'rgba(255,255,255,.06)'}">${icF('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/>')}</span>Imagem ou vídeo meu<small>fica só neste computador</small></label>
+        </div>
+        ${rasc.fundo === 'local' ? `<div class="ct-l"><span>${rasc.local ? `${esc(rasc.local.nome || 'arquivo')} <small class="hint">${(rasc.local.blob.size / 1048576).toFixed(1)} MB</small>` : 'Nenhum arquivo escolhido'}</span><button class="btn sm" data-a="local">${rasc.local ? 'Trocar arquivo' : 'Escolher arquivo'}</button></div>
+          ${rasc.local ? `<div class="ct-l"><span>Blur</span><span class="rng"><input type="range" min="0" max="30" step="1" value="${rasc.blur}" data-k="lblur"><output>${rasc.blur} px</output></span></div>
+          <div class="ct-l"><span>Escurecer</span><span class="rng"><input type="range" min="0" max=".9" step=".01" value="${rasc.escurecer}" data-k="lesc"><output>${Math.round(rasc.escurecer * 100)}%</output></span></div>` : ''}` : ''}</div>`}
+      </div>
+      <div class="ct-pe"><span class="hint" data-m></span><button class="btn" data-x>Fechar</button><button class="btn primary" data-ok>Salvar</button></div></div>`;
     const m = t => { $('[data-m]', d).textContent = t; };
     const fecha = () => { d.remove(); if (window.ESTUDIO_EMBED) { try { sessionStorage.removeItem('ep-conta-v1'); } catch { } avisaPai('fechar'); } }; // dentro de outro programa: avisa para tirar a janela
     $('[data-x]', d).onclick = fecha; d.onclick = e => { if (e.target === d) fecha(); };
     if (window.ESTUDIO_EMBED) { const esc1 = e => { if (e.key === 'Escape' && !document.querySelector('.modal[style*="z-index: 30"]')) { removeEventListener('keydown', esc1); fecha(); } }; addEventListener('keydown', esc1); }
-    $('[data-a=foto]', d).onclick = async () => {
+    $$('[data-a=foto]', d).forEach(b => b.onclick = async () => { // o lápis da foto e o botão "Trocar foto"
       const f = await pedirArquivo('image/png,image/jpeg,image/webp,image/gif'); if (!f) return;
       if (f.size > 40 * 1048576) return m('Essa imagem é grande demais (até 40 MB).');
       let pronta = await cortarFoto(f); if (!pronta) return; // a pessoa ajusta zoom, giro e posição antes de aplicar
       pronta = await paraWebp(pronta); // na nuvem vai em WEBP quando fica menor
       m('Enviando a foto…'); try { CONTA = await contaApi('/conta/foto', { method: 'PUT', body: pronta, headers: { 'content-type': pronta.type } }); aplicaConta(); pinta(); } catch (e) { m(e.message); }
-    };
+    });
     const sf = $('[data-a=semfoto]', d); if (sf) sf.onclick = async () => { try { CONTA = await contaApi('/conta/foto', { method: 'DELETE' }); aplicaConta(); pinta(); } catch (e) { m(e.message); } };
     $('[data-k=nome]', d).oninput = e => { rasc.nome = e.target.value; };
     if ($('[data-a=local]', d)) $('[data-a=local]', d).onclick = async e => {
@@ -898,8 +1148,8 @@ function abrirConta() {
     };
     const lb = $('[data-k=lblur]', d); if (lb) lb.oninput = e => { rasc.blur = +e.target.value; e.target.nextElementSibling.textContent = e.target.value + ' px'; };
     const le = $('[data-k=lesc]', d); if (le) le.oninput = e => { rasc.escurecer = +e.target.value; e.target.nextElementSibling.textContent = Math.round(e.target.value * 100) + '%'; };
-    $$('input[name=fundo]', d).forEach(r => r.onchange = () => { rasc.fundo = r.value; });
-    if ($('[data-k=cor]', d)) $('[data-k=cor]', d).oninput = e => { rasc.cor = e.target.value; rasc.fundo = 'cor'; $('input[value=cor]', d).checked = true; };
+    $$('input[name=fundo]', d).forEach(r => r.onchange = () => { rasc.fundo = r.value; pinta(); }); // redesenha: "Imagem ou vídeo meu" mostra o arquivo, o blur e o escurecer
+    if ($('[data-k=cor]', d)) $('[data-k=cor]', d).oninput = e => { rasc.cor = e.target.value; rasc.fundo = 'cor'; $('input[value=cor]', d).checked = true; const t = e.target.closest('.fundo-op')?.querySelector('.tela'); if (t) t.style.background = rasc.cor; };
     $('[data-ok]', d).onclick = async () => {
       m('Salvando…');
       try {
@@ -923,11 +1173,13 @@ function irCom(url, trocar) {
   const s = $('#saida'); s.classList.add('on');
   setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
 }
+// abrir um programa: na mesma aba, com o fade de sempre (o Dock só tem atalhos; não guarda as abas abertas)
+const abrirProg = url => irCom(url);
 document.addEventListener('click', e => {
-  const a = e.target.closest?.('a.card[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
+  const a = e.target.closest?.('a.card[href], .rec a[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
   let u; try { u = new URL(a.href, location.href); } catch { return; }
   if (u.origin !== location.origin || u.href === location.href) return; // só os programas deste endereço
-  e.preventDefault(); irCom(u.href);
+  e.preventDefault(); abrirProg(u.href);
 });
 addEventListener('pageshow', e => { if (e.persisted) $('#saida')?.classList.remove('on'); }); // voltou pelo botão Voltar: tira o escuro
 function topo(email) {
@@ -941,7 +1193,7 @@ function atualizarTudo() {
   window.EstudioConta?.atualizarTudo(extras);
 }
 // ícones mudaram (ADM salvou, outra aba, nuvem): os cartões ligados a um ícone novo trocam na hora
-addEventListener('estudio-icones', () => { $$('#grid .card').forEach((el, i) => { const l = DADOS?.links?.[i]; if (l) pintarIcone(el, l); }); });
+addEventListener('estudio-icones', () => { $$('#grid .card').forEach((el, i) => { const l = menuVis[i]; if (l) pintarIcone(el, l); }); });
 // partes de dentro de um programa (decisão do dono, 02/11/2026): no cartão ANIMAR, com o mouse em cima, aparecem os ícones do
 // ATELIÊ e dos CENÁRIOS; com o mouse no ícone aparece o nome; o clique abre direto aquela parte do Animador
 const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios']] };
@@ -949,23 +1201,90 @@ function subProgs(el, l) {
   const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone]); const sub = SUBPROGS[prog]; if (!sub) return;
   const box = document.createElement('span'); box.className = 'subprog';
   box.innerHTML = sub.map(([id, nome, url]) => `<span class="sp-it" role="link" tabindex="0" data-url="${url}" aria-label="${nome}"><span data-estudio-icone="${id}"></span><i>${nome}</i></span>`).join('');
-  box.querySelectorAll('.sp-it').forEach(it => { const vai = e => { e.preventDefault(); e.stopPropagation(); location.href = it.dataset.url; };
+  box.querySelectorAll('.sp-it').forEach(it => { const vai = e => { e.preventDefault(); e.stopPropagation(); abrirProg(new URL(it.dataset.url, location.href).href); };
     it.addEventListener('click', vai); it.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') vai(e); }); });
   el.appendChild(box); try { window.EstudioIcones?.pinta?.(box); } catch { }
 }
+let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
+const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
+function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
+  const pos = new Map(o.map((k, i) => [k, i])); // os novos (que a ADM pôs depois) vão para o fim, na ordem da ADM
+  return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
   const g = $('#grid'); g.innerHTML = '';
-  DADOS.links.filter(l => !l.invisivel).forEach((l, i) => { // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
+  menuVis = ordenaLinks(DADOS.links.filter(l => !l.invisivel)); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
+  menuVis.forEach((l, i) => {
     const ok = l.url && !l.embreve;
-    const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.style.animationDelay = (i * .06) + 's';
+    const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
     el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, l); if (ok) subProgs(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
   });
-  if (!DADOS.links.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
+  const n = menuVis.length; g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
+  $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
+  if (!menuVis.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
+  if (!organizar.ligado) { organizar.ligado = true; organizar.liga(); }
+  organizar.pinta();
   quemEsta.liga();
+  recentes.liga(); // redesign: recentes na nuvem (um pedido por abertura do menu)
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
 }
+
+/* ORGANIZAR: "Organizar" faz os cartões tremerem; arrastar (mouse ou dedo) muda a ordem; o alfinete (ou soltar o cartão no Dock)
+   fixa o programa no Dock. Tudo só neste navegador. Fora do modo Organizar, clicar abre o programa como sempre. */
+const PINO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3z"/><path d="M12 14v6"/></svg>';
+const organizar = {
+  on: false,
+  fixos() { try { const v = JSON.parse(localStorage.getItem('ep-dock-fixos') || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } },
+  grava(l) { try { localStorage.setItem('ep-dock-fixos', JSON.stringify(l)); } catch { } dispatchEvent(new Event('estudio-dock-fixos')); this.pinta(); },
+  fixa(l, sim) { const k = chaveL(l), v = this.fixos().filter(x => x.k !== k);
+    if (sim) { const ic = $('#grid .card[data-k="' + CSS.escape(k) + '"] .ic')?.innerHTML || ''; // o mesmo ícone do cartão (se for pequeno)
+      v.push({ k, url: normUrl(l.url || ''), nome: l.nome || '', prog: progDaUrl(l.url, l.nome), ic: ic.length < 8000 ? ic : '' }); }
+    this.grava(v.slice(-8)); toast(sim ? 'Fixado no Dock (só neste navegador).' : 'Tirado do Dock.'); },
+  pinta() { // botão, dica, rolagem e os alfinetes
+    const g = $('#grid'), cx = $('#grid-caixa'), b = $('#btn-org'); if (!g || !cx || !b) return;
+    b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on; g.classList.toggle('org', this.on);
+    $('#progs-cab').hidden = menuVis.length < 2;
+    cx.classList.toggle('rola', g.dataset.densidade !== 'grande'); this.fimDaRolagem();
+    const fx = new Set(this.fixos().map(x => x.k));
+    $$('.card', g).forEach((el, i) => { const l = menuVis[i]; let p = el.querySelector('.fixar');
+      if (!l?.url || l.embreve) { p?.remove(); return; }
+      if (!p) { p = document.createElement('button'); p.type = 'button'; p.className = 'fixar'; p.innerHTML = PINO; el.appendChild(p);
+        p.onclick = e => { e.preventDefault(); e.stopPropagation(); const lk = menuVis.find(x => chaveL(x) === el.dataset.k); if (lk) this.fixa(lk, p.getAttribute('aria-pressed') !== 'true'); }; }
+      const sim = fx.has(el.dataset.k); p.setAttribute('aria-pressed', String(sim)); p.title = sim ? 'Tirar do Dock' : 'Fixar no Dock'; p.setAttribute('aria-label', p.title); });
+  },
+  fimDaRolagem() { const cx = $('#grid-caixa'); if (cx) cx.classList.toggle('fim', cx.scrollHeight - cx.scrollTop - cx.clientHeight < 4); },
+  salvaOrdem() { const ks = $$('#grid .card').map(el => el.dataset.k); try { localStorage.setItem('ep-menu-ordem', JSON.stringify(ks)); } catch { }
+    menuVis = ks.map(k => DADOS.links.find(l => chaveL(l) === k)).filter(Boolean); },
+  liga() {
+    $('#btn-org').onclick = () => { this.on = !this.on; this.pinta(); };
+    $('#grid-caixa').addEventListener('scroll', () => this.fimDaRolagem(), { passive: true });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && this.on) { this.on = false; this.pinta(); } });
+    // no modo Organizar, clicar não abre o programa
+    $('#grid').addEventListener('click', e => { if (this.on && !e.target.closest('.fixar')) { e.preventDefault(); e.stopPropagation(); } }, true);
+    // arrastar (mouse e dedo): o cartão segue o ponteiro; passando sobre outro, troca de lugar; solto no Dock, fixa
+    let arr = null;
+    $('#grid').addEventListener('pointerdown', e => { const el = e.target.closest('.card'); if (!this.on || !el || e.target.closest('.fixar') || e.button > 0) return;
+      e.preventDefault(); arr = { el, x0: e.clientX, y0: e.clientY, foi: false }; el.setPointerCapture?.(e.pointerId); });
+    $('#grid').addEventListener('pointermove', e => { if (!arr) return; const dx = e.clientX - arr.x0, dy = e.clientY - arr.y0;
+      if (!arr.foi) { if (Math.hypot(dx, dy) < 6) return; arr.foi = true; arr.el.classList.add('arrastando'); document.body.classList.add('arrasta-dock'); }
+      arr.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.04)';
+      const sob = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('#grid .card');
+      if (sob && sob !== arr.el) { const r0 = arr.el.getBoundingClientRect(), r = sob.getBoundingClientRect(), depois = (e.clientX > r.left + r.width / 2) || (e.clientY > r.bottom);
+        sob.parentNode.insertBefore(arr.el, depois ? sob.nextSibling : sob); const r1 = arr.el.getBoundingClientRect(); // o cartão mudou de lugar: corrige o deslocamento
+        arr.x0 += r1.left - r0.left; arr.y0 += r1.top - r0.top; arr.el.style.transform = 'translate(' + (e.clientX - arr.x0) + 'px,' + (e.clientY - arr.y0) + 'px) scale(1.04)'; }
+      const cx = $('#grid-caixa'), rc = cx.getBoundingClientRect(); // perto da borda da caixa: rola sozinho
+      if (cx.classList.contains('rola')) { if (e.clientY > rc.bottom - 30) cx.scrollTop += 12; else if (e.clientY < rc.top + 30) cx.scrollTop -= 12; } });
+    const solta = e => { if (!arr) return; const { el, foi } = arr; arr = null; document.body.classList.remove('arrasta-dock');
+      el.classList.remove('arrastando'); el.style.transform = ''; if (!foi) return;
+      const dk = document.querySelector('.ep-dock')?.getBoundingClientRect();
+      if (dk && e.clientX >= dk.left - 10 && e.clientX <= dk.right + 10 && e.clientY >= dk.top - 14 && e.clientY <= dk.bottom + 10) { const l = menuVis.find(x => chaveL(x) === el.dataset.k); if (l?.url && !l.embreve) this.fixa(l, true); }
+      this.salvaOrdem(); this.pinta(); };
+    $('#grid').addEventListener('pointerup', solta); $('#grid').addEventListener('pointercancel', solta);
+  },
+};
+// o Dock (/estudio-conta.js) pede para abrir um programa fixado: abre como os cartões (mesma aba, com o escurecer)
+addEventListener('estudio-abrir-prog', e => { const u = e.detail?.url; if (u) abrirProg(u); });
 
 /* QUEM ESTÁ EM CADA PROGRAMA AGORA (porteiro /online, a mesma presença do ADM): fotinhos no canto do cartão, como o "ao vivo" do Ateliê/Animador.
    Nunca vem e-mail; confere de minuto em minuto só com o menu à vista. */
@@ -976,7 +1295,7 @@ const quemEsta = {
   async busca() { try { const r = await fetch('/online', { credentials: 'same-origin', cache: 'no-store' }); if (!r.ok) return; this.lista = (await r.json()).pessoas || []; this.pinta(); } catch { } },
   pinta() {
     const L = this.lista || [];
-    $$('#grid .card').forEach((el, i) => { const l = DADOS?.links?.[i], prog = l && this.progDe(l.url || ''); el.querySelector('.qe-on')?.remove();
+    $$('#grid .card').forEach((el, i) => { const l = menuVis[i], prog = l && this.progDe(l.url || ''); el.querySelector('.qe-on')?.remove();
       const gs = prog ? L.filter(x => x.prog === prog).sort((a, b) => (b.eu ? 1 : 0) - (a.eu ? 1 : 0)) : []; if (!gs.length) return;
       const n = gs.length <= 3 ? 3 : 2, cor = u => ['#ff6b9d','#ffb35c','#7bd88f','#19d3f0','#b9a6ff','#ffd166'][[...String(u)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6], mini = g => `<span class="qe-av" style="background:${cor(g.u)};color:#14151a" title="${esc(g.nome)}${g.eu ? ' (você)' : ''}">${g.foto ? `<img src="${esc(g.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<i>${esc((g.nome || '?')[0].toUpperCase())}</i></span>`;
       const d = document.createElement('span'); d.className = 'qe-on'; d.title = 'Agora aqui: ' + gs.map(x => x.nome + (x.eu ? ' (você)' : '')).join(', ');
@@ -984,11 +1303,70 @@ const quemEsta = {
   },
 };
 
+/* RECENTES NA NUVEM (redesign, 03/11/2026): as animações da nuvem da equipe mexidas por último (turma-ia GET /animacoes:
+   { id, nome, mod, por, em, tam, quem: { a: criou, e: [quem editou…] } }, códigos u… e nunca e-mail), com a miniatura
+   (animacoes/<id>/thumb.jpg) e a foto de quem editou por último (o /pessoa do porteiro, ou o que as Mensagens já guardaram).
+   ECONOMIA: a lista fica 15 min neste navegador (localStorage, vale para todas as abas): cada busca gasta LISTAS do KV, o limite
+   mais apertado do plano grátis (1000 por dia na conta) e a miniatura fica guardada neste navegador pela
+   data da última mudança (só baixa de novo quando a animação muda). "Só os meus" não fica guardado: volta para Todos no F5. */
+const recentes = {
+  N: 5, quem: 'todos', lista: null, eu: null,
+  async liga() {
+    const box = $('#recentes'); if (!box) return;
+    $$('[data-rec]', box).forEach(b => b.onclick = () => { this.quem = b.dataset.rec; $$('[data-rec]', box).forEach(x => x.setAttribute('aria-pressed', String(x === b))); this.pinta(); });
+    try { const e = String(fb?.currentUser?.email || '').trim().toLowerCase(); // o mesmo código (u…) que o servidor dá para cada pessoa
+      if (e) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + e))); this.eu = 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } } catch { }
+    const K = 'ep-recentes-v1'; let j = null;
+    try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 15 * 6e4) j = c.j; } catch { }
+    if (!j) { try { j = await api('/animacoes?menu=1'); localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { j = null; } }
+    this.lista = (j?.itens || []).filter(x => x.id).sort((a, b) => (b.mod || 0) - (a.mod || 0)).slice(0, 30);
+    box.hidden = !this.lista.length; this.pinta();
+  },
+  editou(x) { const q = x.quem || {}, e = Array.isArray(q.e) ? q.e : []; const ult = e.slice().sort((a, b) => (b.t || 0) - (a.t || 0))[0] || q.a; return ult?.i ? { u: ult.i, nome: ult.n } : x.por ? { u: x.por, nome: '' } : null; },
+  meu(x) { const q = x.quem || {}; return !!this.eu && [x.por, q.a?.i, ...(q.e || []).map(p => p.i)].includes(this.eu); },
+  quando(t) { const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : m < 2880 ? 'ontem' : `há ${Math.round(m / 1440)} dias`; },
+  pinta() {
+    const el = $('#rec'); if (!el || !this.lista) return;
+    const L = this.lista.filter(x => this.quem === 'todos' || this.meu(x)).slice(0, this.N);
+    if (!L.length) { el.innerHTML = `<div class="vz">${this.quem === 'meus' ? 'Você ainda não mexeu em nenhuma animação da nuvem.' : 'Nada na nuvem ainda.'}</div>`; return; }
+    const cor = u => ['#ff6b9d', '#ffb35c', '#7bd88f', '#19d3f0', '#b9a6ff', '#ffd166'][[...String(u)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
+    el.innerHTML = L.map(x => { const p = this.editou(x), eu = p?.u === this.eu, nome = eu ? 'Você' : (p?.nome || '').split(' ')[0] || 'Alguém';
+      return `<a href="/animador/?aba=animacoes" title="${esc(x.nome || 'Animação')} · abrir no Animador"><span class="th carregando" data-th="${esc(x.id)}" data-mod="${+x.mod || 0}"><span class="anel11" role="progressbar" aria-label="Carregando a miniatura"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span><span class="pg"><span data-estudio-icone="an"></span></span>${p ? `<span class="quem" data-u="${esc(p.u)}" style="background:${cor(p.u)}" title="Editado por último por ${esc(eu ? 'você' : p.nome || 'alguém da equipe')}">${esc((p.nome || '?')[0].toUpperCase())}</span>` : ''}</span>
+        <span class="rt"><b>${esc(x.nome || 'Animação sem nome')}</b><small>${esc(nome)} editou ${this.quando(+x.mod || Date.parse(x.em) || Date.now())}</small></span></a>`; }).join('');
+    try { window.EstudioIcones?.pinta?.(el); } catch { }
+    $$('[data-th]', el).forEach(t => this.miniatura(t)); $$('.quem[data-u]', el).forEach(q => this.foto(q));
+  },
+  // miniatura: guardada neste navegador por id + data da mudança (localStorage 'ep-recentes-th', no máximo 12); sem ela, fica a cor do Animador
+  async miniatura(t) {
+    const id = t.dataset.th, mod = +t.dataset.mod || 0, K = 'ep-recentes-th'; let mem = {}; try { mem = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch { }
+    const poe = src => { t.style.backgroundImage = src ? `url("${src}")` : 'linear-gradient(160deg,#062832,#0d0d10)'; t.classList.remove('carregando'); };
+    if (mem[id]?.m === mod && mem[id].d) return poe(mem[id].d);
+    const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 10000); // internet travada: em 10 s desiste (o anel não fica girando para sempre)
+    try { const r = await fetch(SRV + '/animacoes/arquivo?k=' + encodeURIComponent('animacoes/' + id + '/thumb.jpg'), { cache: 'no-store', signal: ac.signal, headers: { authorization: 'Bearer ' + await token() } });
+      if (!r.ok) throw 0; const b = await r.blob(); if (b.size > 400e3) throw 0;
+      const d = await new Promise((ok, no) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = no; f.readAsDataURL(b); });
+      poe(d); mem[id] = { m: mod, d, t: Date.now() };
+      const ks = Object.keys(mem).sort((a, b) => (mem[b].t || 0) - (mem[a].t || 0)); for (const k of ks.slice(12)) delete mem[k];
+      try { localStorage.setItem(K, JSON.stringify(mem)); } catch { try { localStorage.removeItem(K); } catch { } }
+    } catch { poe(null); } finally { clearTimeout(tm); }
+  },
+  // foto de quem editou: primeiro o que as Mensagens já guardaram neste navegador (ep-quem-v1, sem pedido); senão /pessoa (o porteiro guarda 2 min)
+  async foto(el) {
+    const u = el.dataset.u; let q = null; try { q = JSON.parse(localStorage.getItem('ep-quem-v1') || '{}')?.[u]?.q || null; } catch { }
+    if (!q) { this.pessoas ||= new Map(); if (!this.pessoas.has(u)) this.pessoas.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); q = await this.pessoas.get(u); }
+    if (q?.nome && !el.title.includes('você')) { el.title = 'Editado por último por ' + q.nome; const s = el.closest('a')?.querySelector('small'); if (s && /^Alguém /.test(s.textContent)) s.textContent = s.textContent.replace(/^Alguém/, q.nome.split(' ')[0]); }
+    if (q?.foto) el.innerHTML = `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`;
+  },
+};
+
 /* ======================= ADM ======================= */
 let EDIT = null, sujo = false;
 const toast = t => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); };
-const st = (t, k) => { const s = $('#save-st'); s.className = 'st ' + (k || ''); if (/^[^<]*(<span data-quem="[^"<>]*"><\/span>[^<]*)?$/.test(t) && t.includes('data-quem')) s.innerHTML = t; else s.textContent = t; }; // "por" vira foto + nome
+let st = (t, k) => { const s = $('#save-st'); s.className = 'st ' + (k || ''); if (/^[^<]*(<span data-quem="[^"<>]*"><\/span>[^<]*)?$/.test(t) && t.includes('data-quem')) s.innerHTML = t; else s.textContent = t; }; // "por" vira foto + nome
 const mudou = () => { sujo = true; st('Mudanças não salvas.'); };
+// redesign: a barra Salvar flutua e só aparece com mudança (depois de salvar, fica uns segundos mostrando o "Salvo!")
+const pintaSujo = () => { const b = $('#adm .savebar'); if (!b) return; clearTimeout(pintaSujo.t); if (sujo) b.classList.add('sujo'); else pintaSujo.t = setTimeout(() => b.classList.remove('sujo'), 2600); };
+{ const st0 = st; st = (t, k) => { st0(t, k); pintaSujo(); }; }
 const urlOk = u => !u || /^https?:\/\/[^\s"'<>]+$/i.test(u) || /^(?![a-z][\w+.-]*:|\/\/)[^\s"'<>]+$/i.test(u);
 
 // arrastar = posicionar; rodinha = zoom. Funciona com mouse, caneta e dedo.
@@ -1723,8 +2101,14 @@ function abaAdm(n) {
   if (n === 'dispositivos') renderDispositivos();
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
 }
-function showAdm() {
-  $$('.adm-abas [data-aba]').forEach(b => b.onclick = () => { abaAdm(b.dataset.aba); window.scrollTo({ top: 0 }); });
+// sobre = ADM aberta como janela por cima do menu (evento 'estudio-abrir-adm'); na página /adm e em /adm?embed=1 é false
+function showAdm(sobre) {
+  $$('.adm-abas [data-aba]').forEach(b => b.onclick = () => { abaAdm(b.dataset.aba); window.scrollTo({ top: 0 }); $$('.adm>.adm-pag').forEach(p => { p.scrollTop = 0; }); });
+  // redesign: busca da barra lateral (esconde as áreas que não combinam; Enter abre a primeira)
+  const busca = $('#adm-busca'); if (busca) { const sem = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    busca.oninput = () => { const q = sem(busca.value.trim()); $$('.adm-abas [data-aba]').forEach(b => b.classList.toggle('fora', !!q && !sem(b.textContent).includes(q))); $$('.adm-abas h3').forEach(h => { h.hidden = !!q; }); };
+    busca.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $$('.adm-abas [data-aba]').find(b => !b.hidden && !b.classList.contains('fora'))?.click(); } }; }
+  $('#adm-x').onclick = fecharAdm;
   let ultima = 'botoes'; try { ultima = localStorage.getItem('ep-adm-aba') || 'botoes'; } catch { }
   if (/^#denuncias/.test(location.hash)) ultima = 'conversas'; // veio do alerta de denúncia (foto da conta)
   addEventListener('hashchange', () => { if (/^#denuncias/.test(location.hash)) abaAdm('conversas'); });
@@ -1734,10 +2118,10 @@ function showAdm() {
   try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
   $$('#nuvem-fontes [data-fonte]').forEach(b => b.onclick = () => nvTrocaFonte(b.dataset.fonte));
   $('#adm').hidden = false; $('#badge-adm').hidden = false;
-  const ver = $('#btn-ver'); ver.hidden = false; ver.href = BASE;
-  document.title = 'ADM — Estúdio Problems';
+  const ver = $('#btn-ver'); ver.hidden = !!sobre || window.ESTUDIO_EMBED_ADM; ver.href = BASE;
+  if (!sobre) { document.title = 'ADM · Estúdio Problems'; const n = $('#top-nome'); if (n) n.textContent = 'ADM'; const s = $('#top-sub'); if (s) s.hidden = false; }
   const copia = () => JSON.parse(JSON.stringify({ links: DADOS.links, fundo: DADOS.fundo, mensagens: DADOS.mensagens }));
-  EDIT = copia(); EDIT.links.forEach(l => { if (l.url) { const n = normUrl(l.url); if (n !== l.url) { l.url = n; sujo = true; } } }); renderLinks(); renderMensagens(); renderFundo(); fundoTela(null); // na ADM o fundo da tela não toca
+  EDIT = copia(); EDIT.links.forEach(l => { if (l.url) { const n = normUrl(l.url); if (n !== l.url) { l.url = n; sujo = true; } } }); renderLinks(); renderMensagens(); renderFundo(); if (!sobre) fundoTela(null); // na ADM o fundo da tela não toca (por cima do menu, o do menu continua atrás)
   st(DADOS.em ? `Última mudança: ${new Date(DADOS.em).toLocaleString('pt-BR')}${DADOS.por ? ` por <span data-quem="${esc(DADOS.por)}"></span>` : ''}.` : 'Ainda não salvo no servidor: mostrando os botões padrão.');
   $('#add-link').onclick = () => { EDIT.links.push({ nome: 'Novo link', desc: '', url: null, embreve: false, modo: 'sempre', icone: 'link', iconeImg: null, iconeTam: 62, iconeCaixa: true, fundo: null, escurecer: .45 }); mudou(); renderLinks(); $('#links').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
   $$('[data-addbg]').forEach(b => b.onclick = async () => { const m = await novaMidia(b.dataset.addbg); if (!m) return; EDIT.fundo.itens.push(m); if (EDIT.fundo.modo === 'nenhum') EDIT.fundo.modo = 'um'; mudou(); renderFundo(); });
@@ -1752,6 +2136,30 @@ function showAdm() {
   };
   addEventListener('beforeunload', e => { if (sujo) { e.preventDefault(); e.returnValue = ''; } });
 }
+
+/* ADM COMO JANELA (redesign, 03/11/2026): no menu, o evento 'estudio-abrir-adm' (Dock e menu da conta, do /estudio-conta.js) abre a
+   ADM por cima do menu, sem trocar de página; em outro programa ela vem num iframe (/adm?embed=1). ✕, Esc ou clicar fora fecham. */
+let admAberta = false;
+// detail.aba (opcional): já abre naquela área (ex.: 'conversas' para as denúncias)
+function abrirAdmSobre(e) {
+  const aba = e?.detail?.aba;
+  if (MODO_ADM) { if (aba && $('#adm') && !$('#adm').hidden) abaAdm(aba); return; } // a página /adm já é a ADM: só troca de área
+  if (!DADOS?.adm) return; // quem não é ADM não abre
+  if (aba) { try { localStorage.setItem('ep-adm-aba', aba); } catch { } } // a showAdm volta para a última área depois de carregar a lista de acesso
+  if (!admAberta) { admAberta = true; showAdm(true); } else $('#adm').hidden = false;
+  if (aba) abaAdm(aba);
+  document.documentElement.classList.add('adm-sobre'); setTimeout(() => $('#adm-busca')?.focus({ preventScroll: true }), 60);
+}
+function fecharAdm() {
+  if (sujo && !confirm('Fechar a ADM sem salvar as mudanças? (elas continuam aqui se você abrir de novo)')) return;
+  if (window.ESTUDIO_EMBED_ADM) return avisaAdm('fechar');
+  if (!document.documentElement.classList.contains('adm-sobre')) return;
+  document.documentElement.classList.remove('adm-sobre'); $('#adm').hidden = true;
+}
+addEventListener('estudio-abrir-adm', abrirAdmSobre);
+addEventListener('keydown', e => { if (e.key !== 'Escape' || document.querySelector('.modal')) return;
+  if (document.documentElement.classList.contains('adm-sobre') || window.ESTUDIO_EMBED_ADM) { e.preventDefault(); fecharAdm(); } });
+document.addEventListener('mousedown', e => { if (e.target === $('#adm') && (document.documentElement.classList.contains('adm-sobre') || window.ESTUDIO_EMBED_ADM)) fecharAdm(); });
 
 /* ======================= volta para o site que pediu o login ======================= */
 // Um projeto (ex.: /modelador) sem login manda para cá com ?volta=<endereço>. Depois que o servidor libera a conta,
@@ -1786,20 +2194,21 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
       DADOS = await carregar();
       if (MODO_ADM) {
         if (!DADOS.servidor) throw Object.assign(new Error(DADOS.erro?.type === 'sem_kv' || DADOS.erro?.status === 404 ? 'O servidor ainda não tem a parte do menu. Atualize o worker na Cloudflare (veja o LEIA-ME).' : (DADOS.erro?.message || 'Não consegui ler o menu no servidor.')), { soAviso: true });
-        if (!DADOS.adm) return location.replace(BASE); // quem não é ADM volta direto para o menu, sem aviso
+        if (!DADOS.adm) return window.ESTUDIO_EMBED_ADM ? avisaAdm('fechar') : location.replace(BASE); // quem não é ADM volta direto para o menu, sem aviso (dentro de outro programa: a janela fecha)
       }
       if (!MODO_ADM) { const v = destinoVolta(); if (v?.url) { msg('Abrindo o site…', false, true); return irCom(v.url, true); }
         if (v?.bloqueado) setTimeout(() => toast('Esse site não reconheceu o login. Abra pelo botão do menu ou avise o ADM.'), 600); }
       limparVolta();
       // o menu monta por baixo da tela de carregamento e só aparece quando as imagens e arquivos terminaram de baixar
-      const lg = $('#login'); lg.classList.add('cobrindo'); msg('Abrindo o menu…', false, true); topo(email);
-      MODO_ADM ? showAdm() : showMenu();
+      const lg = $('#login'); lg.classList.add('cobrindo'); msg('Abrindo o menu…', false, true); if (!window.ESTUDIO_EMBED_ADM) topo(email); // dentro de outro programa a ADM vem sem a barra de cima (o programa já tem a conta)
+      MODO_ADM ? showAdm() : showMenu(); avisaAdm('pronto');
       try { await window.EstudioProgresso?.esperarTudo(8000); } catch { }
       setTimeout(limpaMidiaCache, 15000);
       lg.classList.add('saindo'); setTimeout(() => { lg.hidden = true; lg.classList.remove('saindo', 'cobrindo'); }, 320);
       if (QS.has('conta') && CONTA) abrirConta();
     } catch (e) {
       if (window.ESTUDIO_EMBED) return avisaPai('login');
+      if (window.ESTUDIO_EMBED_ADM) return avisaAdm('login');
       btn.disabled = false; msg(esc(e.message) + (e.soAviso ? ' <a href="/" style="color:var(--ac);font-weight:600">Voltar ao menu</a>' : ''), true); other.hidden = !fb?.currentUser;
       if (e.denied && !e.soAviso) { try { await fb.signOut(); } catch { } other.hidden = true; }
     }
@@ -1812,7 +2221,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
   // vindo do botão da conta de um projeto: ?sair=1 sai da conta; ?conta=1 abre a Minha conta depois de entrar
   const QS = new URLSearchParams(location.search);
   if (QS.has('sair')) { try { localStorage.removeItem('ep-conv-v1'); } catch { } try { await init(); await fb.signOut(); } catch { } location.replace(BASE); return; }
-  try { const u = await init(); if (u) await pass(); else if (window.ESTUDIO_EMBED) avisaPai('login'); else { btn.disabled = false; msg(new URLSearchParams(location.search).has('volta') ? 'Entre com o Google para abrir o site.' : ''); } }
+  try { const u = await init(); if (u) await pass(); else if (window.ESTUDIO_EMBED) avisaPai('login'); else if (window.ESTUDIO_EMBED_ADM) avisaAdm('login'); else { btn.disabled = false; msg(new URLSearchParams(location.search).has('volta') ? 'Entre com o Google para abrir o site.' : ''); } }
   catch (e) { btn.disabled = true; msg(esc(e.message || String(e)), true); }
 })();
 </script>
