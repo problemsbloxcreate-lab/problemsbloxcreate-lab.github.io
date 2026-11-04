@@ -381,7 +381,16 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
     try { return meta ? await kv.getWithMetadata(k, o) : await kv.get(k, o); }
     // falha de um instante (fora do limite): a cópia de segurança entrega o arquivo SEM marcar "reserva" — senão o site mostrava
     // "a nuvem principal já voltou" sem nada ter saído do ar (04/11/2026)
-    catch (e) { if (!R) throw e; const g = await R.bkget(k).catch(() => ({ value: null })); if (g.value == null) throw e; console.log('leitura pela cópia:', String(e?.message || e).slice(0, 120)); if (emLimite()) usou(); flag.copia = true; return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); } };
+    // VERSÃO VELHA (04/11/2026: Clara e Melzinha "voltavam"): numa falha da principal o servidor entregava a CÓPIA DE SEGURANÇA, que é
+    // de horas antes, e o Ateliê gravava essa versão velha por cima. Agora: tenta a principal mais duas vezes; a cópia só entra no
+    // limite do dia ou quando é da MESMA versão da lista (mod igual ou mais novo). Senão, erro claro (o programa tenta de novo).
+    catch (e) { if (!R) throw e; let e2 = e;
+      for (const ms of [250, 900]) { await new Promise(r => setTimeout(r, ms)); try { return meta ? await kv.getWithMetadata(k, o) : await kv.get(k, o); } catch (x) { e2 = x; } }
+      console.log('leitura falhou na principal:', k.replace(/[^/]+@[^/]+/g, '•'), String(e2?.message || e2).slice(0, 120));
+      const g = await R.bkget(k).catch(() => ({ value: null })); if (g.value == null) throw e2;
+      const naLista = kvLista?.m.get(k)?.metadata?.mod || 0, daCopia = +(g.metadata?.mod || 0);
+      if (!emLimite() && (!naLista || daCopia < naLista)) { const x = new Error('A nuvem não conseguiu ler a versão mais nova deste arquivo agora (só a cópia de segurança, mais antiga, respondeu). Tente de novo em alguns segundos. Nada foi perdido.'); x.instavel = true; throw x; }
+      if (emLimite()) usou(); flag.copia = true; return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); } };
   const W = {
     get: (k, o) => ler(k, o, false), getWithMetadata: (k, o) => ler(k, o, true),
     async put(k, v, o) {
@@ -457,9 +466,10 @@ function avisoLimite(req, e) {
   if (semRes) return new Response(JSON.stringify({ error: { type: 'reserva', message: 'A nuvem da equipe está no limite de hoje e a nuvem reserva não respondeu agora. Tente de novo em alguns segundos. O que você fez continua guardado neste computador.' } }), { status: 503,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
   // ERROS EXPLICADOS (pedido do dono, 04/11/2026): em vez de "erro 500/503" com o texto técnico, uma frase dizendo o que houve e o que fazer
-  const cheio = /ARQUIVOS_CHEIO/.test(m), instavel = !lim && !cheio && /respondeu 5\d\d|abort|timed? ?out|timeout|network connection lost|connection (reset|closed)|internal error|overloaded|too many|busy|1102|exceeded resources|reset because/i.test(m);
+  const cheio = /ARQUIVOS_CHEIO/.test(m), instavel = !lim && !cheio && (e?.instavel || /respondeu 5\d\d|abort|timed? ?out|timeout|network connection lost|connection (reset|closed)|internal error|overloaded|too many|busy|1102|exceeded resources|reset because/i.test(m));
   const erro = lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: duas ? 'A nuvem da equipe, a reserva e a terciária chegaram ao limite de hoje. Voltam sozinhas às 21h (horário de Brasília). O que você fez continua guardado neste computador.' : 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
     : cheio ? { type: 'cheio', message: 'O espaço da nuvem dos arquivos está cheio, então este arquivo não foi salvo lá. Avise um ADM para liberar espaço. O que você fez continua guardado neste computador.' }
+    : instavel && e?.instavel ? { type: 'instavel', message: m }
     : instavel ? { type: 'instavel', message: 'A nuvem ficou sobrecarregada por um instante e não conseguiu responder. Isso costuma passar sozinho: tente de novo em alguns segundos. Nada foi perdido.' }
     : { type: 'servidor', message: 'A nuvem teve um problema inesperado ao fazer isso. Tente de novo; se continuar, avise um ADM. O que você fez continua guardado neste computador. (detalhe técnico: ' + m.slice(0, 120) + ')' };
   return new Response(JSON.stringify({ error: erro, erro: erro.message }), { status: lim || instavel ? 503 : cheio ? 507 : 500,
@@ -497,9 +507,9 @@ export default {
     const flag = { reserva: false }; let r;
     try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
     if (flag.reserva && !emLimite()) { // a principal JÁ VOLTOU e o que sobrou na reserva está voltando para ela: o site tira o aviso
-      const h = new Headers(r.headers); h.set('x-nuvem', 'voltando'); h.set('access-control-expose-headers', 'x-nuvem'); r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+      const h = new Headers(r.headers); h.set('x-nuvem', 'voltando'); h.set('access-control-expose-headers', 'x-nuvem, x-mod'); r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     } else if (flag.reserva || emLimite()) { // o site mostra "usando a nuvem reserva" (ou só o aviso do limite)
-      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? (Date.now() < tercAte ? 'terciaria' : 'reserva') : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial');
+      const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? (Date.now() < tercAte ? 'terciaria' : 'reserva') : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial, x-mod');
       r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
     return r;
@@ -589,11 +599,16 @@ export default {
       const KP = /^personagens\/(pastas\.json|[a-z0-9][a-z0-9-]{1,40}\/(personagem\.json|img\/[a-z0-9][a-z0-9-]{1,60}\.(png|webp|gif|jpg|jpeg|svg)))$/;
       const KD = /^personagens\/[a-z0-9][a-z0-9-]{1,40}\/$/;
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push(await semEmail({ k: x.name, ...(x.metadata || {}) })); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
+      const itemDe = async kk => { // a versão atual: direto do D1 (uma linha; a lista guardada pode ter até 30 s), no limite pela lista
+        if (env._d1 && env.EQUIPE_DB && !emLimite()) { try { const a = await env.EQUIPE_DB.prepare('SELECT meta FROM arq WHERE k = ?').bind(kk).first(); if (!a) return null; let m = {}; try { m = JSON.parse(a.meta || '{}') || {}; } catch { } return { mod: 0, ...m }; } catch { } }
+        const r = await env.EQUIPE.list({ prefix: kk }); const x = r.keys.find(y => y.name === kk); return x ? { mod: 0, ...(x.metadata || {}) } : null; }, modDe = async kk => +((await itemDe(kk))?.mod || 0);
       if (p0 === '/personagens') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors); return json({ itens: await listar('personagens/') }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'GET') {
-        if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
-        const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
-        return new Response(r.value, { status: 200, headers: { ...cors, 'content-type': r.metadata?.tipo || 'application/octet-stream', 'cache-control': k.endsWith('.json') ? 'no-store' : 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff', ...(k.endsWith('.svg') ? { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" } : {}) } });
+        if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors); if (q.get('so') === 'mod') return json({ mod: await modDe(k) }, 200, { ...cors, 'cache-control': 'no-store' }); // só a versão (o Ateliê confere sem baixar o personagem)
+        const r = await env.EQUIPE.getWithMetadata(k, { type: k.endsWith('.json') ? 'arrayBuffer' : 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        const mod = +(r.metadata?.mod || 0);
+        if (k.endsWith('.json')) { const ml = await modDe(k); if (ml && mod && mod < ml) return json({ error: { type: 'instavel', message: 'A nuvem entregou uma versão antiga deste personagem. Tente abrir de novo em alguns segundos. Nada foi perdido.' } }, 503, { ...cors, 'cache-control': 'no-store' }); }
+        return new Response(r.value, { status: 200, headers: { ...cors, 'x-mod': String(mod), 'access-control-expose-headers': 'x-mod, x-nuvem, x-nuvem-volta', 'content-type': r.metadata?.tipo || 'application/octet-stream', 'cache-control': k.endsWith('.json') ? 'no-store' : 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff', ...(k.endsWith('.svg') ? { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" } : {}) } });
       }
       if (req.method === 'PUT' || req.method === 'POST') {
         if (!KP.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
@@ -602,8 +617,14 @@ export default {
         if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
         if (!k.endsWith('.json') && (await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
         const m0 = await metaDe(q.get('de'));
-        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, mod: Date.now(), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
-        return json({ ok: true, k }, 200, cors);
+        // VERSÃO-BASE (04/11/2026): o Ateliê manda ?base=<mod da versão que ele abriu>; se a nuvem já tem outra, recusa (409) em vez de
+        // gravar uma versão velha por cima. ?forcar=1 = a pessoa escolheu sobrescrever. Sem base (aba com o site antigo) e o personagem já existe: recusa e pede F5.
+        if (k.endsWith('personagem.json') && q.get('forcar') !== '1') { const atual = await itemDe(k), base = +q.get('base') || 0;
+          if (atual && !q.has('base')) return json({ error: { type: 'versao_antiga', message: 'Esta aba do Ateliê está com uma versão antiga do site e poderia gravar um personagem velho por cima. Atualize a página (F5) para salvar. O que você fez continua guardado neste computador.' } }, 409, cors);
+          if (atual && +(atual.mod || 0) !== base) { const p = await semEmail({ por: atual.por }); return json({ error: { type: 'conflito', message: 'Há uma versão mais nova deste personagem na nuvem.', mod: +atual.mod || 0, por: p.por || null, quando: +atual.mod || 0 } }, 409, cors); } }
+        const mod = Date.now();
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(k.endsWith('.json') && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, mod, por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        return json({ ok: true, k, mod }, 200, cors);
       }
       if (req.method === 'DELETE') {
         // APAGAR DA NUVEM: só ADM (decisão do dono). Quem não é ADM só pode tirar imagens que o personagem salvo já não usa
