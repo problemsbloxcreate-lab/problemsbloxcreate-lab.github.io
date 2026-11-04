@@ -2,7 +2,7 @@
 
 Todo projeto novo segue o mesmo padrão para nada quebrar no login nem na ligação com o menu:
 
-1. **Login**: só pelo Google do menu (Firebase `estudio-problems-fbe08`, conferido pelo porteiro e pelo servidor `turma-ia`).
+1. **Login**: só pelo Google do menu (Firebase `estudio-problems-login`, conferido pelo porteiro e pelo servidor `turma-ia`).
    A página carrega `<script src="/estudio-login.js"></script>` no `<head>`. Nada de senha própria, bypass ou "modo teste".
 2. **Endereço**: o projeto entra no `PROJETOS` do porteiro (`porteiro/wrangler.toml`) com `"conta": true`
    (e `"assinar": true` + portão próprio se ele tiver um worker na Cloudflare). Links para o menu usam `/`.

@@ -28,11 +28,11 @@
     sdk: 'https://www.gstatic.com/firebasejs/10.14.1/',
     firebase: { // dados PÚBLICOS por natureza; a segurança está no servidor
       apiKey: '__FIREBASE_API_KEY__',
-      authDomain: 'estudio-problems-fbe08.firebaseapp.com',
-      projectId: 'estudio-problems-fbe08',
-      storageBucket: 'estudio-problems-fbe08.firebasestorage.app',
-      messagingSenderId: '833185766272',
-      appId: '1:833185766272:web:4127fcf45287c5a559ff65',
+      authDomain: 'estudio-problems-login.firebaseapp.com',
+      projectId: 'estudio-problems-login',
+      storageBucket: 'estudio-problems-login.firebasestorage.app',
+      messagingSenderId: '105930517340',
+      appId: '1:105930517340:web:665cfdcffdcd8283e8af99',
     },
   };
   const NOME_PROG = ((p => [['/animador/', 'ANIMADOR'], ['/jester/', 'JESTER DREAMS'], ['/editor/', 'EDITOR'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/shorts/', 'SHORTS']].find(([k]) => p.startsWith(k))?.[1] || 'ESTÚDIO PROBLEMS')(location.pathname));
