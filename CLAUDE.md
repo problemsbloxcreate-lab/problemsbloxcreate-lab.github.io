@@ -79,7 +79,15 @@
 - PEDIDOS DOS WORKERS (limite grátis: 100 mil/dia na CONTA problemsraiz: porteiro `estudio` + `turma-ia` + editor-problems + estudio-problems; estourou = erro 1027 e o Estúdio inteiro sai do ar até as 21h). Medido em 02/11/2026: porteiro ~57 mil, turma-ia ~44 mil (a maior parte pela ligação direta do porteiro). O dono quer o aviso de versão nova RÁPIDO, então os arquivos continuam `no-cache`. Economias: no ANIMADOR a conferência de versão nova do estudio-conta.js lê só a página, o estudio-conta.js e o `/animador/versao.json` (antes eram até 30 arquivos a cada 3,5 min por aba); presença de 90 em 90 s (porteiro esquece em 200 s); Mensagens fechadas 60 s / aba escondida 120 s; sessão conferida de 2 em 2 min; menu `/online` de 90 em 90 s. A Action "Uso da nuvem" (repo estudio-problems) mostra "pedidos por worker hoje".
 - CHAVE DO FIREBASE FORA DO CÓDIGO (02/11/2026: o Google SUSPENDEU a chave antiga, "API key has been suspended", depois que o GitHub avisou que ela estava exposta nos repositórios públicos): o código (estudio-login.js, index.html/404.html, js/config.js do Animador) só tem o marcador `__FIREBASE_API_KEY__`; o porteiro troca pela chave do segredo `FIREBASE_API_KEY` (`comChaveFb`, no `menu`, no /estudio-login.js e em qualquer `/js/config.js` repassado). A Action "Publicar o porteiro" põe o segredo a partir do segredo do GitHub de mesmo nome. NUNCA ponha a chave (AIza…) em arquivo do repositório. A chave nova deve ser restrita no Google Cloud (sites: estudio.problemsraiz.workers.dev e estudio-problems-fbe08.firebaseapp.com; APIs: Identity Toolkit e Token Service).
 
-## Firebase novo (02/11/2026)
+## Firebase ATUAL (03/11/2026)
+- O Google suspendeu também o projeto `estudio-problems-fbe08` (a conta problemsbloxcreate@gmail.com caiu). Projeto ATUAL: `estudio-problems-login`
+  (número 105930517340) na conta PESSOAL miriamyasmincontato@gmail.com, que só cuida do login e do ao vivo (não usar essa conta para mais nada).
+  Login Google ligado; domínios autorizados estudio.problemsraiz.workers.dev e estudio-reserva.editorcustomizado.workers.dev; Realtime Database
+  https://estudio-problems-login-default-rtdb.firebaseio.com (us-central1), regras: `aovivo` lê/grava só quem está em `equipe/<uid>`; `equipe/<uid>`
+  só a própria pessoa lê (quem grava é o turma-ia com a conta de serviço). Sem Analytics e sem Gemini. Segredos do GitHub: `FIREBASE_API_KEY`
+  (repos problemsbloxcreate-lab.github.io e estudio-problems) e `FIREBASE_CONTA` (github.io).
+
+## Firebase de 02/11/2026 (SUSPENSO, só histórico)
 - O Google tirou a conta problemsraizz@gmail.com e o projeto antigo `problems-estudios` caiu. Projeto NOVO: `estudio-problems-fbe08`
   na conta problemsbloxcreate@gmail.com (login Google ligado, domínio autorizado estudio.problemsraiz.workers.dev, Realtime Database
   https://estudio-problems-fbe08-default-rtdb.firebaseio.com com regras: `aovivo` só para quem está em `equipe/<uid>`, que o turma-ia marca).
