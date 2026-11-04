@@ -1297,7 +1297,7 @@ const aoVivo = {
     if (!L.length) { el.innerHTML = '<div class="vz">Ninguém trabalhando ao vivo agora. Quando alguém usar o "Trabalhar junto" no Animador ou no Ateliê, aparece aqui.</div>'; return; }
     const cor = s => ['#ff6b9d', '#ffb35c', '#7bd88f', '#19d3f0', '#b9a6ff', '#ffd166'][[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
     const foto = p => { const f = String(p.foto || ''), fundo = esc(p.cor || cor(p.nome)), nome = esc(p.nome);
-      return /^(https:|\/)/.test(f) ? `<span class="av" style="background:${fundo}" title="${nome}"><img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"></span>`
+      return /^(https:|\/|data:image\/(png|jpe?g|webp);base64,)/.test(f) ? `<span class="av" style="background:${fundo}" title="${nome}"><img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"></span>`
         : `<span class="av" style="background:${fundo}" title="${nome}">${esc(String(p.nome)[0].toUpperCase())}</span>`; };
     el.innerHTML = L.map(([s, m]) => {
       const at = s.startsWith('at-'), ps = this.gente.get(s).pessoas, n = ps.length <= 4 ? 4 : 3;
