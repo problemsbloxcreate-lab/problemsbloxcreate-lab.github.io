@@ -390,6 +390,17 @@ input,textarea,[contenteditable],code,pre,.selecionavel,.nv-txt,.ac-orig,.bolha{
 .rec .rt{padding:9px 10px 10px;min-width:0}
 .rec b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rec small{display:block;color:var(--tx2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .vz{padding:14px;color:var(--tx3);font-size:12px}
+/* AO VIVO (03/11/2026): salas abertas agora no Animador/Ateliê (Firebase Realtime Database, o mesmo do "Trabalhar junto") */
+.pt-vivo{display:inline-block;width:7px;height:7px;border-radius:50%;background:#30d158;margin-right:6px;vertical-align:1px;box-shadow:0 0 0 0 rgba(48,209,88,.6)}
+[data-rec=aovivo][aria-pressed=true] .pt-vivo{animation:epPulsa 1.6s ease-out infinite}
+@keyframes epPulsa{to{box-shadow:0 0 0 6px rgba(48,209,88,0)}}
+.rec .vz .btn{margin-top:8px}
+.rec .vivo .th{display:flex;align-items:center;justify-content:center;gap:0;background:radial-gradient(circle at 70% 30%,rgba(48,209,88,.25),transparent 60%),linear-gradient(160deg,#0b2a1a,#0d0d10)}
+.rec .vivo .th .etq-vivo{position:absolute;top:8px;right:8px;display:flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.4px;color:#7ee0a0;background:rgba(0,0,0,.45);padding:2px 8px;border-radius:10px}
+.rec .vivo .fotos{display:flex}.rec .vivo .fotos .av{width:30px;height:30px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font:700 12px/1 var(--font);color:#14151a;box-shadow:0 0 0 2px rgba(10,12,18,.9)}
+.rec .vivo .fotos .av+.av{margin-left:-8px}.rec .vivo .fotos .av img{width:100%;height:100%;object-fit:cover}
+.rec .vivo .fotos .mais{background:#2b2f3d;color:#fff;font-size:10px;width:auto;min-width:30px;padding:0 6px;border-radius:15px}
+@media (prefers-reduced-motion:reduce){[data-rec=aovivo][aria-pressed=true] .pt-vivo{animation:none}}
 /* carregando: anel que gira, aumenta e diminui (como o ProgressRing do Windows 11) */
 .anel11{position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;display:none}
 .carregando>.anel11{display:block}
@@ -592,8 +603,8 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div>
   <!-- redesign: as animações da nuvem da equipe mexidas por último (turma-ia /animacoes), com quem editou -->
   <section class="recentes" id="recentes" hidden>
-    <div class="rec-cab"><h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg>Recentes na nuvem</h4><span class="sp"></span>
-      <span class="seg" role="group" aria-label="De quem"><button type="button" data-rec="todos" aria-pressed="true">Todos</button><button type="button" data-rec="meus" aria-pressed="false">Só os meus</button></span></div>
+    <div class="rec-cab"><h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span id="rec-tit">Recentes na nuvem</span></h4><span class="sp"></span>
+      <span class="seg" role="group" aria-label="De quem"><button type="button" data-rec="todos" aria-pressed="true">Todos</button><button type="button" data-rec="meus" aria-pressed="false">Só os meus</button><button type="button" data-rec="aovivo" aria-pressed="false" title="Quem está trabalhando junto agora no Animador e no Ateliê"><i class="pt-vivo" aria-hidden="true"></i>Ao vivo</button></span></div>
     <div class="rec" id="rec"></div>
   </section>
   <nav data-estudio-dock aria-label="Abas abertas e atalhos"></nav><!-- redesign: o /estudio-conta.js preenche o Dock -->
@@ -1230,6 +1241,76 @@ function showMenu() {
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
 }
 
+/* AO VIVO NO MENU (03/11/2026): quem está trabalhando junto agora no Animador e no Ateliê (o "Trabalhar junto" deles, Firebase
+   Realtime Database: aovivo/lista/<sala> = { tipo, nome, por, em, fim } e aovivo/salas/<sala>/gente/<id> = { nome, foto, cor }).
+   ESTÁVEL E SEM GASTO NA CLOUDFLARE: só conecta quando a pessoa abre a aba "Ao vivo"; não pergunta de tempos em tempos (o Firebase avisa
+   quando muda); escuta no máximo 8 salas; desliga ao trocar de aba ou esconder a página (e religa ao voltar); erro ou demora = aviso
+   com "Tentar de novo" (NUNCA tenta sozinho, para não entrar em laço). */
+const aoVivo = {
+  URL: 'https://' + MENU_CONFIG.firebase.projectId + '-default-rtdb.firebaseio.com', MAX: 8,
+  el: null, ligado: false, db: null, offLista: null, gente: new Map(), lista: {}, tm: 0, erro: '', recebeu: false,
+  async sdk() {
+    if (window.firebase?.database) return;
+    if (!this._sdk) this._sdk = new Promise((ok, no) => { const s = document.createElement('script'); s.src = SDK + 'firebase-database-compat.js'; s.onload = ok; s.onerror = () => { this._sdk = null; no(new Error('não carregou')); }; document.head.appendChild(s); });
+    return this._sdk;
+  },
+  mostra(el) { this.el = el; if (document.hidden) return; if (!this.ligado) this.liga(); else this.desenha(); },
+  async liga() {
+    this.ligado = true; this.erro = ''; this.lista = {}; this.recebeu = false; this.desenha();
+    clearTimeout(this.tm); this.tm = setTimeout(() => { if (this.ligado && !this.recebeu) { this.erro = 'demora'; this.para(true); } }, 10000); // 10 s sem resposta: desiste e mostra o botão
+    try {
+      await this.sdk(); if (!this.ligado) return;
+      this.db = firebase.app().database(this.URL); this.db.goOnline();
+      const r = this.db.ref('aovivo/lista');
+      const ok = s => { this.recebeu = true; clearTimeout(this.tm); this.lista = s.val() || {}; this.salas(); };
+      const falhou = () => { this.erro = 'permissao'; this.para(true); };
+      r.on('value', ok, falhou); this.offLista = () => r.off('value', ok);
+    } catch { this.erro = 'rede'; this.para(true); }
+  },
+  para(mostraErro) { // desliga tudo (listas e conexão); com erro, mostra o aviso e o botão
+    clearTimeout(this.tm); try { this.offLista?.(); } catch { } this.offLista = null;
+    for (const g of this.gente.values()) try { g.off(); } catch { }
+    this.gente.clear(); try { this.db?.goOffline(); } catch { } this.ligado = false;
+    if (mostraErro) this.desenha();
+  },
+  // salas abertas (sem "fim"), as mais recentes primeiro: escuta quem está em cada uma (só as que vão aparecer)
+  salas() {
+    const L = Object.entries(this.lista).filter(([s, m]) => /^(an|at)-/.test(s) && m && !m.fim).sort((a, b) => (b[1].em || 0) - (a[1].em || 0)).slice(0, this.MAX);
+    const quer = new Set(L.map(([s]) => s));
+    for (const [s, g] of this.gente) if (!quer.has(s)) { try { g.off(); } catch { } this.gente.delete(s); }
+    for (const [s] of L) if (!this.gente.has(s)) {
+      const r = this.db.ref('aovivo/salas/' + s + '/gente');
+      const ok = v => { const g = this.gente.get(s); if (g) { g.pessoas = Object.values(v.val() || {}).filter(p => p && p.nome); this.desenha(); } };
+      this.gente.set(s, { pessoas: null, off: () => r.off('value', ok) }); r.on('value', ok, () => { });
+    }
+    this.desenha();
+  },
+  desenha() {
+    const el = this.el; if (!el || recentes.quem !== 'aovivo') return;
+    if (this.erro) {
+      const txt = this.erro === 'permissao' ? 'O ao vivo ainda não foi liberado para a sua conta. Abra o Animador uma vez e tente de novo.' : 'Não deu para ver quem está ao vivo agora.';
+      el.innerHTML = '<div class="vz">' + txt + '<br><button type="button" class="btn sm" data-av-de-novo>Tentar de novo</button></div>';
+      el.querySelector('[data-av-de-novo]').onclick = () => { this.erro = ''; this.liga(); }; return;
+    }
+    if (!this.recebeu) { el.innerHTML = '<div class="vz">Procurando quem está ao vivo…</div>'; return; }
+    const L = Object.entries(this.lista).filter(([s]) => this.gente.get(s)?.pessoas?.length).sort((a, b) => (b[1].em || 0) - (a[1].em || 0));
+    if (!L.length) { el.innerHTML = '<div class="vz">Ninguém trabalhando ao vivo agora. Quando alguém usar o "Trabalhar junto" no Animador ou no Ateliê, aparece aqui.</div>'; return; }
+    const cor = s => ['#ff6b9d', '#ffb35c', '#7bd88f', '#19d3f0', '#b9a6ff', '#ffd166'][[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
+    const foto = p => { const f = String(p.foto || ''), fundo = esc(p.cor || cor(p.nome)), nome = esc(p.nome);
+      return /^(https:|\/)/.test(f) ? `<span class="av" style="background:${fundo}" title="${nome}"><img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"></span>`
+        : `<span class="av" style="background:${fundo}" title="${nome}">${esc(String(p.nome)[0].toUpperCase())}</span>`; };
+    el.innerHTML = L.map(([s, m]) => {
+      const at = s.startsWith('at-'), ps = this.gente.get(s).pessoas, n = ps.length <= 4 ? 4 : 3;
+      const url = at ? '/animador/?atelie=' + encodeURIComponent(s.slice(3)) : '/animador/?aba=animacoes'; // Ateliê: abre o personagem e entra sozinho; Animador: a tela inicial tem o "Entrar"
+      return `<a class="vivo" href="${url}" title="${esc(m.nome || '')} · ${at ? 'abrir no Ateliê' : 'entrar no Animador'}"><span class="th"><span class="pg"><span data-estudio-icone="${at ? 'at' : 'an'}"></span></span><span class="etq-vivo"><i class="pt-vivo"></i>AO VIVO</span><span class="fotos">${ps.slice(0, n).map(foto).join('')}${ps.length > n ? `<span class="av mais">+${ps.length - n}</span>` : ''}</span></span>`
+        + `<span class="rt"><b>${esc(m.nome || (at ? 'Personagem' : 'Animação'))}</b><small>${at ? 'Ateliê' : 'Animador'} · ${ps.length} ${ps.length > 1 ? 'pessoas' : 'pessoa'}${m.por ? ' · aberta por ' + esc(String(m.por).split(' ')[0]) : ''}</small></span></a>`;
+    }).join('');
+    try { window.EstudioIcones?.pinta?.(el); } catch { } // o ícone do programa (An / At) no canto, como nos recentes
+  },
+};
+// página escondida: desliga o ao vivo (libera a conexão); voltou com a aba "Ao vivo" aberta: liga de novo
+document.addEventListener('visibilitychange', () => { if (recentes.quem !== 'aovivo') return; if (document.hidden) aoVivo.para(); else if (!aoVivo.erro) aoVivo.mostra($('#rec')); });
+
 /* ORGANIZAR: "Organizar" faz os cartões tremerem; arrastar (mouse ou dedo) muda a ordem; o alfinete (ou soltar o cartão no Dock)
    fixa o programa no Dock. Tudo só neste navegador. Fora do modo Organizar, clicar abre o programa como sempre. */
 const PINO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3z"/><path d="M12 14v6"/></svg>';
@@ -1320,13 +1401,15 @@ const recentes = {
     try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 15 * 6e4) j = c.j; } catch { }
     if (!j) { try { j = await api('/animacoes?menu=1'); localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { j = null; } }
     this.lista = (j?.itens || []).filter(x => x.id).sort((a, b) => (b.mod || 0) - (a.mod || 0)).slice(0, 30);
-    box.hidden = !this.lista.length; this.pinta();
+    box.hidden = false; this.pinta();
   },
   editou(x) { const q = x.quem || {}, e = Array.isArray(q.e) ? q.e : []; const ult = e.slice().sort((a, b) => (b.t || 0) - (a.t || 0))[0] || q.a; return ult?.i ? { u: ult.i, nome: ult.n } : x.por ? { u: x.por, nome: '' } : null; },
   meu(x) { const q = x.quem || {}; return !!this.eu && [x.por, q.a?.i, ...(q.e || []).map(p => p.i)].includes(this.eu); },
   quando(t) { const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : m < 2880 ? 'ontem' : `há ${Math.round(m / 1440)} dias`; },
   pinta() {
-    const el = $('#rec'); if (!el || !this.lista) return;
+    const el = $('#rec'); if (!el) return;
+    $('#rec-tit').textContent = this.quem === 'aovivo' ? 'Ao vivo agora' : 'Recentes na nuvem';
+    if (this.quem === 'aovivo') return aoVivo.mostra(el); aoVivo.para(); if (!this.lista) return;
     const L = this.lista.filter(x => this.quem === 'todos' || this.meu(x)).slice(0, this.N);
     if (!L.length) { el.innerHTML = `<div class="vz">${this.quem === 'meus' ? 'Você ainda não mexeu em nenhuma animação da nuvem.' : 'Nada na nuvem ainda.'}</div>`; return; }
     const cor = u => ['#ff6b9d', '#ffb35c', '#7bd88f', '#19d3f0', '#b9a6ff', '#ffd166'][[...String(u)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
@@ -1618,7 +1701,7 @@ async function renderAcesso() {
     catch (e) { stA(e.message, true); } finally { bt.disabled = false; }
   };
   $('#acesso-atu').onclick = async () => { const b = $('#acesso-atu'); b.disabled = true; b.classList.add('girando'); await carrega(); b.classList.remove('girando'); b.disabled = false; };
-  clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 30e3); // online/offline ao vivo
+  clearInterval(renderAcesso.t); renderAcesso.t = setInterval(() => { if (!document.hidden && !$('#acesso-sec').hidden && !document.activeElement?.closest?.('#acesso-add')) carrega(); }, 120e3); // online/offline (economia, 03/11/2026: de 2 em 2 min; o botão Atualizar busca na hora)
   return carrega();
 }
 // ADM › Dispositivos: PCs com o Estúdio Problems Local (o porteiro confere se é ADM); e-mail sempre censurado

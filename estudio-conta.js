@@ -768,7 +768,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         const base = new URL(r.url), html = await r.text(); // das páginas, pega também os scripts, estilos e ícones do mesmo endereço
         for (const m of html.matchAll(/<(?:script|link|img)\b[^>]*?\b(?:src|href)\s*=\s*["']([^"'#]+)["']/gi)) {
           if (m[1].includes('${')) continue; // pedaço de código, não é arquivo
-          try { const u = new URL(m[1], base); if (u.origin === location.origin && !/\/(entrar|sair|conta)$/.test(u.pathname)) fila.push(u.pathname + u.search); } catch { }
+          try { const u = new URL(m[1], base); if (u.origin === location.origin && !/\/(entrar|sair|conta)$/.test(u.pathname) && !u.searchParams.has('_ev')) fila.push(u.pathname + u.search); } catch { } // com carimbo (?_ev=): a versão nova já vem com outro carimbo, não precisa baixar de novo (economia: antes até 800 pedidos por clique)
         }
       };
       // contagem real: quantos já baixou de quantos achou até agora (as páginas vêm primeiro e dizem quais arquivos usam, então o total para de crescer logo)
@@ -863,8 +863,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (ta?.token) { const t = await ta.token(); return t ? (/^Bearer /.test(t) ? t : 'Bearer ' + t) : null; }
   } catch { } return null; };
   async function usoNuvem(novo) {
-    const K = 'ep-nuvem-uso'; // guardado 5 min e o MESMO para todas as abas (cada medida lista a nuvem inteira; o porteiro também guarda)
-    if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 300e3) return c.j; } catch { } }
+    const K = 'ep-nuvem-uso'; // guardado 15 min (economia, 03/11/2026; antes 5) e o MESMO para todas as abas — 'Medir de novo' mede na hora (cada medida lista a nuvem inteira; o porteiro também guarda)
+    if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 900e3) return c.j; } catch { } }
     const tk = await tokenNuvem(); if (!tk) throw new Error('Entre pelo menu para ver a nuvem.');
     const r = await fetch('/nuvem-uso' + (novo ? '?novo=1' : ''), { credentials: 'same-origin', cache: 'no-store', headers: { authorization: tk } }), j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error?.message || 'A nuvem não respondeu.');
@@ -880,7 +880,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if ((atualizaNuvem.tentativas = (atualizaNuvem.tentativas || 0) + 1) <= 6) setTimeout(() => atualizaNuvem(novo), 2500); return; }
     atualizaNuvem.tentativas = 0;
   }
-  setInterval(() => { if (document.visibilityState === 'visible' && document.querySelector('.ep-conta-nuvem')) atualizaNuvem(); }, 180000);
+  setInterval(() => { if (document.visibilityState === 'visible' && document.querySelector('.ep-conta-nuvem')) atualizaNuvem(); }, 180000); // usa a medida guardada (15 min): no máximo uma medida de verdade a cada 15 min por navegador
   // a nuvem mudou (encheu, entrou a reserva/terciária, voltou): o círculo muda de cor NA HORA, com a última medida guardada (sem pedir nada à nuvem)
   addEventListener('estudio-nuvem-estado', () => { const bs = document.querySelectorAll('.ep-conta-nuvem'); if (!bs.length) return;
     let j = null; try { j = JSON.parse(localStorage.getItem('ep-nuvem-uso') || 'null')?.j || null; } catch { }
@@ -1008,7 +1008,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     let j; try { const r = await fetch('/sessao', { credentials: 'same-origin', cache: 'no-store' }); if (!r.ok) return; j = await r.json(); } catch { return; } // sem internet: não faz nada
     const agora = String(j?.email || '').toLowerCase(), antes = String(P.email || '').toLowerCase();
     if (agora && agora === antes) return;
-    confereSessao.indo = true;
+    confereSessao.indo = true; manda({ sessaoMudou: 1 }); // as outras abas conferem também (uma vez cada)
     const aviso = document.createElement('div'); aviso.className = 'ep-esp';
     aviso.innerHTML = `<div class="cx" role="alertdialog" style="width:min(380px,100%);text-align:center"><h2 style="justify-content:center">${agora ? 'Você entrou com outra conta' : 'Sua sessão terminou'}</h2><p class="nota">${agora ? 'Salvando o que está aberto e atualizando a página com a conta nova…' : 'Salvando o que está aberto e voltando para o login do menu…'}</p></div>`;
     document.body.appendChild(aviso);
@@ -1018,8 +1018,11 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   function vigiaSessao() {
     if (vigiando) return; vigiando = true;
-    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 120000) confereSessao(); }, 15000); // de 2 em 2 min (economia de pedidos)
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - ultimaSessao > 10000) confereSessao(); });
+    // ECONOMIA (03/11/2026): de 2 em 2 min só a aba LÍDER confere (com alguma aba do Estúdio à vista); se a sessão mudou, ela avisa as
+    // outras (sessaoMudou) e cada uma confere uma vez. O porteiro continua barrando quem foi tirado em qualquer pedido.
+    const vista = () => document.visibilityState === 'visible' || Date.now() - VIVO.outraVisivel < 45000;
+    setInterval(() => { if (VIVO.lider && vista() && Date.now() - ultimaSessao > 120000) confereSessao(); }, 15000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (VIVO.lider || !CANAL) && Date.now() - ultimaSessao > 10000) confereSessao(); });
   }
 
   /* ---------- Mensagens: conversa geral da equipe + conversas privadas ----------
@@ -1122,6 +1125,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (CANAL) CANAL.onmessage = ({ data: d }) => { if (!d) return;
       if (d.j || d.ev || d.bate || 'estado' in d) VIVO.bate = Date.now(); // sinal de que a líder está viva
       if (d.vivo) VIVO.outraVisivel = Date.now();
+      if (d.versaoNova) { marcaNova.deFora = true; marcaNova(d.versaoNova); marcaNova.deFora = false; } // outra aba achou versão nova
+      if (d.voltou && VIVO.lider) { VIVO.outraVisivel = Date.now(); if (Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); if (Date.now() - ultimaSessao > 30000) confereSessao(); }
+      if (d.sessaoMudou) confereSessao(); // a líder viu que saiu da conta (ou trocou): esta aba confere e faz o mesmo
       if (d.j) aplicaMsgs(d.j, MSG);
       else if (d.ev) eventoVivo(d.ev);
       else if (d.on && VIVO.lider) { VIVO.abas.set(String(d.on.aba), { prog: d.on.prog || null, t: Date.now() }); mandaPresenca(); }
@@ -1696,8 +1702,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const SITES = ['/', '/animador/', '/shorts/', '/editor/', '/modelador/'];
   const mesmaOrigem = u => { try { const x = new URL(u, location.href); return x.origin === location.origin ? x.pathname + x.search : null; } catch { return null; } };
   const recursosDaPagina = () => {
-    const l = [location.pathname + location.search, '/estudio-conta.js', '/estudio-login.js', '/estudio-carregando.js'];
-    document.querySelectorAll('script[src],link[rel~="stylesheet"][href]').forEach(e => { const u = mesmaOrigem(e.src || e.href); if (u) l.push(u); });
+    const l = [location.pathname + location.search];
+    // ECONOMIA (03/11/2026): arquivo com carimbo de versão (?_ev=, posto pelo porteiro) não precisa ser baixado: quando ele muda, o
+    // carimbo muda e o HTML da página muda junto — conferir a página já pega. Só os sem carimbo continuam na lista.
+    document.querySelectorAll('script[src],link[rel~="stylesheet"][href]').forEach(e => { const u = mesmaOrigem(e.src || e.href); if (u && !/[?&]_ev=/.test(u)) l.push(u); });
     return [...new Set(l)].slice(0, 30);
   };
   async function digital(u, modo) {
@@ -1709,7 +1717,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   const telaDeCarregamento = () => [...document.querySelectorAll('#estudio-porta,#turma-login')].some(e => !e.classList.contains('ep-saindo') && !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).opacity !== '0');
   function marcaNova(onde) {
-    if (VERSAO.nova) return; VERSAO.nova = true; VERSAO.onde = onde;
+    if (VERSAO.nova) return; VERSAO.nova = true; VERSAO.onde = onde; if (!marcaNova.deFora) manda({ versaoNova: onde }); // as outras abas acendem junto
     document.querySelectorAll('.ep-conta').forEach(b => b.classList.add('ep-novo'));
     try { dispatchEvent(new CustomEvent('estudio-versao-nova', { detail: { onde } })); } catch { }
   }
@@ -1748,10 +1756,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     } finally { VERSAO.rodando = false; }
   }
   if (window.top === window && /^https?:$/.test(location.protocol)) {
-    const comeca = () => { confereVersao(true).catch(() => { }); setTimeout(() => { VERSAO.ultima = 0; confereVersao().catch(() => { }); }, 20000); };
+    // ECONOMIA (03/11/2026): ao abrir, cada aba confere só o leve (página + 2 arquivos, para recarregar ainda na tela de carregamento);
+    // a conferência completa (as páginas dos programas) fica com a aba LÍDER, que avisa as outras quando acha versão nova.
+    const lider = () => VIVO.lider, algumaVisivel = () => document.visibilityState === 'visible' || Date.now() - VIVO.outraVisivel < 45000;
+    const comeca = () => { confereVersao(true).catch(() => { }); setTimeout(() => { if (!lider()) return; VERSAO.ultima = 0; confereVersao().catch(() => { }); }, 20000); };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comeca, { once: true }); else comeca();
-    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 3.5 * 60000) confereVersao().catch(() => { }); }, 30000);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); });
+    setInterval(() => { if (lider() && algumaVisivel() && Date.now() - VERSAO.ultima > 3.5 * 60000) confereVersao().catch(() => { }); }, 30000);
+    // voltou para uma aba do Estúdio: a líder confere (se faz mais de 1 min); as outras só avisam a líder
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') return; if (lider()) { if (Date.now() - VERSAO.ultima > 60000) confereVersao().catch(() => { }); } else manda({ voltou: 1 }); });
   }
 
   /* ===================== REDESIGN (03/11/2026): relógio + calendário pessoal, Dock, ADM por cima, anel de carregamento =====================
