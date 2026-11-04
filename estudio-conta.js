@@ -168,8 +168,16 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
           if (m2 !== j.error.message) return new Response(JSON.stringify({ ...j, error: { ...j.error, message: m2 } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); } } catch { } }
       else if (!/event-stream/.test(tipo)) { // página de limite da própria Cloudflare (HTML): vira o mesmo aviso
         const txt = await r.clone().text().catch(() => '');
-        if (/1027|limit|exceeded|rate.?limit/i.test(txt)) { marca(); return new Response(JSON.stringify({ error: { type: 'limite_cloudflare', message: MSG } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
+        if (/1027|limit|exceeded|rate.?limit/i.test(txt) && !/1102|exceeded resources/i.test(txt)) { marca(); return new Response(JSON.stringify({ error: { type: 'limite_cloudflare', message: MSG } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
       }
+    }
+    // ERROS EXPLICADOS (pedido do dono, 04/11/2026): a página de erro da própria Cloudflare (HTML, sem frase nossa) vira uma frase
+    // que diz o que houve e o que fazer — os programas mostram error.message em vez de "erro 503"
+    if (r.status >= 500 && !/json|event-stream/.test(r.headers.get('content-type') || '')) {
+      const s = r.status, txt = await r.clone().text().catch(() => ''), sobrecarga = s === 502 || s === 503 || s === 504 || s >= 520 || /1102|exceeded resources|timed? ?out/i.test(txt);
+      const msg = sobrecarga ? `A nuvem ficou sobrecarregada por um instante e não conseguiu responder (erro ${s}). Isso costuma passar sozinho: tente de novo em alguns segundos. Nada foi perdido.`
+        : `A nuvem teve um problema inesperado ao fazer isso (erro ${s}). Tente de novo; se continuar, avise um ADM. O que você fez continua guardado neste computador.`;
+      return new Response(JSON.stringify({ error: { type: sobrecarga ? 'instavel' : 'servidor', message: msg }, erro: msg }), { status: s, headers: { 'content-type': 'application/json; charset=utf-8' } });
     }
     return r;
   };

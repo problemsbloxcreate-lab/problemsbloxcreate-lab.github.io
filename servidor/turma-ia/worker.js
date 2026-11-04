@@ -454,8 +454,13 @@ function avisoLimite(req, e) {
   const o = req.headers.get('origin') || '*', d = new Date(); d.setUTCHours(24, 0, 0, 0); const m = String(e?.message || e), duas = /RESERVA_NO_LIMITE/.test(m), semRes = /RESERVA_SEM_RESPOSTA/.test(m), lim = duas || ehLimite(e);
   if (semRes) return new Response(JSON.stringify({ error: { type: 'reserva', message: 'A nuvem da equipe está no limite de hoje e a nuvem reserva não respondeu agora. Tente de novo em alguns segundos. O que você fez continua guardado neste computador.' } }), { status: 503,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
-  return new Response(JSON.stringify({ error: lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: duas ? 'A nuvem da equipe, a reserva e a terciária chegaram ao limite de hoje. Voltam sozinhas às 21h (horário de Brasília). O que você fez continua guardado neste computador.' : 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
-    : { type: 'servidor', message: 'O servidor da nuvem teve um erro: ' + String(e?.message || e).slice(0, 160) } }), { status: lim ? 503 : 500,
+  // ERROS EXPLICADOS (pedido do dono, 04/11/2026): em vez de "erro 500/503" com o texto técnico, uma frase dizendo o que houve e o que fazer
+  const cheio = /ARQUIVOS_CHEIO/.test(m), instavel = !lim && !cheio && /respondeu 5\d\d|abort|timed? ?out|timeout|network connection lost|connection (reset|closed)|internal error|overloaded|too many|busy|1102|exceeded resources|reset because/i.test(m);
+  const erro = lim ? { type: 'limite_cloudflare', volta: d.toISOString(), message: duas ? 'A nuvem da equipe, a reserva e a terciária chegaram ao limite de hoje. Voltam sozinhas às 21h (horário de Brasília). O que você fez continua guardado neste computador.' : 'A nuvem da equipe chegou ao limite de hoje. Volta sozinha às 21h (horário de Brasília). O que você fez continua guardado neste computador.' }
+    : cheio ? { type: 'cheio', message: 'O espaço da nuvem dos arquivos está cheio, então este arquivo não foi salvo lá. Avise um ADM para liberar espaço. O que você fez continua guardado neste computador.' }
+    : instavel ? { type: 'instavel', message: 'A nuvem ficou sobrecarregada por um instante e não conseguiu responder. Isso costuma passar sozinho: tente de novo em alguns segundos. Nada foi perdido.' }
+    : { type: 'servidor', message: 'A nuvem teve um problema inesperado ao fazer isso. Tente de novo; se continuar, avise um ADM. O que você fez continua guardado neste computador. (detalhe técnico: ' + m.slice(0, 120) + ')' };
+  return new Response(JSON.stringify({ error: erro, erro: erro.message }), { status: lim || instavel ? 503 : cheio ? 507 : 500,
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': o, 'access-control-allow-headers': 'authorization, content-type', 'vary': 'origin', 'cache-control': 'no-store' } });
 }
 
