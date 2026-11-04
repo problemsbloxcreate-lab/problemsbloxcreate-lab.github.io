@@ -121,3 +121,6 @@
 - SESSÃO: de 2 em 2 min só a aba líder confere `/sessao`; mudou = avisa as outras (`sessaoMudou`), que conferem uma vez cada.
 - CÍRCULO DA NUVEM: a medida fica 15 min guardada (`ep-nuvem-uso`, todas as abas); "Medir de novo" mede na hora. ADM › Quem pode entrar recarrega de 2 em 2 min.
 - Ficaram de fora DE PROPÓSITO: o login do menu (/quem + /entrar) — mexe no login; a gravação de uso da IA (`USO.put`) — protege o limite de gasto em dinheiro.
+
+## ERROS EXPLICADOS (pedido do dono, 04/11/2026)
+Erro da nuvem nunca aparece só como "erro 500/503". O servidor (avisoLimite no turma-ia) responde error.message com uma frase dizendo o que houve e o que fazer: limite, sobrecarga (503 type instavel), espaço cheio (507) ou problema inesperado (500, com o detalhe técnico no fim). O fetch do estudio-conta.js troca a página de erro HTML da Cloudflare (5xx) pela mesma frase. Nos programas, mostre sempre error.message antes do número.
