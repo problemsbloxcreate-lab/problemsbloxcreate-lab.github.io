@@ -76,7 +76,7 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
   const falta = t => { const m = Math.max(0, Math.ceil((t - Date.now()) / 60e3)), h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`; };
   let el = null, iv = 0;
   // VOLTANDO: a principal já voltou e o que ficou na reserva está voltando para ela (aviso verde-água por alguns minutos)
-  const KV = 'estudio-voltando', voltando = () => { try { return +localStorage.getItem(KV) > Date.now(); } catch { return false; } };
+  const KV = 'estudio-voltando', voltando = () => { try { const v = +localStorage.getItem(KV) - Date.now(); return v > 0 && v <= 90e3; } catch { return false; } }; // só ENQUANTO o servidor diz que está voltando (90 s, renovados a cada resposta "voltando"; marcas antigas de 10 min não contam)
   // AVISO SÓ QUANDO MUDA ALGO (decisão do dono, 29/10/2026): "limite" sem reserva em uso (nível 0) não aparece — nada muda
   // para a equipe (o que for gravado vai sozinho para a reserva e aí sim o aviso aparece)
   const visivel = () => naReserva() ? marcado() : 0;
@@ -105,7 +105,7 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
       const r = naReserva(), r3 = naTerciaria(); el.title = (r3 ? `A nuvem principal e a reserva chegaram ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem terciária e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : r ? `A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : MSG) + ' (clique para encolher)';
       el.style.borderColor = r3 ? 'rgba(255,143,209,.6)' : r ? 'rgba(47,208,168,.55)' : 'rgba(255,255,255,.12)'; el.style.color = r3 ? '#ffc2e6' : r ? '#9df0db' : '#cfd3dc'; // reserva = verde-água · terciária = rosa
       el.innerHTML = ic + (el._mini ? `<span>${r3 ? 'terciária · ' : r ? 'reserva · ' : ''}${falta(t2)}</span>` : r3 ? `<span>Usando a nuvem terciária · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
-    el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 30e3);
+    el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 10e3);
   }
   const f0 = window.fetch?.bind(window); if (!f0) return;
   /* PORTA RESERVA (decisão do dono, 02/11/2026): a conta principal passou dos pedidos do dia (erro 1027 da Cloudflare: o porteiro e o
@@ -155,7 +155,8 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
     }
     if (r.status === 429) confere1027(r);
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
-    if (xn === 'voltando') { const tinha = !!le(); try { localStorage.removeItem(K); localStorage.setItem(KV, String(Date.now() + 10 * 6e4)); } catch { } selo(); if (tinha) avisaCirculo(); } // a principal já voltou (o que sobrou na reserva está voltando para ela)
+    if (!xn && r.ok && voltando() && /^turma-ia\./.test((() => { try { return new URL(url, location.href).hostname; } catch { return ''; } })())) { try { localStorage.removeItem(KV); } catch { } selo(); } // o servidor respondeu normal: não tem mais nada voltando, o aviso sai na hora (sem F5)
+    if (xn === 'voltando') { const tinha = !!le(); try { localStorage.removeItem(K); localStorage.setItem(KV, String(Date.now() + 90e3)); } catch { } selo(); if (tinha) avisaCirculo(); } // a principal já voltou (o que sobrou na reserva está voltando para ela)
     else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'terciaria' ? 2 : xn === 'reserva' ? 1 : (xn === 'limite' && naReserva() && r.ok ? nivel() : 0));
     // o servidor da nuvem respondeu NORMAL (sem x-nuvem): a marca "só limite" (nível 0, sem reserva em uso) sai na hora —
     // antes ela ficava presa neste navegador até as 21h, mesmo atualizando a página
