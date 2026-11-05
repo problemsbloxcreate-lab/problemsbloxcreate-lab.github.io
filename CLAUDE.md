@@ -130,3 +130,6 @@ Erro da nuvem nunca aparece só como "erro 500/503". O servidor (avisoLimite no 
 - POST do personagem.json que já existe exige ?base=<mod> (sem base = aba com site antigo: 409 versao_antiga, pede F5); base diferente da atual = 409 conflito; ?forcar=1 = a pessoa escolheu sobrescrever.
 - Ateliê (animador/js/atelie.js): modNuvem é a versão-base da aba (vem do x-mod, vai no rascunho e na sala ao vivo). No 409 o envio automático para e pergunta (Abrir a versão nova / Salvar a minha por cima). Ao voltar para a aba confere a versão. Guardião da sala só entre gente ativa.
 - Ao vivo (aovivo.js): sala que nasceu de versão mais velha que a da nuvem é recriada da nuvem.
+
+## NUVEM DOS ARQUIVOS: FORMATO TEXTO (05/11/2026)
+O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 10 ms de CPU (exceededResources ~11%, "a nuvem ficou sobrecarregada"). O arquivos-problems guarda cada pedaço como texto base64 (mapa.f = 1, Buffer do nodejs_compat) e lembra na memória os arquivos lidos (até 48 MB). Os antigos foram convertidos (Action "Nuvem dos arquivos", acao=converter). Erros por Worker: Action "Uso da nuvem" com detalhe (e "desde").
