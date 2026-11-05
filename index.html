@@ -2090,7 +2090,7 @@ function renderLinks() {
     const card = $('.card', row); montarCard(card, l); if (l.invisivel) card.style.opacity = .4;
     const soon = () => { const s = !l.url || l.embreve; card.classList.toggle('soon', s); let t = $('.tag', card); if (s && !t) card.insertAdjacentHTML('afterbegin', '<span class="tag">em breve</span>'); if (!s && t) t.remove(); }; soon();
     const refresh = () => { $('b', card).textContent = nomeMenu(l); $('small', card).textContent = l.desc || ''; pintarIcone(card, l); card.style.setProperty('--esc', l.escurecer ?? .45); soon(); card.dataset.modo = l.fundo ? (MODOS[l.modo] ? l.modo : 'sempre') : 'sempre'; const m = $('.mfill', card); if (m && l.fundo) posicionar(m, l.fundo, blurDoCard(l)); const z = $('[data-k=zoom]', row); if (z && l.fundo) { z.value = l.fundo.zoom; z.nextElementSibling.textContent = vez(l.fundo.zoom); } };
-    arrastavel(card, () => l.fundo, fim => { refresh(); if (fim) mudou(); });
+    // (sem arrastar/zoom pela rodinha na prévia: o fundo dos botões não existe mais no menu novo)
     const campoUrl = $('[data-k=url]', row); campoUrl.addEventListener('blur', () => { const n = normUrl(campoUrl.value); if (n !== campoUrl.value.trim()) { campoUrl.value = n; toast('Completei o endereço com https://'); } });
     $$('[data-k]', row).forEach(inp => inp.addEventListener('input', () => {
       const k = inp.dataset.k;
