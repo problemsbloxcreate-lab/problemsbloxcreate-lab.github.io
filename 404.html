@@ -1084,7 +1084,7 @@ function fundoTela(f) {
   const mostra = () => {
     const m = itens[i % itens.length], l = document.createElement('div'); l.className = 'layer';
     const el = midiaEl(m, { loop: false }); l.appendChild(el); box.appendChild(l);
-    requestAnimationFrame(() => requestAnimationFrame(() => l.classList.add('on')));
+    setTimeout(() => l.classList.add('on'), 40); // (antes: dois requestAnimationFrame — com a aba sem desenhar, a foto nova nunca aparecia)
     $$('.layer', box).slice(0, -1).forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), 1300); });
     i++; clearTimeout(bgTimer);
     const prox = () => { clearTimeout(bgTimer); mostra(); };
@@ -1796,7 +1796,7 @@ function renderFundo() {
   $('[data-k=modo]', $('#bg-cfg')).value = f.modo;
   $$('#bg-cfg [data-k]').forEach(inp => inp.addEventListener('input', () => {
     const k = inp.dataset.k; if (k === 'modo') f.modo = inp.value; else if (k === 'intervalo') f.intervalo = clamp(+inp.value || 8, 2, 120); else { f.escurecer = +inp.value; inp.nextElementSibling.textContent = pct(inp.value); }
-    mudou();
+    mudou(); clearTimeout(renderFundo.tp); renderFundo.tp = setTimeout(() => fundoTela(soImagens(f)), 300); // prévia na hora, atrás da ADM
   }));
   const box = $('#bg-items'); box.innerHTML = '';
   const bf = $('#bg-fotos'); if (bf) bf.onclick = () => { for (const m of FOTOS_ESTUDIO) if (!f.itens.some(x => x.src === m.src)) f.itens.push(JSON.parse(JSON.stringify(m))); if (f.modo === 'nenhum') f.modo = 'um'; mudou(); renderFundo(); };
@@ -2574,7 +2574,7 @@ function showAdm(sobre) {
     const ruim = EDIT.links.find(l => !l.nome.trim() || !urlOk(l.url || ''));
     if (ruim) { st(ruim.nome.trim() ? `Endereço inválido em "${ruim.nome}". Use https://...` : 'Todo link precisa de um nome.', 'err'); return; }
     const b = $('#btn-save'); b.disabled = true; st('Salvando…');
-    try { const j = await api('/menu-links', { method: 'POST', body: JSON.stringify(EDIT), headers: { 'content-type': 'application/json' } }); DADOS = { ...DADOS, links: j.links, fundo: j.fundo, mensagens: { ...MSG_PADRAO, ...(j.mensagens || {}) }, em: j.em, por: j.por }; EDIT = copia(); sujo = false; renderLinks(); renderMensagens(); renderFundo(); st('Salvo! Todo mundo já vê o menu novo.', 'ok'); }
+    try { const j = await api('/menu-links', { method: 'POST', body: JSON.stringify(EDIT), headers: { 'content-type': 'application/json' } }); DADOS = { ...DADOS, links: j.links, fundo: soImagens(j.fundo), mensagens: { ...MSG_PADRAO, ...(j.mensagens || {}) }, em: j.em, por: j.por }; EDIT = copia(); sujo = false; renderLinks(); renderMensagens(); renderFundo(); fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); }); st('Salvo! Todo mundo já vê o menu novo.', 'ok'); }
     catch (e) { st(e.message, 'err'); } finally { b.disabled = false; }
   };
   addEventListener('beforeunload', e => { if (sujo) { e.preventDefault(); e.returnValue = ''; } });
@@ -2597,7 +2597,7 @@ function fecharAdm() {
   if (sujo && !confirm('Fechar a ADM sem salvar as mudanças? (elas continuam aqui se você abrir de novo)')) return;
   if (window.ESTUDIO_EMBED_ADM) return avisaAdm('fechar');
   if (!document.documentElement.classList.contains('adm-sobre')) return;
-  document.documentElement.classList.remove('adm-sobre'); $('#adm').hidden = true;
+  document.documentElement.classList.remove('adm-sobre'); $('#adm').hidden = true; if (DADOS) fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); }); // tira a prévia do fundo que não foi salva
 }
 addEventListener('estudio-abrir-adm', abrirAdmSobre);
 addEventListener('keydown', e => { if (e.key !== 'Escape' || document.querySelector('.modal')) return;

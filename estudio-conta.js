@@ -621,6 +621,14 @@ window.EstudioPerm ||= (() => {
 .ep-cal .g button{border-radius:0!important}.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}.ep-cal .g button.hoje{box-shadow:inset 0 0 0 2px #fff!important}
 .ep-cal input,.ep-cal .seg,.ep-cal .seg button,.ep-cal .ev{border-radius:0!important}
 .ep-notif{border-radius:0!important;background:rgba(14,32,58,.94)!important}
+/* balão da conta (foto no canto) no mesmo estilo */
+.ep-conta-pop{background:rgba(14,32,58,.96)!important;-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);border:0!important;border-radius:0!important;box-shadow:0 22px 60px rgba(0,20,50,.5)!important;color:#fff!important;padding:6px 0!important}
+.ep-conta-pop .it{border-radius:0!important;padding-left:16px!important;padding-right:16px!important}
+.ep-conta-pop .it:hover,.ep-conta-pop .it:focus-visible{background:rgba(255,255,255,.1)!important}
+.ep-conta-pop .it.sair:hover,.ep-conta-pop .it.sair:focus-visible{background:#d93a3a!important}
+.ep-conta-pop .sep{margin:6px 0!important;background:rgba(255,255,255,.12)!important}
+.ep-conta-pop .av,.ep-conta-pop img{border-radius:0!important}
+.ep-conta-pop b{font-weight:600}
 @media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
