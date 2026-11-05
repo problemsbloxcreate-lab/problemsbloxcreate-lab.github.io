@@ -560,10 +560,14 @@ async function comTrocas(env, r) {
    - Função "programa.algo" de um programa que a pessoa não vê também fica bloqueada.
    - Economia: o modelo fica 60 s na memória (e cacheTtl 60 no KV); o catálogo 10 min. Gravar = só quando o ADM salva. */
 const PERM = { m: undefined, t: 0 }, CAT = { j: null, t: 0 };
-const PERM_PADRAO = () => ({ v: 1, cargos: [{ id: 'equipe', nome: 'Equipe', cor: '#8e8e93', desc: 'Cargo padrão: quem não tem cargo fica nele.', sem: { programas: [], funcoes: [] } }], pessoas: {}, pastas: [], padrao: 'equipe' });
+// CARGO ADM (pedido da dona, 05/11/2026): sempre na lista, só para o selo dos ADMs no título do menu (nome, cor e "mostrar selo").
+// Quem é ADM vem da lista ADMINS (não dá para pôr alguém neste cargo pela tela); para ADM nada é bloqueado.
+const PERM_ADM = () => ({ id: 'adm', nome: 'ADM', cor: '#1d6fd6', desc: 'Os ADMs do Estúdio (lista do servidor). Só o selo no título do menu.', selo: true, sem: { programas: [], funcoes: [] } });
+const comAdm = m => { if (m && Array.isArray(m.cargos) && !m.cargos.some(c => c.id === 'adm')) m.cargos.splice(m.cargos.some(c => c.id === 'equipe') ? 1 : 0, 0, PERM_ADM()); return m; };
+const PERM_PADRAO = () => ({ v: 1, cargos: [{ id: 'equipe', nome: 'Equipe', cor: '#8e8e93', desc: 'Cargo padrão: quem não tem cargo fica nele.', sem: { programas: [], funcoes: [] } }, PERM_ADM()], pessoas: {}, pastas: [], padrao: 'equipe' });
 async function permModelo(env, forcar) {
   if (!forcar && PERM.m !== undefined && Date.now() - PERM.t < 60e3) return PERM.m;
-  try { const v = await env.EQUIPE?.get('acesso/permissoes', { type: 'json', cacheTtl: 60 }); PERM.m = v && Array.isArray(v.cargos) ? v : null; PERM.t = Date.now(); }
+  try { const v = await env.EQUIPE?.get('acesso/permissoes', { type: 'json', cacheTtl: 60 }); PERM.m = v && Array.isArray(v.cargos) ? comAdm(v) : null; PERM.t = Date.now(); }
   catch { if (PERM.m === undefined) PERM.m = null; PERM.t = Date.now() - 45e3; } // falhou: tenta de novo em 15 s; sem modelo = tudo liberado
   return PERM.m;
 }
@@ -576,12 +580,14 @@ const b64uE = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/
 const permId = async email => b64uE(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('acesso:' + String(email || '').trim().toLowerCase()))).slice(0, 16); // = idDe do porteiro
 // o que a pessoa NÃO tem (id = permId do e-mail). ADM: nada bloqueado.
 function permSem(m, id, adm) {
-  const vazio = { programas: [], funcoes: [], cargos: [] }; if (!m) return vazio;
-  const ids = (m.pessoas?.[id]?.cargos || []).filter(c => m.cargos.some(x => x.id === c));
+  const vazio = { programas: [], funcoes: [], cargos: [] }, cv = c => ({ id: c.id, nome: c.nome, cor: c.cor, ...(c.selo ? { selo: true } : {}) });
+  const admC = cv(m?.cargos?.find(x => x.id === 'adm') || PERM_ADM());
+  if (!m) return adm ? { ...vazio, cargos: [admC] } : vazio;
+  const ids = (m.pessoas?.[id]?.cargos || []).filter(c => c !== 'adm' && m.cargos.some(x => x.id === c)); // o cargo ADM é só de quem é ADM de verdade
   let cs = ids.map(c => m.cargos.find(x => x.id === c)); if (!cs.length) cs = [m.cargos.find(x => x.id === (m.padrao || 'equipe')) || m.cargos[0]].filter(Boolean);
   if (!cs.length) return vazio;
-  const cargosV = cs.map(c => ({ id: c.id, nome: c.nome, cor: c.cor, ...(c.selo ? { selo: true } : {}) })); // selo = mostrar no título do menu (ADM › Níveis)
-  if (adm) return { ...vazio, cargos: cargosV }; // ADM não perde nada, mas o selo do cargo dele também aparece
+  const cargosV = cs.map(cv); // selo = mostrar no título do menu (ADM › Níveis)
+  if (adm) return { ...vazio, cargos: [admC, ...cargosV] }; // ADM não perde nada; o cargo ADM (selo) e os cargos dele aparecem
   const todos = t => cs.reduce((a, c) => a.filter(k => (c.sem?.[t] || []).includes(k)), [...(cs[0].sem?.[t] || [])]); // bloqueado só se TODOS os cargos tiram
   return { programas: todos('programas'), funcoes: todos('funcoes'), cargos: cargosV };
 }
@@ -612,6 +618,7 @@ function permLimpa(b, porId) {
   const cargos = []; for (const c of b.cargos) { const id = txt(c?.id, 40).toLowerCase(); if (!ID.test(id) || cargos.some(x => x.id === id)) continue;
     cargos.push({ id, nome: txt(c.nome, 40) || 'Cargo', cor: cor(c.cor), desc: txt(c.desc, 160), ...(c.selo ? { selo: true } : {}), sem: { programas: lista(c.sem?.programas, ID, 60), funcoes: lista(c.sem?.funcoes, FN, 600) } }); }
   if (!cargos.some(c => c.id === 'equipe')) cargos.unshift(PERM_PADRAO().cargos[0]);
+  { const a = cargos.find(c => c.id === 'adm'); if (a) { a.sem = { programas: [], funcoes: [] }; } else comAdm({ cargos }); } // o cargo ADM sempre existe e nunca tira nada
   const pastas = []; for (const p of (Array.isArray(b.pastas) ? b.pastas : []).slice(0, 100)) { const id = txt(p?.id, 40).toLowerCase(); if (ID.test(id) && !pastas.some(x => x.id === id)) pastas.push({ id, nome: txt(p.nome, 40) || 'Pasta' }); }
   const pessoas = {}; let n = 0;
   for (const [id, p] of Object.entries(b.pessoas && typeof b.pessoas === 'object' ? b.pessoas : {})) { if (!PID.test(id) || ++n > 2000) continue;

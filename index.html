@@ -1570,7 +1570,8 @@ function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) re
 function pintaSeloAdm(s = DADOS?.seloAdm) { const b = $('#badge-adm'); if (!b) return; b.textContent = s?.texto || 'ADM'; const c = /^#[0-9a-f]{6}$/i.test(s?.cor || '') ? s.cor : ''; b.style.borderColor = c; b.style.background = c ? c + '55' : ''; }
 function pintaSelos() {
   const box = $('#selos-cargo'); if (!box) return; const P = window.EstudioPerm;
-  const desenha = () => { let cs = []; try { cs = (P?.dados?.()?.cargos || []).filter(c => c?.selo && c.nome); } catch { }
+  const desenha = () => { let todos = []; try { todos = P?.dados?.()?.cargos || []; } catch { } const cs = todos.filter(c => c?.selo && c.nome);
+    const ba = $('#badge-adm'); if (ba) ba.hidden = !DADOS?.adm || todos.some(c => c?.id === 'adm'); // cargo ADM chegou: o selo dele (nome/cor) substitui o fixo
     box.innerHTML = cs.map(c => { const cor = /^#[0-9a-f]{6}$/i.test(c.cor || '') ? c.cor : '#8e8e93'; return `<span class="badge cargo" style="border-color:${cor};background:${cor}40" title="Seu cargo">${esc(c.nome)}</span>`; }).join(''); };
   desenha(); if (!pintaSelos.ok) { pintaSelos.ok = true; try { P?.pronto?.then?.(desenha); } catch { } addEventListener('estudio-perm', desenha); }
 }
@@ -2168,7 +2169,7 @@ function renderMensagens() {
   const m = EDIT.mensagens, sa = (EDIT.seloAdm ||= { texto: 'ADM' });
   // SELO ADM (pedido da dona, 05/11/2026): texto e cor do selo ao lado de "Estúdio Problems" para quem é ADM
   let sc = $('#selo-cfg'); if (!sc) { sc = document.createElement('div'); sc.id = 'selo-cfg'; $('#msg-cfg').after(sc); }
-  sc.innerHTML = `<h2 style="margin-top:22px">Selo</h2><div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+  sc.innerHTML = `<h2 style="margin-top:22px">Selo</h2><p class="hint">O selo dos ADMs e dos outros cargos agora fica em <b>ADM › Níveis de acesso</b> (no cargo, "Mostrar selo no título do menu"); o cargo <b>ADM</b> já vem lá, com o selo ligado. Os campos abaixo só valem se as permissões não carregarem.</p><div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
     <label class="f" style="max-width:220px"><span>Texto do selo</span><input type="text" maxlength="16" id="sa-texto" value="${esc(sa.texto || 'ADM')}"></label>
     <label class="f" style="max-width:160px"><span>Cor (vazio = branco)</span><input type="color" id="sa-cor" value="${esc(sa.cor || '#ffffff')}"></label>
     <button type="button" class="btn sm" id="sa-sem">Sem cor</button>
@@ -2802,7 +2803,7 @@ function naResumo(c) {
   const sp = (c.sem?.programas || []).length, sf = (c.sem?.funcoes || []).length;
   return !sp && !sf ? 'tudo liberado' : [sp ? `sem ${sp} programa${sp > 1 ? 's' : ''}` : '', sf ? `sem ${sf} ${sf > 1 ? 'funções' : 'função'}` : ''].filter(Boolean).join(' · ');
 }
-function naQuantos(c) { const n = NA.pessoas.filter(p => naCargosDe(p.id).includes(c.id)).length, sem = c.id === (NA.modelo.padrao || 'equipe') ? NA.pessoas.filter(p => !naCargosDe(p.id).length).length : 0; return n + sem; }
+function naQuantos(c) { if (c.id === 'adm') return NA.pessoas.filter(p => p.adm).length; const n = NA.pessoas.filter(p => naCargosDe(p.id).includes(c.id)).length, sem = c.id === (NA.modelo.padrao || 'equipe') ? NA.pessoas.filter(p => !naCargosDe(p.id).length).length : 0; return n + sem; }
 function naCargos(box) {
   const c = naCargo(NA.cargo) || NA.modelo.cargos[0]; NA.cargo = c.id;
   const padrao = c.id === (NA.modelo.padrao || 'equipe'), sp = c.sem.programas, sf = c.sem.funcoes;
@@ -2814,14 +2815,17 @@ function naCargos(box) {
         <label class="f"><span>Descrição (opcional)</span><input type="text" id="na-desc" maxlength="160" value="${esc(c.desc || '')}" placeholder="Ex.: quem só anima, sem exportar"></label></div>
       <h3>Cor</h3><div class="na-cores">${NA_CORES.map(k => `<button type="button" data-cor="${k}" style="background:${k}" aria-pressed="${k === c.cor}" aria-label="Cor ${k}"></button>`).join('')}<input type="color" id="na-cor" value="${esc(c.cor)}" title="Outra cor"></div>
       <label class="na-ck" style="margin-top:10px"><input type="checkbox" id="na-selo" ${c.selo ? 'checked' : ''}><span><b>Mostrar selo no título do menu</b><small>Quem tem este cargo vê o nome do cargo, nesta cor, ao lado de "Estúdio Problems". Desligado = não aparece (o ADM sempre tem o selo ADM).</small></span></label>
+      ${c.id === 'adm' ? '<p class="hint" style="margin:12px 0 0">Cargo dos <b>ADMs</b> (a lista de ADMs do servidor): aqui você muda só o nome, a cor e o selo deles no título do menu. Para ADM nada é bloqueado, então não há programas nem funções para marcar.</p>' : ''}
       ${padrao ? '<p class="hint" style="margin:12px 0 0">Este é o cargo PADRÃO: quem não tem nenhum cargo fica nele. Com tudo marcado, ninguém perde nada. Desmarque aqui só se quiser tirar algo de todo mundo que não tem cargo.</p>' : ''}
+      <div ${c.id === 'adm' ? 'hidden' : ''}>
       <h3>Programas que este cargo vê<span class="sp" style="flex:1"></span><button type="button" class="btn sm" data-tudo="1">Marcar tudo</button><button type="button" class="btn sm" data-tudo="0">Desmarcar tudo</button></h3>
       <div class="na-progs">${naProgs().map(p => `<label class="na-ck"><input type="checkbox" data-prog="${esc(p.id)}" ${sp.includes(p.id) ? '' : 'checked'}><span><b>${esc(p.nome)}</b></span></label>`).join('') || '<div class="hint">Sem a lista de programas.</div>'}</div>
       <h3>Funções que este cargo usa</h3>
       <p class="hint" style="margin:-4px 0 4px">Desmarcado = a pessoa vê o programa, mas sem essa função. Função nova que aparecer depois já vem liberada.</p>
       ${naGrupos().map(([pid, fs]) => { const off = sp.includes(pid); return `<div class="na-grupo"><h4>${esc(naProgNome(pid))}${off ? '<span class="hint">o programa está desligado neste cargo: as funções dele também ficam de fora</span>' : ''}</h4>
         <div class="na-fns">${fs.map(f => `<label class="na-ck${off ? ' off' : ''}"><input type="checkbox" data-fn="${esc(f.id)}" ${sf.includes(f.id) ? '' : 'checked'} ${off ? 'disabled' : ''}><span><b>${esc(f.nome || f.id)}</b>${f.desc ? `<small>${esc(f.desc)}</small>` : ''}</span></label>`).join('')}</div></div>`; }).join('')}
-      <div class="acts" style="display:flex;gap:8px;margin-top:16px;align-items:center">${padrao ? '' : '<button type="button" class="btn sm danger" id="na-apaga">Apagar este cargo</button>'}<span class="hint">${naQuantos(c)} pessoa${naQuantos(c) === 1 ? '' : 's'} com este cargo${padrao ? ' (contando quem não tem cargo)' : ''}.</span></div>
+      </div>
+      <div class="acts" style="display:flex;gap:8px;margin-top:16px;align-items:center">${padrao || c.id === 'adm' ? '' : '<button type="button" class="btn sm danger" id="na-apaga">Apagar este cargo</button>'}<span class="hint">${naQuantos(c)} pessoa${naQuantos(c) === 1 ? '' : 's'} com este cargo${padrao ? ' (contando quem não tem cargo)' : ''}.</span></div>
     </div></div>`;
   const muda = (redesenha = true) => { $('#niv-salvar').disabled = !naSujo(); naSt(naSujo() ? 'Mudanças ainda não salvas.' : ''); if (redesenha) naPinta(); };
   $$('[data-c]', box).forEach(b => b.onclick = () => { NA.cargo = b.dataset.c; naPinta(); });
@@ -2853,14 +2857,14 @@ function naPessoas(box) {
   const lista = NA.pessoas.filter(p => (NA.pasta === '*' || (NA.pasta === '-' ? !pastaDe(p.id) : pastaDe(p.id) === NA.pasta)) && (!q || naSemAcento((p.nome || '') + ' ' + (p.mascara || '') + ' ' + naCargosDe(p.id).map(c => naCargo(c).nome).join(' ')).includes(q)));
   const conta = f => NA.pessoas.filter(f).length;
   const tagCargo = c => `<span class="na-tag" style="--c:${esc(c.cor)}"><i class="na-cor" style="background:${esc(c.cor)};width:8px;height:8px"></i>${esc(c.nome)}</span>`;
-  const optCargos = NA.modelo.cargos.map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+  const optCargos = NA.modelo.cargos.filter(c => c.id !== 'adm').map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
   const optPastas = `<option value="">Sem pasta</option>` + pastas.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('');
   const av = (f, n) => `<span class="ac-av">${f ? `<img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${esc((n || '?')[0].toUpperCase())}'))">` : esc((n || '?')[0].toUpperCase())}</span>`;
   const veHtml = p => { const sem = naSem(p.id, p.adm), ps = naProgs();
     const fnsTiradas = (NA.cat?.funcoes || []).filter(f => naBloq(sem, f.id) && !sem.programas.includes(f.programa || f.id.split('.')[0]));
     return `<div class="na-abre">
       <div class="hint" style="margin-bottom:6px">Cargos desta pessoa (pode marcar mais de um: ela soma tudo o que os cargos dela têm):</div>
-      <div class="na-pastas">${NA.modelo.cargos.map(c => `<button type="button" class="na-chip" data-pc="${esc(c.id)}" data-pid="${esc(p.id)}" aria-pressed="${naCargosDe(p.id).includes(c.id)}"><i class="na-cor" style="background:${esc(c.cor)};width:9px;height:9px"></i>${esc(c.nome)}</button>`).join('')}</div>
+      <div class="na-pastas">${NA.modelo.cargos.filter(c => c.id !== 'adm').map(c => `<button type="button" class="na-chip" data-pc="${esc(c.id)}" data-pid="${esc(p.id)}" aria-pressed="${naCargosDe(p.id).includes(c.id)}"><i class="na-cor" style="background:${esc(c.cor)};width:9px;height:9px"></i>${esc(c.nome)}</button>`).join('')}</div>
       <div class="hint" style="margin:8px 0 2px"><b style="color:var(--tx)">O que esta pessoa vê</b>${p.adm ? ' — é ADM: vê tudo, sempre (os cargos não valem para ADM).' : naCargosDe(p.id).length ? '' : ` — sem cargo: fica no padrão (${esc(naCargo(NA.modelo.padrao || 'equipe')?.nome || 'Equipe')}).`}</div>
       <div class="na-ve">${ps.map(x => `<span class="${naBloq(sem, x.id) ? 'nao' : ''}" title="${naBloq(sem, x.id) ? 'Não vê' : 'Vê'}">${esc(x.nome)}</span>`).join('')}</div>
       <div class="hint">${fnsTiradas.length ? 'Sem as funções: ' + fnsTiradas.map(f => `<b style="color:#ff8a80">${esc(f.nome)}</b> (${esc(naProgNome(f.programa || f.id.split('.')[0]))})`).join(', ') + '.' : 'Usa todas as funções dos programas que vê.'}${naSujo() ? ' <i>Prévia: só vale depois de Salvar.</i>' : ''}</div></div>`; };
