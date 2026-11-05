@@ -561,7 +561,66 @@ window.EstudioPerm ||= (() => {
 .ep-admj .cx{position:relative;width:min(1100px,100%);height:100%;border-radius:14px;overflow:hidden;background:#1e1e21;border:.5px solid rgba(255,255,255,.12);box-shadow:0 24px 70px rgba(0,0,0,.6)}
 .ep-admj iframe{width:100%;height:100%;border:0;display:block}
 .ep-admj .x{position:absolute;top:10px;right:12px;z-index:1;width:28px;height:28px;border-radius:7px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);color:#f5f5f7;display:grid;place-items:center;cursor:pointer}
-@media (max-width:820px){.ep-admj{padding:0}.ep-admj .cx{border-radius:0;border:0}}`;
+@media (max-width:820px){.ep-admj{padding:0}.ep-admj .cx{border-radius:0;border:0}}
+/* ===== VISUAL NOVO (05/11/2026, aprovado pela dona): janelas no mesmo estilo do menu (azul escuro translúcido, cantos retos, letras finas).
+   Espaço na nuvem e no computador entram pela DIREITA; seções e pastas fechadas por padrão; pasta e barra com a cor do programa dono. */
+.ep-pg .cx,.ep-esp .cx,.ep-msgs .cx,.ep-cal,.ep-admj .cx{background:rgba(14,32,58,.92)!important;-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);border:0!important;border-radius:0!important;color:#fff}
+.ep-pg,.ep-esp,.ep-msgs{background:rgba(5,20,45,.35)!important}
+.ep-pg button,.ep-esp .bt,.ep-msgs .epm-bt,.ep-cal .bt{border-radius:0!important;border:2px solid rgba(255,255,255,.7)!important;background:none!important;font-weight:600!important;color:#fff}
+.ep-pg button:hover,.ep-esp .bt:hover,.ep-msgs .epm-bt:hover,.ep-cal .bt:hover{background:rgba(255,255,255,.14)!important}
+.ep-pg button.sim.azul,.ep-msgs .epm-bt.epm-pri,.ep-msgs .epm-envia,.ep-cal .bt.pri{background:#fff!important;color:#0d3a66!important;border-color:#fff!important}
+.ep-pg button.sim{background:#d93a3a!important;border-color:#d93a3a!important}
+.ep-esp .bt.perigo,.ep-esp .bt.vermelho{border-color:rgba(255,140,130,.8)!important;color:#ffd0cc!important}
+.ep-esp{place-items:stretch end!important;padding:0!important}
+.ep-esp .cx{width:min(460px,100%)!important;max-height:none!important;height:100%;padding:22px 22px 18px!important;animation:epEntraDir .45s cubic-bezier(.1,.9,.2,1) both}
+@keyframes epEntraDir{from{transform:translateX(100%)}}
+.ep-esp h2{font:300 26px/1.2 "Segoe UI Light","Segoe UI",system-ui,sans-serif!important;display:flex;align-items:center;gap:10px}
+.ep-esp h3{font:400 12px/1.3 'Segoe UI',system-ui,sans-serif!important;color:rgba(255,255,255,.6)!important;text-transform:uppercase!important;letter-spacing:.8px!important;margin:18px 0 8px!important}
+.ep-esp h3 small{text-transform:none;letter-spacing:0;color:rgba(255,255,255,.45)}
+.ep-esp .topo b{font:300 30px "Segoe UI Light","Segoe UI",system-ui,sans-serif}
+.ep-esp .linha,.ep-esp details .linha,.ep-esp .grp-l .linha{background:none!important;border:0!important;border-radius:0!important;border-top:1px solid rgba(255,255,255,.08)!important;padding:9px 6px!important;margin:0!important}
+.ep-esp .linha.aqui{background:rgba(255,255,255,.07)!important}
+.ep-esp .barra{height:5px!important;background:rgba(255,255,255,.18)!important;border-radius:0!important}.ep-esp .barra i{border-radius:0!important}
+.ep-esp details,.ep-esp details.grp{border:0!important;border-top:1px solid rgba(255,255,255,.14)!important;border-radius:0!important;background:none!important;margin:0!important}
+.ep-esp details.grp:last-of-type{border-bottom:1px solid rgba(255,255,255,.14)!important}
+.ep-esp details>summary,.ep-esp details.grp>summary{display:flex;align-items:center;gap:10px;padding:12px 4px!important;background:none!important}
+.ep-esp details>summary:hover{background:rgba(255,255,255,.05)!important}
+.ep-esp details>summary .seta{transition:transform .3s cubic-bezier(.1,.9,.2,1)}.ep-esp details[open]>summary .seta{transform:rotate(90deg)}
+.ep-esp details>summary .sp{flex:1}.ep-esp details>summary .tam{color:rgba(255,255,255,.7);font-size:12.5px}
+.ep-esp details.grp .cnt{border-radius:0!important;background:rgba(255,255,255,.14)!important;color:#fff!important}
+.ep-esp details[open] .grp-l,.ep-esp details[open]>.linha{animation:epAbre .35s cubic-bezier(.1,.9,.2,1) both}
+@keyframes epAbre{from{opacity:0;transform:translateY(-6px)}}
+.ep-pasta{width:30px;height:24px;flex:none}
+.ep-estado{display:flex;gap:12px;align-items:flex-start;padding:12px;background:rgba(255,255,255,.07);margin:0 0 14px}
+.ep-estado>i{width:11px;height:11px;border-radius:50%;margin-top:4px;flex:none;background:#3ccf7f;box-shadow:0 0 0 4px rgba(60,207,127,.2)}
+.ep-estado b{display:block}.ep-estado small{display:block;color:rgba(255,255,255,.75)}
+.ep-nv-aviso{border-radius:0!important}
+.ep-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:rgba(255,255,255,.6);margin:10px 0 2px}.ep-leg span{display:inline-flex;align-items:center;gap:6px}.ep-leg i{width:10px;height:10px;display:inline-block}
+.ep-esp .vazio{border-radius:0!important}
+/* Mensagens: abas Privadas / Grupos */
+.ep-msgs .cx{box-shadow:0 30px 80px rgba(0,20,50,.5)!important}
+.ep-msgs aside{background:rgba(0,0,0,.12)!important;border-right:1px solid rgba(255,255,255,.1)!important}
+.ep-msgs h2{font:300 24px "Segoe UI Light","Segoe UI",system-ui,sans-serif!important}
+.ep-msgs .epm-abas{position:sticky;top:0;z-index:2;display:flex;margin:0 -8px 8px;padding:0 8px;background:rgba(14,32,58,.96);border-bottom:1px solid rgba(255,255,255,.14)}
+.ep-msgs .epm-abas button{flex:1;height:38px;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;background:none;color:rgba(255,255,255,.7);font:400 15px "Segoe UI Light","Segoe UI",system-ui,sans-serif;cursor:pointer}
+.ep-msgs .epm-abas button[aria-selected=true]{color:#fff;border-bottom-color:#fff}
+.ep-msgs .epm-abas button i{font:700 11px 'Segoe UI',system-ui,sans-serif;font-style:normal;background:#fff;color:#0d3a66;padding:1px 6px;margin-left:4px;vertical-align:2px}
+.ep-msgs .epm-novog{margin:10px 8px;display:inline-flex}
+.ep-msgs .epm-pes{border-radius:0!important}.ep-msgs .epm-pes:hover{background:rgba(255,255,255,.07)!important}
+.ep-msgs .epm-pes.epm-sel{background:#fff!important;color:#0d3a66!important}.ep-msgs .epm-pes.epm-sel small,.ep-msgs .epm-pes.epm-sel .epm-tx b{color:#0d3a66!important}
+.ep-msgs .epm-cont{border-radius:0!important;background:#fff!important;color:#0d3a66!important}
+.ep-msgs header{background:rgba(255,255,255,.04)!important;border-bottom:1px solid rgba(255,255,255,.1)!important}
+.ep-msgs section{background:rgba(0,0,0,.1)!important}
+.ep-msgs .epm-m .epm-b{border-radius:0!important;background:rgba(255,255,255,.12)!important}
+.ep-msgs .epm-m.epm-meu .epm-b{background:#1d6fd6!important}
+.ep-msgs textarea,.ep-msgs input{border-radius:0!important}
+/* calendário */
+.ep-cal{box-shadow:0 30px 80px rgba(0,20,50,.5)!important}
+.ep-cal .cab b{font:300 20px "Segoe UI Light","Segoe UI",system-ui,sans-serif}
+.ep-cal .g button{border-radius:0!important}.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}.ep-cal .g button.hoje{box-shadow:inset 0 0 0 2px #fff!important}
+.ep-cal input,.ep-cal .seg,.ep-cal .seg button,.ep-cal .ev{border-radius:0!important}
+.ep-notif{border-radius:0!important;background:rgba(14,32,58,.94)!important}
+@media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
   // (conversa da IA do Animador, pedidos do Modelador, texto do roteiro dos Shorts)
@@ -890,7 +949,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     return Math.max(m, j?.nuvem === 'terciaria' ? 2 : (j?.nuvem === 'reserva' || j?.antiga) ? 1 : 0); };
   const usandoReserva = j => nivelNuvem(j) > 0;
   function anelNuvem(pct, reserva) {
-    const n = reserva === true ? 1 : +reserva || 0, c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : n >= 2 ? '#ff8fd1' : n ? '#2fd0a8' : '#9b7bff', r = 13, L = 2 * Math.PI * r;
+    const n = reserva === true ? 1 : +reserva || 0, c = pct > 85 ? '#f0584f' : pct > 60 ? '#f0b232' : '#3ccf7f' /* a cor diz quanto já foi usado; reserva/terciária vão escritas no painel e na dica */, r = 13, L = 2 * Math.PI * r;
     return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct > 0 ? 3 : 0, Math.min(100, pct)) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><path d="M11.6 19.4h8.6a2.9 2.9 0 0 0 .3-5.78 3.9 3.9 0 0 0-7.6.73 2.6 2.6 0 0 0-1.3 5.05z" fill="${c}"/></svg>`;
   }
   const tokenNuvem = async () => { try {
@@ -935,6 +994,11 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const t3 = nivelNuvem(j) >= 2, qual = t3 ? 'nuvem terciária' : 'nuvem reserva';
     return `<div class="ep-nv-aviso${t3 ? ' terc' : ''}" role="status">${ICONES.nuvem}<div><b>${t3 ? 'A nuvem principal e a reserva chegaram no limite de hoje: usando a nuvem terciária.' : j.antiga ? 'A nuvem principal chegou no limite de hoje: mostrando a última medida' + (j.em ? ' (de ' + new Date(j.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ')' : '') + '.' : j.nuvem === 'reserva' ? 'Mostrando as informações da nuvem reserva.' : 'A nuvem principal chegou no limite de hoje.'}</b><small>A principal volta às ${hora} (em ${em}). ${t3 || j.nuvem === 'reserva' || j.antiga ? `O que a equipe salvar até lá vai para a ${qual} e volta sozinho para a principal.` : 'O que você fizer continua guardado neste computador.'}</small></div></div>`;
   }
+  // COR DE CADA PROGRAMA (a do ícone dele, ADM › Ícones): pastas e barras dos painéis de espaço usam a cor do programa dono
+  const PROG_ID = { animador: 'an', 'animador antigo': 'an', ateliê: 'at', atelie: 'at', cenários: 'cn', cenarios: 'cn', shorts: 'sh', 'criar shorts': 'sh', editor: 'ed', 'editar vídeos': 'ed', modelador: 'md', preparativos: 'pr' };
+  const corProg = nome => { const n = String(nome || '').toLowerCase(), k = PROG_ID[n] || PROG_ID[n.split(/[ (·]/)[0]]; try { const c = k && window.EstudioIcones?.config?.()?.[k]; if (c?.fg) return c.fg; } catch { } return '#8a9aab'; };
+  const pastaIc = nome => { const c = corProg(nome); return `<svg class="ep-pasta" viewBox="0 0 34 28" aria-hidden="true"><path d="M1.5 5a2.5 2.5 0 0 1 2.5-2.5h8.5l3 3.5H30a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 30 26H4a2.5 2.5 0 0 1-2.5-2.5z" fill="${c}"/><path d="M1.5 10.5h31" stroke="rgba(255,255,255,.4)" stroke-width="1.3"/></svg>`; };
+  const legenda = '<div class="ep-leg"><span><i style="background:#3ccf7f"></i>até 60%: tranquilo</span><span><i style="background:#f0b232"></i>60–85%: atenção</span><span><i style="background:#f0584f"></i>mais de 85%: quase cheio</span></div>';
   async function painelNuvem() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
@@ -949,13 +1013,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
       cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
-        ${avisoReserva(j)}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
+        ${avisoReserva(j) || '<div class="ep-estado"><i></i><div><b>Nuvem principal funcionando</b><small>Tudo o que você salva vai direto para ela.</small></div></div>'}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
-        <h3>Por programa</h3>
-        ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}"><div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || '<div class="vazio">A nuvem está vazia.</div>'}
-        <h3>O que ocupa</h3>
-        ${P.flatMap(pr => pr.grupos).sort((a, b) => b.bytes - a.bytes).map(g => `<details${g.projeto === atual ? ' open' : ''}><summary><b>${esc(g.nome)}</b><span class="tam">${g.n} · ${fmt(g.bytes)}</span></summary>
+        ${legenda}
+        <details class="grp sec"><summary><span class="seta">${ICONES.seta || '›'}</span><b>Por programa</b><span class="sp"></span><span class="tam">${P.length} ${P.length === 1 ? 'programa' : 'programas'}</span></summary><div class="grp-l">
+        ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}">${pastaIc(pr.nome)}<div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%;background:${corProg(pr.nome)}"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || '<div class="vazio">A nuvem está vazia.</div>'}</div></details>
+        <h3>Pastas <small>(a cor é a do programa dono)</small></h3>
+        ${P.flatMap(pr => pr.grupos).sort((a, b) => b.bytes - a.bytes).map(g => `<details class="grp"><summary><span class="seta">${ICONES.seta || '›'}</span>${pastaIc(g.projeto)}<b>${esc(g.nome)}</b><span class="sp"></span><span class="tam">${g.n} · ${fmt(g.bytes)}</span></summary>
           ${g.itens.slice(0, 200).map(it => `<div class="linha"><div class="n"><b>${esc(it.nome)}</b><small>${[it.info, it.em ? dataTxt(Date.parse(it.em) || it.em) : ''].filter(Boolean).map(esc).join(' · ')}</small></div>${quemHtml(it)}<span class="tam">${fmt(it.bytes)}</span>
             ${it.ref && !it.protegido ? `<button class="bt ${j.adm ? 'vermelho' : 'so-adm'}" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem (clique para saber mais)'}">${j.adm ? ICONES.lixo || '' : ICONES.sair}Apagar</button>` : ''}</div>`).join('')}
           ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
@@ -979,7 +1044,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     for (const it of itens) { const ext = /\.([a-z0-9]+)\b/i.exec(it.rotuloBaixar || '')?.[1]?.toLowerCase(), k = it.grupo || (ext ? ext : 'outros');
       if (!G.has(k)) G.set(k, { k, nome: it.grupo || NOMES[k] || (ext ? `Arquivos .${ext}` : 'Outros'), L: [], b: 0 }); const g = G.get(k); g.L.push(it); g.b += +it.bytes || 0; }
     const L = [...G.values()].sort((a, b) => (a.k === 'outros') - (b.k === 'outros')); let mem = {}; try { mem = JSON.parse(sessionStorage.getItem('ep-esp-grupos') || '{}'); } catch { }
-    for (const g of L) g.aberto = g.k in mem ? mem[g.k] : (L.length === 1 || (g.L.length <= 4 && itens.length <= 8));
+    for (const g of L) g.aberto = g.k in mem ? !!mem[g.k] : false; // fechadas por padrão (pedido da dona, 05/11/2026); a pessoa abre e fica lembrado
     return L;
   }
   async function painelEspaco() {
@@ -1004,10 +1069,11 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       <div class="topo"><span style="flex:none">${anel(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>
         <div><b>${fmt(e.usage)} usados</b><small>${e.quota ? `de ${fmt(e.quota)} que o navegador libera · ${fmt(Math.max(0, e.quota - e.usage))} livres` : 'O navegador não informou o limite.'}</small>
         <div class="nota" style="margin-top:4px">É o mesmo espaço para todos os programas do Estúdio Problems neste computador.</div></div></div>
-      <h3>Por programa</h3>
-      ${linhas.length ? linhas.map(([n, x]) => `<div class="linha ${n === atual ? 'aqui' : ''}"><div class="n"><b>${esc(n)}${n === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(x.b / maior * 100).toFixed(1)}%"></i></div></div><span class="tam">${fmt(x.b)}</span>${x.end && n !== atual ? `<a class="bt" href="${x.end}">Abrir</a>` : ''}</div>`).join('') : '<div class="vazio">Nada guardado neste navegador ainda.</div>'}
+      ${legenda}
+      <details class="grp sec"><summary><span class="seta">${ICONES.seta || '›'}</span><b>Por programa</b><span class="sp"></span><span class="tam">${linhas.length} ${linhas.length === 1 ? 'item' : 'itens'}</span></summary><div class="grp-l">
+      ${linhas.length ? linhas.map(([n, x]) => `<div class="linha ${n === atual ? 'aqui' : ''}">${pastaIc(n)}<div class="n"><b>${esc(n)}${n === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(x.b / maior * 100).toFixed(1)}%;background:${corProg(n)}"></i></div></div><span class="tam">${fmt(x.b)}</span>${x.end && n !== atual ? `<a class="bt" href="${x.end}">Abrir</a>` : ''}</div>`).join('') : '<div class="vazio">Nada guardado neste navegador ainda.</div>'}</div></details>
       ${prov ? `<h3>Arquivos do ${esc(prov.programa)} (${itens.length})</h3>
-        ${itens.length ? gruposEsp(itens).map(g => `<details class="grp" data-g="${esc(g.k)}" ${g.aberto ? 'open' : ''}><summary><span class="seta">${ICONES.seta || '›'}</span><b>${esc(g.nome)}</b><span class="cnt">${g.L.length}</span><span class="sp"></span><span class="tam">${fmt(g.b)}</span></summary><div class="grp-l">${g.L.map(it => { const i = itens.indexOf(it); return `<div class="linha">${it.thumb ? `<img class="th" src="${esc(it.thumb)}" alt="">` : ''}<div class="n"><b>${esc(it.nome)}</b><small>${[it.bytes != null ? fmt(it.bytes) : '', dataTxt(it.data), it.info || ''].filter(Boolean).join(' · ')}</small></div>
+        ${itens.length ? gruposEsp(itens).map(g => `<details class="grp" data-g="${esc(g.k)}" ${g.aberto ? 'open' : ''}><summary><span class="seta">${ICONES.seta || '›'}</span>${pastaIc(prov.programa)}<b>${esc(g.nome)}</b><span class="cnt">${g.L.length}</span><span class="sp"></span><span class="tam">${fmt(g.b)}</span></summary><div class="grp-l">${g.L.map(it => { const i = itens.indexOf(it); return `<div class="linha">${it.thumb ? `<img class="th" src="${esc(it.thumb)}" alt="">` : ''}<div class="n"><b>${esc(it.nome)}</b><small>${[it.bytes != null ? fmt(it.bytes) : '', dataTxt(it.data), it.info || ''].filter(Boolean).join(' · ')}</small></div>
           ${it.baixar ? `<button class="bt" data-b="${i}" title="${esc(it.rotuloBaixar || 'Baixar')}">${ICONES.baixar}${esc(it.rotuloBaixar || 'Baixar')}</button>` : ''}${it.apagar ? `<button class="bt perigo" data-d="${i}" title="Apagar deste navegador">${ICONES.lixo}</button>` : ''}</div>`; }).join('')}</div></details>`).join('') : '<div class="vazio">Nenhum arquivo guardado por este programa.</div>'}` : ''}
       <div class="pe">${prov?.detalhes ? `<button class="bt" data-det>${ICONES.lista}Limpeza e detalhes…</button>` : ''}<span class="sp"></span>
         <span class="nota">Para não perder nada, baixe os projetos importantes.</span></div>`;
@@ -1434,8 +1500,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           ${mc ? '<b class="epm-cont epm-arroba" title="Citaram você">@</b>' : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
       const geralC = convs[0];
       grupos.sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || a.g.nome.localeCompare(b.g.nome));
-      lista.innerHTML = linha(geralC) + (grupos.length || R.adm ? `<h3>Grupos${R.adm ? `<button type="button" class="epm-novog" title="Só ADM: criar um grupo com pessoas escolhidas">${ICONES.mais} Novo grupo</button>` : ''}</h3>` + grupos.map(linha).join('') : '')
-        + (resto.length ? '<h3>Pessoas</h3>' + resto.map(linha).join('') : '<p class="epm-nota">Ainda ninguém da equipe por aqui.</p>');
+      // ABAS (pedido da dona, 05/11/2026): conversas privadas de um lado, grupos (com a geral da equipe) do outro, cada aba com as não lidas
+      const somaN = L => L.reduce((t, c) => t + (nao[c.id] || 0), 0), grpL = [geralC, ...grupos], nP = somaN(resto), nG = somaN(grpL);
+      if (!M.aba) M.aba = nG && !nP ? 'grp' : 'priv';
+      const nAba = n => n ? ` <i>${n > 99 ? '99+' : n}</i>` : '';
+      lista.innerHTML = `<div class="epm-abas" role="tablist"><button type="button" role="tab" data-aba="priv" aria-selected="${M.aba === 'priv'}">Privadas${nAba(nP)}</button><button type="button" role="tab" data-aba="grp" aria-selected="${M.aba === 'grp'}">Grupos${nAba(nG)}</button></div>`
+        + (M.aba === 'grp' ? grpL.map(linha).join('') + (R.adm ? `<button type="button" class="epm-novog" title="Só ADM: criar um grupo com pessoas escolhidas">${ICONES.mais} Novo grupo</button>` : '')
+          : resto.length ? resto.map(linha).join('') : '<p class="epm-nota">Ainda ninguém da equipe por aqui.</p>');
+      lista.querySelectorAll('[data-aba]').forEach(bt => bt.onclick = () => { M.aba = bt.dataset.aba; desenhaLista(); });
       lista.querySelector('.epm-novog')?.addEventListener('click', () => editaGrupo(null));
       lista.querySelectorAll('[data-c]').forEach(b => b.onclick = () => M.escolha ? marcaAlvo(b.dataset.c, b.dataset.u) : abreConv(b.dataset.c, b.dataset.u));
       if (M.conv) pintaTitulo();
