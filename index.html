@@ -856,6 +856,15 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #top .badge[hidden]{display:none!important}
 #top .selos-cargo{display:inline-flex;gap:6px;align-self:center}#top .selos-cargo:empty{display:none}
 #top .badge.cargo{margin-left:6px;text-transform:none;letter-spacing:.2px;font-weight:600}
+
+/* ADM › Níveis: prévia do selo como fica de verdade (foto do fundo + véu azul + título) */
+.na-selo-cfg{margin:8px 0 4px}
+.na-selo-prev{display:flex;align-items:center;gap:0;height:74px;padding:0 18px;background-size:cover;background-position:center 70%;color:#fff}
+.na-selo-prev .t{font:300 30px/1 var(--mn-leve);text-shadow:0 1px 14px rgba(0,40,100,.3)}
+.na-selo-prev .badge{display:inline-grid;place-items:center;height:22px;margin-left:10px;padding:0 8px;border:1.5px solid;color:#fff;font:600 11px/1 var(--font);letter-spacing:.2px}
+.na-selo-aj{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:10px;font-size:13px;color:var(--tx2)}
+.na-selo-aj label{display:inline-flex;align-items:center;gap:8px}.na-selo-aj input[type=color]{width:34px;height:24px;border:0;padding:0;background:none;cursor:pointer}
+.na-selo-aj .al input{width:140px}.na-selo-aj output{min-width:36px;color:#fff}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1568,11 +1577,15 @@ function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) re
 /* SELO DO CARGO NO TÍTULO (pedido da dona, 05/11/2026): o nome do cargo da pessoa, na cor do cargo, ao lado de "Estúdio Problems" —
    só dos cargos em que a ADM › Níveis de acesso marcou "Mostrar selo no título do menu" (por padrão nenhum; o ADM tem o selo ADM). */
 function pintaSeloAdm(s = DADOS?.seloAdm) { const b = $('#badge-adm'); if (!b) return; b.textContent = s?.texto || 'ADM'; const c = /^#[0-9a-f]{6}$/i.test(s?.cor || '') ? s.cor : ''; b.style.borderColor = c; b.style.background = c ? c + '55' : ''; }
+// estilo do selo de um cargo: borda e fundo (padrão = a cor do cargo) e a transparência do fundo (padrão 25%)
+function seloCss(c) { const h = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null, cor = h(c?.cor) || '#8e8e93', b = h(c?.seloBorda) || cor, f = h(c?.seloFundo) || cor;
+  const a = Number.isFinite(+c?.seloAlfa) && c?.seloAlfa !== '' && c?.seloAlfa != null ? Math.max(0, Math.min(1, +c.seloAlfa)) : .25;
+  return `border-color:${b};background:${f}${Math.round(a * 255).toString(16).padStart(2, '0')}`; }
 function pintaSelos() {
   const box = $('#selos-cargo'); if (!box) return; const P = window.EstudioPerm;
   const desenha = () => { let todos = []; try { todos = P?.dados?.()?.cargos || []; } catch { } const cs = todos.filter(c => c?.selo && c.nome);
     const ba = $('#badge-adm'); if (ba) ba.hidden = !DADOS?.adm || todos.some(c => c?.id === 'adm'); // cargo ADM chegou: o selo dele (nome/cor) substitui o fixo
-    box.innerHTML = cs.map(c => { const cor = /^#[0-9a-f]{6}$/i.test(c.cor || '') ? c.cor : '#8e8e93'; return `<span class="badge cargo" style="border-color:${cor};background:${cor}40" title="Seu cargo">${esc(c.nome)}</span>`; }).join(''); };
+    box.innerHTML = cs.map(c => { const cor = /^#[0-9a-f]{6}$/i.test(c.cor || '') ? c.cor : '#8e8e93'; return `<span class="badge cargo" style="${seloCss(c)}" title="Seu cargo">${esc(c.nome)}</span>`; }).join(''); };
   desenha(); if (!pintaSelos.ok) { pintaSelos.ok = true; try { P?.pronto?.then?.(desenha); } catch { } addEventListener('estudio-perm', desenha); }
 }
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
@@ -2814,7 +2827,12 @@ function naCargos(box) {
       <div class="fields"><label class="f"><span>Nome do cargo</span><input type="text" id="na-nome" maxlength="40" value="${esc(c.nome)}"></label>
         <label class="f"><span>Descrição (opcional)</span><input type="text" id="na-desc" maxlength="160" value="${esc(c.desc || '')}" placeholder="Ex.: quem só anima, sem exportar"></label></div>
       <h3>Cor</h3><div class="na-cores">${NA_CORES.map(k => `<button type="button" data-cor="${k}" style="background:${k}" aria-pressed="${k === c.cor}" aria-label="Cor ${k}"></button>`).join('')}<input type="color" id="na-cor" value="${esc(c.cor)}" title="Outra cor"></div>
-      <label class="na-ck" style="margin-top:10px"><input type="checkbox" id="na-selo" ${c.selo ? 'checked' : ''}><span><b>Mostrar selo no título do menu</b><small>Quem tem este cargo vê o nome do cargo, nesta cor, ao lado de "Estúdio Problems". Desligado = não aparece (o ADM sempre tem o selo ADM).</small></span></label>
+      <label class="na-ck" style="margin-top:10px"><input type="checkbox" id="na-selo" ${c.selo ? 'checked' : ''}><span><b>Mostrar selo no título do menu</b><small>Quem tem este cargo vê o nome do cargo, nesta cor, ao lado de "Estúdio Problems". Desligado = não aparece.</small></span></label>
+      <div class="na-selo-cfg" ${c.selo ? '' : 'hidden'}>
+        <div class="na-selo-prev" style="background-image:linear-gradient(180deg,rgba(12,58,112,.55),rgba(12,58,112,.18)),url('${esc((DADOS?.fundo?.itens || [])[0]?.src || '/fundo-margarida.jpg')}')"><span class="t">Estúdio Problems</span><span class="badge cargo" id="na-selo-prev" style="${seloCss(c)}">${esc(c.nome)}</span></div>
+        <div class="na-selo-aj"><label>Borda <input type="color" id="na-sb" value="${esc(c.seloBorda || c.cor)}"></label><label>Fundo <input type="color" id="na-sf" value="${esc(c.seloFundo || c.cor)}"></label>
+          <label class="al">Transparência do fundo <input type="range" id="na-sa" min="0" max="100" step="1" value="${Math.round(100 - 100 * (c.seloAlfa ?? .25))}"><output id="na-sa-o">${Math.round(100 - 100 * (c.seloAlfa ?? .25))}%</output></label>
+          <button type="button" class="btn sm" id="na-s0">Usar a cor do cargo</button></div></div>
       ${c.id === 'adm' ? '<p class="hint" style="margin:12px 0 0">Cargo dos <b>ADMs</b> (a lista de ADMs do servidor): aqui você muda só o nome, a cor e o selo deles no título do menu. Para ADM nada é bloqueado, então não há programas nem funções para marcar.</p>' : ''}
       ${padrao ? '<p class="hint" style="margin:12px 0 0">Este é o cargo PADRÃO: quem não tem nenhum cargo fica nele. Com tudo marcado, ninguém perde nada. Desmarque aqui só se quiser tirar algo de todo mundo que não tem cargo.</p>' : ''}
       <div ${c.id === 'adm' ? 'hidden' : ''}>
@@ -2837,6 +2855,11 @@ function naCargos(box) {
   $$('[data-cor]', box).forEach(b => b.onclick = () => { c.cor = b.dataset.cor; muda(); });
   $('#na-cor').onchange = e => { c.cor = e.target.value; muda(); };
   $('#na-selo').onchange = e => { if (e.target.checked) c.selo = true; else delete c.selo; muda(); };
+  const pv = () => { const p = $('#na-selo-prev'); if (p) { p.setAttribute('style', seloCss(c)); p.textContent = c.nome || 'Cargo'; } };
+  $('#na-sb')?.addEventListener('input', e => { c.seloBorda = e.target.value; pv(); muda(false); });
+  $('#na-sf')?.addEventListener('input', e => { c.seloFundo = e.target.value; pv(); muda(false); });
+  $('#na-sa')?.addEventListener('input', e => { c.seloAlfa = Math.round(100 - +e.target.value) / 100; $('#na-sa-o').textContent = e.target.value + '%'; pv(); muda(false); });
+  $('#na-s0')?.addEventListener('click', () => { delete c.seloBorda; delete c.seloFundo; delete c.seloAlfa; muda(); });
   $$('[data-prog]', box).forEach(i => i.onchange = () => { const k = i.dataset.prog; c.sem.programas = i.checked ? sp.filter(x => x !== k) : [...new Set([...sp, k])]; muda(); });
   $$('[data-fn]', box).forEach(i => i.onchange = () => { const k = i.dataset.fn; c.sem.funcoes = i.checked ? c.sem.funcoes.filter(x => x !== k) : [...new Set([...c.sem.funcoes, k])]; muda(); });
   $$('[data-tudo]', box).forEach(b => b.onclick = () => { const tudo = b.dataset.tudo === '1'; c.sem.programas = tudo ? [] : naProgs().map(p => p.id); c.sem.funcoes = tudo ? [] : (NA.cat?.funcoes || []).map(f => f.id); muda(); });

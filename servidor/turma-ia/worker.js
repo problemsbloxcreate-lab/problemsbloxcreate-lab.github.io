@@ -580,7 +580,7 @@ const b64uE = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/
 const permId = async email => b64uE(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('acesso:' + String(email || '').trim().toLowerCase()))).slice(0, 16); // = idDe do porteiro
 // o que a pessoa NÃO tem (id = permId do e-mail). ADM: nada bloqueado.
 function permSem(m, id, adm) {
-  const vazio = { programas: [], funcoes: [], cargos: [] }, cv = c => ({ id: c.id, nome: c.nome, cor: c.cor, ...(c.selo ? { selo: true } : {}) });
+  const vazio = { programas: [], funcoes: [], cargos: [] }, cv = c => ({ id: c.id, nome: c.nome, cor: c.cor, ...(c.selo ? { selo: true } : {}), ...(c.seloBorda ? { seloBorda: c.seloBorda } : {}), ...(c.seloFundo ? { seloFundo: c.seloFundo } : {}), ...(c.seloAlfa != null ? { seloAlfa: c.seloAlfa } : {}) });
   const admC = cv(m?.cargos?.find(x => x.id === 'adm') || PERM_ADM());
   if (!m) return adm ? { ...vazio, cargos: [admC] } : vazio;
   const ids = (m.pessoas?.[id]?.cargos || []).filter(c => c !== 'adm' && m.cargos.some(x => x.id === c)); // o cargo ADM é só de quem é ADM de verdade
@@ -616,7 +616,7 @@ function permLimpa(b, porId) {
   if (!b || !Array.isArray(b.cargos)) throw new Error('Modelo inválido.');
   if (b.cargos.length > 60) throw new Error('No máximo 60 cargos.');
   const cargos = []; for (const c of b.cargos) { const id = txt(c?.id, 40).toLowerCase(); if (!ID.test(id) || cargos.some(x => x.id === id)) continue;
-    cargos.push({ id, nome: txt(c.nome, 40) || 'Cargo', cor: cor(c.cor), desc: txt(c.desc, 160), ...(c.selo ? { selo: true } : {}), sem: { programas: lista(c.sem?.programas, ID, 60), funcoes: lista(c.sem?.funcoes, FN, 600) } }); }
+    cargos.push({ id, nome: txt(c.nome, 40) || 'Cargo', cor: cor(c.cor), desc: txt(c.desc, 160), ...(c.selo ? { selo: true } : {}), ...(/^#[0-9a-f]{6}$/i.test(c.seloBorda || '') ? { seloBorda: c.seloBorda.toLowerCase() } : {}), ...(/^#[0-9a-f]{6}$/i.test(c.seloFundo || '') ? { seloFundo: c.seloFundo.toLowerCase() } : {}), ...(Number.isFinite(+c.seloAlfa) && c.seloAlfa !== '' && c.seloAlfa != null ? { seloAlfa: Math.max(0, Math.min(1, +c.seloAlfa)) } : {}), sem: { programas: lista(c.sem?.programas, ID, 60), funcoes: lista(c.sem?.funcoes, FN, 600) } }); }
   if (!cargos.some(c => c.id === 'equipe')) cargos.unshift(PERM_PADRAO().cargos[0]);
   { const a = cargos.find(c => c.id === 'adm'); if (a) { a.sem = { programas: [], funcoes: [] }; } else comAdm({ cargos }); } // o cargo ADM sempre existe e nunca tira nada
   const pastas = []; for (const p of (Array.isArray(b.pastas) ? b.pastas : []).slice(0, 100)) { const id = txt(p?.id, 40).toLowerCase(); if (ID.test(id) && !pastas.some(x => x.id === id)) pastas.push({ id, nome: txt(p.nome, 40) || 'Pasta' }); }
