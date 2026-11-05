@@ -801,6 +801,11 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #menu .mp-filtro button:hover{background:rgba(255,255,255,.14)}
 #menu .mp-filtro button[aria-pressed=true]{background:#fff;color:#0d3a66;border-color:#fff}
 @media (max-width:720px){#menu .mp-filtro button{padding:0 7px;font-size:11px}}
+
+/* ===== tudo com cantos retos (pedido da dona): menos os ícones dos programas ===== */
+:is(#top,#menu,#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo){border-radius:0!important}
+/* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
+#adm #ic-salvar,#adm #niv-salvar{display:none!important}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -2642,6 +2647,25 @@ async function naSalvar() {
   catch (e) { naSt(e.message || 'Não deu para salvar.', true); b.disabled = false; }
 }
 addEventListener('beforeunload', e => { if (naSujo()) { e.preventDefault(); e.returnValue = ''; } });
+/* BARRA ÚNICA DE SALVAR (pedido da dona, 05/11/2026): toda mudança na ADM mostra a MESMA barra embaixo (Salvar / Desfazer mudanças).
+   Botões, Mensagens e Fundo já usavam ela; Ícones e Níveis de acesso tinham o próprio "Salvar" no meio da página: agora a barra
+   chama o salvar deles e o botão de dentro some. A barra aparece quando o "Salvar" de dentro fica liberado (há mudança). */
+const SALVA_PROPRIO = { icones: '#ic-salvar', niveis: '#niv-salvar' };
+function barraUnica() {
+  const sel = SALVA_PROPRIO[abaAdm.atual], bar = $('#adm .savebar'); if (!bar) return;
+  if (!sel) { if (!sujo) bar.classList.remove('sujo'); return; }
+  const bt = $(sel), tem = !!bt && !bt.disabled; bar.classList.toggle('sujo', tem); const s0 = $('#save-st'); if (s0 && tem) { s0.className = 'st'; s0.textContent = 'Mudanças não salvas.'; }
+}
+new MutationObserver(() => barraUnica()).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['disabled'] });
+document.addEventListener('click', async e => {
+  const sv = e.target.closest?.('#btn-save'), dz = e.target.closest?.('#btn-undo'), sel = SALVA_PROPRIO[abaAdm.atual]; if ((!sv && !dz) || !sel) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (sv) { $(sel)?.click(); return; }
+  if (!(await pergunta({ titulo: 'Desfazer as mudanças?', texto: 'O que ainda não foi salvo nesta área volta como estava.', ok: 'Desfazer', perigo: true }))) return;
+  if (abaAdm.atual === 'icones') { renderIcones.st = null; renderIcones(); }
+  if (abaAdm.atual === 'niveis' && NA.salvo) { NA.modelo = JSON.parse(NA.salvo); renderNiveis(); $('#niv-salvar').disabled = true; }
+  barraUnica(); toast('Mudanças desfeitas.');
+}, true);
 function abaAdm(n) {
   const abas = $$('.adm-abas [data-aba]'); if (!abas.some(b => b.dataset.aba === n && !b.hidden)) n = 'botoes';
   abas.forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === n)));
@@ -2649,7 +2673,8 @@ function abaAdm(n) {
   if (n === 'conversas') window.EstudioConta?.adm?.conversas($('#conversas-adm'));
   if (n === 'icones') renderIcones();
   if (n === 'niveis') renderNiveis();
-  $('#adm .savebar').hidden = n === 'icones' || n === 'niveis' || n === 'acesso' || n === 'nuvem' || n === 'conversas' || n === 'dispositivos'; // quem pode entrar salva sozinho; a nuvem é só para ver
+  abaAdm.atual = n; barraUnica();
+  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'conversas' || n === 'dispositivos'; // quem pode entrar salva sozinho; a nuvem é só para ver
   if (n === 'nuvem') { renderUsoDia(); if (!renderNuvem.feito) nvEspera(); } // o gasto (rápido) aparece na hora; a lista dos arquivos (demorada, gasta listas do dia) só ao clicar
   if (n === 'dispositivos') renderDispositivos();
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
