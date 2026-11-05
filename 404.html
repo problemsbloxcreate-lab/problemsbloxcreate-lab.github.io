@@ -720,6 +720,28 @@ html.no-menu #top .ep-conta-nuvem,html.no-menu #top .ep-conta-espaco{display:non
   .mn-area{gap:22px}
 }
 @media (prefers-reduced-motion:reduce){#menu .card,#menu .mp,#menu .et,.mn-busca{animation:none!important;transition:none}}
+
+/* ===== ADM NO VISUAL NOVO (05/11/2026, pedido da dona): o mesmo do menu — azul escuro translúcido sobre a foto, cantos retos, letras finas ===== */
+#adm .adm{background:rgba(14,32,58,.9);-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);border-radius:0;box-shadow:0 30px 80px rgba(0,20,50,.5);color:#fff}
+#adm .adm-abas{background:rgba(0,0,0,.14);border-right:1px solid rgba(255,255,255,.1)}
+#adm .adm-abas .adm-cab b{font:300 26px/1.2 var(--mn-leve)}
+#adm .adm-abas h3{font:400 11.5px var(--font);text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.55);margin:16px 8px 6px}
+#adm .adm-abas button{border-radius:0;padding:7px 8px}
+#adm .adm-abas button:hover{background:rgba(255,255,255,.08)}
+#adm .adm-abas button[aria-selected=true]{background:#fff;color:#0d3a66}#adm .adm-abas button[aria-selected=true] b{font-weight:600}#adm .adm-abas button[aria-selected=true] small{color:#3a5578}
+#adm .adm-abas button svg{border-radius:0;box-shadow:none}
+#adm .adm-pag h2{font:300 21px/1.25 var(--mn-leve);color:#fff;margin:22px 0 10px}
+#adm .adm-desc{color:rgba(255,255,255,.75)}
+#adm :is(.btn,input,select,textarea,.lrow,.bgit,.frame,.adm-busca,.adm-x,.na-cargo,.na-seg,.na-seg button,.empty,details,.savebar,.f input,.f select){border-radius:0!important}
+#adm .btn{border:2px solid rgba(255,255,255,.7);background:none;color:#fff;font-weight:600}
+#adm .btn:hover{background:rgba(255,255,255,.14)}
+#adm .btn.primary{background:#fff;border-color:#fff;color:#0d3a66}#adm .btn.primary:hover{background:#dfeeff}
+#adm .btn.danger{border-color:rgba(255,140,130,.8);color:#ffd0cc;background:none}#adm .btn.danger:hover{background:rgba(255,80,80,.16)}
+#adm input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),#adm select,#adm textarea{background:rgba(255,255,255,.95);color:#10233a;border:2px solid transparent}
+#adm input:focus,#adm select:focus,#adm textarea:focus{border-color:#7fc4ff;outline:none}
+#adm .lrow,#adm .bgit{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+#adm .savebar{background:rgba(14,32,58,.95);border:1px solid rgba(255,255,255,.2)}
+html.adm-sobre #adm{inset:0;background:rgba(5,20,45,.35)}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -787,7 +809,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <h3 class="eq" role="presentation">Equipe</h3><h3 class="si" role="presentation">Sistema</h3>
     <button role="tab" data-aba="botoes"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span><b>Botões</b><small>os projetos do menu</small></span></button>
     <button role="tab" data-aba="mensagens"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><span><b>Mensagens</b><small>saudação e frases</small></span></button>
-    <button role="tab" data-aba="fundo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span><b>Fundo</b><small>imagem ou vídeo da tela</small></span></button>
+    <button role="tab" data-aba="fundo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span><b>Fundo</b><small>foto atrás do menu</small></span></button>
     <button role="tab" data-aba="icones"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M8 15.5V9.5h3M8 12.5h2.5M14 9.5v6M14 12.5c0-1.7 3-1.9 3 0v3"/></svg><span><b>Ícones</b><small>Sh, Ed, An, At, Md e os novos</small></span></button>
     <button role="tab" data-aba="acesso" id="aba-acesso" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg><span><b>Quem pode entrar</b><small>liberar e tirar e-mails</small></span></button>
     <button role="tab" data-aba="niveis" id="aba-niveis" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="M8.5 10.5h7M8.5 14h4.5"/></svg><span><b>Níveis de acesso</b><small>cargos: quem vê cada programa</small></span></button>
@@ -828,7 +850,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
       </div></div>
   </div>
   <div class="adm-pag" data-pag="fundo">
-    <p class="adm-desc">A imagem, GIF ou vídeo atrás do menu (um só, em sequência ou sorteado).</p>
+    <p class="adm-desc">A foto atrás do menu: sempre a padrão (a primeira), uma aleatória a cada visita ou trocando sozinha. Só imagens.</p>
     <h2>Fundo da tela toda</h2>
     <div class="box">
       <div class="fields" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="bg-cfg"></div>
@@ -2542,7 +2564,7 @@ function showAdm(sobre) {
   const ver = $('#btn-ver'); ver.hidden = !!sobre || window.ESTUDIO_EMBED_ADM; ver.href = BASE;
   if (!sobre) { document.title = 'ADM · Estúdio Problems'; const n = $('#top-nome'); if (n) n.textContent = 'ADM'; const s = $('#top-sub'); if (s) s.hidden = false; }
   const copia = () => JSON.parse(JSON.stringify({ links: DADOS.links, fundo: DADOS.fundo, mensagens: DADOS.mensagens }));
-  EDIT = copia(); EDIT.links.forEach(l => { if (l.url) { const n = normUrl(l.url); if (n !== l.url) { l.url = n; sujo = true; } } }); renderLinks(); renderMensagens(); renderFundo(); if (!sobre) fundoTela(null); // na ADM o fundo da tela não toca (por cima do menu, o do menu continua atrás)
+  EDIT = copia(); EDIT.links.forEach(l => { if (l.url) { const n = normUrl(l.url); if (n !== l.url) { l.url = n; sujo = true; } } }); renderLinks(); renderMensagens(); renderFundo(); if (!sobre) fundoTela(DADOS.fundo); // a ADM também mostra a foto do fundo (só imagens agora; por cima do menu, o do menu continua atrás)
   st(DADOS.em ? `Última mudança: ${new Date(DADOS.em).toLocaleString('pt-BR')}${DADOS.por ? ` por <span data-quem="${esc(DADOS.por)}"></span>` : ''}.` : 'Ainda não salvo no servidor: mostrando os botões padrão.');
   $('#add-link').onclick = () => { EDIT.links.push({ nome: 'Novo link', desc: '', url: null, embreve: false, modo: 'sempre', icone: 'link', iconeImg: null, iconeTam: 62, iconeCaixa: true, fundo: null, escurecer: .45 }); mudou(); renderLinks(); $('#links').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
   $$('[data-addbg]').forEach(b => b.onclick = async () => { const m = await novaMidia(b.dataset.addbg); if (!m) return; if (m.tipo === 'video') return toast('Vídeo não entra mais no fundo do menu: use uma imagem.'); EDIT.fundo.itens.push(m); if (EDIT.fundo.modo === 'nenhum') EDIT.fundo.modo = 'um'; mudou(); renderFundo(); });
