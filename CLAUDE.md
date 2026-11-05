@@ -185,4 +185,6 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
   preparativos, menu-midia, menu-links, ideias) para o turma-reserva com `_pr=1` (sem trocar endereços). Se a principal não
   responder (1027/429), o mesmo pedido é repetido lá. IA, transcrição e uso continuam só na principal.
 - ADM › Nuvem mostra no topo o TOTAL de hoje das 3 nuvens da equipe (principal, reserva, terciária); a dos sons fica fora.
-- Falta: o porteiro (menu/páginas, ~55% dos pedidos da principal) ainda só roda na principal.
+- TODA rota de dados divide (lista NAO_DIV do estudio-conta.js = o que fica só na principal: IA, transcrição, /quem, /app-key, robôs, reserva, painel ADM). Programa novo que use a nuvem da equipe já entra na divisão sozinho.
+- Porteiro: scripts/CSS de projeto no GitHub Pages PÚBLICO vão direto do GitHub (função direto() + comVersoes no porteiro/worker.js; config.js, HTML, Workers e a porta reserva continuam pelo porteiro). Botão da nuvem mostra "Uso de hoje" (/nuvem-hoje no turma-ia).
+- As LEITURAS do D1 continuam todas no banco da principal (a ponte lê de lá também): se elas chegarem no limite, entra a reserva como antes.
