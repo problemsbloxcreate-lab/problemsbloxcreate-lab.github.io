@@ -805,7 +805,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 @media (max-width:720px){#menu .mp-filtro button{padding:0 7px;font-size:11px}}
 
 /* ===== tudo com cantos retos (pedido da dona): menos os ícones dos programas ===== */
-:is(#top,#menu,#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo){border-radius:0!important}
+:is(#top,#menu,#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
 /* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
 #adm #ic-salvar,#adm #niv-salvar{display:none!important}
 
@@ -833,6 +833,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 .mn-progs{min-width:calc(5 * var(--mn-u) + 4 * var(--mn-g))}
 @media (max-width:720px){.mn-progs{min-width:0;width:100%}}
 #menu #estudio.pronto .et,#menu #atalhos.pronto .et{animation:none}
+#adm .f.chk input[type=checkbox]{border-radius:10px!important}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1859,14 +1860,31 @@ const recentes = {
     } catch { return []; }
   },
   async carrega(forcar) {
-    const [n, l] = await Promise.all([this.daNuvem(forcar), this.locais && !forcar ? this.locais : this.doComputador()]);
-    this.nuvem = n || null; this.locais = l || []; this.pinta();
+    const [n, l, q] = await Promise.all([this.daNuvem(forcar), this.locais && !forcar ? this.locais : this.doComputador(), this.daEquipe(forcar)]);
+    this.nuvem = n || null; this.locais = l || []; this.equipe = q || []; this.pinta();
+  },
+  /* PREPARATIVOS e PUBLICAÇÕES (pedido da dona, 05/11/2026): os que ESTA pessoa fez, na nuvem da equipe.
+     - Publicações: a lista que o próprio Publicações já guarda neste navegador ('ep-publicacoes-v1', sem pedido); sem ela, GET /publicacoes.
+     - Preparativos: GET /preparativos (só a lista, sem abrir arquivos).
+     As duas buscas ficam 15 min guardadas ('ep-meus-equipe'), como a das animações; o botão de atualizar busca de novo. */
+  async daEquipe(forcar) {
+    const K = 'ep-meus-equipe'; let c = null; try { c = JSON.parse(localStorage.getItem(K) || 'null'); } catch { }
+    if (!forcar && c && Date.now() - c.t < 15 * 6e4) return c.L;
+    const L = [], eu = this.eu, ok = id => window.EstudioPerm?.programa?.(id) !== false;
+    const quando = x => +x?.mod || Date.parse(x?.em || '') || Date.parse(x?.publicado || x?.quando || '') || +x?.criado || 0;
+    if (ok('preparativos')) try { const j = await api('/preparativos'); for (const x of j?.itens || []) if (x?.id && eu && x.por === eu) L.push({ id: x.id, tipo: 'pr', nome: x.nome || 'Preparativo', mod: quando(x), onde: 'nuvem' }); } catch { }
+    if (ok('publicacoes')) { let P = null; try { const v = JSON.parse(localStorage.getItem('ep-publicacoes-v1') || 'null'); if (!forcar && v?.itens && Date.now() - (v.em || 0) < 864e5) P = v.itens; } catch { }
+      if (!P) try { P = (await api('/publicacoes'))?.itens || []; } catch { P = []; }
+      for (const x of P || []) if (x?.id && x.meu) L.push({ id: x.id, tipo: 'pu', nome: x.titulo || x.arquivo?.nome || 'Publicação', mod: quando(x), onde: 'nuvem' }); }
+    try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), L })); } catch { }
+    return L;
   },
   criador(x) { const a = x?.quem?.a?.i; return a || x?.por || null; },
   lista() {
     const eu = this.eu, nv = new Map((this.nuvem || []).map(x => [x.id, x])), out = new Map();
     for (const x of nv.values()) if (eu && this.criador(x) === eu) out.set(x.id, { id: x.id, nome: x.nome, mod: +x.mod || Date.parse(x.em) || 0, onde: 'nuvem' });
     for (const p of this.locais || []) if (p.tipo === 'ed') out.set('ed:' + p.id, { id: p.id, tipo: 'ed', nome: p.nome, mod: p.mod, onde: 'local' });
+    for (const p of this.equipe || []) out.set(p.tipo + ':' + p.id, p);
     for (const p of this.locais || []) if (p.tipo === 'at' && eu && p.editou === eu) out.set('at:' + p.id, { id: p.id, tipo: 'at', nome: p.nome, mod: p.mod, onde: p.nuvem ? 'nuvem' : 'local' });
     for (const p of this.locais || []) { if (p.tipo === 'at' || p.tipo === 'ed' || !p.id || p.anterior || out.has(p.id)) continue;
       const c = nv.get(p.id); if (c) { if (eu && this.criador(c) === eu) out.set(p.id, { id: p.id, nome: c.nome || p.nome, mod: Math.max(+c.mod || 0, p.mod), onde: 'nuvem' }); continue; } // está na nuvem mas é de outra pessoa
@@ -1884,9 +1902,9 @@ const recentes = {
   pinta() {
     const el = $('#rec'); if (!el) return; const L = this.lista();
     if (!L.length) { el.innerHTML = `<div class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : (this.filtro() === 'nuvem' ? 'Nenhum projeto seu na nuvem.' : this.filtro() === 'local' ? 'Nenhum projeto seu só neste computador.' : 'Você ainda não criou nenhum projeto. As animações e os personagens do Ateliê que você fizer aparecem aqui.')}</div>`; return; }
-    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', at = x.tipo === 'at', edt = x.tipo === 'ed', href = edt ? '/editor/?p=' + encodeURIComponent(x.id) : at ? '/animador/?atelie=' + encodeURIComponent(x.id) : nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
+    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', at = x.tipo === 'at', edt = x.tipo === 'ed', pr = x.tipo === 'pr', pu = x.tipo === 'pu', href = pr ? '/preparativos/?id=' + encodeURIComponent(x.id) : pu ? '/publicacoes/' : edt ? '/editor/?p=' + encodeURIComponent(x.id) : at ? '/animador/?atelie=' + encodeURIComponent(x.id) : nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
       const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Só neste computador</span>` : `<span class="onde lc">${this.IC.local}Neste computador</span>`;
-      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="${edt ? 'Abrir no Editar' : at ? 'Abrir no Ateliê' : 'Abrir no Animador'}" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || (at ? 'Personagem sem nome' : 'Animação sem nome'))}</b><small>${edt ? 'Edição · ' : at ? 'Personagem · ' : ''}${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="${edt ? 'ed' : at ? 'at' : 'an'}"></span></a>`; }).join('');
+      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="${pr ? 'Abrir no Preparativos' : pu ? 'Abrir o Publicações' : edt ? 'Abrir no Editar' : at ? 'Abrir no Ateliê' : 'Abrir no Animador'}" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || (at ? 'Personagem sem nome' : 'Animação sem nome'))}</b><small>${pr ? 'Preparativo · ' : pu ? 'Publicação · ' : edt ? 'Edição · ' : at ? 'Personagem · ' : ''}${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="${pr ? 'pr' : pu ? 'pu' : edt ? 'ed' : at ? 'at' : 'an'}"></span></a>`; }).join('');
     try { window.EstudioIcones?.pinta?.(el); } catch { }
   },
 };
