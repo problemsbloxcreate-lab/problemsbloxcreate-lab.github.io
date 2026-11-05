@@ -305,6 +305,19 @@ async function robo(req, env) {
    este servidor grava ou apaga já entra na lista guardada na hora (put/delete passam por aqui). Antes cada abertura da
    biblioteca/espaço gastava listas e o limite do dia acabava ("reached the free usage limit"). */
 let kvLista = null; const KV_LISTA_MS = 5 * 60e3;
+/* LER MENOS (05/11/2026): cada vez que a Cloudflare "acorda" uma cópia nova deste servidor, ela lia a tabela inteira do D1 (~14 mil
+   linhas = 14 mil leituras) — era a maior parte das 5 milhões de leituras do dia. Agora a lista inteira fica no CACHE da Cloudflare
+   (não gasta leitura nem gravação do D1); quem acorda pega a foto de lá e lê do D1 só o que mudou depois dela (índice arq_em).
+   A foto é trocada a cada leitura completa (de 6 em 6 h); com mais de 6 h ela é ignorada. */
+const LISTA_CACHE = 'https://turma.cache/lista-equipe-v1';
+async function listaDoCache() {
+  try { const r = await caches.default.match(LISTA_CACHE); if (!r) return null; const j = await r.json();
+    if (!j?.desde || !Array.isArray(j.m) || Date.now() - j.cheia > 6 * 3600e3) return null;
+    return { m: new Map(j.m.map(x => [x.name, x])), at: 0, cheia: j.cheia, desde: j.desde }; } catch { return null; }
+}
+async function guardaListaCache(L) {
+  await caches.default.put(LISTA_CACHE, new Response(JSON.stringify({ cheia: L.cheia, desde: L.desde, m: [...L.m.values()] }), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=21600' } }));
+}
 /* NUVEM RESERVA (decisão do dono, 23/10/2026): quando esta conta chega no limite grátis do dia, o que seria gravado/apagado vai
    para a reserva (Worker reserva-problems com D1; em último caso ele passa para a antiga, sons-problems), e as leituras/listas juntam.
    Depois das 21h de Brasília (00:00 UTC) a principal volta e, aos poucos, tudo passa de volta (`migra`) e sai da reserva.
@@ -368,16 +381,20 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
   const naReserva = async k => { if (!(await ativa())) return null; try { const ri = await R.indice(); return ri.get(k) || (pastaApagada(ri, k) ? { name: k, metadata: { _del: 1 } } : null); } catch { return null; } };
   const carrega = async () => {
     if (kvLista && Date.now() - kvLista.at < (forcar || kv.mudancas ? 30e3 : KV_LISTA_MS)) return kvLista.m;
+    if (!kvLista && kv.mudancas) kvLista = await listaDoCache(); // acordou agora: começa da foto guardada e busca só o que mudou depois dela
     if (kvLista?.desde && kv.mudancas && Date.now() - kvLista.cheia < 6 * 3600e3) { // D1: só o que mudou (2 minutos de folga para relógios diferentes)
       const t = Date.now(), d = await kv.mudancas(kvLista.desde);
       if (d) { for (const x of d.mudou) kvLista.m.set(x.name, x); for (const k of d.apagou) kvLista.m.delete(k); kvLista.at = t; kvLista.desde = t - 120e3; return kvLista.m; } }
     const t0 = Date.now(), m = new Map(); let cur; do { const r = await kv.list({ cursor: cur }); for (const k of r.keys) m.set(k.name, k); cur = r.list_complete ? null : r.cursor; } while (cur);
     kvLista = { m, at: Date.now(), cheia: Date.now(), desde: kv.mudancas ? t0 - 120e3 : 0 };
+    if (kv.mudancas) bg(guardaListaCache(kvLista).catch(() => { }));
     if (R && Date.now() - fotoListaEm > 15 * 60e3) { fotoListaEm = Date.now(); bg(R.guardaLista(m).catch(() => { })); } // foto da lista guardada na reserva (de 15 em 15 min: se a principal acabar de repente, a lista continua abrindo pela reserva)
     return m;
   };
   const ler = async (k, o, meta) => { const it = await naReserva(k);
     if (it) { usou(); if (it.metadata?._del) return meta ? { value: null, metadata: null } : null; const g = await R.get(k); return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); }
+    if (R && emLimite()) { const naLista = +(kvLista?.m.get(k)?.metadata?.mod || 0); // poupando a principal: a cópia só vale se for a mesma versão
+      if (naLista) { const g = await R.bkget(k).catch(() => null); if (g?.value != null && +(g.metadata?.mod || 0) >= naLista) { flag.copia = true; return meta ? { value: valorComo(g.value, o), metadata: g.metadata } : valorComo(g.value, o); } } }
     try { return meta ? await kv.getWithMetadata(k, o) : await kv.get(k, o); }
     // falha de um instante (fora do limite): a cópia de segurança entrega o arquivo SEM marcar "reserva" — senão o site mostrava
     // "a nuvem principal já voltou" sem nada ter saído do ar (04/11/2026)
@@ -467,7 +484,10 @@ async function confereDivide(R) {
 async function confereCheio(kv, R) {
   if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
   const c = await R.contaJa(), o = c?.contas?.principal, L = c?.limites; if (!o?.kv || !L || c.dia !== new Date().toISOString().slice(0, 10)) return;
-  const pct = o.d1ativo && o.d1 ? o.d1.write / (L.d1Write || 1e5) : Math.max(o.kv.write / L.write, o.kv.list / L.list, o.kv.delete / L.delete); if (pct < SEGURO) return; // no D1 conta as linhas gravadas
+  // LEITURAS TAMBÉM (pedido da dona, 05/11/2026): antes só as gravações ligavam a proteção; com as leituras em 100% o Estúdio passava a
+  // ler a cópia de segurança, que podia estar atrasada (versões velhas). Agora, aos 85% das leituras OU das gravações: última cópia
+  // atualizada, as gravações vão para a reserva e as leituras saem da cópia (quando ela é da mesma versão) até as 21h.
+  const pct = o.d1ativo && o.d1 ? Math.max(o.d1.write / (L.d1Write || 1e5), o.d1.read / (L.d1Read || 5e6)) : Math.max(o.kv.write / L.write, o.kv.list / L.list, o.kv.delete / L.delete); if (pct < SEGURO) return; // no D1: linhas gravadas e linhas lidas
   // última foto da lista antes de poupar (se ainda dá para listar) e a cópia de segurança do que mudou
   if (o.kv.list / L.list < 0.97 && Date.now() - fotoListaEm > 30 * 60e3) { try { kvLista = null; fotoListaEm = 0; await kv.list({}); } catch { } }
   limiteAte = fimDoDia(); R.copiar().catch(() => { });
@@ -647,7 +667,7 @@ export default {
     const login = peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
-    if (R && login.email && !env._porta) bg(confereCheio(env.EQUIPE, R).catch(() => { }));
+    if (R && login.email && (!env._porta || env._ponte)) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // a ponte lê o mesmo banco: poupa também
     if (R && login.email) bg(confereDivide(R)); // DIVIDIR os pedidos com a outra porta quando a principal estiver gastando muito // perto do limite (85%): poupa a principal até as 21h
     // RESUMO para o círculo da nuvem quando a principal não deixa listar (limite do dia): o espaço medido pela Cloudflare
     // (Action "Uso da nuvem") + o que está na reserva agora. Qualquer conta da equipe; sem e-mails (semEmail)
