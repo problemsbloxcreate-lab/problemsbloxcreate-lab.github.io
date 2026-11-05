@@ -56,6 +56,7 @@
     const falta = restante(), tot = feitos.size + falta, raw = tot ? feitos.size / tot : 0;
     const cap = document.readyState === 'loading' ? 72 : document.readyState === 'interactive' ? 90 : 98;
     alvo = Math.max(alvo, Math.min(cap - 14, 4 + raw * (cap - 18))); // deixa folga para continuar andando
+    alvo = Math.max(alvo, Math.min(cap - 2, 80 * (1 - Math.exp(-performance.now() / 1800)))); // anda com o tempo também: não fica parada em 0% (05/11/2026)
     // nunca fica parado: enquanto falta algo, vai andando devagarinho (cada vez mais devagar) sem passar do teto da fase
     const teto = falta || document.readyState !== 'complete' ? cap - 1 : cap;
     if (alvo < teto) alvo = Math.min(teto, alvo + (teto - alvo) * .0025 + .012);
@@ -92,7 +93,12 @@
       if (!ativo) { ativo = true; mo.observe(document.documentElement, { childList: true, subtree: true }); document.querySelectorAll('img,script[src],link[rel~="stylesheet"]').forEach(olha); alvo = Math.min(alvo, 90); mostrado = Math.min(mostrado, 90); agenda(); } // tela que volta (ex.: menu depois do login)
       return esperando || (esperando = new Promise(ok => {
         const ini = Date.now(); let quieto = 0;
-        const fim = () => { clearInterval(t); alvo = 100; mostrado = 100; pinta(); etapa = ''; esperando = null; setTimeout(() => { if (!esperando) { ativo = false; mo.disconnect(); } }, 500); ok(); };
+        // FECHA EM 100% (pedido da dona, 05/11/2026): antes pulava de onde estava (às vezes 0%) para sumir na hora. Agora a barra corre
+        // até 100% em ~0,4 s e só então a tela sai (mesmo que seja só para fazer sentido aos olhos)
+        const fim = () => { clearInterval(t); alvo = 100; const de = mostrado, t0 = performance.now(); let foi = false;
+          const acaba = () => { if (foi) return; foi = true; mostrado = 100; pinta(); etapa = ''; esperando = null; setTimeout(() => { if (!esperando) { ativo = false; mo.disconnect(); } }, 500); setTimeout(ok, 90); };
+          const anda = () => { if (foi) return; const k = Math.min(1, (performance.now() - t0) / 400); mostrado = de + (100 - de) * (1 - (1 - k) * (1 - k)); pinta(); if (k < 1) requestAnimationFrame(anda); else acaba(); };
+          if (de >= 99) acaba(); else { anda(); setTimeout(acaba, 700); } }; // aba escondida (sem desenho): termina pelo relógio
         const t = setInterval(() => { calcula(); muda();
           const livre = document.readyState === 'complete' && restante() === 0;
           quieto = livre ? quieto + 100 : 0; if (quieto >= 300 || Date.now() - ini > ms) fim(); }, 100);
