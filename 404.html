@@ -828,6 +828,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 
 /* selo "Em teste": discreto, no canto do bloco */
 #menu .card .tag.teste{top:6px;right:6px;left:auto;background:rgba(240,178,50,.92)!important;color:#241600!important;font:600 10px/1.5 var(--font)!important;letter-spacing:.2px!important;text-transform:none!important;padding:0 6px!important}
+.mn-col{display:flex;flex-direction:column;gap:28px;min-width:0}
+@media (max-width:1100px){.mn-col{align-items:center}}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -882,9 +884,11 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <section class="mn-grupo recentes" id="recentes" hidden><div class="progs-cab"><h2 id="rec-tit">Meus projetos</h2><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="mp-filtro" role="group" aria-label="Mostrar"><button type="button" data-mf="todos" aria-pressed="true">Todos</button><button type="button" data-mf="nuvem" aria-pressed="false">Na nuvem</button><button type="button" data-mf="local" aria-pressed="false">Neste computador</button></span></div>
       <div class="blocos meus" id="rec"></div></section>
     <!-- ESTÚDIO: Mensagens, Calendário, nuvem, este computador, perfil e ADM (no lugar do Dock) -->
+    <div class="mn-col"><!-- Estúdio e, logo abaixo, Meus atalhos (mesma coluna) -->
     <section class="mn-grupo" id="g-est"><h2>Estúdio</h2><div class="blocos" id="estudio"></div></section>
     <!-- MEUS ATALHOS: blocos e links da própria pessoa, só neste computador (localStorage 'ep-atalhos'), zero nuvem -->
     <section class="mn-grupo" id="g-atalhos"><h2>Meus atalhos</h2><div class="blocos" id="atalhos"></div></section>
+    </div>
   </div>
 </main>
 
