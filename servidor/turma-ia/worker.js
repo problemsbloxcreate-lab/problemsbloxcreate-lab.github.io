@@ -1018,13 +1018,17 @@ export default {
           if ('grupo' in v && (v.grupo === null || (typeof v.grupo === 'string' && /^[\p{L}\p{N} ._-]{1,30}$/u.test(v.grupo.trim())))) e.grupo = v.grupo === null ? null : v.grupo.trim();
           // PADRÃO NO ANIMADOR (personagem do Ateliê para todos os roteiros): { id, nome } | null (= nenhum); "auto" tira o campo (= mesmo nome)
           if ('atelie' in v) { const a = v.atelie; if (a === null || a === 'auto') e.atelie = a; else if (a && typeof a === 'object' && /^[a-z0-9][a-z0-9-]{1,40}$/.test(String(a.id || ''))) e.atelie = { id: String(a.id), nome: String(a.nome || a.id).replace(/[<>]/g, '').slice(0, 80) }; }
+          if (v.apagar === true) e.apagar = true; // tirar da lista (renomear = o nome novo com os mesmos dados + apagar o velho)
           if (Object.keys(e).length) out[k] = e; } return out; };
       const juntaPers = async (mudas, soNovos) => { const p0 = await lePers(), p = { ...p0 }, velhas = []; let mudou = false;
-        for (const [k, e] of Object.entries(mudas || {})) { if (soNovos && p[k]) continue; const n = { ...(p[k] || {}), ...e }; for (const x of Object.keys(n)) if (n[x] === null && x !== 'atelie') delete n[x]; if (n.atelie === 'auto') delete n.atelie;
+        const ordem = Object.entries(mudas || {}).sort(([, a], [, b]) => (a.apagar ? 1 : 0) - (b.apagar ? 1 : 0)); // primeiro grava, depois apaga (renomear não perde a foto)
+        for (const [k, e] of ordem) { if (e.apagar) { if (!soNovos && p[k]) { if (p[k].foto) velhas.push(p[k].foto); delete p[k]; mudou = true; } continue; }
+          if (soNovos && p[k]) continue; const n = { ...(p[k] || {}), ...e }; for (const x of Object.keys(n)) if (n[x] === null && x !== 'atelie') delete n[x]; if (n.atelie === 'auto') delete n.atelie;
           if ('foto' in e && p[k]?.foto && p[k].foto !== e.foto) velhas.push(p[k].foto); const { em: _a, ...antes } = p[k] || {}, { em: _b, ...depois } = n;
           if (!p[k] || JSON.stringify(depois) !== JSON.stringify(antes)) { p[k] = { ...depois, em: new Date().toISOString() }; mudou = true; } }
         if (mudou) { const t = JSON.stringify(p); await env.EQUIPE.put('preparativos/personagens.json', t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } });
-          for (const f of velhas.slice(0, 5)) { try { await env.EQUIPE.delete(f); } catch { } } }
+          const usadas = new Set(Object.values(p).map(x => x.foto).filter(Boolean)); // foto que ainda é de alguém (ex.: renomeado) fica
+          for (const f of velhas.filter(f => !usadas.has(f)).slice(0, 5)) { try { await env.EQUIPE.delete(f); } catch { } } }
         return p; };
       const coresDe = async p => { const c = await leCores(); for (const [k, e] of Object.entries(p || {})) if (e.cor) c[k] = e.cor; return c; };
       const juntaCores = async novas => coresDe(await juntaPers(Object.fromEntries(Object.entries(novas || {}).map(([k, c]) => [k, { cor: c }]))));
