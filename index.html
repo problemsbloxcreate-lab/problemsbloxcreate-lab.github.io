@@ -825,6 +825,9 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 @media (hover:none){#menu .et.at .at-ed{opacity:1}}
 /* telas estreitas (blocos empilhados) e celular: tudo centralizado na tela */
 @media (max-width:1100px){.mn-area{justify-content:center}#menu .grid,#menu .grid[data-densidade],#menu .blocos{justify-content:center}#menu .mn-grupo h2,#menu .progs-cab{justify-content:center;text-align:center}}
+
+/* selo "Em teste": discreto, no canto do bloco */
+#menu .card .tag.teste{top:6px;right:6px;left:auto;background:rgba(240,178,50,.92)!important;color:#241600!important;font:600 10px/1.5 var(--font)!important;letter-spacing:.2px!important;text-transform:none!important;padding:0 6px!important}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1526,6 +1529,10 @@ function comPartes(lista) { const out = [];
   const ORDEM = ['shorts', 'editor', 'animador', 'preparativos', 'atelie', 'cenarios', 'modelador', 'publicacoes'];
   const id = l => { if (l.id) return l.id; try { const u = new URL(l.url || '', location.href); return u.origin === location.origin ? u.pathname.split('/').filter(Boolean)[0] || '' : ''; } catch { return ''; } };
   return out.map((l, i) => ({ l, i, p: ORDEM.includes(id(l)) ? ORDEM.indexOf(id(l)) : 100 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
+/* EM TESTE (pedido da dona, 05/11/2026): selo discreto no bloco. Vem da ADM › Botões (caixinha "Em teste", campo etiqueta);
+   o Publicações nasce marcado. Desmarcar grava etiqueta '-' (= sem selo), para o padrão não voltar sozinho. */
+const ETIQUETA_PADRAO = { publicacoes: 'Em teste' };
+function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) return l.etiqueta; try { const u = new URL(l?.url || '', location.href); return u.origin === location.origin ? ETIQUETA_PADRAO[u.pathname.split('/').filter(Boolean)[0]] || '' : ''; } catch { return ''; } }
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
 const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
 function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
@@ -1547,7 +1554,7 @@ function pintaGrid() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
   const n = menuVis.length; g.style.setProperty('--cols', n > 15 ? 6 : n > 8 ? 5 : 4); g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
@@ -1965,6 +1972,7 @@ function renderLinks() {
         <label class="f full"><span>Endereço do site</span><input type="url" maxlength="500" placeholder="https://..." data-k="url" value="${esc(l.url || '')}"></label>
         <label class="f full chk"><input type="checkbox" data-k="soAdm" ${l.soAdm ? 'checked' : ''}><span><b>Só para ADMs</b>: só quem é ADM vê este programa no menu (para os outros ele nem aparece). Desmarque quando for liberar para todos.</span></label>
         <label class="f full chk"><input type="checkbox" data-k="invisivel" ${l.invisivel ? 'checked' : ''}><span><b>Invisível</b>: o programa some do menu para TODOS, inclusive os ADMs (continua guardado aqui na ADM › Menu). Desmarque para ele voltar.</span></label>
+        <label class="f full chk"><input type="checkbox" data-k="emteste" ${etiquetaDe(l) ? 'checked' : ''}><span><b>Em teste</b>: mostra o selo "Em teste" no bloco (programa ainda sendo feito). Desmarque quando ficar pronto.</span></label>
         <label class="f full chk"><input type="checkbox" data-k="embreve" ${l.embreve || !l.url ? 'checked' : ''} ${l.url ? '' : 'disabled'}><span><b>Em breve</b>: o botão aparece apagado, com a etiqueta "em breve", e não abre nada${l.url ? ' (o endereço fica guardado para quando você desligar)' : ' (sempre ligado enquanto não tiver endereço)'}.</span></label>
         <div class="acts full">
           ${l.fundo ? '<span class="hint">Este botão tem um fundo antigo (o menu novo não mostra mais fundo nos blocos).</span><button class="btn sm" data-a="semfundo">Apagar o fundo antigo</button>' : ''}
@@ -1984,6 +1992,7 @@ function renderLinks() {
       if (k === 'zoom') { l.fundo.zoom = +inp.value; inp.nextElementSibling.textContent = vez(inp.value); }
       else if (k === 'escurecer') { l.escurecer = +inp.value; inp.nextElementSibling.textContent = pct(inp.value); }
       else if (k === 'url') { const tinha = !!l.url; l.url = normUrl(inp.value) || null; inp.classList.toggle('bad', !urlOk(inp.value.trim())); if (tinha !== !!l.url) { mudou(); return renderLinks(); } }
+      else if (k === 'emteste') { l.etiqueta = inp.checked ? 'Em teste' : '-'; }
       else if (k === 'embreve') l.embreve = inp.checked;
       else if (k === 'soAdm') l.soAdm = inp.checked;
       else if (k === 'invisivel') { l.invisivel = inp.checked; card.style.opacity = l.invisivel ? .4 : ''; }
