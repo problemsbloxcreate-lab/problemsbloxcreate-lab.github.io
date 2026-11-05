@@ -821,7 +821,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <label class="mn-busca" id="prog-busca" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="prog-q" placeholder="Buscar programa ou projeto" aria-label="Buscar programa ou projeto" autocomplete="off"><small>Esc limpa</small></label>
   <div class="mn-area">
     <section class="mn-grupo" id="g-fix" hidden><h2>Fixados</h2><div class="blocos" id="fixos"></div></section>
-    <section class="mn-grupo"><div class="progs-cab" id="progs-cab"><h2>Programas</h2><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no topo (só para você, fica neste navegador)">Organizar</button><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no topo · só para você</span></div>
+    <section class="mn-grupo"><div class="progs-cab" id="progs-cab"><h2>Programas</h2><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no topo (só para você, fica neste navegador)">Organizar</button><button type="button" class="btn-org" id="org-padrao" hidden title="Tira a sua ordem e volta à ordem padrão do Estúdio (só neste navegador)">Voltar à ordem padrão</button><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no topo · só para você</span></div>
       <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div></section>
     <!-- MEUS PROJETOS: os últimos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
     <section class="mn-grupo recentes" id="recentes" hidden><div class="progs-cab"><h2 id="rec-tit">Meus projetos</h2><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
@@ -1511,7 +1511,10 @@ const organizar = {
     this.grava(v.slice(-8)); pintaFixos(); toast(sim ? 'Fixado no topo (só neste navegador).' : 'Tirado dos fixados.'); },
   pinta() { // botão, dica, rolagem e os alfinetes
     const g = $('#grid'), cx = $('#grid-caixa'), b = $('#btn-org'); if (!g || !cx || !b) return;
-    b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on; g.classList.toggle('org', this.on);
+    b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on;
+    // "Voltar à ordem padrão": só no modo Organizar e só quando a ordem desta pessoa é diferente da padrão
+    const padraoKs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l))).map(chaveL).join('\n'), bp = $('#org-padrao');
+    if (bp) { bp.hidden = !this.on || padraoKs === menuVis.map(chaveL).join('\n'); bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
     $('#btn-org').hidden = menuVis.length < 2;
     cx.classList.toggle('rola', g.dataset.densidade !== 'grande'); this.fimDaRolagem();
     const fx = new Set(this.fixos().map(x => x.k));
