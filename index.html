@@ -791,7 +791,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #menu .et .et-r.cal b{font:400 15px/1.25 var(--font);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #menu .et .et-r.cal small{font-size:11.5px;color:rgba(255,255,255,.8)}
 #menu .et .dia small{line-height:1.25;display:block;text-transform:capitalize}
-@media (max-width:720px){#menu .et .et-r.cal{left:72px}#menu .et .des svg{width:22px;height:22px}}
+@media (max-width:720px){#menu .et .et-r.cal{left:50%;right:8px;top:8px}#menu .et .et-r.cal small{display:none}#menu .et .et-r.cal b{font-size:12.5px;-webkit-line-clamp:3}#menu .et[data-et=cal] .dia small{font-size:10.5px}#menu .et[data-et=cal] .nm{display:none}#menu .et .des svg{width:22px;height:22px}#menu .et.clima .cl-mm{display:none}#menu .mp-filtro{flex-wrap:wrap}}
 /* avisos que aparecem embaixo (ex.: "Voltou à ordem padrão") no visual novo */
 .toast{background:rgba(14,32,58,.94)!important;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 14px 40px rgba(0,20,50,.45)!important;padding:12px 18px!important;animation:mnToast .35s var(--mn-entra) both}
 @keyframes mnToast{from{opacity:0;transform:translate(-50%,10px)}}
@@ -808,6 +808,23 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 :is(#top,#menu,#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo){border-radius:0!important}
 /* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
 #adm #ic-salvar,#adm #niv-salvar{display:none!important}
+
+/* clima: passa de cidade em cidade (de baixo para cima) */
+#menu .et.clima{overflow:hidden}
+#menu .et.clima .cl-faces{position:absolute;inset:0;transition:transform .8s var(--mn-entra);transform:translateY(calc(var(--i,0) * -100%))}
+#menu .et.clima .cl-f{position:relative;display:block;height:100%}
+#menu .et.clima .cl-mm{position:absolute;left:12px;top:48px;font-size:12px;color:rgba(255,255,255,.85)}
+.cl-lista{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.cl-op{display:flex;align-items:center;gap:8px;cursor:pointer}
+/* meus atalhos */
+#menu .et.at{text-decoration:none;display:block}
+#menu .et.at .at-l{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font:300 40px/1 var(--mn-leve);letter-spacing:-1px}
+#menu .et.at .at-ed{position:absolute;right:4px;top:4px;width:28px;height:28px;border:0;background:rgba(0,0,0,.3);color:#fff;display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity .15s}
+#menu .et.at:hover .at-ed,#menu .et.at:focus-within .at-ed{opacity:1}
+#menu .et.at-mais{--c:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.5)}
+#menu .et.at-mais:hover{--c:rgba(255,255,255,.2)}
+@media (hover:none){#menu .et.at .at-ed{opacity:1}}
+/* telas estreitas (blocos empilhados) e celular: tudo centralizado na tela */
+@media (max-width:1100px){.mn-area{justify-content:center}#menu .grid,#menu .grid[data-densidade],#menu .blocos{justify-content:center}#menu .mn-grupo h2,#menu .progs-cab{justify-content:center;text-align:center}}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -863,6 +880,8 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
       <div class="blocos meus" id="rec"></div></section>
     <!-- ESTÚDIO: Mensagens, Calendário, nuvem, este computador, perfil e ADM (no lugar do Dock) -->
     <section class="mn-grupo" id="g-est"><h2>Estúdio</h2><div class="blocos" id="estudio"></div></section>
+    <!-- MEUS ATALHOS: blocos e links da própria pessoa, só neste computador (localStorage 'ep-atalhos'), zero nuvem -->
+    <section class="mn-grupo" id="g-atalhos"><h2>Meus atalhos</h2><div class="blocos" id="atalhos"></div></section>
   </div>
 </main>
 
@@ -1518,6 +1537,7 @@ function showMenu() {
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
+  atalhos.pinta(); // Meus atalhos (só neste computador)
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
 }
 function pintaGrid() {
@@ -1653,10 +1673,111 @@ const estudio = {
     T.push(esp('nuvem', 'Nuvem da equipe', nv, '#1a5fb4'), esp('pc', 'Este computador', this.pc, '#3b4b5b'));
     T.push(`<button type="button" class="et" data-et="perfil" style="--c:#6a4fd8"><span class="foto">${avatarHtml(CONTA?.foto, CONTA?.nome || fb?.currentUser?.displayName)}</span><span class="nm">Perfil e fundo</span></button>`);
     if (DADOS?.adm) T.push(`<button type="button" class="et" data-et="adm" style="--c:#24364a"><span class="gi">${ICE('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L4 16.7V20h3.3l5.3-5.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>')}</span><span class="nm">ADM</span></button>`);
-    box.innerHTML = T.join(''); box.style.setProperty('--cols', 4);
-    const vai = { msgs: () => EC?.mensagens?.abrir?.(), cal: () => EC?.calendario?.(), nuvem: () => EC?.nuvem?.painel?.(), pc: () => EC?.painelEspaco?.(), perfil: () => abrirConta(), adm: () => EC?.adm?.abrir?.() };
+    T.push(clima.html());
+    const ORD = ['cal', 'nuvem', 'pc', 'msgs', 'perfil', 'adm', 'clima'], et = h => ORD.indexOf((h.match(/data-et="(\w+)"/) || [])[1]);
+    T.sort((a, b) => et(a) - et(b)); // ordem pedida pela dona: Calendário, Nuvem, Este computador, Mensagens, Perfil, ADM, Clima
+    box.innerHTML = T.join(''); box.style.setProperty('--cols', 4); clima.liga(box);
+    const vai = { clima: () => clima.config(), msgs: () => EC?.mensagens?.abrir?.(), cal: () => EC?.calendario?.(), nuvem: () => EC?.nuvem?.painel?.(), pc: () => EC?.painelEspaco?.(), perfil: () => abrirConta(), adm: () => EC?.adm?.abrir?.() };
     $$('[data-et]', box).forEach(b => b.onclick = () => vai[b.dataset.et]?.());
     if (this.pc == null && !this._med) { this._med = 1; navigator.storage?.estimate?.().then(e => { if (e?.quota) { this.pc = e.usage / e.quota; this.pinta(); } }).catch(() => { }); }
+  },
+};
+/* CLIMA (pedido da dona, 05/11/2026): bloco com o tempo agora, direto do Open-Meteo (gratuito, sem chave) pelo navegador — NÃO passa
+   pela nossa nuvem. Um pedido só para todas as cidades, guardado 30 min no localStorage ('ep-clima'). Cidades padrão: Rio, São Paulo,
+   BH e Curitiba; clicando, a pessoa escolhe quais (ou a cidade dela), salvo só neste computador ('ep-clima-cfg'). Mais de uma cidade:
+   o bloco vai passando de uma em uma. */
+const clima = {
+  PADRAO: [{ n: 'Rio de Janeiro', la: -22.91, lo: -43.17 }, { n: 'São Paulo', la: -23.55, lo: -46.63 }, { n: 'Belo Horizonte', la: -19.92, lo: -43.94 }, { n: 'Curitiba', la: -25.43, lo: -49.27 }],
+  i: 0,
+  cidades() { try { const v = JSON.parse(localStorage.getItem('ep-clima-cfg') || 'null'); if (Array.isArray(v?.c) && v.c.length) return v.c; } catch { } return this.PADRAO; },
+  grava(c) { try { localStorage.setItem('ep-clima-cfg', JSON.stringify({ c })); localStorage.removeItem('ep-clima'); } catch { } this.dados = null; estudio.pinta(); },
+  chave(c) { return c.map(x => x.la.toFixed(2) + ',' + x.lo.toFixed(2)).join(';'); },
+  async busca() {
+    const c = this.cidades(), k = this.chave(c);
+    try { const v = JSON.parse(localStorage.getItem('ep-clima') || 'null'); if (v?.k === k && Date.now() - v.t < 30 * 6e4) return (this.dados = v.d); } catch { }
+    if (this._buscando) return; this._buscando = true;
+    try { const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.map(x => x.la).join(',') + '&longitude=' + c.map(x => x.lo).join(',') + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=America%2FSao_Paulo';
+      const j = await (await fetch(u, { credentials: 'omit', cache: 'no-store' })).json(), L = Array.isArray(j) ? j : [j];
+      this.dados = L.map(x => ({ t: Math.round(x?.current?.temperature_2m), w: x?.current?.weather_code, dia: !!x?.current?.is_day, mx: Math.round(x?.daily?.temperature_2m_max?.[0]), mn: Math.round(x?.daily?.temperature_2m_min?.[0]) }));
+      try { localStorage.setItem('ep-clima', JSON.stringify({ k, t: Date.now(), d: this.dados })); } catch { }
+      estudio.pinta();
+    } catch { } finally { this._buscando = false; }
+  },
+  tipo(w, dia) { const W = +w;
+    if (W === 0 || W === 1) return [dia ? 'Céu limpo' : 'Noite limpa', dia ? 'sol' : 'lua']; if (W === 2) return ['Parcialmente nublado', 'solnuv']; if (W === 3) return ['Nublado', 'nuv'];
+    if (W === 45 || W === 48) return ['Neblina', 'nuv']; if (W >= 51 && W <= 57) return ['Garoa', 'chuva']; if ((W >= 61 && W <= 67) || (W >= 80 && W <= 82)) return ['Chuva', 'chuva'];
+    if (W >= 71 && W <= 77) return ['Neve', 'nuv']; if (W >= 95) return ['Tempestade', 'raio']; return ['—', 'nuv']; },
+  IC: { sol: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
+    lua: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>', nuv: '<path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/>',
+    solnuv: '<path d="M8.5 4.5v1.5M3.5 9.5H5M4.9 5.9l1 1M13.1 5.9l-1 1"/><path d="M5.6 12a3.5 3.5 0 0 1 6.2-3"/><path d="M8.5 19.5h9a3.5 3.5 0 0 0 .5-7 5 5 0 0 0-9.6-1.2A4 4 0 0 0 8.5 19.5z"/>',
+    chuva: '<path d="M7 15.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 15.5z"/><path d="M8 18.5l-1 2.5M12 18.5l-1 2.5M16 18.5l-1 2.5"/>',
+    raio: '<path d="M7 15.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 15.5z"/><path d="m12.5 15.5-2 3.5h3l-2 3.5"/>' },
+  html() {
+    const c = this.cidades(), d = this.dados;
+    if (!d) { this.busca(); return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="des">${ICE(this.IC.nuv, 34)}</span><span class="pct">—</span><span class="nm">${esc(c[0].n)}</span></button>`; }
+    const faces = c.map((x, k) => { const v = d[k] || {}, [txt, ic] = this.tipo(v.w, v.dia);
+      return `<span class="cl-f" title="${esc(x.n)}: ${esc(txt)}"><span class="des">${ICE(this.IC[ic], 34)}</span><span class="pct">${isNaN(v.t) ? '—' : v.t + '<small>°</small>'}</span><span class="cl-mm">${isNaN(v.mx) ? '' : `${v.mx}° / ${v.mn}°`}</span><span class="nm">${esc(x.n)}</span></span>`; }).join('');
+    return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="cl-faces" style="--i:${this.i % c.length}">${faces}</span></button>`;
+  },
+  liga(box) { // mais de uma cidade: passa de uma em uma (devagar)
+    clearInterval(this._t); const n = this.cidades().length; if (n < 2 || !this.dados) return;
+    this._t = setInterval(() => { if (document.hidden) return; const f = box.querySelector('.cl-faces'); if (!f) return clearInterval(this._t); this.i = (this.i + 1) % n; f.style.setProperty('--i', this.i); }, 6000);
+    if (Date.now() - (JSON.parse(localStorage.getItem('ep-clima') || '{"t":0}').t || 0) > 30 * 6e4) this.busca();
+  },
+  config() { // escolher as cidades (só neste computador)
+    const sel = new Set(this.cidades().map(x => x.n)), extras = this.cidades().filter(x => !this.PADRAO.some(p => p.n === x.n));
+    const d = document.createElement('div'); d.className = 'modal';
+    const pinta = () => { const todas = [...this.PADRAO, ...extras];
+      d.innerHTML = `<div class="mc" role="dialog" aria-label="Clima" style="padding:22px;width:min(460px,100%)"><h3 style="margin:0 0 4px;font:300 24px var(--mn-leve)">Clima</h3>
+        <p class="hint" style="margin:0 0 14px">Escolha as cidades do bloco. Fica só neste computador; o tempo vem do Open-Meteo, sem usar a nuvem do Estúdio.</p>
+        <div class="cl-lista">${todas.map(x => `<label class="cl-op"><input type="checkbox" value="${esc(x.n)}" ${sel.has(x.n) ? 'checked' : ''}> ${esc(x.n)}</label>`).join('')}</div>
+        <div style="display:flex;gap:8px;margin-top:14px"><input type="text" id="cl-q" placeholder="Outra cidade (ex.: Recife)" style="flex:1;height:34px;padding:0 10px;border:0;background:#fff;color:#10233a"><button class="btn" id="cl-busca" type="button">Buscar</button></div>
+        <div id="cl-res" class="hint" style="margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:18px"><span style="flex:1"></span><button class="btn" data-x type="button">Cancelar</button><button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
+      $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
+      $$('.cl-op input', d).forEach(i => i.onchange = () => { i.checked ? sel.add(i.value) : sel.delete(i.value); });
+      const buscar = async () => { const q = $('#cl-q', d).value.trim(); if (!q) return; $('#cl-res', d).textContent = 'Procurando…';
+        try { const j = await (await fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language=pt&name=' + encodeURIComponent(q), { credentials: 'omit' })).json(); const R = j.results || [];
+          if (!R.length) { $('#cl-res', d).textContent = 'Não achei essa cidade.'; return; }
+          $('#cl-res', d).innerHTML = R.map((x, k) => `<button type="button" class="btn sm" data-r="${k}" style="margin:3px 4px 0 0">${esc(x.name)}${x.admin1 ? ' · ' + esc(x.admin1) : ''}${x.country_code && x.country_code !== 'BR' ? ' · ' + esc(x.country_code) : ''}</button>`).join('');
+          $$('[data-r]', d).forEach(b => b.onclick = () => { const x = R[+b.dataset.r], n = x.name; if (!extras.some(e => e.n === n) && !this.PADRAO.some(p => p.n === n)) extras.push({ n, la: +x.latitude, lo: +x.longitude }); sel.add(n); pinta(); });
+        } catch { $('#cl-res', d).textContent = 'Não deu para procurar agora (sem internet?).'; } };
+      $('#cl-busca', d).onclick = buscar; $('#cl-q', d).onkeydown = e => { if (e.key === 'Enter') buscar(); };
+      $('[data-ok]', d).onclick = () => { const esc2 = [...this.PADRAO, ...extras].filter(x => sel.has(x.n)); if (!esc2.length) return toast('Escolha pelo menos uma cidade.'); this.i = 0; this.grava(esc2); d.remove(); toast('Clima salvo neste computador.'); };
+    };
+    pinta(); document.body.appendChild(d);
+  },
+};
+/* MEUS ATALHOS (pedido da dona, 05/11/2026): blocos e links da própria pessoa. Só neste computador (localStorage 'ep-atalhos'), nada na nuvem. */
+const atalhos = {
+  CORES: ['#1d6fd6', '#1f7a5c', '#6a4fd8', '#c2410c', '#b8325a', '#3b4b5b'],
+  lista() { try { const v = JSON.parse(localStorage.getItem('ep-atalhos') || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } },
+  grava(L) { try { localStorage.setItem('ep-atalhos', JSON.stringify(L.slice(0, 40))); } catch { } this.pinta(); },
+  pinta() {
+    const box = $('#atalhos'); if (!box) return; const L = this.lista();
+    box.innerHTML = L.map((a, k) => `<a class="et at" href="${esc(a.url)}" data-at="${k}" style="--c:${esc(a.cor || this.CORES[0])}" title="${esc(a.nome)} · ${esc(a.url)}" target="${/^https?:/i.test(a.url) && !a.url.startsWith(location.origin) ? '_blank' : '_self'}" rel="noopener"><span class="at-l">${esc(String(a.nome || '?').slice(0, 2))}</span><span class="nm">${esc(a.nome)}</span><button type="button" class="at-ed" data-ed="${k}" title="Editar" aria-label="Editar ${esc(a.nome)}">${ICE('<path d="M4 20h4L19 9l-4-4L4 16z"/>', 14)}</button></a>`).join('')
+      + `<button type="button" class="et at-mais" title="Adicionar um atalho (só neste computador)"><span class="gi">${ICE('<path d="M12 5v14M5 12h14"/>', 34)}</span><span class="nm">Adicionar</span></button>`;
+    box.style.setProperty('--cols', Math.max(1, Math.min(4, L.length + 1)));
+    $('.at-mais', box).onclick = () => this.edita(-1);
+    $$('[data-ed]', box).forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); this.edita(+b.dataset.ed); });
+  },
+  edita(k) {
+    const L = this.lista(), a = k >= 0 ? { ...L[k] } : { nome: '', url: 'https://', cor: this.CORES[0] };
+    const d = document.createElement('div'); d.className = 'modal';
+    d.innerHTML = `<div class="mc" role="dialog" aria-label="Atalho" style="padding:22px;width:min(460px,100%)"><h3 style="margin:0 0 14px;font:300 24px var(--mn-leve)">${k >= 0 ? 'Editar atalho' : 'Novo atalho'}</h3>
+      <label class="hint" style="display:block;margin-bottom:4px">Nome</label><input type="text" id="at-n" maxlength="30" value="${esc(a.nome)}" style="width:100%;height:34px;padding:0 10px;border:0;background:#fff;color:#10233a">
+      <label class="hint" style="display:block;margin:12px 0 4px">Endereço</label><input type="url" id="at-u" maxlength="500" value="${esc(a.url)}" style="width:100%;height:34px;padding:0 10px;border:0;background:#fff;color:#10233a">
+      <label class="hint" style="display:block;margin:12px 0 6px">Cor</label><div style="display:flex;gap:6px">${this.CORES.map(c => `<button type="button" class="at-cor" data-cor="${c}" style="width:34px;height:34px;border:3px solid ${c === a.cor ? '#fff' : 'transparent'};background:${c};cursor:pointer" aria-label="Cor ${c}"></button>`).join('')}</div>
+      <p class="hint" style="margin:12px 0 0">Fica só neste computador.</p>
+      <div style="display:flex;gap:8px;margin-top:18px">${k >= 0 ? '<button class="btn danger" data-rm type="button">Remover</button>' : ''}<span style="flex:1"></span><button class="btn" data-x type="button">Cancelar</button><button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
+    document.body.appendChild(d); setTimeout(() => $('#at-n', d).focus(), 50);
+    $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
+    $$('.at-cor', d).forEach(b => b.onclick = () => { a.cor = b.dataset.cor; $$('.at-cor', d).forEach(x => x.style.borderColor = x === b ? '#fff' : 'transparent'); });
+    $('[data-rm]', d)?.addEventListener('click', () => { L.splice(k, 1); this.grava(L); d.remove(); toast('Atalho removido.'); });
+    $('[data-ok]', d).onclick = () => { const nome = $('#at-n', d).value.trim(); let url = $('#at-u', d).value.trim();
+      if (!nome) return toast('Dê um nome ao atalho.'); if (/^[\w-]+(\.[\w-]+)+/.test(url) && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      if (!/^(https?:\/\/[^\s"'<>]+|\/[^\s"'<>]*)$/i.test(url) || url === 'https://') return toast('Endereço inválido (comece com https://).');
+      const n = { nome, url, cor: a.cor }; if (k >= 0) L[k] = n; else L.push(n); this.grava(L); d.remove(); toast('Atalho salvo neste computador.'); };
   },
 };
 // apertar um bloco: ele inclina para o lado onde o mouse/dedo apertou (fora do modo Organizar)
