@@ -1132,7 +1132,7 @@ function fundoTela(f) {
 /* card de um link (usado no menu e na prévia da ADM) */
 /* NOMES PADRÃO DOS PROGRAMAS (pedido da dona, 05/11/2026): no bloco do menu, o nome sai do ENDEREÇO do programa, com estas letras.
    Programa que não está aqui usa o nome da ADM › Botões. (O nome salvo continua sendo a chave da ordem e dos fixados de cada pessoa.) */
-const NOMES_PADRAO = { shorts: 'Shorts', editor: 'Editar', animador: 'Animador', preparativos: 'Preparativos', publicacoes: 'Publicações' };
+const NOMES_PADRAO = { shorts: 'Shorts', editor: 'Editar', animador: 'Animador', preparativos: 'Preparativos', modelador: 'Modelador', publicacoes: 'Publicações' };
 function nomeMenu(l) { if (l?.parte) return l.nome; try { const u = new URL(l?.url || '', location.href); if (u.origin === location.origin && !u.search) { const k = u.pathname.split('/').filter(Boolean)[0]; if (NOMES_PADRAO[k]) return NOMES_PADRAO[k]; } } catch { } return l?.nome || 'Sem nome'; }
 function cardHtml(l, tag) {
   return `${tag}<span class="bg"></span><span class="ic"></span><span class="txt"><b>${esc(nomeMenu(l))}</b><small>${esc(l.desc || '')}</small></span>`;
@@ -1463,8 +1463,12 @@ function subProgs(el, l) {
 // com o ícone pequeno do Animador do lado (antes apareciam só com o mouse em cima). Seguem o EstudioPerm (animador.atelie / animador.cenarios).
 function comPartes(lista) { const out = [];
   for (const l of lista) { out.push(l); if (!l.url || l.embreve || progDaUrl(l.url, l.nome) !== 'an') continue;
-    for (const [id, nome, url, f] of SUBPROGS.an) if (permProg(f) && window.EstudioPerm?.pode?.('animador.' + f) !== false) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do Animador', url, prog: id, parte: 'an' }); }
-  return out; }
+    for (const [id, nome, url, f] of SUBPROGS.an) if (permProg(f) && window.EstudioPerm?.pode?.('animador.' + f) !== false) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do Animador', url, prog: id, parte: 'an', id: f }); }
+  // ORDEM PADRÃO (pedido da dona, 05/11/2026): Shorts, Editar, Animador, Preparativos, Ateliê, Cenários, Modelador, Publicações;
+  // o que não está aqui vem depois, na ordem da ADM. A ordem que cada pessoa organizou continua valendo por cima disto.
+  const ORDEM = ['shorts', 'editor', 'animador', 'preparativos', 'atelie', 'cenarios', 'modelador', 'publicacoes'];
+  const id = l => { if (l.id) return l.id; try { const u = new URL(l.url || '', location.href); return u.origin === location.origin ? u.pathname.split('/').filter(Boolean)[0] || '' : ''; } catch { return ''; } };
+  return out.map((l, i) => ({ l, i, p: ORDEM.includes(id(l)) ? ORDEM.indexOf(id(l)) : 100 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
 const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
 function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
