@@ -2168,12 +2168,12 @@ function renderMensagens() {
   const m = EDIT.mensagens, sa = (EDIT.seloAdm ||= { texto: 'ADM' });
   // SELO ADM (pedido da dona, 05/11/2026): texto e cor do selo ao lado de "Estúdio Problems" para quem é ADM
   let sc = $('#selo-cfg'); if (!sc) { sc = document.createElement('div'); sc.id = 'selo-cfg'; $('#msg-cfg').after(sc); }
-  sc.innerHTML = `<h2 style="margin-top:22px">Selo ADM no título</h2><div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+  sc.innerHTML = `<h2 style="margin-top:22px">Selo</h2><div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
     <label class="f" style="max-width:220px"><span>Texto do selo</span><input type="text" maxlength="16" id="sa-texto" value="${esc(sa.texto || 'ADM')}"></label>
     <label class="f" style="max-width:160px"><span>Cor (vazio = branco)</span><input type="color" id="sa-cor" value="${esc(sa.cor || '#ffffff')}"></label>
     <button type="button" class="btn sm" id="sa-sem">Sem cor</button>
     <span class="badge" id="sa-prev" style="display:inline-grid;place-items:center;height:22px;padding:0 8px;border:1.5px solid rgba(255,255,255,.85);color:#fff;font:700 11px/1 var(--font);letter-spacing:.8px"></span></div>
-    <p class="hint" style="margin-top:6px">Só os ADMs veem este selo. O selo de cada cargo fica em ADM › Níveis de acesso (no cargo, "Mostrar selo no título do menu").</p>`;
+    <p class="hint" style="margin-top:6px">Este é o selo dos ADMs, ao lado de "Estúdio Problems" (só eles veem). Outros cargos só ganham selo se você ligar em ADM › Níveis de acesso › o cargo › "Mostrar selo no título do menu"; por padrão, nenhum.</p>`;
   const prev = () => { const p = $('#sa-prev'); p.textContent = sa.texto || 'ADM'; p.style.borderColor = sa.cor || ''; p.style.background = sa.cor ? sa.cor + '55' : 'rgba(14,32,58,.35)'; pintaSeloAdm(sa); };
   $('#sa-texto').oninput = e => { sa.texto = e.target.value.slice(0, 16); prev(); mudou(); };
   $('#sa-cor').oninput = e => { sa.cor = e.target.value; prev(); mudou(); };
