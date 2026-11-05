@@ -1,6 +1,7 @@
 /* YOUTUBE do Estúdio Problems (pedido da dona, 05/11/2026) — global EstudioYouTube. Usado pelo programa PUBLICAÇÕES (/publicacoes/)
    e pelos botões "Publicar no YouTube" dos outros programas.
-   - Os programas (Animador, Shorts, Editor) só chamam EstudioYouTube.levar({ blob, nome, titulo, descricao, programa }):
+   - Os programas (Animador, Shorts, Editor) só chamam EstudioYouTube.levar({ blob, nome, titulo, descricao, programa }) — com
+     concluir: true e abrir: '/<programa>/…' é o "Marcar como concluído" (o Publicações põe em "Não publicados" para a equipe) —
      o vídeo fica no IndexedDB 'ep-publicacoes' (mesma origem, nada vai para a nuvem) e abre /publicacoes/?video=<id> numa aba nova.
    - O Publicações usa: entrar(escolher) → { token, canal } (Google Identity Services, token client, escopos youtube.upload e
      youtube.readonly; o token fica só na memória da aba), enviar(token, blob, meta, prog) (envio resumível da YouTube Data API v3,
@@ -18,6 +19,8 @@
   const pode = k => { try { return window.EstudioPerm?.pode?.(k) ?? true; } catch { return true; } };
   // o botão "Publicar no YouTube" de um programa: pode exportar nele E pode publicar no Publicações
   const podeLevar = prog => pode(prog + '.exportar') && pode('publicacoes.publicar');
+  // "Marcar como concluído": pode exportar no programa e ver o Publicações (o projeto aparece em "Não publicados" para a equipe)
+  const podeConcluir = prog => pode(prog + '.exportar') && pode('publicacoes.ver');
 
   // ---------- passar o vídeo para o Publicações (IndexedDB da mesma origem) ----------
   const DB = 'ep-publicacoes', ST = 'videos';
@@ -35,7 +38,7 @@
     // a aba abre JÁ (o navegador só deixa abrir janela logo depois do clique); o endereço vem quando o vídeo estiver guardado
     const w = window.open('about:blank', '_blank');
     try {
-      await fila.poe({ id, blob: o.blob, nome: String(o.nome || 'video.mp4'), titulo: String(o.titulo || '').slice(0, 100), descricao: String(o.descricao || '').slice(0, 5000), programa: String(o.programa || ''), em: Date.now() });
+      await fila.poe({ id, blob: o.blob, nome: String(o.nome || 'video.mp4'), titulo: String(o.titulo || '').slice(0, 100), descricao: String(o.descricao || '').slice(0, 5000), programa: String(o.programa || ''), em: Date.now(), ...(o.concluir ? { concluir: true, abrir: /^\/[A-Za-z0-9/_?=&.%-]{0,200}$/.test(o.abrir || '') ? o.abrir : '' } : {}) });
     } catch (e) { try { w?.close(); } catch { } throw e; }
     const url = '/publicacoes/?video=' + id;
     if (w && !w.closed) { w.location.href = url; return id; }
@@ -153,6 +156,6 @@
     return out;
   }
 
-  window.EstudioYouTube = { configurado, pode, podeLevar, levar, fila, canalPadrao, gravarPadrao, entrar, enviar, cancelar, situacao, carregaGis,
+  window.EstudioYouTube = { configurado, pode, podeLevar, podeConcluir, levar, fila, canalPadrao, gravarPadrao, entrar, enviar, cancelar, situacao, carregaGis,
     esquecerCanal: () => { try { localStorage.removeItem(CHAVE_CANAL); } catch { } tok = null; } };
 })();

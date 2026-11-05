@@ -790,6 +790,7 @@ export default {
     }
     // PUBLICAÇÕES (programa /publicacoes/, pedido da dona, 05/11/2026): UM JSON só (publicacoes/lista.json) com o que a equipe publicou
     //   no YouTube, os PEDIDOS da fila (pedido: true — quem não é gerente do canal deixa para um gerente publicar; o vídeo NÃO vem para cá)
+    //   os CONCLUÍDOS (concluido: true — projeto marcado como concluído num programa, ainda não publicado; thumb pequena em data:image/jpeg)
     //   e os CANAIS da equipe (nome + ID UC…, cadastrados por ADM; o canal de quem publica direto entra sozinho).
     //   GET → { itens, canais, mod } (por = código u…, nunca e-mail; meu = é seu)
     //   POST { item, substitui? } → grava/atualiza 1 item (o seu, ou ADM); substitui = id do PEDIDO que virou vídeo (qualquer um da equipe)
@@ -813,17 +814,18 @@ export default {
           await grava(v); return saida(v);
         }
         const i = b?.item; if (!i || typeof i !== 'object' || !/^[A-Za-z0-9_-]{6,20}$/.test(String(i.id || ''))) return json({ error: { message: 'Item inválido.' } }, 400, cors);
-        const pedido = !!i.pedido;
+        const pedido = !!i.pedido, concl = !pedido && !!i.concluido;
         const limpo = { id: i.id, titulo: txt(i.titulo, 100), canal: { id: txt(i.canal?.id, 40), nome: txt(i.canal?.nome, 100), foto: /^https:\/\//.test(i.canal?.foto || '') ? txt(i.canal.foto, 300) : '' },
           modo: ['naoListado', 'agora', 'agendado'].includes(i.modo) ? i.modo : 'naoListado', privacidade: ['public', 'unlisted', 'private'].includes(i.privacidade) ? i.privacidade : 'unlisted',
           publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm), via: i.via === 'studio' ? 'studio' : 'api',
+          ...(concl ? { concluido: true, thumb: /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(i.thumb || '') && i.thumb.length < 24000 ? i.thumb : '', abrir: /^\/[A-Za-z0-9/_?=&.%-]{0,200}$/.test(i.abrir || '') ? i.abrir : '', arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}),
           ...(pedido ? { pedido: true, descricao: txt(i.descricao, 5000), criancas: typeof i.criancas === 'boolean' ? i.criancas : null, arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}) };
         const k = v.itens.findIndex(x => x.id === limpo.id), antes = k >= 0 ? JSON.stringify(v.itens[k]) : null;
         if (k >= 0) { if (!dono(v.itens[k])) return json({ error: { type: 'adm', message: 'Só quem publicou (ou um ADM) muda este item.' } }, 403, cors); v.itens[k] = { ...limpo, por: v.itens[k].por, enviadoEm: v.itens[k].enviadoEm }; }
         else { v.itens.unshift({ ...limpo, por: eu }); if (v.itens.length > 3000) v.itens.length = 3000; }
         let mudou = !(antes && antes === JSON.stringify(v.itens[k >= 0 ? k : 0]));
-        if (b.substitui && b.substitui !== limpo.id) { const n = v.itens.length; v.itens = v.itens.filter(x => !(x.id === b.substitui && x.pedido)); if (v.itens.length !== n) mudou = true; } // o pedido virou vídeo
-        if (!pedido && limpo.via === 'api' && ehCanal(limpo.canal.id) && !v.canais.some(c => c.id === limpo.canal.id) && v.canais.length < 30) { v.canais.push({ id: limpo.canal.id, nome: limpo.canal.nome || limpo.canal.id }); mudou = true; } // canal novo de quem publica direto
+        if (b.substitui && b.substitui !== limpo.id) { const n = v.itens.length; v.itens = v.itens.filter(x => !(x.id === b.substitui && (x.pedido || x.concluido))); if (v.itens.length !== n) mudou = true; } // o pedido virou vídeo
+        if (!pedido && !concl && limpo.via === 'api' && ehCanal(limpo.canal.id) && !v.canais.some(c => c.id === limpo.canal.id) && v.canais.length < 30) { v.canais.push({ id: limpo.canal.id, nome: limpo.canal.nome || limpo.canal.id }); mudou = true; } // canal novo de quem publica direto
         if (mudou) await grava(v);
         return saida(v);
       }
