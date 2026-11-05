@@ -645,7 +645,7 @@ html.no-menu #top .ep-conta-nuvem,html.no-menu #top .ep-conta-espaco{display:non
 .mn-lupa:hover{background:rgba(255,255,255,.14)}
 .mn-busca{display:flex;align-items:center;gap:10px;max-width:520px;width:100%;height:42px;margin:14px auto 0;padding:0 14px;background:rgba(255,255,255,.96);color:#13324f;animation:mnSobe .35s var(--mn-entra) both}
 .mn-busca input{flex:1;border:0;outline:none;background:none;color:#13324f;font-size:16px}.mn-busca small{color:#5a6a80}
-.mn-area{display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px clamp(24px,4vw,56px);margin-top:20px}
+.mn-area{display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px clamp(20px,2.1vw,40px);margin-top:20px}
 .mn-grupo{min-width:0}
 .mn-grupo h2{margin:0 0 12px;font:300 21px/1.2 var(--mn-leve);color:#fff;text-shadow:0 1px 10px rgba(0,30,70,.35)}
 #menu .progs-cab{width:auto;margin:0 0 12px;gap:12px;min-height:0}#menu .progs-cab h2{margin:0}
@@ -830,6 +830,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #menu .card .tag.teste{top:6px;right:6px;left:auto;background:rgba(240,178,50,.92)!important;color:#241600!important;font:600 10px/1.5 var(--font)!important;letter-spacing:.2px!important;text-transform:none!important;padding:0 6px!important}
 .mn-col{display:flex;flex-direction:column;gap:28px;min-width:0}
 @media (max-width:1100px){.mn-col{align-items:center}}
+.mn-progs{min-width:calc(5 * var(--mn-u) + 4 * var(--mn-g))}
+@media (max-width:720px){.mn-progs{min-width:0;width:100%}}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -877,9 +879,11 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <div class="mn-cab"><div><h1 id="hello">Olá!</h1><p class="sub" id="boasvindas"></p><p class="frase" id="frase" aria-live="polite"></p></div><span class="sp"></span></div>
   <label class="mn-busca" id="prog-busca" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="prog-q" placeholder="Buscar programa ou projeto" aria-label="Buscar programa ou projeto" autocomplete="off"><small>Esc limpa</small></label>
   <div class="mn-area">
+    <div class="mn-col mn-progs"><!-- Fixados em cima dos Programas (mesma coluna, largura de 5 blocos: cabe ~20 programas) -->
     <section class="mn-grupo" id="g-fix" hidden><h2>Fixados</h2><div class="blocos" id="fixos"></div></section>
     <section class="mn-grupo"><div class="progs-cab" id="progs-cab"><h2>Programas</h2><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no topo (só para você, fica neste navegador)">Organizar</button><button type="button" class="btn-org" id="org-padrao" hidden title="Tira a sua ordem e volta à ordem padrão do Estúdio (só neste navegador)">Voltar à ordem padrão</button><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no topo · só para você</span></div>
       <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div></section>
+    </div>
     <!-- MEUS PROJETOS: os últimos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
     <section class="mn-grupo recentes" id="recentes" hidden><div class="progs-cab"><h2 id="rec-tit">Meus projetos</h2><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="mp-filtro" role="group" aria-label="Mostrar"><button type="button" data-mf="todos" aria-pressed="true">Todos</button><button type="button" data-mf="nuvem" aria-pressed="false">Na nuvem</button><button type="button" data-mf="local" aria-pressed="false">Neste computador</button></span></div>
       <div class="blocos meus" id="rec"></div></section>
@@ -1560,7 +1564,7 @@ function pintaGrid() {
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
     el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
-  const n = menuVis.length; g.style.setProperty('--cols', n > 15 ? 6 : n > 8 ? 5 : 4); g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
+  const n = menuVis.length; g.style.setProperty('--cols', n > 20 ? 6 : 5); // espaço reservado para até 20 programas (5 por linha) g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
   if (!menuVis.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   if (!organizar.ligado) { organizar.ligado = true; organizar.liga(); }
@@ -1656,7 +1660,7 @@ function pintaFixos() {
   const ls = organizar.fixos().map(x => menuVis.find(l => chaveL(l) === x.k)).filter(l => l?.url && !l.embreve);
   for (const l of ls) { const o = $('#grid .card[data-k="' + CSS.escape(chaveL(l)) + '"]'); if (!o) continue;
     const c = o.cloneNode(true); c.querySelector('.fixar')?.remove(); c.querySelector('.subprog')?.remove(); c.classList.remove('apaga'); c.style.animationDelay = '0s'; const ic = c.querySelector('.ic'); if (ic) delete ic.dataset.k; pintarIcone(c, l); box.appendChild(c); }
-  box.style.setProperty('--cols', Math.max(1, Math.min(4, box.children.length))); sec.hidden = !box.children.length; try { window.EstudioIcones?.pinta?.(box); } catch { }
+  box.style.setProperty('--cols', 5); sec.hidden = !box.children.length; // mesma largura dos Programas try { window.EstudioIcones?.pinta?.(box); } catch { }
 }
 /* GRUPO ESTÚDIO (no lugar do Dock): Mensagens, Calendário, nuvem da equipe, este computador, perfil e ADM. Abre as mesmas janelas do
    /estudio-conta.js. Nada pede à nuvem: a nuvem usa a medida guardada ('ep-nuvem-uso'), o computador o navigator.storage. */
