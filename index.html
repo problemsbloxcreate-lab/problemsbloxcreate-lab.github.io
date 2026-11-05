@@ -751,6 +751,24 @@ html.adm-sobre #adm{inset:0;background:rgba(5,20,45,.35)}
 #adm .lrow .card .txt{position:absolute;left:8px;right:8px;bottom:8px;text-align:center}
 #adm .lrow .card b{display:block;font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#adm .lrow .card small{display:none}
 #adm .lrow .card .tag,#adm .lrow .card .tag-adm{border-radius:0;top:6px;right:6px;left:auto;bottom:auto;transform:none;font-size:10px}
+
+/* janelas do menu (Perfil e fundo, perguntas) no visual novo + saída da ADM */
+.modal{background:rgba(5,20,45,.35)!important}
+.modal .mc{background:rgba(14,32,58,.94)!important;-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);border:0!important;border-radius:0!important;box-shadow:0 30px 80px rgba(0,20,50,.5)!important;color:#fff}
+.modal .btn{border-radius:0;border:2px solid rgba(255,255,255,.7);background:none;color:#fff;font-weight:600}.modal .btn:hover{background:rgba(255,255,255,.14)}
+.modal .btn.primary{background:#fff;border-color:#fff;color:#0d3a66}.modal .btn.primary:hover{background:#dfeeff}
+.modal .btn.danger{border-color:rgba(255,140,130,.8);color:#ffd0cc;background:none}
+.conta .ct-topo b{font:300 24px/1.2 var(--mn-leve)}
+.conta .ct-av .av,.conta .ct-lapis{border-radius:0!important}.conta .ct-lapis{border-color:rgba(14,32,58,1)!important;background:#fff!important;color:#0d3a66!important}
+.conta .ct-g{border:0!important;border-radius:0!important;background:rgba(255,255,255,.07)!important}
+.conta .ct-l input[type=text]{border-radius:0!important;background:rgba(255,255,255,.95)!important;color:#10233a!important;border:2px solid transparent!important;height:32px}
+.conta .ct-tit{font:400 12px var(--font);text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.6)}
+.conta .fundo-op .tela{border-radius:0!important;box-shadow:none!important;border:3px solid transparent!important}
+.conta .fundo-op:has(input:checked) .tela{border-color:#fff!important}
+.conta .fundo-op input[type=color]{border-radius:0}
+.conta .ct-pe{border-top:1px solid rgba(255,255,255,.12)!important}
+html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{animation:mnEncolhe .22s ease both}
+@keyframes mnSome{to{opacity:0}}@keyframes mnEncolhe{to{transform:scale(.97)}}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1028,7 +1046,7 @@ const MSG_PADRAO = { boasVindas: 'Bem-vindo(a) de volta à equipe do Problems! E
 const FOTOS_ESTUDIO = [{ tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
   { tipo: 'imagem', src: '/fundo-margarida-2.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Margarida sozinha', credito: 'Csaba · Unsplash' }];
 const fundoPadrao = () => ({ modo: 'um', intervalo: 30, escurecer: .08, itens: JSON.parse(JSON.stringify(FOTOS_ESTUDIO)) });
-function soImagens(f) { const itens = (f?.itens || []).filter(m => m?.src && m.tipo !== 'video'); return itens.length ? { ...f, itens, modo: f.modo === 'nenhum' ? 'um' : f.modo } : fundoPadrao(); }
+function soImagens(f) { const itens = (f?.itens || []).filter(m => m?.src && m.tipo !== 'video'); return itens.length ? { ...f, itens, modo: f.modo === 'nenhum' ? 'um' : f.modo } : { ...fundoPadrao(), ...(f?.modo && f.modo !== 'nenhum' ? { modo: f.modo } : {}), ...(f?.intervalo ? { intervalo: f.intervalo } : {}) }; } // sem imagem salva: as fotos do Estúdio, no modo escolhido (slideshow continua slideshow)
 const padrao = () => ({ mensagens: JSON.parse(JSON.stringify(MSG_PADRAO)), links: MENU_CONFIG.projetos.map(p => ({ nome: p.nome, desc: p.desc || '', url: p.url || null, icone: p.icone || p.id, fundo: null, escurecer: .45 })), fundo: fundoPadrao() });
 // PREPARATIVOS (05/11/2026): enquanto a ADM não puser o cartão no menu, ele entra no fim (salvar a ADM › Menu guarda ele junto)
 const comPrep = ls => (ls || []).some(l => /\/preparativos(\/|$)/.test(String(l.url || ''))) ? ls : [...(ls || []), { nome: 'PREPARATIVOS', desc: 'Roteiros, falas e gravações', url: '/preparativos/', icone: 'link', fundo: null, escurecer: .45 }];
@@ -1342,9 +1360,9 @@ function abrirConta() {
         <div class="ct-g"><label class="ct-l"><span>Nome</span><input type="text" maxlength="40" data-k="nome" value="${esc(rasc.nome)}" placeholder="${esc(CONTA.nomeGoogle)} (do Google)"></label></div>
         ${window.ESTUDIO_EMBED ? '' : `<div class="ct-tit">Fundo do menu</div>
         <div class="ct-g"><div class="fundos">
-          <label class="fundo-op"><input type="radio" name="fundo" value="padrao" ${rasc.fundo !== 'cor' && rasc.fundo !== 'local' ? 'checked' : ''}><span class="tela" style="background:radial-gradient(circle at 20% 20%,rgba(25,211,240,.6),transparent 60%),radial-gradient(circle at 90% 10%,rgba(10,132,255,.7),transparent 60%),radial-gradient(circle at 70% 100%,rgba(155,123,255,.6),transparent 60%),#121022">${icF('<rect x="3" y="5.5" width="13" height="13" rx="2"/><path d="m16 10 5-3v10l-5-3"/>')}</span>Padrão do estúdio<small>o vídeo ou imagem da ADM</small></label>
+          <label class="fundo-op"><input type="radio" name="fundo" value="padrao" ${rasc.fundo !== 'cor' && rasc.fundo !== 'local' ? 'checked' : ''}><span class="tela" style="background:#5ea9e6 url(${esc((DADOS?.fundo?.itens || [])[0]?.src || '/fundo-margarida.jpg')}) center/cover"></span>Padrão do estúdio<small>as fotos da ADM</small></label>
           <label class="fundo-op"><input type="radio" name="fundo" value="cor" ${rasc.fundo === 'cor' ? 'checked' : ''}><span class="tela" style="background:${esc(rasc.cor || '#1b2a4a')}">${icF('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/>')}</span>Uma cor só<small><input type="color" data-k="cor" value="${esc(rasc.cor)}" aria-label="Cor do fundo"></small></label>
-          <label class="fundo-op"><input type="radio" name="fundo" value="local" ${rasc.fundo === 'local' ? 'checked' : ''}><span class="tela" style="background:${rasc.local ? 'linear-gradient(135deg,#ff9f0a,#ff375f)' : 'rgba(255,255,255,.06)'}">${icF('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/>')}</span>Imagem ou vídeo meu<small>fica só neste computador</small></label>
+          <label class="fundo-op"><input type="radio" name="fundo" value="local" ${rasc.fundo === 'local' ? 'checked' : ''}><span class="tela" style="background:${rasc.local ? 'linear-gradient(135deg,#ff9f0a,#ff375f)' : 'rgba(255,255,255,.06)'}">${icF('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/>')}</span>Imagem minha<small>fica só neste computador</small></label>
         </div>
         ${rasc.fundo === 'local' ? `<div class="ct-l"><span>${rasc.local ? `${esc(rasc.local.nome || 'arquivo')} <small class="hint">${(rasc.local.blob.size / 1048576).toFixed(1)} MB</small>` : 'Nenhum arquivo escolhido'}</span><button class="btn sm" data-a="local">${rasc.local ? 'Trocar arquivo' : 'Escolher arquivo'}</button></div>
           ${rasc.local ? `<div class="ct-l"><span>Blur</span><span class="rng"><input type="range" min="0" max="30" step="1" value="${rasc.blur}" data-k="lblur"><output>${rasc.blur} px</output></span></div>
@@ -1365,7 +1383,7 @@ function abrirConta() {
     const sf = $('[data-a=semfoto]', d); if (sf) sf.onclick = async () => { try { CONTA = await contaApi('/conta/foto', { method: 'DELETE' }); aplicaConta(); pinta(); } catch (e) { m(e.message); } };
     $('[data-k=nome]', d).oninput = e => { rasc.nome = e.target.value; };
     if ($('[data-a=local]', d)) $('[data-a=local]', d).onclick = async e => {
-      e.preventDefault(); const f = await pedirArquivo('image/*,video/*'); if (!f) return;
+      e.preventDefault(); const f = await pedirArquivo('image/*'); if (!f) return;
       if (!/^(image|video)\//.test(f.type)) return m('Escolha uma imagem, GIF ou vídeo.');
       if (f.size > 300 * 1048576) return m('Arquivo grande demais (até 300 MB).');
       rasc.local = { blob: f, tipo: tipoDe(f.type), nome: f.name, blur: rasc.blur, escurecer: rasc.escurecer }; rasc.fundo = 'local'; pinta();
@@ -2600,7 +2618,8 @@ function fecharAdm() {
   if (sujo && !confirm('Fechar a ADM sem salvar as mudanças? (elas continuam aqui se você abrir de novo)')) return;
   if (window.ESTUDIO_EMBED_ADM) return avisaAdm('fechar');
   if (!document.documentElement.classList.contains('adm-sobre')) return;
-  document.documentElement.classList.remove('adm-sobre'); $('#adm').hidden = true; if (DADOS) fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); }); // tira a prévia do fundo que não foi salva
+  const H = document.documentElement; H.classList.add('adm-saindo'); setTimeout(() => { H.classList.remove('adm-saindo'); }, 240); // animação de saída
+  setTimeout(() => { H.classList.remove('adm-sobre'); $('#adm').hidden = true; }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220); if (DADOS) fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); }); // tira a prévia do fundo que não foi salva
 }
 addEventListener('estudio-abrir-adm', abrirAdmSobre);
 addEventListener('keydown', e => { if (e.key !== 'Escape' || document.querySelector('.modal')) return;

@@ -629,6 +629,14 @@ window.EstudioPerm ||= (() => {
 .ep-conta-pop .sep{margin:6px 0!important;background:rgba(255,255,255,.12)!important}
 .ep-conta-pop .av,.ep-conta-pop img{border-radius:0!important}
 .ep-conta-pop b{font-weight:600}
+/* SAÍDA com animação (pedido da dona): as janelas não somem seco */
+.ep-saindo{pointer-events:none!important}
+.ep-esp.ep-saindo{animation:epSome .3s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .3s cubic-bezier(.4,0,1,1) both!important}
+.ep-cal.ep-saindo{animation:epSaiDir .3s cubic-bezier(.4,0,1,1) both!important}
+.ep-msgs.ep-saindo,.ep-pg.ep-saindo,.ep-admj.ep-saindo,.modal.ep-saindo{animation:epSome .22s ease both!important}
+.ep-msgs.ep-saindo .cx,.ep-pg.ep-saindo .cx,.ep-admj.ep-saindo .cx,.modal.ep-saindo .mc{animation:epEncolhe .22s ease both!important}
+.ep-conta-pop.ep-saindo,.ep-notif.ep-saindo{animation:epSome .16s ease both!important}
+@keyframes epSaiDir{to{transform:translateX(100%)}}@keyframes epSome{to{opacity:0}}@keyframes epEncolhe{to{transform:scale(.97)}}
 @media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
@@ -1912,7 +1920,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   const CAL = { mes: null, sel: null, alvo: null };
   function calendario(ev) { // abre o calendário por cima (ev = o lembrete que deve aparecer destacado)
-    poeCss(); document.querySelector('.ep-cal')?.remove();
+    poeCss(); document.querySelector('.ep-cal:not(.ep-saindo)')?.remove();
     const base = ev ? new Date(ev.em) : new Date(); CAL.sel = new Date(base); CAL.sel.setHours(0, 0, 0, 0); CAL.mes = new Date(base.getFullYear(), base.getMonth(), 1); CAL.alvo = ev?.id || null;
     const c = document.createElement('div'); c.className = 'ep-cal'; c.setAttribute('role', 'dialog'); c.setAttribute('aria-label', 'Seu calendário'); document.body.appendChild(c); pintaCal();
     const fora = e => { if (!c.isConnected) return tira(); if (!e.target.closest('.ep-cal,.ep-relogio,.ep-notif')) { c.remove(); tira(); } };
@@ -1921,7 +1929,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     setTimeout(() => { document.addEventListener('mousedown', fora); document.addEventListener('keydown', esc1); });
   }
   function pintaCal() {
-    const c = document.querySelector('.ep-cal'); if (!c) return; const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const c = document.querySelector('.ep-cal:not(.ep-saindo)'); if (!c) return; const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const EV = leCal(), ini = new Date(CAL.mes); ini.setDate(1 - ini.getDay()); const dias = [];
     for (let i = 0; i < 42; i++) { const d = new Date(ini); d.setDate(ini.getDate() + i); dias.push(d); }
     const doDia = d => EV.filter(e => mesmoDia(e.em, d)).sort((a, b) => a.em - b.em), lista = doDia(CAL.sel);
@@ -2010,7 +2018,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   function poeMarcas() {
     document.querySelectorAll('[data-estudio-relogio]:not([data-ep-montado])').forEach(el => { el.dataset.epMontado = '1';
       el.innerHTML = '<button class="ep-relogio" type="button" title="Seu calendário (lembretes e metas)"><span class="pt" title="Tem lembrete hoje"></span><span class="dt"></span><span class="hr"></span></button>';
-      el.querySelector('button').onclick = () => document.querySelector('.ep-cal') ? document.querySelector('.ep-cal').remove() : calendario(); });
+      el.querySelector('button').onclick = () => document.querySelector('.ep-cal:not(.ep-saindo)') ? document.querySelector('.ep-cal:not(.ep-saindo)').remove() : calendario(); });
     document.querySelectorAll('[data-estudio-dock]:not([data-ep-montado])').forEach(el => { el.dataset.epMontado = '1'; el.innerHTML = '<nav class="ep-dock" aria-label="Atalhos do Estúdio"></nav>'; });
     pintaRelogios(); pintaDock();
   }
@@ -2024,6 +2032,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     addEventListener('storage', e => { if (e.key === 'ep-dock-fixos') pintaDock(); }); // ...ou em outra aba
   }
 
+  // SAÍDA ANIMADA (05/11/2026): quem fecha estas janelas chama .remove(); aqui elas tocam a animação de saída e só então saem
+  { const SAI = '.ep-esp,.ep-cal,.ep-msgs,.ep-pg,.ep-admj,.ep-conta-pop,.ep-notif,.modal', rm0 = Element.prototype.remove, calmo = matchMedia('(prefers-reduced-motion: reduce)');
+    if (!Element.prototype.remove.epSai) { const rm = function () { if (this.isConnected && !calmo.matches && this.matches?.(SAI) && !this.classList.contains('ep-saindo')) { this.classList.add('ep-saindo'); setTimeout(() => rm0.call(this), 300); return; } return rm0.call(this); }; rm.epSai = true; Element.prototype.remove = rm; } }
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
     calendario: ev => calendario(ev), dock: { atualizar: () => pintaDock() },
     preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas, abrir: abrirAdm }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
