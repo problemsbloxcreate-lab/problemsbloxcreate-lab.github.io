@@ -102,7 +102,7 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
    Ao entregar uma página, o porteiro troca  <script src="js/app.js">  por  js/app.js?_ev=<versão do arquivo>.
    Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
    quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
-const RAIZ_ASSETS = new Set(['/estudio-icones.js', '/estudio-edicao.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
+const RAIZ_ASSETS = new Set(['/estudio-icones.js', '/estudio-edicao.js', '/estudio-youtube.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
 const VERS = new Map();
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
@@ -962,6 +962,9 @@ async function contaEmUso(req, env, url) {
    FIREBASE_API_KEY do Worker (posto pela Action a partir do segredo do GitHub de mesmo nome) na hora de entregar a página/arquivo. */
 const MARCA_FB = '__FIREBASE_API_KEY__';
 const comChaveFb = (env, t) => env.FIREBASE_API_KEY && t.includes(MARCA_FB) ? t.split(MARCA_FB).join(env.FIREBASE_API_KEY) : t;
+// PUBLICAR NO YOUTUBE (05/11/2026): o /estudio-youtube.js traz o marcador __YOUTUBE_CLIENT_ID__ e o porteiro troca pelo segredo YOUTUBE_CLIENT_ID (ID do cliente OAuth web do projeto estudio-problems-login; a Action põe a partir do segredo do GitHub de mesmo nome)
+const MARCA_YT = '__YOUTUBE_CLIENT_ID__';
+const comChaveYt = (env, t) => env.YOUTUBE_CLIENT_ID && t.includes(MARCA_YT) ? t.split(MARCA_YT).join(env.YOUTUBE_CLIENT_ID) : t;
 async function menu(env, url, status = 200, req = null) {
   const r = await env.ASSETS.fetch(new Request(new URL('/', url)));
   const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); h.set('x-robots-tag', 'noindex');
@@ -1107,7 +1110,7 @@ export default {
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
-    if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { if (caminho === '/estudio-login.js') { const r0 = await env.ASSETS.fetch(new Request(new URL(caminho, url))); if (r0.ok) return new Response(comChaveFb(env, await r0.text()), { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } }); } const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
+    if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-youtube.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { if (caminho === '/estudio-login.js' || caminho === '/estudio-youtube.js') { const r0 = await env.ASSETS.fetch(new Request(new URL(caminho, url))); if (r0.ok) return new Response(comChaveYt(env, comChaveFb(env, await r0.text())), { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } }); } const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);

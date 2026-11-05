@@ -8,7 +8,7 @@ name: Publicar o porteiro (Cloudflare)
 on:
   push:
     branches: [main]
-    paths: ["porteiro/**", "index.html", "404.html", "estudio-login.js", "estudio-conta.js", "estudio-carregando.js", "estudio-icones.js", "estudio-edicao.js", "favicon.svg", "favicon.ico", "icone-180.png", ".github/workflows/porteiro.yml"]
+    paths: ["porteiro/**", "index.html", "404.html", "estudio-login.js", "estudio-conta.js", "estudio-carregando.js", "estudio-icones.js", "estudio-edicao.js", "estudio-youtube.js", "favicon.svg", "favicon.ico", "icone-180.png", ".github/workflows/porteiro.yml"]
   workflow_dispatch: {}
 
 permissions:
@@ -25,6 +25,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
       WR: npx --yes wrangler@4.20.0
     steps:
       - uses: actions/checkout@v4
@@ -38,9 +39,10 @@ jobs:
           node -e "new Function(require('fs').readFileSync('estudio-conta.js','utf8'))"
           node -e "new Function(require('fs').readFileSync('estudio-carregando.js','utf8'))"
           node -e "new Function(require('fs').readFileSync('estudio-icones.js','utf8'))"
+          node -e "new Function(require('fs').readFileSync('estudio-youtube.js','utf8'))"
           node -e "const E=require('./estudio-edicao.js');if(!E.legendas.gera({texto:'teste de legenda',d:1}).blocos.length)process.exit(1);console.log('edicao ok')"
           cmp index.html 404.html || { echo "::error::index.html e 404.html precisam ser iguais (o 404.html é cópia do menu)."; exit 1; }
-          mkdir -p dist && cp index.html 404.html estudio-login.js estudio-conta.js estudio-carregando.js estudio-icones.js estudio-edicao.js favicon.svg favicon.ico icone-180.png dist/
+          mkdir -p dist && cp index.html 404.html estudio-login.js estudio-conta.js estudio-carregando.js estudio-icones.js estudio-edicao.js estudio-youtube.js favicon.svg favicon.ico icone-180.png dist/
           ls -la dist
       - name: Conferir os segredos
         id: seg
@@ -90,6 +92,9 @@ jobs:
           # chave do Firebase (login do Google): vem do segredo FIREBASE_API_KEY do GitHub e nunca fica no código (o porteiro troca o marcador __FIREBASE_API_KEY__)
           if [ -n "${FIREBASE_API_KEY:-}" ]; then printf '%s' "$FIREBASE_API_KEY" | $WR secret put FIREBASE_API_KEY -c wrangler.toml > ../fb.log 2>&1 && echo "FIREBASE_API_KEY atualizada." || { cat ../fb.log | grep -v AIza; echo "::error::Não consegui pôr a FIREBASE_API_KEY no porteiro."; exit 1; }
           else echo "::warning::Sem o segredo FIREBASE_API_KEY no GitHub: o login do Google não funciona até ele ser posto (Settings › Secrets and variables › Actions)."; fi
+          # PUBLICAR NO YOUTUBE: ID do cliente OAuth web (segredo YOUTUBE_CLIENT_ID do GitHub; o porteiro troca o marcador __YOUTUBE_CLIENT_ID__ do /estudio-youtube.js)
+          if [ -n "${YOUTUBE_CLIENT_ID:-}" ]; then printf '%s' "$YOUTUBE_CLIENT_ID" | $WR secret put YOUTUBE_CLIENT_ID -c wrangler.toml > ../yt.log 2>&1 && echo "YOUTUBE_CLIENT_ID atualizado." || { cat ../yt.log; echo "::error::Não consegui pôr o YOUTUBE_CLIENT_ID no porteiro."; exit 1; }
+          else echo "::notice::Sem o segredo YOUTUBE_CLIENT_ID no GitHub: o botão Publicar no YouTube avisa que ainda não foi ligado."; fi
           if $WR secret list -c wrangler.toml 2>/dev/null | grep -q '"SESSAO_SEGREDO"'; then echo "SESSAO_SEGREDO já existe."
           else openssl rand -hex 32 | $WR secret put SESSAO_SEGREDO -c wrangler.toml > ../segredo.log 2>&1 || { cat ../segredo.log; echo "::error::Não consegui criar o SESSAO_SEGREDO."; exit 1; }; echo "SESSAO_SEGREDO criado."; fi
           # par de chaves do passe assinado (Shorts, Editor): a privada fica só no Worker; a pública sai em /chave-publica
