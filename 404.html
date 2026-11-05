@@ -2047,7 +2047,7 @@ async function renderUsoDia(forcar) {
   const bt = $('#nvd-medir'); if (bt) bt.onclick = () => medirUsoDia(c?.em || 0);
   // CÓPIA DE SEGURANÇA na reserva: o ADM marca o que entra (Personagens do Ateliê sempre entra)
   const cp = j.copia; if (!cp) return;
-  const NOMES = { 'personagens/': 'Personagens do Ateliê (Animador)', 'cenarios/': 'Cenários', 'menu/': 'Menu (botões, fundo, mensagens)', 'equipe/': 'Mídia da equipe', 'conhecimento/': 'Conhecimento da IA', 'acesso/': 'Quem pode entrar' };
+  const NOMES = { 'personagens/': 'Personagens do Ateliê (Animador)', 'cenarios/': 'Cenários', 'menu/': 'Menu (botões, fundo, mensagens)', 'equipe/': 'Mídia da equipe', 'conhecimento/': 'Conhecimento dos Shorts', 'acesso/': 'Quem pode entrar' };
   const todas = [...new Set(['personagens/', ...(cp.raizes || []), ...(cp.prefixos || [])])], marc = new Set(['personagens/', ...(cp.prefixos || [])]);
   const quandoC = cp.em ? new Date(cp.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : null;
   const box = document.createElement('div'); box.className = 'nvd-c nvd-copia';
@@ -2088,7 +2088,7 @@ async function renderNuvem(manter) {
   const btApaga = it => it.ref && !it.protegido ? `<button class="ibtn nv-x" type="button" data-x="${ITENS.push(it) - 1}" title="Apagar da nuvem">${NVI.lixo}</button>` : it.protegido ? `<span class="nv-lock" title="${esc(it.protegido)}">${NVI.cadeado}</span>` : '<span class="nv-lock"></span>';
   const btBaixa = it => it.abrir || it.arqs?.length ? `<button class="ibtn nv-b" type="button" data-b="${ITENS.push(it) - 1}" title="Baixar no computador">${NVI.baixar}</button>` : '<span class="nv-lock"></span>';
   const linha = it => { const t = nvTipo(it), k = ITENS.push(it) - 1, abre = it.abrir || it.arqs?.length;
-    return `<div class="nv-i${abre ? ' abre' : ''}" ${abre ? `data-v="${k}" tabindex="0" role="button" title="Abrir"` : ''}><span class="nv-ti">${NVI[t] || NVI.texto}</span><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.ia ? '<span class="nv-ia">IA</span>' : ''}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
+    return `<div class="nv-i${abre ? ' abre' : ''}" ${abre ? `data-v="${k}" tabindex="0" role="button" title="Abrir"` : ''}><span class="nv-ti">${NVI[t] || NVI.texto}</span><span class="nm" title="${esc(it.nome)}">${esc(it.nome)}${it.info ? ` <small style="color:var(--tx3)">${esc(it.info)}</small>` : ''}</span>
       ${it.porNome ? `<span class="por" title="Enviado por ${esc(it.porNome)}">${mini(it.porFoto, it.porNome)}${esc(it.porNome)}</span>` : ''}<span class="qd hint">${esc(quando(it.em))}</span><span class="tm">${nvFmt(it.bytes)}</span>${btBaixa(it)}${btApaga(it)}</div>`; };
   const btGrupo = g => (g.itens.some(it => it.abrir || it.arqs?.length) ? `<button class="btn sm nv-bg" type="button" data-bg="${GRUPOS.push(g) - 1}" title="Baixar tudo deste grupo num .zip">${NVI.baixar}Baixar</button>` : '')
     + (g.itens.some(it => it.ref && !it.protegido) ? `<button class="btn sm nv-limpa" type="button" data-g="${GRUPOS.push(g) - 1}" title="Apagar tudo deste grupo (o que é protegido fica)">${NVI.lixo}Limpar</button>` : '');

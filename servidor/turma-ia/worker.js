@@ -605,7 +605,7 @@ export default {
     // direta não tem — então este caminho só vale pela ligação. Mesmo assim o e-mail precisa estar na lista de quem entra.
     const peloPorteiro = p00 === '/permissoes' && req.method === 'GET' && !req.cf && req.headers.get('x-porteiro-email');
     const login = peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
-    if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
+    if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
     if (R && login.email && !env._porta) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
     // RESUMO para o círculo da nuvem quando a principal não deixa listar (limite do dia): o espaço medido pela Cloudflare
@@ -1207,7 +1207,7 @@ export default {
     if (uso(u).usd >= limite) return json({ error: { type: 'limite', message: 'Limite de gasto atingido' }, turma_uso: uso(u) }, 402, cors);
 
     // o corpo vem do editor SEM modelo/limites — quem decide é o servidor (sem reler o JSON inteiro, que pode ter imagens)
-    if (login.email && !(await pode(env, login.email, 'geral.ia'))) return json({ error: { type: 'permissao', message: 'O seu cargo não usa a IA. Peça para um ADM liberar em ADM › Níveis de acesso.' } }, 403, cors); // NÍVEIS DE ACESSO
+    if (login.email && !(await pode(env, login.email, 'geral.ia'))) return json({ error: { type: 'permissao', message: 'O seu cargo não pode usar esta função. Peça para um ADM liberar em ADM › Níveis de acesso.' } }, 403, cors); // NÍVEIS DE ACESSO
     let txt = (await req.text()).trim();
     if (!txt.startsWith('{') || !txt.endsWith('}') || /"(model|max_tokens|thinking|stream)"\s*:/.test(txt.slice(-400))) return json({ error: { message: 'Pedido inválido' } }, 400, cors);
     // resposta em "stream" (aos pedaços): permite respostas bem grandes sem estourar tempo
@@ -1224,7 +1224,7 @@ export default {
       break;
     }
     if (!r.ok || !/event-stream/.test(r.headers.get('content-type') || '')) {
-      const j = await r.json().catch(() => ({ error: { message: 'Resposta inválida da IA' } }));
+      const j = await r.json().catch(() => ({ error: { message: 'A nuvem respondeu de um jeito inesperado. Tente de novo.' } }));
       return json(j, r.status, cors);
     }
     // repassa o stream para o editor e, em paralelo, conta o uso (sem atrasar a resposta)

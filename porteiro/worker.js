@@ -308,7 +308,7 @@ async function nuvemUso(req, env, url) {
     perfis.set(email, { porNome: p.nome || p.google?.nome || (email.includes('@') ? mascara(email) : 'Alguém da equipe'), porFoto: p.fotoV ? '/pessoa/foto?u=' + (await codigoU(email)) + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); }; // /pessoa/foto: qualquer pessoa da equipe vê (a /acesso/foto é só do ADM)
   const PROJ = { personagens: 'Animador', cenarios: 'Animador', menu: 'Menu do Estúdio', fotos: 'Menu do Estúdio', acesso: 'Menu do Estúdio', conhecimento: 'Shorts', equipe: 'Geral', outros: 'Geral' };
   const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, projeto: PROJ[id] || 'Geral', bytes: 0, n: 0, itens: [] });
-  const NOMES = { cenarios: 'Cenários', menu: 'Fundos e links do menu', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento da IA', acesso: 'Lista de quem entra' };
+  const NOMES = { cenarios: 'Cenários', menu: 'Fundos e links do menu', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento dos Shorts', acesso: 'Lista de quem entra' };
   const pers = {};
   for (const it of j.itens || []) {
     const tam = +it.tam || 0, raiz = it.k.split('/')[0];
