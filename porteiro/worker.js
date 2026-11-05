@@ -213,7 +213,8 @@ async function repassa(req, url, p, env, s) {
   if (r.ok && (out.get('content-type') || '').includes('text/html')) {
     let h = await r.text();
     if (p.nuvem || p.conta) { const m = h.match(/<head[^>]*>/i);
-    const carregando = p.conta && !h.includes('estudio-login.js') && !h.includes('estudio-carregando.js') ? '<script src="/estudio-carregando.js"></script>' : '';
+    // página com o estudio-login.js (tela própria): entra só o MOTOR da porcentagem (data-so-progresso); sem ele a tela ficava em 0% (05/11/2026)
+    const carregando = p.conta && !h.includes('estudio-carregando.js') ? (h.includes('estudio-login.js') ? '<script src="/estudio-carregando.js" data-so-progresso></script>' : '<script src="/estudio-carregando.js"></script>') : '';
     // ícone da aba: cada programa usa o próprio logo; o do menu só entra nas páginas que não têm ícone nenhum
     const icone = !/<link[^>]+rel=["']?(shortcut )?icon/i.test(h) ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">' : '';
     const extra = carregando + icone +
