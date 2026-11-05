@@ -86,7 +86,7 @@
     get pct() { return Math.round(mostrado); }, get texto() { return texto(); },
     etapa(t) { etapa = String(t || ''); muda(); },
     // a tela de carregamento também espera esta tarefa (ex.: nomes e fotos da equipe) e mostra o texto dela
-    tarefa(p, txt) { if (!ativo || !p?.then) return p; const id = ++nId; pend.set(id, '\u0001' + String(txt || 'Preparando…')); muda(); const fim = () => { if (pend.delete(id)) feitos.add('tarefa:' + id); muda(); }; p.then(fim, fim); setTimeout(fim, 15000); return p; },
+    tarefa(p, txt, ms) { if (!ativo || !p?.then) return p; const id = ++nId; pend.set(id, '\u0001' + String(txt || 'Preparando…')); muda(); const fim = () => { if (pend.delete(id)) feitos.add('tarefa:' + id); muda(); }; p.then(fim, fim); setTimeout(fim, ms || 15000); return p; },
     // espera os arquivos e imagens que a página ainda está baixando (no máximo ms); termina em 100%
     esperarTudo(ms = 12000) {
       if (!ativo) { ativo = true; mo.observe(document.documentElement, { childList: true, subtree: true }); document.querySelectorAll('img,script[src],link[rel~="stylesheet"]').forEach(olha); alvo = Math.min(alvo, 90); mostrado = Math.min(mostrado, 90); agenda(); } // tela que volta (ex.: menu depois do login)
