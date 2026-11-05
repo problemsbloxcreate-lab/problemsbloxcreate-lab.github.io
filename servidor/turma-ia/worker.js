@@ -543,9 +543,9 @@ async function permEfetivas(env, email) {
 // qual programa é um botão do menu (pelo endereço; sem endereço, pelo nome) — para não mandar o link de quem não pode ver
 function permProgDoLink(l) {
   let p = String(l?.url || ''); try { p = new URL(p, 'https://x.invalid/').pathname; } catch { }
-  const m = p.match(/^\/(animador|shorts|editor|modelador|jester|jester-dreams|preparativos)(\/|$)/); if (m) return m[1] === 'jester-dreams' ? 'jester' : m[1];
+  const m = p.match(/^\/(animador|shorts|editor|modelador|jester|jester-dreams|preparativos|publicacoes)(\/|$)/); if (m) return m[1] === 'jester-dreams' ? 'jester' : m[1];
   const n = String(l?.nome || '').toUpperCase();
-  return /JESTER/.test(n) ? 'jester' : /PREPARA/.test(n) ? 'preparativos' : /SHORT/.test(n) ? 'shorts' : /MODEL/.test(n) ? 'modelador' : /ANIM/.test(n) ? 'animador' : /EDI/.test(n) ? 'editor' : null;
+  return /JESTER/.test(n) ? 'jester' : /PREPARA/.test(n) ? 'preparativos' : /PUBLICA/.test(n) ? 'publicacoes' : /SHORT/.test(n) ? 'shorts' : /MODEL/.test(n) ? 'modelador' : /ANIM/.test(n) ? 'animador' : /EDI/.test(n) ? 'editor' : null;
 }
 // ADM salvando: confere tudo o que veio (nada de e-mail; ids e textos curtos)
 function permLimpa(b, porId) {
@@ -815,6 +815,8 @@ export default {
         }
         const i = b?.item; if (!i || typeof i !== 'object' || !/^[A-Za-z0-9_-]{6,20}$/.test(String(i.id || ''))) return json({ error: { message: 'Item inválido.' } }, 400, cors);
         const pedido = !!i.pedido, concl = !pedido && !!i.concluido;
+        if (!(await pode(env, login.email, concl ? 'publicacoes' : 'publicacoes.publicar'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode publicar pelo Publicações. Peça para um ADM liberar.' } }, 403, cors);
+        if (i.modo === 'agendado' && !concl && !(await pode(env, login.email, 'publicacoes.agendar'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode agendar vídeos. Peça para um ADM liberar.' } }, 403, cors);
         const limpo = { id: i.id, titulo: txt(i.titulo, 100), canal: { id: txt(i.canal?.id, 40), nome: txt(i.canal?.nome, 100), foto: /^https:\/\//.test(i.canal?.foto || '') ? txt(i.canal.foto, 300) : '' },
           modo: ['naoListado', 'agora', 'agendado'].includes(i.modo) ? i.modo : 'naoListado', privacidade: ['public', 'unlisted', 'private'].includes(i.privacidade) ? i.privacidade : 'unlisted',
           publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm), via: i.via === 'studio' ? 'studio' : 'api',

@@ -18,9 +18,9 @@
   const configurado = () => /\.apps\.googleusercontent\.com$/.test(CLIENTE);
   const pode = k => { try { return window.EstudioPerm?.pode?.(k) ?? true; } catch { return true; } };
   // o botão "Publicar no YouTube" de um programa: pode exportar nele E pode publicar no Publicações
-  const podeLevar = prog => pode(prog + '.exportar') && pode('publicacoes.publicar');
+  const podeLevar = prog => pode(prog + '.exportar') && pode(prog + '.youtube') && pode('publicacoes.publicar');
   // "Marcar como concluído": pode exportar no programa e ver o Publicações (o projeto aparece em "Não publicados" para a equipe)
-  const podeConcluir = prog => pode(prog + '.exportar') && pode('publicacoes.ver');
+  const podeConcluir = prog => pode(prog + '.exportar') && pode('publicacoes');
 
   // ---------- passar o vídeo para o Publicações (IndexedDB da mesma origem) ----------
   const DB = 'ep-publicacoes', ST = 'videos';

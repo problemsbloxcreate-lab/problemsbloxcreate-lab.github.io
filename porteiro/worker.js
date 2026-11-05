@@ -72,7 +72,7 @@ function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch 
    O porteiro pergunta pela ligação direta (TURMA) mandando o e-mail da sessão (x-porteiro-email; o turma-ia só aceita esse
    cabeçalho de pedido SEM req.cf, ou seja, pela ligação). Guarda 60 s por pessoa; e quando NINGUÉM tem nada bloqueado
    ("livre") guarda isso 2 min para todo mundo — sem custo a mais até um ADM configurar. Falhou = deixa passar (nada quebra). */
-const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos' };
+const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos', '/publicacoes/': 'publicacoes' };
 const PERM_MEM = new Map(), PERM_LIVRE = { t: 0 };
 async function permDe(env, email, url, forcar, atalho) { // atalho: vale o "ninguém tem nada bloqueado" guardado (só para barrar páginas)
   email = String(email || '').toLowerCase(); if (!email || !env.SERVIDOR) return null;

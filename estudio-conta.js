@@ -1968,7 +1968,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const bt = ([k, n, ic, bg, extra = '']) => `<button class="di" type="button" data-fixo="${k}" data-dica="${dica(k, n)}" aria-label="${dica(k, n)}"><span class="ic fx" style="background:${bg}">${ic}</span>${k === 'nuvem' ? barra(usoNv) : k === 'pc' ? barra(DOCK_PC) : ''}${extra}</button>`;
     // programas que a pessoa FIXOU no Dock pelo "Organizar" do menu (localStorage 'ep-dock-fixos', só neste navegador)
     let meus = []; try { meus = JSON.parse(localStorage.getItem('ep-dock-fixos') || '[]'); if (!Array.isArray(meus)) meus = []; } catch { }
-    meus = meus.filter(x => { const m = String(x?.url || '').match(/\/(animador|shorts|editor|modelador|jester|preparativos)(\/|$)/); return !m || window.EstudioPerm?.programa(m[1]) !== false; }); // NÍVEIS DE ACESSO: programa que o cargo não vê sai do Dock
+    meus = meus.filter(x => { const m = String(x?.url || '').match(/\/(animador|shorts|editor|modelador|jester|preparativos|publicacoes)(\/|$)/); return !m || window.EstudioPerm?.programa(m[1]) !== false; }); // NÍVEIS DE ACESSO: programa que o cargo não vê sai do Dock
     const icMeu = x => { try { if (x.prog && window.EstudioIcones?.svg) return window.EstudioIcones.svg(x.prog); } catch { }
       return x.ic ? `<span class="meu">${x.ic}</span>` : `<span style="display:grid;place-items:center;background:#3a3a3c;font-size:16px">${esc(String(x.nome || '?').slice(0, 2))}</span>`; }; // ícone do cartão: com o quadradinho de fundo do menu
     const meuBt = (x, i) => `<button class="di prog" type="button" data-meu="${i}" data-dica="${esc(x.nome)}" aria-label="${esc(x.nome)} (clique direito: tirar do Dock)"><span class="ic">${icMeu(x)}</span></button>`;
