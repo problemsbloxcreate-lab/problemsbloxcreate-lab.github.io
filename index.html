@@ -852,6 +852,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #menu #rec{max-height:calc(4 * var(--mn-u) + 3 * var(--mn-g));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.4) transparent;padding-right:6px}
 #menu #rec::-webkit-scrollbar{width:6px}#menu #rec::-webkit-scrollbar-thumb{background:rgba(255,255,255,.4)}
 #menu #recentes .progs-cab{flex-wrap:nowrap}
+#top .badge{display:inline-grid;place-items:center;align-self:center;margin-left:10px;height:22px;padding:0 8px;border:1.5px solid rgba(255,255,255,.85);background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 var(--font);letter-spacing:.8px}
+#top .badge[hidden]{display:none!important}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1568,7 +1570,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); $('#lupa').hidden = false; document.documentElement.classList.add('no-menu');
+  pintaGrid(); $('#lupa').hidden = false; $('#badge-adm').hidden = !DADOS?.adm; // selo ADM no título (só para quem é ADM) document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
