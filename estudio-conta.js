@@ -1403,12 +1403,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const menc = R.mencoes || {};
       const linha = c => { const m = ult[c.id], n = nao[c.id] || 0, mc = menc[c.id] || 0, geral = c.id === 'geral', on = c.p?.on, grupo = c.g;
         const citaDe = x => { try { return x.cita ? JSON.parse(x.cita) : null; } catch { return null; } }, cm = m && citaDe(m);
-        const prev = m ? (m.de === M.eu ? 'Você: ' : '') + (m.apagada && !M.como ? 'Mensagem apagada' : semMenc(m.texto, nomesL).replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : grupo ? `Grupo · ${grupo.membros.length} pessoas` : on ? 'online ' + (NOME_PROG_ON[on] || '') : 'Nenhuma mensagem ainda';
+        const prev = m ? (m.de === M.eu ? 'Você: ' : '') + (m.apagada && !M.como ? 'Mensagem apagada' : semMenc(m.texto, nomesL).replace(/\s+/g, ' ').slice(0, 60) || (cm ? 'Citou: ' + cm.titulo : '')) : geral ? 'Conversa de toda a equipe' : grupo ? `Grupo · ${grupo.membros.length} pessoas` : on ? 'online' : 'Nenhuma mensagem ainda';
         const alvo = M.escolha ? M.escolha.alvos.some(a => a.id === c.id) : false;
         return `<button type="button" class="epm-pes${!M.escolha && M.conv?.id === c.id ? ' epm-sel' : ''}${alvo ? ' epm-alvo' : ''}${n ? ' epm-tem' : ''}" data-c="${esc(c.id)}" data-u="${esc(c.u)}" role="listitem">${M.escolha ? `<span class="epm-ck">${alvo ? ICONES.ok : ''}</span>` : ''}
           <span class="epm-avw">${geral ? geralAv() : grupo ? grupoAv(grupo) : avU(c.q)}${on ? '<i class="epm-on"></i>' : ''}</span>
           <span class="epm-tx"><b>${geral ? esc(geralNome()) : grupo ? esc(grupo.nome) : esc(nomeU(c.u, c.q, M)) + chaveAdm(c.q)}</b><small${geral || !on ? '' : ' class="ondeOn"'}>${on && !m ? esc(prev) : esc(prev)}</small></span>
-          ${on ? `<em class="epm-onde" title="Usando agora">${esc((NOME_PROG_ON[on] || '').replace(/^(no|na|nos) /, ''))}</em>` : ''}${mc ? '<b class="epm-cont epm-arroba" title="Citaram você">@</b>' : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
+          ${mc ? '<b class="epm-cont epm-arroba" title="Citaram você">@</b>' : ''}${n ? `<b class="epm-cont">${n > 99 ? '99+' : n}</b>` : ''}</button>`; };
       const geralC = convs[0];
       grupos.sort((a, b) => (ult[b.id]?.id || 0) - (ult[a.id]?.id || 0) || a.g.nome.localeCompare(b.g.nome));
       lista.innerHTML = linha(geralC) + (grupos.length || R.adm ? `<h3>Grupos${R.adm ? `<button type="button" class="epm-novog" title="Só ADM: criar um grupo com pessoas escolhidas">${ICONES.mais} Novo grupo</button>` : ''}</h3>` + grupos.map(linha).join('') : '')
@@ -1426,7 +1426,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       if (c.u === 'geral') { tit.innerHTML = `${geralAv()}<span style="min-width:0"><b>${esc(geralNome())}</b><small>Conversa geral · todo mundo da equipe vê</small></span>${M.res?.adm ? `<button class="epm-bt epm-edg" type="button" title="Só ADM: mudar o nome e a foto da conversa geral">${ICONES.lapis} Editar</button>` : ''}`;
         tit.querySelector('.epm-edg')?.addEventListener('click', editaGeral); return; }
       const q = await quemU(c.u), on = pessoaDe(c.u)?.on;
-      tit.innerHTML = `<span class="epm-avw">${avU(q)}${on ? '<i class="epm-on"></i>' : ''}</span><span style="min-width:0"><b>${esc(nomeU(c.u, q, M))}${chaveAdm(q)}</b><small>${on ? 'Online agora ' + esc(NOME_PROG_ON[on] || '') : 'Conversa privada · só vocês dois veem'}</small></span><button class="epm-bt epm-edg" type="button" title="Dar um apelido (só você vê, entre parênteses)">${ICONES.lapis} Apelido</button>`;
+      tit.innerHTML = `<span class="epm-avw">${avU(q)}${on ? '<i class="epm-on"></i>' : ''}</span><span style="min-width:0"><b>${esc(nomeU(c.u, q, M))}${chaveAdm(q)}</b><small>${on ? 'Online agora' : 'Conversa privada · só vocês dois veem'}</small></span><button class="epm-bt epm-edg" type="button" title="Dar um apelido (só você vê, entre parênteses)">${ICONES.lapis} Apelido</button>`;
       tit.querySelector('.epm-edg').onclick = () => editaApelido(c.u, q);
     }
     async function desenhaConversa() {

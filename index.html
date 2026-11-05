@@ -390,6 +390,18 @@ input,textarea,[contenteditable],code,pre,.selecionavel,.nv-txt,.ac-orig,.bolha{
 .rec .rt{padding:9px 10px 10px;min-width:0}
 .rec b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rec small{display:block;color:var(--tx2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .vz{padding:14px;color:var(--tx3);font-size:12px}
+/* MEUS PROJETOS (05/11/2026): lista simples, sem miniatura; o selo diz se está na nuvem ou só neste computador */
+.meus{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.meus a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(28,28,32,.72);border:.5px solid rgba(255,255,255,.08);color:var(--tx);text-decoration:none}
+.meus a:hover,.meus a:focus-visible{background:rgba(52,52,58,.85);outline:none}
+.meus .pg{width:26px;height:26px;flex:none}.meus .pg svg,.meus .pg img,.meus .pg>span{display:block;width:26px;height:26px}
+.meus .rt{flex:1;min-width:0}.meus b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meus small{display:block;color:var(--tx2);font-size:11px}
+.meus .onde{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.meus .onde.nv{color:#bcd8ff;background:rgba(10,132,255,.16)}.meus .onde.lc{color:#e6d3a8;background:rgba(255,190,80,.12)}
+.meus .vz{padding:14px;color:var(--tx3);font-size:12px}
+.prog-busca{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;background:rgba(0,0,0,.28);border:.5px solid rgba(255,255,255,.1);color:var(--tx2)}
+.prog-busca[hidden]{display:none}.prog-busca input{border:0;background:none;color:var(--tx);font:inherit;font-size:13px;outline:none;width:180px}
+.grid .card[hidden]{display:none!important}
 .rec-atu{display:inline-grid;place-items:center;width:28px;height:28px;margin-left:6px;border-radius:8px;border:.5px solid rgba(255,255,255,.08);background:rgba(0,0,0,.28);color:var(--tx);cursor:pointer}.rec-atu:hover{background:rgba(255,255,255,.12)}.rec-atu:disabled{cursor:default;opacity:.7}.rec-atu.girando svg{animation:giraAtu .8s linear infinite}
 /* AO VIVO (03/11/2026): salas abertas agora no Animador/Ateliê (Firebase Realtime Database, o mesmo do "Trabalhar junto") */
 .pt-vivo{display:inline-block;width:7px;height:7px;border-radius:50%;background:#30d158;margin-right:6px;vertical-align:1px;box-shadow:0 0 0 0 rgba(48,209,88,.6)}
@@ -600,13 +612,12 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <h1 id="hello">Olá!</h1>
   <p class="sub" id="boasvindas"></p>
   <p class="frase" id="frase" aria-live="polite"></p>
-  <div class="progs-cab" id="progs-cab"><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no Dock (ou arraste até ele)</span><span class="sp"></span><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no Dock (só para você, fica neste navegador)">Organizar</button></div>
+  <div class="progs-cab" id="progs-cab"><label class="prog-busca" id="prog-busca" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="prog-q" placeholder="Buscar programa" aria-label="Buscar programa" autocomplete="off"></label><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no Dock (ou arraste até ele)</span><span class="sp"></span><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no Dock (só para você, fica neste navegador)">Organizar</button></div>
   <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div>
-  <!-- redesign: as animações da nuvem da equipe mexidas por último (turma-ia /animacoes), com quem editou -->
+  <!-- MEUS PROJETOS (05/11/2026): os últimos projetos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
   <section class="recentes" id="recentes" hidden>
-    <div class="rec-cab"><h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span id="rec-tit">Recentes na nuvem</span></h4><span class="sp"></span>
-      <span class="seg" role="group" aria-label="De quem"><button type="button" data-rec="todos" aria-pressed="true">Todos</button><button type="button" data-rec="meus" aria-pressed="false">Só os meus</button><button type="button" data-rec="aovivo" aria-pressed="false" title="Quem está trabalhando junto agora no Animador e no Ateliê"><i class="pt-vivo" aria-hidden="true"></i>Ao vivo</button></span><button type="button" class="rec-atu" id="rec-atu" title="Atualizar os recentes (busca de novo na nuvem, sem F5)" aria-label="Atualizar os recentes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
-    <div class="rec" id="rec"></div>
+    <div class="rec-cab"><h4><span id="rec-tit">Meus projetos</span></h4><span class="sp"></span><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
+    <ul class="meus" id="rec"></ul>
   </section>
   <nav data-estudio-dock aria-label="Abas abertas e atalhos"></nav><!-- redesign: o /estudio-conta.js preenche o Dock -->
 </main>
@@ -1208,9 +1219,9 @@ function atualizarTudo() {
 addEventListener('estudio-icones', () => { $$('#grid .card').forEach((el, i) => { const l = menuVis[i]; if (l) pintarIcone(el, l); }); });
 // partes de dentro de um programa (decisão do dono, 02/11/2026): no cartão ANIMAR, com o mouse em cima, aparecem os ícones do
 // ATELIÊ e dos CENÁRIOS; com o mouse no ícone aparece o nome; o clique abre direto aquela parte do Animador
-const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios']] };
+const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens', 'atelie'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios', 'cenarios']] };
 function subProgs(el, l) {
-  const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone]); const sub = SUBPROGS[prog]; if (!sub) return;
+  const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone]); const sub = (SUBPROGS[prog] || []).filter(x => permProg(x[3])); if (!sub.length) return;
   const box = document.createElement('span'); box.className = 'subprog';
   box.innerHTML = sub.map(([id, nome, url]) => `<span class="sp-it" role="link" tabindex="0" data-url="${url}" aria-label="${nome}"><span data-estudio-icone="${id}"></span><i>${nome}</i></span>`).join('');
   box.querySelectorAll('.sp-it').forEach(it => { const vai = e => { e.preventDefault(); e.stopPropagation(); abrirProg(new URL(it.dataset.url, location.href).href); };
@@ -1224,8 +1235,14 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  const g = $('#grid'); g.innerHTML = '';
-  menuVis = ordenaLinks(DADOS.links.filter(l => !l.invisivel)); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
+  pintaGrid();
+  if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
+  recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
+  fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
+}
+function pintaGrid() {
+  const g = $('#grid'); if (!g || !DADOS) return; g.innerHTML = '';
+  menuVis = ordenaLinks(DADOS.links.filter(l => !l.invisivel && podeVer(l))); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
   menuVis.forEach((l, i) => {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
@@ -1236,81 +1253,8 @@ function showMenu() {
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
   if (!menuVis.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   if (!organizar.ligado) { organizar.ligado = true; organizar.liga(); }
-  organizar.pinta();
-  quemEsta.liga();
-  recentes.liga(); // redesign: recentes na nuvem (um pedido por abertura do menu)
-  fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
+  organizar.pinta(); buscaProgs.aplica();
 }
-
-/* AO VIVO NO MENU (03/11/2026): quem está trabalhando junto agora no Animador e no Ateliê (o "Trabalhar junto" deles, Firebase
-   Realtime Database: aovivo/lista/<sala> = { tipo, nome, por, em, fim } e aovivo/salas/<sala>/gente/<id> = { nome, foto, cor }).
-   ESTÁVEL E SEM GASTO NA CLOUDFLARE: só conecta quando a pessoa abre a aba "Ao vivo"; não pergunta de tempos em tempos (o Firebase avisa
-   quando muda); escuta no máximo 8 salas; desliga ao trocar de aba ou esconder a página (e religa ao voltar); erro ou demora = aviso
-   com "Tentar de novo" (NUNCA tenta sozinho, para não entrar em laço). */
-const aoVivo = {
-  URL: 'https://' + MENU_CONFIG.firebase.projectId + '-default-rtdb.firebaseio.com', MAX: 8,
-  el: null, ligado: false, db: null, offLista: null, gente: new Map(), lista: {}, tm: 0, erro: '', recebeu: false,
-  async sdk() {
-    if (window.firebase?.database) return;
-    if (!this._sdk) this._sdk = new Promise((ok, no) => { const s = document.createElement('script'); s.src = SDK + 'firebase-database-compat.js'; s.onload = ok; s.onerror = () => { this._sdk = null; no(new Error('não carregou')); }; document.head.appendChild(s); });
-    return this._sdk;
-  },
-  mostra(el) { this.el = el; if (document.hidden) return; if (!this.ligado) this.liga(); else this.desenha(); },
-  async liga() {
-    this.ligado = true; this.erro = ''; this.lista = {}; this.recebeu = false; this.desenha();
-    clearTimeout(this.tm); this.tm = setTimeout(() => { if (this.ligado && !this.recebeu) { this.erro = 'demora'; this.para(true); } }, 10000); // 10 s sem resposta: desiste e mostra o botão
-    try {
-      await this.sdk(); if (!this.ligado) return;
-      this.db = firebase.app().database(this.URL); this.db.goOnline();
-      const r = this.db.ref('aovivo/lista');
-      const ok = s => { this.recebeu = true; clearTimeout(this.tm); this.lista = s.val() || {}; this.salas(); };
-      const falhou = () => { this.erro = 'permissao'; this.para(true); };
-      r.on('value', ok, falhou); this.offLista = () => r.off('value', ok);
-    } catch { this.erro = 'rede'; this.para(true); }
-  },
-  para(mostraErro) { // desliga tudo (listas e conexão); com erro, mostra o aviso e o botão
-    clearTimeout(this.tm); try { this.offLista?.(); } catch { } this.offLista = null;
-    for (const g of this.gente.values()) try { g.off(); } catch { }
-    this.gente.clear(); try { this.db?.goOffline(); } catch { } this.ligado = false;
-    if (mostraErro) this.desenha();
-  },
-  // salas abertas (sem "fim"), as mais recentes primeiro: escuta quem está em cada uma (só as que vão aparecer)
-  salas() {
-    const L = Object.entries(this.lista).filter(([s, m]) => /^(an|at)-/.test(s) && m && !m.fim).sort((a, b) => (b[1].em || 0) - (a[1].em || 0)).slice(0, this.MAX);
-    const quer = new Set(L.map(([s]) => s));
-    for (const [s, g] of this.gente) if (!quer.has(s)) { try { g.off(); } catch { } this.gente.delete(s); }
-    for (const [s] of L) if (!this.gente.has(s)) {
-      const r = this.db.ref('aovivo/salas/' + s + '/gente');
-      const ok = v => { const g = this.gente.get(s); if (g) { g.pessoas = Object.values(v.val() || {}).filter(p => p && p.nome); this.desenha(); } };
-      this.gente.set(s, { pessoas: null, off: () => r.off('value', ok) }); r.on('value', ok, () => { });
-    }
-    this.desenha();
-  },
-  desenha() {
-    const el = this.el; if (!el || recentes.quem !== 'aovivo') return;
-    if (this.erro) {
-      const txt = this.erro === 'permissao' ? 'O ao vivo ainda não foi liberado para a sua conta. Abra o Animador uma vez e tente de novo.' : 'Não deu para ver quem está ao vivo agora.';
-      el.innerHTML = '<div class="vz">' + txt + '<br><button type="button" class="btn sm" data-av-de-novo>Tentar de novo</button></div>';
-      el.querySelector('[data-av-de-novo]').onclick = () => { this.erro = ''; this.liga(); }; return;
-    }
-    if (!this.recebeu) { el.innerHTML = '<div class="vz">Procurando quem está ao vivo…</div>'; return; }
-    const L = Object.entries(this.lista).filter(([s]) => this.gente.get(s)?.pessoas?.length).sort((a, b) => (b[1].em || 0) - (a[1].em || 0));
-    if (!L.length) { el.innerHTML = '<div class="vz">Ninguém trabalhando ao vivo agora. Quando alguém usar o "Trabalhar junto" no Animador ou no Ateliê, aparece aqui.</div>'; return; }
-    const cor = s => ['#ff6b9d', '#ffb35c', '#7bd88f', '#19d3f0', '#b9a6ff', '#ffd166'][[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
-    const foto = p => { const f = String(p.foto || ''), fundo = esc(p.cor || cor(p.nome)), nome = esc(p.nome);
-      return /^(https:|\/|data:image\/(png|jpe?g|webp);base64,)/.test(f) ? `<span class="av" style="background:${fundo}" title="${nome}"><img src="${esc(f)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"></span>`
-        : `<span class="av" style="background:${fundo}" title="${nome}">${esc(String(p.nome)[0].toUpperCase())}</span>`; };
-    el.innerHTML = L.map(([s, m]) => {
-      const at = s.startsWith('at-'), ps = this.gente.get(s).pessoas, n = ps.length <= 4 ? 4 : 3;
-      const url = at ? '/animador/?atelie=' + encodeURIComponent(s.slice(3)) : m.auto ? '/animador/?nuvem=' + encodeURIComponent(s.slice(3)) : '/animador/?aba=animacoes'; // animação da nuvem: abre direto (e entra na sala) // Ateliê: abre o personagem e entra sozinho; Animador: a tela inicial tem o "Entrar"
-      return `<a class="vivo" href="${url}" title="${esc(m.nome || '')} · ${at ? 'abrir no Ateliê' : 'entrar no Animador'}"><span class="th"><span class="pg"><span data-estudio-icone="${at ? 'at' : 'an'}"></span></span><span class="etq-vivo"><i class="pt-vivo"></i>AO VIVO</span><span class="fotos">${ps.slice(0, n).map(foto).join('')}${ps.length > n ? `<span class="av mais">+${ps.length - n}</span>` : ''}</span></span>`
-        + `<span class="rt"><b>${esc(m.nome || (at ? 'Personagem' : 'Animação'))}</b><small>${at ? 'Ateliê' : 'Animador'} · ${ps.length} ${ps.length > 1 ? 'pessoas' : 'pessoa'}${m.por ? ' · aberta por ' + esc(String(m.por).split(' ')[0]) : ''}</small></span></a>`;
-    }).join('');
-    try { window.EstudioIcones?.pinta?.(el); } catch { } // o ícone do programa (An / At) no canto, como nos recentes
-  },
-};
-// página escondida: desliga o ao vivo (libera a conexão); voltou com a aba "Ao vivo" aberta: liga de novo
-document.addEventListener('visibilitychange', () => { if (recentes.quem !== 'aovivo') return; if (document.hidden) aoVivo.para(); else if (!aoVivo.erro) aoVivo.mostra($('#rec')); });
 
 /* ORGANIZAR: "Organizar" faz os cartões tremerem; arrastar (mouse ou dedo) muda a ordem; o alfinete (ou soltar o cartão no Dock)
    fixa o programa no Dock. Tudo só neste navegador. Fora do modo Organizar, clicar abre o programa como sempre. */
@@ -1368,84 +1312,86 @@ const organizar = {
 // o Dock (/estudio-conta.js) pede para abrir um programa fixado: abre como os cartões (mesma aba, com o escurecer)
 addEventListener('estudio-abrir-prog', e => { const u = e.detail?.url; if (u) abrirProg(u); });
 
-/* QUEM ESTÁ EM CADA PROGRAMA AGORA (porteiro /online, a mesma presença do ADM): fotinhos no canto do cartão, como o "ao vivo" do Ateliê/Animador.
-   Nunca vem e-mail; confere de minuto em minuto só com o menu à vista. */
-const quemEsta = {
-  PROG: [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR']],
-  progDe(url) { let p = ''; try { const u = new URL(url, location.href); if (u.origin !== location.origin) return null; p = u.pathname; } catch { return null; } return this.PROG.find(([k]) => p.startsWith(k))?.[1] || null; },
-  liga() { this.pinta(); this.busca(); if (this._t) return; this._t = setInterval(() => { if (!document.hidden && !$('#menu').hidden) this.busca(); }, 90e3); addEventListener('visibilitychange', () => { if (!document.hidden && !$('#menu').hidden) this.busca(); }); },
-  async busca() { try { const r = await fetch('/online', { credentials: 'same-origin', cache: 'no-store' }); if (!r.ok) return; this.lista = (await r.json()).pessoas || []; this.pinta(); } catch { } },
-  pinta() {
-    const L = this.lista || [];
-    $$('#grid .card').forEach((el, i) => { const l = menuVis[i], prog = l && this.progDe(l.url || ''); el.querySelector('.qe-on')?.remove();
-      const gs = prog ? L.filter(x => x.prog === prog).sort((a, b) => (b.eu ? 1 : 0) - (a.eu ? 1 : 0)) : []; if (!gs.length) return;
-      const n = gs.length <= 3 ? 3 : 2, cor = u => ['#ff6b9d','#ffb35c','#7bd88f','#19d3f0','#b9a6ff','#ffd166'][[...String(u)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6], mini = g => `<span class="qe-av" style="background:${cor(g.u)};color:#14151a" title="${esc(g.nome)}${g.eu ? ' (você)' : ''}">${g.foto ? `<img src="${esc(g.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<i>${esc((g.nome || '?')[0].toUpperCase())}</i></span>`;
-      const d = document.createElement('span'); d.className = 'qe-on'; d.title = 'Agora aqui: ' + gs.map(x => x.nome + (x.eu ? ' (você)' : '')).join(', ');
-      d.innerHTML = '<b></b>' + gs.slice(0, n).map(mini).join('') + (gs.length > n ? `<span class="qe-av qe-mais">+${gs.length - n}</span>` : ''); el.appendChild(d); });
-  },
+/* QUEM PODE VER CADA PROGRAMA (níveis de acesso, 05/11/2026): window.EstudioPerm.programa(id) do /estudio-conta.js; sem regras = true.
+   O id sai do caminho do link (/animador/ → 'animador'); link de fora ou sem caminho: o nome do botão em minúsculas, sem acento. */
+function permProg(id) { try { const f = window.EstudioPerm?.programa; return !f || !id || f(id) !== false; } catch { return true; } }
+function idProg(l) { try { const u = new URL(l.url || '', location.href); const p = u.origin === location.origin && u.pathname.split('/').filter(Boolean)[0]; if (p) return p.toLowerCase(); } catch { }
+  return String(l.nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+const podeVer = l => permProg(idProg(l));
+
+/* BUSCA DOS PROGRAMAS (05/11/2026): com mais de 6 programas aparece a caixa "Buscar programa" (nome e descrição, sem acento).
+   Só esconde os cartões (não muda a ordem nem os fixados); Enter abre o primeiro que sobrou; Esc limpa. */
+const buscaProgs = {
+  norm: t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(),
+  liga() { const q = $('#prog-q'); if (!q) return; q.addEventListener('input', () => this.aplica());
+    q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { e.stopPropagation(); q.value = ''; this.aplica(); }
+      if (e.key === 'Enter') { const c = $$('#grid .card:not([hidden])')[0]; if (c?.href) { e.preventDefault(); c.click(); } } }); },
+  aplica() { const box = $('#prog-busca'), q = $('#prog-q'), g = $('#grid'); if (!box || !q || !g) return;
+    box.hidden = menuVis.length <= 6; if (box.hidden) q.value = ''; if (!box.hidden) $('#progs-cab').hidden = false;
+    const t = this.norm(q.value.trim()); let n = 0;
+    $$('.card', g).forEach((el, i) => { const l = menuVis[i]; const ok = !t || this.norm((l?.nome || '') + ' ' + (l?.desc || '')).includes(t); el.hidden = !ok; if (ok) n++; });
+    let vz = $('#grid .busca-vazia'); if (t && !n) { if (!vz) { vz = document.createElement('div'); vz.className = 'empty busca-vazia'; g.appendChild(vz); } vz.textContent = 'Nenhum programa com esse nome.'; } else vz?.remove();
+    organizar.fimDaRolagem?.(); },
 };
 
-/* RECENTES NA NUVEM (redesign, 03/11/2026): as animações da nuvem da equipe mexidas por último (turma-ia GET /animacoes:
-   { id, nome, mod, por, em, tam, quem: { a: criou, e: [quem editou…] } }, códigos u… e nunca e-mail), com a miniatura
-   (animacoes/<id>/thumb.jpg) e a foto de quem editou por último (o /pessoa do porteiro, ou o que as Mensagens já guardaram).
-   ECONOMIA: a lista fica 15 min neste navegador (localStorage, vale para todas as abas): cada busca gasta LISTAS do KV, o limite
-   mais apertado do plano grátis (1000 por dia na conta) e a miniatura fica guardada neste navegador pela
-   data da última mudança (só baixa de novo quando a animação muda). "Só os meus" não fica guardado: volta para Todos no F5. */
+/* MEUS PROJETOS (pedido da dona, 05/11/2026; no lugar de "Recentes na nuvem" e "Ao vivo", que mostravam coisa a quem não devia):
+   os últimos projetos que ESTA pessoa criou, dizendo se estão na nuvem ou só neste computador. SEM miniatura (poupa pedidos).
+   - Na nuvem: a lista do turma-ia GET /animacoes?menu=1 (guardada 15 min no localStorage 'ep-recentes-v1', como antes), só as que
+     ela criou (quem.a = o código u… dela; sem quem.a, quem mandou).
+   - Neste computador: os projetos do Animador no IndexedDB 'animador-v2' (mesmo endereço, zero pedido). Cópia de uma animação de
+     outra pessoa, cópia "(anterior)" e projeto de outro autor não entram.
+   O id da animação é o mesmo nos dois lugares: na nuvem abre /animador/?nuvem=<id>, só aqui abre /animador/?projeto=<id>. */
 const recentes = {
-  N: 5, quem: 'todos', lista: null, eu: null,
+  N: 8, eu: null, nuvem: null, locais: null,
   async liga() {
     const box = $('#recentes'); if (!box) return;
-    $$('[data-rec]', box).forEach(b => b.onclick = () => { this.quem = b.dataset.rec; $$('[data-rec]', box).forEach(x => x.setAttribute('aria-pressed', String(x === b))); this.pinta(); });
-    try { const e = String(fb?.currentUser?.email || '').trim().toLowerCase(); // o mesmo código (u…) que o servidor dá para cada pessoa
-      if (e) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + e))); this.eu = 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } } catch { }
-    // botão ATUALIZAR (pedido do dono, 04/11/2026): busca de novo na nuvem, sem a lista guardada de 15 min e sem F5
+    if (!permProg('animador')) { box.hidden = true; return; } // por enquanto só o Animador guarda projetos que aparecem aqui
+    try { const e = String(fb?.currentUser?.email || '').trim().toLowerCase(); // o mesmo código (u…) que o servidor e o Animador dão para cada pessoa
+      if (e && !this.eu) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + e))); this.eu = 'u' + [...b].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } } catch { }
     const bt = $('#rec-atu'); if (bt) bt.onclick = async () => { if (bt.disabled) return; bt.disabled = true; bt.classList.add('girando');
-      try { if (this.quem === 'aovivo') { aoVivo.para(); aoVivo.mostra($('#rec')); } else await this.carrega(true); } finally { bt.disabled = false; bt.classList.remove('girando'); } };
+      try { await this.carrega(true); } finally { bt.disabled = false; bt.classList.remove('girando'); } };
     await this.carrega(false); box.hidden = false;
   },
-  async carrega(forcar) {
+  async daNuvem(forcar) {
     const K = 'ep-recentes-v1'; let j = null;
     if (!forcar) try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 15 * 6e4) j = c.j; } catch { }
-    if (!j) { try { j = await api('/animacoes?menu=1' + (forcar ? '&novo=1' : '')); localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { j = forcar ? { itens: this.lista || [] } : null; } }
-    this.lista = (j?.itens || []).filter(x => x.id).sort((a, b) => (b.mod || 0) - (a.mod || 0)).slice(0, 30);
-    this.pinta();
+    if (!j) { try { j = await api('/animacoes?menu=1' + (forcar ? '&novo=1' : '')); try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { } } catch { return this.nuvem; } }
+    return (j?.itens || []).filter(x => x?.id);
   },
-  editou(x) { const q = x.quem || {}, e = Array.isArray(q.e) ? q.e : []; const ult = e.slice().sort((a, b) => (b.t || 0) - (a.t || 0))[0] || q.a; return ult?.i ? { u: ult.i, nome: ult.n } : x.por ? { u: x.por, nome: '' } : null; },
-  meu(x) { const q = x.quem || {}; return !!this.eu && [x.por, q.a?.i, ...(q.e || []).map(p => p.i)].includes(this.eu); },
-  quando(t) { const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : m < 2880 ? 'ontem' : `há ${Math.round(m / 1440)} dias`; },
+  async doComputador() { // só abre o banco se ele já existe (não cria um banco vazio do Animador em quem nunca abriu o Animador)
+    try { const ns = await indexedDB.databases?.(); if (ns && !ns.some(d => d.name === 'animador-v2')) return []; } catch { }
+    try { const db = await new Promise((ok, no) => { const r = indexedDB.open('animador-v2'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); r.onupgradeneeded = () => { try { r.transaction.abort(); } catch { } }; });
+      if (!db.objectStoreNames.contains('projetos')) { db.close(); return []; }
+      const out = await new Promise(ok => { const L = [], c = db.transaction('projetos').objectStore('projetos').openCursor();
+        c.onsuccess = () => { const k = c.result; if (!k) return ok(L); const P = k.value || {}; L.push({ id: P.id, nome: P.nome, mod: +P.modificado || +P.criado || 0, autor: P.autor?.id || null, anterior: !!P.anterior }); k.continue(); };
+        c.onerror = () => ok(L); });
+      db.close(); return out;
+    } catch { return []; }
+  },
+  async carrega(forcar) {
+    const [n, l] = await Promise.all([this.daNuvem(forcar), this.locais && !forcar ? this.locais : this.doComputador()]);
+    this.nuvem = n || null; this.locais = l || []; this.pinta();
+  },
+  criador(x) { const a = x?.quem?.a?.i; return a || x?.por || null; },
+  lista() {
+    const eu = this.eu, nv = new Map((this.nuvem || []).map(x => [x.id, x])), out = new Map();
+    for (const x of nv.values()) if (eu && this.criador(x) === eu) out.set(x.id, { id: x.id, nome: x.nome, mod: +x.mod || Date.parse(x.em) || 0, onde: 'nuvem' });
+    for (const p of this.locais || []) { if (!p.id || p.anterior || out.has(p.id)) continue;
+      const c = nv.get(p.id); if (c) { if (eu && this.criador(c) === eu) out.set(p.id, { id: p.id, nome: c.nome || p.nome, mod: Math.max(+c.mod || 0, p.mod), onde: 'nuvem' }); continue; } // está na nuvem mas é de outra pessoa
+      if (p.autor && eu && p.autor !== eu) continue; // copiado de outra pessoa
+      out.set(p.id, { id: p.id, nome: p.nome, mod: p.mod, onde: this.nuvem ? 'local' : '?' }); }
+    return [...out.values()].sort((a, b) => b.mod - a.mod).slice(0, this.N);
+  },
+  quando(t) { if (!t) return ''; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : m < 2880 ? 'ontem' : m < 43200 ? `há ${Math.round(m / 1440)} dias` : new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); },
+  IC: { nuvem: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg>',
+    local: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg>' },
   pinta() {
-    const el = $('#rec'); if (!el) return;
-    $('#rec-tit').textContent = this.quem === 'aovivo' ? 'Ao vivo agora' : 'Recentes na nuvem';
-    if (this.quem === 'aovivo') return aoVivo.mostra(el); aoVivo.para(); if (!this.lista) return;
-    const L = this.lista.filter(x => this.quem === 'todos' || this.meu(x)).slice(0, this.N);
-    if (!L.length) { el.innerHTML = `<div class="vz">${this.quem === 'meus' ? 'Você ainda não mexeu em nenhuma animação da nuvem.' : 'Nada na nuvem ainda.'}</div>`; return; }
-    const cor = u => ['#ff6b9d', '#ffb35c', '#7bd88f', '#19d3f0', '#b9a6ff', '#ffd166'][[...String(u)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
-    el.innerHTML = L.map(x => { const p = this.editou(x), eu = p?.u === this.eu, nome = eu ? 'Você' : (p?.nome || '').split(' ')[0] || 'Alguém';
-      return `<a href="/animador/?nuvem=${encodeURIComponent(x.id)}" title="${esc(x.nome || 'Animação')} · abrir no Animador"><span class="th carregando" data-th="${esc(x.id)}" data-mod="${+x.mod || 0}"><span class="anel11" role="progressbar" aria-label="Carregando a miniatura"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span><span class="pg"><span data-estudio-icone="an"></span></span>${p ? `<span class="quem" data-u="${esc(p.u)}" style="background:${cor(p.u)}" title="Editado por último por ${esc(eu ? 'você' : p.nome || 'alguém da equipe')}">${esc((p.nome || '?')[0].toUpperCase())}</span>` : ''}</span>
-        <span class="rt"><b>${esc(x.nome || 'Animação sem nome')}</b><small>${esc(nome)} editou ${this.quando(+x.mod || Date.parse(x.em) || Date.now())}</small></span></a>`; }).join('');
+    const el = $('#rec'); if (!el) return; const L = this.lista();
+    if (!L.length) { el.innerHTML = `<li class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : 'Você ainda não criou nenhum projeto. Os que você criar no Animador aparecem aqui.'}</li>`; return; }
+    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', href = nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
+      const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Só neste computador</span>` : `<span class="onde lc">${this.IC.local}Neste computador</span>`;
+      return `<li><a href="${href}" title="Abrir no Animador"><span class="pg" data-estudio-icone="an"></span><span class="rt"><b>${esc(x.nome || 'Animação sem nome')}</b><small>${esc(this.quando(x.mod))}</small></span>${onde}</a></li>`; }).join('');
     try { window.EstudioIcones?.pinta?.(el); } catch { }
-    $$('[data-th]', el).forEach(t => this.miniatura(t)); $$('.quem[data-u]', el).forEach(q => this.foto(q));
-  },
-  // miniatura: guardada neste navegador por id + data da mudança (localStorage 'ep-recentes-th', no máximo 12); sem ela, fica a cor do Animador
-  async miniatura(t) {
-    const id = t.dataset.th, mod = +t.dataset.mod || 0, K = 'ep-recentes-th'; let mem = {}; try { mem = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch { }
-    const poe = src => { t.style.backgroundImage = src ? `url("${src}")` : 'linear-gradient(160deg,#062832,#0d0d10)'; t.classList.remove('carregando'); };
-    if (mem[id]?.m === mod && mem[id].d) return poe(mem[id].d);
-    const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 10000); // internet travada: em 10 s desiste (o anel não fica girando para sempre)
-    try { const r = await fetch(SRV + '/animacoes/arquivo?k=' + encodeURIComponent('animacoes/' + id + '/thumb.jpg'), { cache: 'no-store', signal: ac.signal, headers: { authorization: 'Bearer ' + await token() } });
-      if (!r.ok) throw 0; const b = await r.blob(); if (b.size > 400e3) throw 0;
-      const d = await new Promise((ok, no) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = no; f.readAsDataURL(b); });
-      poe(d); mem[id] = { m: mod, d, t: Date.now() };
-      const ks = Object.keys(mem).sort((a, b) => (mem[b].t || 0) - (mem[a].t || 0)); for (const k of ks.slice(12)) delete mem[k];
-      try { localStorage.setItem(K, JSON.stringify(mem)); } catch { try { localStorage.removeItem(K); } catch { } }
-    } catch { poe(null); } finally { clearTimeout(tm); }
-  },
-  // foto de quem editou: primeiro o que as Mensagens já guardaram neste navegador (ep-quem-v1, sem pedido); senão /pessoa (o porteiro guarda 2 min)
-  async foto(el) {
-    const u = el.dataset.u; let q = null; try { q = JSON.parse(localStorage.getItem('ep-quem-v1') || '{}')?.[u]?.q || null; } catch { }
-    if (!q) { this.pessoas ||= new Map(); if (!this.pessoas.has(u)) this.pessoas.set(u, fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null)); q = await this.pessoas.get(u); }
-    if (q?.nome && !el.title.includes('você')) { el.title = 'Editado por último por ' + q.nome; const s = el.closest('a')?.querySelector('small'); if (s && /^Alguém /.test(s.textContent)) s.textContent = s.textContent.replace(/^Alguém/, q.nome.split(' ')[0]); }
-    if (q?.foto) el.innerHTML = `<img src="${esc(q.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`;
   },
 };
 

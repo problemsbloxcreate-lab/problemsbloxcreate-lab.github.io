@@ -747,7 +747,7 @@ async function mensagens(req, env, url) {
     for (const p of lista) {
       if (p.u === u) continue;
       const tirado = await foiTirado(env, p.e); if (tirado && +tirado > (p.v || 0)) continue; // tirado pela tela ADM e não entrou de novo
-      pessoas.push({ u: p.u, on: on[p.e]?.prog || null, visto: p.v || 0 });
+      pessoas.push({ u: p.u, on: on[p.e]?.prog ? 1 : null, visto: p.v || 0 }); // só "online": o programa que a pessoa usa não vai mais (pedido da dona, 05/11/2026)
     }
     out.pessoas = pessoas;
   }
@@ -1062,6 +1062,7 @@ export default {
     if (caminho === '/mensagens' || caminho === '/mensagens/anexo' || caminho === '/mensagens/ao-vivo') return mensagens(req, env, url);
     if (caminho === '/online') { // MENU: quem está em cada programa agora (foto + nome + código, NUNCA o e-mail); só para quem está logado
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);
+      if (!(await admsDe(env)).has(await codigoU(s.e))) return json({ pessoas: [] }, 200, { 'cache-control': 'no-store' }); // 05/11/2026: o menu não mostra mais quem está em cada programa; só ADM recebe
       const on = env.PRESENCA ? await presenca(env).catch(() => ({})) : {}, eu = s.e.toLowerCase(), pessoas = [];
       for (const [em, v] of Object.entries(on)) { if (!v?.prog || v.prog === 'MENU' || v.prog === 'ADM') continue;
         let p = {}; const c = PESSOA_MEM.get(em); if (c && Date.now() - c.t < 120e3) p = c.p; else { p = await lePerfil(env, em); PESSOA_MEM.set(em, { p, t: Date.now() }); if (PESSOA_MEM.size > 500) PESSOA_MEM.clear(); }
