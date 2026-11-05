@@ -673,7 +673,11 @@ html.no-menu #top .ep-conta-nuvem,html.no-menu #top .ep-conta-espaco{display:non
 #menu .card .fixar{border-radius:0;left:6px;top:6px;width:28px;height:28px}
 #menu .grid.org .card{animation:epTreme .26s ease-in-out infinite alternate;cursor:grab}
 #menu .grid.org .card:nth-child(2n){animation-delay:-.13s}
-#menu .grid .card.arrastando{animation:none;z-index:20}
+#menu .grid .card.arrastando{animation:none!important;transition:none!important;z-index:20;pointer-events:none;cursor:grabbing;box-shadow:0 24px 60px rgba(0,20,50,.55),inset 0 0 0 3px rgba(255,255,255,.7);background:var(--mn-bloco2)}
+/* organizando: os blocos não deslizam nem inclinam (o arrastado segue o cursor na hora; os outros trocam de lugar sem atraso) */
+#menu .grid.org .card{transition:none}#menu .grid.org .card:hover{transform:none;box-shadow:inset 0 0 0 3px rgba(255,255,255,.4)}
+#menu .grid.org .card .subprog{display:none}
+#menu .grid.org{touch-action:none}#menu .grid .card{-webkit-user-drag:none;user-select:none}
 @keyframes mnGira{from{opacity:0;transform:perspective(900px) translateX(60px) rotateY(-70deg)}}
 @keyframes mnSobe{from{opacity:0;transform:translateY(-8px)}}
 /* partes de dentro (Ateliê, Cenários): aparecem DO LADO do bloco com o mouse em cima */
@@ -1539,6 +1543,7 @@ const organizar = {
     $('#grid').addEventListener('click', e => { if (this.on && !e.target.closest('.fixar')) { e.preventDefault(); e.stopPropagation(); } }, true);
     // arrastar (mouse e dedo): o cartão segue o ponteiro; passando sobre outro, troca de lugar; solto no Dock, fixa
     let arr = null;
+    $('#grid').addEventListener('dragstart', e => e.preventDefault()); // o bloco é um link: sem o "arrastar link" do navegador por cima do nosso
     $('#grid').addEventListener('pointerdown', e => { const el = e.target.closest('.card'); if (!this.on || !el || e.target.closest('.fixar') || e.button > 0) return;
       e.preventDefault(); arr = { el, x0: e.clientX, y0: e.clientY, foi: false }; el.setPointerCapture?.(e.pointerId); });
     $('#grid').addEventListener('pointermove', e => { if (!arr) return; const dx = e.clientX - arr.x0, dy = e.clientY - arr.y0;
