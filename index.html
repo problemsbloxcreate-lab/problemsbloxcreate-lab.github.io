@@ -1130,8 +1130,12 @@ function fundoTela(f) {
 }
 
 /* card de um link (usado no menu e na prévia da ADM) */
+/* NOMES PADRÃO DOS PROGRAMAS (pedido da dona, 05/11/2026): no bloco do menu, o nome sai do ENDEREÇO do programa, com estas letras.
+   Programa que não está aqui usa o nome da ADM › Botões. (O nome salvo continua sendo a chave da ordem e dos fixados de cada pessoa.) */
+const NOMES_PADRAO = { shorts: 'Shorts', editor: 'Editar', animador: 'Animador', preparativos: 'Preparativos', publicacoes: 'Publicações' };
+function nomeMenu(l) { if (l?.parte) return l.nome; try { const u = new URL(l?.url || '', location.href); if (u.origin === location.origin && !u.search) { const k = u.pathname.split('/').filter(Boolean)[0]; if (NOMES_PADRAO[k]) return NOMES_PADRAO[k]; } } catch { } return l?.nome || 'Sem nome'; }
 function cardHtml(l, tag) {
-  return `${tag}<span class="bg"></span><span class="ic"></span><span class="txt"><b>${esc(l.nome || 'Sem nome')}</b><small>${esc(l.desc || '')}</small></span>`;
+  return `${tag}<span class="bg"></span><span class="ic"></span><span class="txt"><b>${esc(nomeMenu(l))}</b><small>${esc(l.desc || '')}</small></span>`;
 }
 // ícone pronto (SVG da lista) ou ícone próprio (SVG/PNG enviado). O próprio entra como <img>: assim um SVG
 // enviado nunca roda código na página.
@@ -1566,7 +1570,7 @@ const buscaProgs = {
       if (document.activeElement?.closest?.('input,textarea,select,[contenteditable]') || document.querySelector('.ep-msgs,.ep-esp,.ep-cal,.ep-pg,.ep-admj,.conta,html.adm-sobre')) return;
       if ($('#prog-busca').hidden) this.mostra(true); }); },
   aplica() { const q = $('#prog-q'); if (!q) return; const t = this.norm(q.value.trim());
-    $$('#grid .card, #fixos .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); el.classList.toggle('apaga', !!t && !this.norm((l?.nome || '') + ' ' + (l?.desc || '') + (/animador/i.test(l?.url || '') ? ' atelie cenarios' : '')).includes(t)); });
+    $$('#grid .card, #fixos .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); el.classList.toggle('apaga', !!t && !this.norm(nomeMenu(l) + ' ' + (l?.nome || '') + ' ' + (l?.desc || '') + (/animador/i.test(l?.url || '') ? ' atelie cenarios' : '')).includes(t)); });
     $$('#rec .mp').forEach(el => el.classList.toggle('apaga', !!t && !this.norm(el.dataset.busca).includes(t))); },
 };
 // FIXADOS: os programas que a pessoa fixou pelo "Organizar" (localStorage 'ep-dock-fixos', só neste navegador) ficam num grupo no topo
@@ -1788,7 +1792,7 @@ function renderLinks() {
       </div>`;
     const card = $('.card', row); montarCard(card, l); if (l.invisivel) card.style.opacity = .4;
     const soon = () => { const s = !l.url || l.embreve; card.classList.toggle('soon', s); let t = $('.tag', card); if (s && !t) card.insertAdjacentHTML('afterbegin', '<span class="tag">em breve</span>'); if (!s && t) t.remove(); }; soon();
-    const refresh = () => { $('b', card).textContent = l.nome || 'Sem nome'; $('small', card).textContent = l.desc || ''; pintarIcone(card, l); card.style.setProperty('--esc', l.escurecer ?? .45); soon(); card.dataset.modo = l.fundo ? (MODOS[l.modo] ? l.modo : 'sempre') : 'sempre'; const m = $('.mfill', card); if (m && l.fundo) posicionar(m, l.fundo, blurDoCard(l)); const z = $('[data-k=zoom]', row); if (z && l.fundo) { z.value = l.fundo.zoom; z.nextElementSibling.textContent = vez(l.fundo.zoom); } };
+    const refresh = () => { $('b', card).textContent = nomeMenu(l); $('small', card).textContent = l.desc || ''; pintarIcone(card, l); card.style.setProperty('--esc', l.escurecer ?? .45); soon(); card.dataset.modo = l.fundo ? (MODOS[l.modo] ? l.modo : 'sempre') : 'sempre'; const m = $('.mfill', card); if (m && l.fundo) posicionar(m, l.fundo, blurDoCard(l)); const z = $('[data-k=zoom]', row); if (z && l.fundo) { z.value = l.fundo.zoom; z.nextElementSibling.textContent = vez(l.fundo.zoom); } };
     arrastavel(card, () => l.fundo, fim => { refresh(); if (fim) mudou(); });
     const campoUrl = $('[data-k=url]', row); campoUrl.addEventListener('blur', () => { const n = normUrl(campoUrl.value); if (n !== campoUrl.value.trim()) { campoUrl.value = n; toast('Completei o endereço com https://'); } });
     $$('[data-k]', row).forEach(inp => inp.addEventListener('input', () => {
