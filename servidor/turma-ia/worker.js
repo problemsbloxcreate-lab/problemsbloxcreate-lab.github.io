@@ -846,7 +846,7 @@ export default {
       if (typeof pode === 'function' && !(await pode(env, login.email, 'preparativos.ideias'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode mudar as ideias. Peça para um ADM liberar.' } }, 403, cors);
       let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
       if (req.method === 'POST' && b?.acao === 'atualizar') {
-        if (Array.isArray(b.canais)) { const c = [...new Set(b.canais.map(x => String(x || '').trim()).map(x => x.startsWith('@') ? x : '@' + x).filter(x => /^@[\w.\-]{3,40}$/.test(x)))].slice(0, 8);
+        if (Array.isArray(b.canais)) { const c = [...new Set(b.canais.map(x => String(x || '').trim()).map(x => x.startsWith('@') ? x : '@' + x).filter(x => /^@[\w.\-]{3,40}$/.test(x)))].slice(0, 20); // até 20 canais (Preparativos › Ideias › Canais)
           if (!c.length) return json({ error: { message: 'Ponha pelo menos um canal (@nome).' } }, 400, cors);
           const ant = await le('ideias/canais.json'); if (JSON.stringify(ant?.canais || []) !== JSON.stringify(c)) await grava('ideias/canais.json', { canais: c }); }
         const R4 = reservaDe(env, auth0); if (!R4) return json({ error: { message: 'O servidor não está ligado ao robô que analisa os canais.' } }, 503, cors);
@@ -998,7 +998,7 @@ export default {
       const kP = id => `preparativos/${id}/prep.json`;
       const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
       const gravaP = async (P, m0) => { const mod = Date.now(); P.mod = mod; const t = JSON.stringify(P), fs = (P.partes || []).flatMap(p => p.falas || []);
-        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), uso: [...new Set((Array.isArray(P.usadoPor) ? P.usadoPor : []).map(u => u.programa).filter(x => DEST.includes(x)))], por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return mod; };
       const leCores = async () => { try { return JSON.parse((await env.EQUIPE.get('preparativos/cores.json')) || '{}') || {}; } catch { return {}; } };
       const limpaCores = o => { const out = {}; for (const [a, b] of Object.entries(o && typeof o === 'object' ? o : {}).slice(0, 200)) { const n = String(a).normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR').slice(0, 40); if (n && /^#[0-9a-f]{6}$/i.test(String(b))) out[n] = String(b).toLowerCase(); } return out; };
@@ -1024,7 +1024,7 @@ export default {
       const coresDe = async p => { const c = await leCores(); for (const [k, e] of Object.entries(p || {})) if (e.cor) c[k] = e.cor; return c; };
       const juntaCores = async novas => coresDe(await juntaPers(Object.fromEntries(Object.entries(novas || {}).map(([k, c]) => [k, { cor: c }]))));
       if (p0 === '/preparativos') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
-        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [] })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
+        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [], uso: Array.isArray(d.uso) ? d.uso : [] })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
         return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (p0 === '/preparativos/acao') {
         if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
