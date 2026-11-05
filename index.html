@@ -681,14 +681,13 @@ body{background:#5ea9e6}
 /* meus projetos: nuvem = azul (céu), só neste computador = grafite */
 #menu .meus{--cols:4}
 #menu .recentes{width:auto;margin-top:0} /* fica do lado dos Programas (a regra antiga ocupava a largura toda) */
-#menu .mp{grid-column:span 2;position:relative;display:block;padding:10px 12px;color:#fff;text-decoration:none;background:#40505f;animation:mnGira .6s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s,opacity .3s,filter .3s}
+#menu .mp{grid-column:span 2;border-radius:0;border:0;gap:0;align-items:initial; /* bloco reto, sem cantos arredondados */position:relative;display:block;padding:10px 12px;color:#fff;text-decoration:none;background:#40505f;animation:mnGira .6s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s,opacity .3s,filter .3s}
 #menu .mp.nv{background:#1d6fd6}
 #menu .mp:hover,#menu .mp:focus-visible{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55);outline:none}
 #menu .mp b{display:-webkit-box!important;-webkit-line-clamp:2;white-space:normal;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.25}
 #menu .mp small{display:block;margin-top:3px;font-size:12px;color:rgba(255,255,255,.8)}
 #menu .mp .onde{position:absolute;left:10px;bottom:9px;display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.85);padding:0;background:none}
-#menu .mp .pg{position:absolute;right:10px;bottom:8px;width:26px;height:26px}
-#menu .mp .pg rect,#menu .mp .pg img{rx:0;ry:0;border-radius:0} /* ícone sem cantos arredondados (pedido da dona) */#menu .mp .pg svg,#menu .mp .pg img,#menu .mp .pg>span{display:block;width:26px;height:26px}
+#menu .mp .pg{position:absolute;right:10px;bottom:8px;width:26px;height:26px}#menu .mp .pg svg,#menu .mp .pg img,#menu .mp .pg>span{display:block;width:26px;height:26px}
 #menu .meus .vz{grid-column:1/-1;padding:6px 0;color:rgba(255,255,255,.9);font-size:13px;text-shadow:0 1px 8px rgba(0,30,70,.4)}
 /* grupo Estúdio */
 #menu .et{position:relative;border:0;padding:0;cursor:pointer;color:#fff;text-align:left;background:var(--c);font:inherit;overflow:hidden;animation:mnGira .6s .25s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s}
