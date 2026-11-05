@@ -1021,6 +1021,9 @@ function perfisCom(kv) {
         LISTAS_P.set(pre, { t: Date.now(), keys }); return { keys, list_complete: true }; }
       catch (e) { if (c) return { keys: c.keys, list_complete: true }; throw e; } } };
 }
+// MEDIDA: o TIPO do pedido (1º e 2º pedaço do caminho sem números/ids, extensão, se tem carimbo _ev, método e status) — nada de e-mail nem conteúdo
+function tipoDoPedido(req, r) { const u = new URL(req.url), ps = u.pathname.split("/").filter(Boolean).map(x => /\d{3,}|^[a-z0-9]{16,}$|^u[0-9a-f]{16}$/i.test(x) ? "#" : x.slice(0, 30)), ext = (u.pathname.match(/\.([a-z0-9]{1,5})$/i) || [])[1] || "";
+  return [ps[0] || "/", ps.length > 2 ? ps[1] : (ps[1] && !ext ? ps[1] : ""), ext, u.searchParams.has("_ev") ? "ev" : "", req.method, String(r?.status || 0), (req.headers.get("upgrade") || "").slice(0, 10)]; }
 /* PORTA RESERVA (decisão do dono, 02/11/2026): este mesmo porteiro roda numa conta reserva, com outro endereço, para quando a conta
    principal passa dos pedidos do dia (erro 1027). Lá, TROCA_DE/TROCA_PARA trocam nas páginas e scripts os endereços da principal
    (o menu e o turma-ia) pelos da porta reserva, para tudo falar com ela. Fora da porta reserva, nada muda. */
@@ -1033,7 +1036,7 @@ async function comTrocasP(env, r) {
 }
 
 export default {
-  async fetch(req, env, ctx) { const r = await this.fetch0(req, env, ctx); return env.TROCA_DE ? comTrocasP(env, r) : r; },
+  async fetch(req, env, ctx) { const r = await this.fetch0(req, env, ctx); try { if (env.MEDIDA && Math.random() < 0.2) env.MEDIDA.writeDataPoint({ blobs: tipoDoPedido(req, r), doubles: [1], indexes: ["p"] }); } catch { } return env.TROCA_DE ? comTrocasP(env, r) : r; },
   async fetch0(req, env, ctx) {
     if (env.PERFIS && !env.PERFIS._comLista) env = { ...env, PERFIS: perfisCom(env.PERFIS) }; try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
   async atende(req, env) {
