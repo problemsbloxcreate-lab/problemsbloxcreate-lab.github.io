@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PREPARATIVOS · Estúdio Problems</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">
+<script>
+// o Preparativos mora no endereço único do Estúdio Problems; quem abrir a cópia do GitHub Pages vai para lá
+if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/preparativos/' + location.pathname.replace(/^\/preparativos\/?/, '') + location.search + location.hash);
+</script>
+<!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
+<script src="/estudio-login.js"></script>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="./" title="Voltar ao início"><span class="ic-prog" data-estudio-icone="pr" aria-hidden="true"></span><div><b>PREPARATIVOS</b><small>Estúdio Problems</small></div></a>
+  <nav class="abas" data-abas>
+    <button data-aba="roteiros" class="on">Roteiros</button>
+    <button data-aba="ideias">Ideias</button>
+    <button data-aba="cores">Cores das legendas</button>
+  </nav>
+  <div class="esp"></div>
+  <span data-estudio-conta></span>
+</header>
+<main id="tela"></main>
+<div id="avisos" aria-live="polite"></div>
+<script src="js/config.js"></script>
+<script src="js/roteiro.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/app.js"></script>
+<script src="/estudio-conta.js" defer></script>
+</body>
+</html>
