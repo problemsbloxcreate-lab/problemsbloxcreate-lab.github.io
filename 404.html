@@ -56,6 +56,7 @@ svg{display:block;flex:none}
 .view:not([hidden]){animation:vEntra .35s ease both}@keyframes vEntra{from{opacity:0}}
 /* transições com fade: o login some, e ao abrir um programa a tela escurece até a tela de carregamento dele (mesmo fundo) */
 .login{transition:opacity .3s ease}.login.saindo{opacity:0;pointer-events:none}
+#saida{display:flex;align-items:center;justify-content:center;color:#e8e9ec;font:14px/1.5 "Segoe UI",system-ui,sans-serif}#saida .sd-c{display:grid;justify-items:center;gap:16px;opacity:0;transition:opacity .2s ease .25s}#saida.on .sd-c{opacity:1}#saida .sd-c small{display:block;font-size:12px;color:#9aa0ab;text-align:center;margin-top:2px}#saida .sd-sp{position:relative;width:40px;height:40px}#saida .sd-sp i{position:absolute;inset:0;opacity:0;animation:sdGira 4.4s infinite}#saida .sd-sp i::after{content:"";position:absolute;top:0;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:#fff}#saida .sd-sp i:nth-child(2){animation-delay:.22s}#saida .sd-sp i:nth-child(3){animation-delay:.44s}#saida .sd-sp i:nth-child(4){animation-delay:.66s}#saida .sd-sp i:nth-child(5){animation-delay:.88s}@keyframes sdGira{0%{transform:rotate(180deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(300deg);animation-timing-function:linear}30%{transform:rotate(470deg);animation-timing-function:ease-in-out}39%{transform:rotate(645deg);animation-timing-function:linear}70%{transform:rotate(770deg);animation-timing-function:ease-out}75%{transform:rotate(900deg);opacity:1}76%,100%{transform:rotate(900deg);opacity:0}}
 #saida{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);opacity:0;pointer-events:none;transition:opacity .16s ease-out}#saida.on{opacity:1;pointer-events:auto}
 @media (prefers-reduced-motion:reduce){.view:not([hidden]){animation:none}.login,#saida{transition:none}}
 
@@ -1457,8 +1458,11 @@ function abrirConta() {
 
 /* ======================= telas ======================= */
 // abrir um programa: a tela escurece com fade e só então troca de página (a tela de carregamento do programa tem o mesmo fundo)
+// A TELA JÁ DIZ O QUE ESTÁ ABRINDO (pedido da dona, 05/11/2026): antes ficava só o escuro, parecendo que o clique não funcionou
+const NOMES_PROG = { animador: 'o Animador', shorts: 'os Shorts', editor: 'o Editor', modelador: 'o Modelador', preparativos: 'os Preparativos', publicacoes: 'as Publicações', jester: 'o Jester Dreams' };
 function irCom(url, trocar) {
-  const s = $('#saida'); s.classList.add('on');
+  const s = $('#saida'); let nm = ''; try { const u = new URL(url, location.href), p = u.pathname.split('/')[1]; nm = u.searchParams.get('atelie') ? 'o Ateliê' : NOMES_PROG[p] || ''; } catch { }
+  s.innerHTML = '<div class="sd-c" role="status"><div class="sd-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div>' + (nm ? 'Abrindo ' + nm + '…' : 'Abrindo…') + '<small>Buscando a versão mais nova</small></div></div>'; s.classList.add('on');
   setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
 }
 // abrir um programa: na mesma aba, com o fade de sempre (o Dock só tem atalhos; não guarda as abas abertas)
