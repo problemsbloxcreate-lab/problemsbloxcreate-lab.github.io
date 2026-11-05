@@ -870,7 +870,8 @@ async function passeLocal(req, env, url) {
   if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405);
   if ((req.headers.get('sec-fetch-site') || 'same-origin') !== 'same-origin') return json({ error: { message: 'Pedido de outro site.' } }, 403);
   const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
-  const ps = await passe(env, s.e, LOCAL_HOST, s.a ? { a: 1 } : {}); if (!ps) return json({ error: { message: 'O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.' } }, 503);
+  let g = ''; try { g = new URL(req.headers.get('referer') || '').pathname.split('/').filter(Boolean)[0] || ''; } catch { } g = /^[a-z0-9-]{1,20}$/i.test(g) ? g.toLowerCase() : ''; // o programa que pediu (ex.: editor)
+  const ps = await passe(env, s.e, LOCAL_HOST, { ...(s.a ? { a: 1 } : {}), ...(g ? { g } : {}) }); if (!ps) return json({ error: { message: 'O porteiro está sem a ASSINATURA. Rode a Action de publicação de novo.' } }, 503);
   return json({ passe: ps });
 }
 async function novoDispositivo(req, env) {
@@ -885,7 +886,8 @@ async function novoDispositivo(req, env) {
   const tirado = await foiTirado(env, email); if (tirado && +tirado > (p.x - 120) * 1000) return json({ error: { message: 'Esta conta não tem mais acesso ao Estúdio Problems.' } }, 401);
   const token = b64u(crypto.getRandomValues(new Uint8Array(32))), h = await sha256('dispositivo:' + token), id = h.slice(0, 16);
   const nome_pc = String(b.nome_pc || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 60);
-  await env.PERFIS.put('dispositivo:' + id, JSON.stringify({ h, email, criado: Date.now(), ...(nome_pc ? { nome_pc } : {}), ...(p.a ? { adm: true } : {}) }));
+  const versao = String(b.versao || b.version || '').replace(/[^\w.\- ]+/g, '').slice(0, 20), prog = /^[a-z0-9-]{1,20}$/.test(p.g || '') ? p.g : '';
+  await env.PERFIS.put('dispositivo:' + id, JSON.stringify({ h, email, criado: Date.now(), ...(nome_pc ? { nome_pc } : {}), ...(p.a ? { adm: true } : {}), ...(prog ? { prog } : {}), ...(versao ? { versao } : {}) }));
   return json({ id, token });
 }
 // ADM › Dispositivos: lista (e-mail censurado, nome e foto da conta) e revogar
@@ -905,7 +907,7 @@ async function dispositivos(req, env, url) {
     for (const x of l.keys) { const d = await env.PERFIS.get(x.name, { type: 'json' }).catch(() => null); if (!d) continue;
       const p = await lePerfil(env, d.email);
       itens.push({ id: x.name.slice(12), mascara: mascara(d.email), nome: p.nome || p.google?.nome || '', foto: p.fotoV ? '/pessoa/foto?u=' + await codigoU(d.email) + '&v=' + p.fotoV : (p.google?.foto || null),
-        nome_pc: d.nome_pc || '', criado: d.criado, visto: d.visto || null, adm: !!d.adm, voce: d.email === s.e.toLowerCase() }); }
+        nome_pc: d.nome_pc || '', criado: d.criado, visto: d.visto || null, adm: !!d.adm, voce: d.email === s.e.toLowerCase(), prog: d.prog || '', versao: d.versao || '' }); }
     cur = l.list_complete ? null : l.cursor; } while (cur);
   return json({ itens: itens.sort((a, b) => b.criado - a.criado) });
 }

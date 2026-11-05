@@ -769,6 +769,10 @@ html.adm-sobre #adm{inset:0;background:rgba(5,20,45,.35)}
 .conta .ct-pe{border-top:1px solid rgba(255,255,255,.12)!important}
 html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{animation:mnEncolhe .22s ease both}
 @keyframes mnSome{to{opacity:0}}@keyframes mnEncolhe{to{transform:scale(.97)}}
+
+/* ícone pequeno do programa "pai" ao lado do ícone (Ateliê e Cenários são partes do Animador) */
+#menu .card .parte{position:absolute;left:calc(50% + 24px);top:calc(42% + 6px);width:24px;height:24px;z-index:2;filter:drop-shadow(0 1px 4px rgba(0,0,0,.45))}
+#menu .card .parte svg,#menu .card .parte img,#menu .card .parte>span{display:block;width:24px;height:24px}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1099,9 +1103,11 @@ const tipoDe = (mime, url) => /^video\//.test(mime || '') || /\.(mp4|webm|mov|m4
 /* fundo da tela: um só, slideshow (troca a cada X s; vídeo troca quando termina) ou aleatório (um a cada visita) */
 let bgTimer = null;
 function fundoTela(f) {
-  const box = $('#pagebg'); clearTimeout(bgTimer); box.innerHTML = '';
+  const box = $('#pagebg'), chave = JSON.stringify(f || null);
+  if (chave === fundoTela.k && box.querySelector('.layer')) return; // o mesmo fundo de novo (outra parte do menu chamou): não recomeça o slideshow do começo
+  fundoTela.k = chave; clearTimeout(bgTimer); box.innerHTML = '';
   const itens = (f?.itens || []).filter(m => m?.src);
-  if (!f || f.modo === 'nenhum' || !itens.length) { box.hidden = true; return; }
+  if (!f || f.modo === 'nenhum' || !itens.length) { box.hidden = true; fundoTela.k = null; return; }
   box.hidden = false; box.style.setProperty('--esc', f.escurecer ?? .55);
   if (f.modo !== 'slideshow' || itens.length === 1) {
     const m = f.modo === 'aleatorio' ? itens[Math.floor(Math.random() * itens.length)] : itens[0];
@@ -1111,8 +1117,10 @@ function fundoTela(f) {
   const mostra = () => {
     const m = itens[i % itens.length], l = document.createElement('div'); l.className = 'layer';
     const el = midiaEl(m, { loop: false }); l.appendChild(el); box.appendChild(l);
-    setTimeout(() => l.classList.add('on'), 40); // (antes: dois requestAnimationFrame — com a aba sem desenhar, a foto nova nunca aparecia)
-    $$('.layer', box).slice(0, -1).forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), 1300); });
+    // a foto nova entra só depois de CARREGAR (antes podia aparecer o fundo vazio ou ficar a mesma); a antiga sai junto
+    const velhas = $$('.layer', box).slice(0, -1); let foi = false;
+    const entra = () => { if (foi) return; foi = true; l.classList.add('on'); velhas.forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), 1300); }); };
+    if (m.tipo === 'video') setTimeout(entra, 40); else { el.addEventListener('load', () => setTimeout(entra, 20), { once: true }); el.addEventListener('error', entra, { once: true }); setTimeout(entra, 4000); }
     i++; clearTimeout(bgTimer);
     const prox = () => { clearTimeout(bgTimer); mostra(); };
     if (m.tipo === 'video') { el.addEventListener('ended', prox, { once: true }); el.addEventListener('error', () => { clearTimeout(bgTimer); bgTimer = setTimeout(prox, 1500); }, { once: true }); bgTimer = setTimeout(prox, 120e3); }
@@ -1132,7 +1140,7 @@ function icNovoDe(l) { const EI = window.EstudioIcones; if (!EI) return null; co
   return EI.IDS.find(id => EI.ehNovo(id) && (c[id].botao === l.nome || (c[id].caminho && cm && cm.startsWith(c[id].caminho)))) || null; }
 function pintarIcone(el, l) {
   const box = $('.ic', el); box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
-  const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone] || icNovoDe(l)); box.classList.toggle('prog', !!prog); box.classList.remove('nobox'); // o cartão de um programa SEMPRE usa o ícone dele (muda em ADM › Ícones) // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
+  const prog = window.EstudioIcones && (l.prog || progDaUrl(l.url, l.nome) || PROG_IC[l.icone] || icNovoDe(l)); box.classList.toggle('prog', !!prog); box.classList.remove('nobox'); // o cartão de um programa SEMPRE usa o ícone dele (muda em ADM › Ícones) // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
   if (prog) { if (box.dataset.k !== 'ep:' + prog) { box.innerHTML = `<span data-estudio-icone="${prog}"></span>`; box.dataset.k = 'ep:' + prog; } return; }
   box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
   if (!l.iconeImg) { if (box.dataset.k !== 'p:' + l.icone) { box.innerHTML = prog ? `<span data-estudio-icone="${prog}"></span>` : (ICONES[l.icone] || ICONES.link)[1]; box.dataset.k = 'p:' + l.icone; } return; }
@@ -1447,6 +1455,12 @@ function subProgs(el, l) {
     it.addEventListener('click', vai); it.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') vai(e); }); });
   el.appendChild(box); try { window.EstudioIcones?.pinta?.(box); } catch { }
 }
+// PARTES DO ANIMADOR (pedido da dona, 05/11/2026): Ateliê e Cenários são blocos próprios em Programas, logo depois do Animador,
+// com o ícone pequeno do Animador do lado (antes apareciam só com o mouse em cima). Seguem o EstudioPerm (animador.atelie / animador.cenarios).
+function comPartes(lista) { const out = [];
+  for (const l of lista) { out.push(l); if (!l.url || l.embreve || progDaUrl(l.url, l.nome) !== 'an') continue;
+    for (const [id, nome, url, f] of SUBPROGS.an) if (permProg(f) && window.EstudioPerm?.pode?.('animador.' + f) !== false) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do Animador', url, prog: id, parte: 'an' }); }
+  return out; }
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
 const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
 function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
@@ -1462,12 +1476,12 @@ function showMenu() {
 }
 function pintaGrid() {
   const g = $('#grid'); if (!g || !DADOS) return; g.innerHTML = '';
-  menuVis = ordenaLinks(DADOS.links.filter(l => !l.invisivel && podeVer(l))); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
+  menuVis = ordenaLinks(comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l)))); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
   menuVis.forEach((l, i) => {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (ok) subProgs(el, l); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
   const n = menuVis.length; g.style.setProperty('--cols', n > 15 ? 6 : n > 8 ? 5 : 4); g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
@@ -1501,7 +1515,7 @@ const organizar = {
   },
   fimDaRolagem() { const cx = $('#grid-caixa'); if (cx) cx.classList.toggle('fim', cx.scrollHeight - cx.scrollTop - cx.clientHeight < 4); },
   salvaOrdem() { const ks = $$('#grid .card').map(el => el.dataset.k); try { localStorage.setItem('ep-menu-ordem', JSON.stringify(ks)); } catch { }
-    menuVis = ks.map(k => DADOS.links.find(l => chaveL(l) === k)).filter(Boolean); },
+    const atual = menuVis; menuVis = ks.map(k => atual.find(l => chaveL(l) === k) || DADOS.links.find(l => chaveL(l) === k)).filter(Boolean); },
   liga() {
     $('#btn-org').onclick = () => { this.on = !this.on; this.pinta(); };
     $('#grid-caixa').addEventListener('scroll', () => this.fimDaRolagem(), { passive: true });
@@ -1560,8 +1574,8 @@ function pintaFixos() {
   const box = $('#fixos'), sec = $('#g-fix'); if (!box || !sec) return; box.innerHTML = '';
   const ls = organizar.fixos().map(x => menuVis.find(l => chaveL(l) === x.k)).filter(l => l?.url && !l.embreve);
   for (const l of ls) { const o = $('#grid .card[data-k="' + CSS.escape(chaveL(l)) + '"]'); if (!o) continue;
-    const c = o.cloneNode(true); c.querySelector('.fixar')?.remove(); c.querySelector('.subprog')?.remove(); c.classList.remove('apaga'); c.style.animationDelay = '0s'; subProgs(c, l); box.appendChild(c); }
-  box.style.setProperty('--cols', Math.max(1, Math.min(4, box.children.length))); sec.hidden = !box.children.length;
+    const c = o.cloneNode(true); c.querySelector('.fixar')?.remove(); c.querySelector('.subprog')?.remove(); c.classList.remove('apaga'); c.style.animationDelay = '0s'; const ic = c.querySelector('.ic'); if (ic) delete ic.dataset.k; pintarIcone(c, l); box.appendChild(c); }
+  box.style.setProperty('--cols', Math.max(1, Math.min(4, box.children.length))); sec.hidden = !box.children.length; try { window.EstudioIcones?.pinta?.(box); } catch { }
 }
 /* GRUPO ESTÚDIO (no lugar do Dock): Mensagens, Calendário, nuvem da equipe, este computador, perfil e ADM. Abre as mesmas janelas do
    /estudio-conta.js. Nada pede à nuvem: a nuvem usa a medida guardada ('ep-nuvem-uso'), o computador o navigator.storage. */
@@ -1917,6 +1931,13 @@ async function renderAcesso() {
   return carrega();
 }
 // ADM › Dispositivos: PCs com o Estúdio Problems Local (o porteiro confere se é ADM); e-mail sempre censurado
+// PROGRAMA DE CADA DISPOSITIVO (pedido da dona, 05/11/2026): o porteiro anota de qual programa o PC foi ligado (it.prog = começo do
+// endereço da página, ex.: 'editor') e a versão do serviço, se ele mandar. Os ligados antes disso não têm a marca: hoje só o Editor liga.
+function progDisp(it) {
+  const k = String(it.prog || ''), l = k && (DADOS?.links || []).find(x => { try { return new URL(x.url || '', location.href).pathname.split('/').filter(Boolean)[0] === k; } catch { return false; } });
+  const nome = l?.nome || ({ editor: 'Editor', shorts: 'Shorts', animador: 'Animador', modelador: 'Modelador' })[k] || k;
+  return 'Estúdio Problems Local' + (it.versao ? ' ' + it.versao : '') + ' · ' + (nome ? 'para o ' + nome : 'para o Editor (ligado antes da marcação)');
+}
 async function renderDispositivos() {
   const lista = $('#disp-lista'), st = (t, err) => { const e = $('#disp-st'); e.textContent = t; e.style.color = err ? 'var(--err,#ff8a9a)' : ''; };
   const chama = async (opt = {}) => { const r = await fetch('/dispositivos', { credentials: 'same-origin', cache: 'no-store', ...opt, headers: { 'content-type': 'application/json' } });
@@ -1928,7 +1949,7 @@ async function renderDispositivos() {
     $('#disp-n').textContent = itens.length + (itens.length === 1 ? ' dispositivo' : ' dispositivos');
     lista.innerHTML = itens.map(it => `<div class="ac-l">${av(it.foto, it.nome || it.mascara)}
       <div class="ac-n"><b>${esc(it.nome_pc || 'PC sem nome')}</b><small>${esc(it.nome || 'Sem nome')} · ${esc(it.mascara)}</small>
-        <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm" title="Ligado por um ADM: pode enviar mídia">ADM</span>' : ''}<span class="ac-tag" style="text-transform:none;letter-spacing:0">ligado ${esc(quando(it.criado))}</span></div></div>
+        <div class="ac-tags">${it.voce ? '<span class="ac-tag voce">Você</span>' : ''}${it.adm ? '<span class="ac-tag ehadm" title="Ligado por um ADM: pode enviar mídia">ADM</span>' : ''}<span class="ac-tag" style="text-transform:none;letter-spacing:0" title="O programa que este PC baixou e usa">${esc(progDisp(it))}</span><span class="ac-tag" style="text-transform:none;letter-spacing:0">ligado ${esc(quando(it.criado))}</span></div></div>
       <span class="ac-em">${it.visto ? 'último uso ' + esc(quando(it.visto)) : 'ainda não usou'}</span>
       <button class="btn sm danger" data-revoga="${esc(it.id)}" title="Desligar este PC">Revogar</button></div>`).join('') || '<div class="hint">Nenhum PC ligado ainda.</div>';
     $$('[data-revoga]', lista).forEach(b => b.onclick = async () => {
