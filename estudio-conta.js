@@ -676,6 +676,9 @@ window.EstudioPerm ||= (() => {
 .ep-cal .g button.hoje:not(.sel){color:#7fc4ff!important;font-weight:700;box-shadow:inset 0 0 0 1px rgba(127,196,255,.6)!important}
 .ep-cal .g .sem{background:rgb(17,37,64);padding:4px 0}
 @media (prefers-reduced-motion:reduce){.ep-cal .g::before{transition:none}}
+.ep-cal .g.mes-prox{animation:epMesProx .28s cubic-bezier(.1,.9,.2,1) both}.ep-cal .g.mes-ant{animation:epMesAnt .28s cubic-bezier(.1,.9,.2,1) both}.ep-cal .cab b.mes-nome{animation:epSome2 .3s ease both}
+@keyframes epMesProx{from{opacity:0;transform:translateX(18px)}}@keyframes epMesAnt{from{opacity:0;transform:translateX(-18px)}}@keyframes epSome2{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ep-cal .g.mes-prox,.ep-cal .g.mes-ant,.ep-cal .cab b.mes-nome{animation:none}}
 @keyframes epSaiDir{to{transform:translateX(100%)}}@keyframes epSome{to{opacity:0}}@keyframes epEncolhe{to{transform:scale(.97)}}
 @media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
@@ -1999,8 +2002,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       <div class="d"><div class="dc"><b>${esc(CAL.sel.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }))}</b><button class="bt" type="button" data-fx>Fechar</button></div>
         <div class="l">${lista.map(e => `<div class="ev ${e.tipo === 'meta' ? 'meta' : ''}${e.id === CAL.alvo ? ' alvo' : ''}"><span class="hr">${horaCal(e.em)}</span><div class="tx"><b>${esc(e.t)}</b>${e.txt ? `<p>${esc(e.txt)}</p>` : ''}<small>${e.tipo === 'meta' ? 'Meta' : 'Lembrete'}${e.avisar ? ' · avisa na hora' : ''}</small></div><button class="bt perigo" type="button" data-apg="${e.id}" title="Apagar">${ICONES.lixo}</button></div>`).join('') || '<div class="vz">Nada marcado neste dia.</div>'}</div>
         <form><input type="text" name="t" required maxlength="80" placeholder="Novo lembrete ou meta…"><div class="lin"><span class="seg"><button type="button" data-v="aviso" class="on">Lembrete</button><button type="button" data-v="meta">Meta</button></span><input type="time" name="h" value="${new Date(Date.now() + 36e5).toTimeString().slice(0, 5)}"><label><input type="checkbox" name="av" checked> Avisar na hora</label><span class="sp"></span><button class="bt pri" type="submit">Adicionar</button></div></form></div>`;
-    c.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { CAL.mes.setMonth(CAL.mes.getMonth() + +b.dataset.m); pintaCal(); });
-    c.querySelector('[data-hoje]').onclick = () => { CAL.sel = new Date(hoje); CAL.mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1); pintaCal(); };
+    // trocar de mês: o mês novo entra deslizando do lado certo (pedido da dona: dá para ver que o mês mudou)
+    const anima = d => { const x = document.querySelector('.ep-cal:not(.ep-saindo)'); x?.querySelector('.g')?.classList.add(d > 0 ? 'mes-prox' : 'mes-ant'); x?.querySelector('.cab b')?.classList.add('mes-nome'); };
+    c.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { CAL.mes.setMonth(CAL.mes.getMonth() + +b.dataset.m); pintaCal(); anima(+b.dataset.m); });
+    c.querySelector('[data-hoje]').onclick = () => { const d0 = CAL.mes.getFullYear() * 12 + CAL.mes.getMonth(), d1 = hoje.getFullYear() * 12 + hoje.getMonth(); setTimeout(() => { if (d0 !== d1) anima(d1 - d0); }); CAL.sel = new Date(hoje); CAL.mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1); pintaCal(); };
     c.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { CAL.sel = dias[+b.dataset.d]; if (CAL.sel.getMonth() !== CAL.mes.getMonth()) CAL.mes = new Date(CAL.sel.getFullYear(), CAL.sel.getMonth(), 1); CAL.alvo = null; pintaCal(); });
     c.querySelector('[data-fx]').onclick = () => c.remove();
     c.querySelectorAll('[data-apg]').forEach(b => b.onclick = () => { gravaCal(leCal().filter(e => String(e.id) !== b.dataset.apg)); pintaCal(); pintaRelogios(); });
