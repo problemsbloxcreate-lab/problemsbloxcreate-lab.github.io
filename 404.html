@@ -1532,9 +1532,9 @@ function subProgs(el, l) {
 function comPartes(lista) { const out = [];
   for (const l of lista) { out.push(l); if (!l.url || l.embreve || progDaUrl(l.url, l.nome) !== 'an') continue;
     for (const [id, nome, url, f] of SUBPROGS.an) if (permProg(f) && window.EstudioPerm?.pode?.('animador.' + f) !== false) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do Animador', url, prog: id, parte: 'an', id: f, ...(l.partes?.[f]?.etiqueta ? { etiqueta: l.partes[f].etiqueta } : {}) }); }
-  // ORDEM PADRÃO (pedido da dona, 05/11/2026): Shorts, Editar, Animador, Preparativos, Ateliê, Cenários, Modelador, Publicações;
+  // ORDEM PADRÃO (pedido da dona, 05/11/2026): Shorts, Editar, Animador, Preparativos, Publicações, Ateliê, Cenários, Modelador;
   // o que não está aqui vem depois, na ordem da ADM. A ordem que cada pessoa organizou continua valendo por cima disto.
-  const ORDEM = ['shorts', 'editor', 'animador', 'preparativos', 'atelie', 'cenarios', 'modelador', 'publicacoes'];
+  const ORDEM = ['shorts', 'editor', 'animador', 'preparativos', 'publicacoes', 'atelie', 'cenarios', 'modelador'];
   const id = l => { if (l.id) return l.id; try { const u = new URL(l.url || '', location.href); return u.origin === location.origin ? u.pathname.split('/').filter(Boolean)[0] || '' : ''; } catch { return ''; } };
   return out.map((l, i) => ({ l, i, p: ORDEM.includes(id(l)) ? ORDEM.indexOf(id(l)) : 100 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 /* EM TESTE (pedido da dona, 05/11/2026): selo discreto no bloco. Vem da ADM › Botões (caixinha "Em teste", campo etiqueta);
