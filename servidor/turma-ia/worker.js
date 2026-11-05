@@ -923,7 +923,7 @@ export default {
       const nega = c => json({ error: { type: 'permissao', message: `Sua conta não pode ${OQUE[c] || c} nos Preparativos. Peça para um ADM liberar.` } }, 403, cors);
       if (!(await podeP('ver'))) return nega('ver');
       const q = new URL(req.url).searchParams, k = q.get('k') || '', ID = /^[A-Za-z0-9_-]{2,40}$/;
-      const KPR = /^preparativos\/(cores\.json|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KPR = /^preparativos\/(cores\.json|personagens\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
       const DEST = ['animador', 'shorts', 'editor'], STAT = ['rascunho', 'gravando', 'pronto'];
       const kP = id => `preparativos/${id}/prep.json`;
       const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
@@ -932,7 +932,25 @@ export default {
         return mod; };
       const leCores = async () => { try { return JSON.parse((await env.EQUIPE.get('preparativos/cores.json')) || '{}') || {}; } catch { return {}; } };
       const limpaCores = o => { const out = {}; for (const [a, b] of Object.entries(o && typeof o === 'object' ? o : {}).slice(0, 200)) { const n = String(a).normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR').slice(0, 40); if (n && /^#[0-9a-f]{6}$/i.test(String(b))) out[n] = String(b).toLowerCase(); } return out; };
-      const juntaCores = async novas => { const c0 = await leCores(), c = { ...c0, ...novas }; if (JSON.stringify(c) !== JSON.stringify(c0)) { const t = JSON.stringify(c); await env.EQUIPE.put('preparativos/cores.json', t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), por: login.email, em: new Date().toISOString() } }); } return c; };
+      // PERSONAGENS DA EQUIPE (preparativos/personagens.json): { "<nome minúsculo>": { nome, cor, foto, grupo, em } } — todo personagem que aparece
+      // num roteiro salvo entra sozinho (só o nome); cor/foto/grupo mudam pela ação "personagens". O cores.json antigo continua sendo lido.
+      const chaveP = s => String(s || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR').slice(0, 40);
+      const lePers = async () => { try { const o = JSON.parse((await env.EQUIPE.get('preparativos/personagens.json')) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch { return {}; } };
+      const limpaPers = o => { const out = {}; for (const [a, v] of Object.entries(o && typeof o === 'object' ? o : {}).slice(0, 300)) { const k = chaveP(a); if (!k || !v || typeof v !== 'object') continue; const e = {};
+          if (typeof v.nome === 'string' && v.nome.trim()) e.nome = v.nome.replace(/[<>:*#\[\]()]/g, '').trim().slice(0, 40);
+          if (/^#[0-9a-f]{6}$/i.test(String(v.cor || ''))) e.cor = String(v.cor).toLowerCase();
+          if ('foto' in v && (v.foto === null || /^preparativos\/pers\/[a-z0-9-]{1,60}\.webp$/.test(String(v.foto)))) e.foto = v.foto;
+          if ('grupo' in v && (v.grupo === null || (typeof v.grupo === 'string' && /^[\p{L}\p{N} ._-]{1,30}$/u.test(v.grupo.trim())))) e.grupo = v.grupo === null ? null : v.grupo.trim();
+          if (Object.keys(e).length) out[k] = e; } return out; };
+      const juntaPers = async (mudas, soNovos) => { const p0 = await lePers(), p = { ...p0 }, velhas = []; let mudou = false;
+        for (const [k, e] of Object.entries(mudas || {})) { if (soNovos && p[k]) continue; const n = { ...(p[k] || {}), ...e }; for (const x of Object.keys(n)) if (n[x] === null) delete n[x];
+          if ('foto' in e && p[k]?.foto && p[k].foto !== e.foto) velhas.push(p[k].foto); const { em: _a, ...antes } = p[k] || {}, { em: _b, ...depois } = n;
+          if (!p[k] || JSON.stringify(depois) !== JSON.stringify(antes)) { p[k] = { ...depois, em: new Date().toISOString() }; mudou = true; } }
+        if (mudou) { const t = JSON.stringify(p); await env.EQUIPE.put('preparativos/personagens.json', t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } });
+          for (const f of velhas.slice(0, 5)) { try { await env.EQUIPE.delete(f); } catch { } } }
+        return p; };
+      const coresDe = async p => { const c = await leCores(); for (const [k, e] of Object.entries(p || {})) if (e.cor) c[k] = e.cor; return c; };
+      const juntaCores = async novas => coresDe(await juntaPers(Object.fromEntries(Object.entries(novas || {}).map(([k, c]) => [k, { cor: c }]))));
       if (p0 === '/preparativos') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
         const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [] })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
         return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
@@ -940,6 +958,7 @@ export default {
         if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
         let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
         if (b?.acao === 'cores') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, cores: await juntaCores(limpaCores(b.cores)) }, 200, cors); }
+        if (b?.acao === 'personagens') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, personagens: await juntaPers(limpaPers(b.itens)) }, 200, cors); }
         if (!ID.test(String(b?.id || ''))) return json({ error: { message: 'Preparativo inválido.' } }, 400, cors);
         const a = b.acao, precisa = { falas: 'gravar', marca: 'pronto', legenda: 'organizar', usado: 'ver' }[a]; if (!precisa) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
         if (!(await podeP(precisa))) return nega(precisa);
@@ -959,7 +978,7 @@ export default {
           if ('status' in b) P.status = STAT.includes(b.status) ? b.status : 'rascunho';
           extra.mod = await gravaP(P, o.m);
         } else if (a === 'legenda') {
-          const cores = limpaCores(b.cores); P.legenda = { ativa: b.ativa !== false, cores: { ...(P.legenda?.cores || {}), ...cores } };
+          const cores = limpaCores(b.cores); P.legenda = { ativa: b.ativa !== false, mostrarNome: b.mostrarNome === true, cores: { ...(P.legenda?.cores || {}), ...cores } };
           extra.mod = await gravaP(P, o.m); extra.cores = await juntaCores(cores);
         } else if (a === 'usado') { // o programa que usou este preparativo (Animador, Shorts, Editor) avisa aqui
           const programa = String(b.programa || ''), projeto = String(b.projeto || '').slice(0, 120); if (!DEST.includes(programa)) return json({ error: { message: 'Programa inválido.' } }, 400, cors);
@@ -971,12 +990,20 @@ export default {
       if (req.method === 'GET') {
         if (!KPR.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
-        const aud = k.includes('/aud/');
-        return new Response(r.value, { status: 200, headers: { ...cors, 'x-mod': String(+(r.metadata?.mod || 0)), 'access-control-expose-headers': 'x-mod, x-nuvem, x-nuvem-volta', 'content-type': aud ? (r.metadata?.tipo || 'audio/webm') : 'application/json', 'cache-control': aud ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+        const aud = k.includes('/aud/'), img = k.endsWith('.webp');
+        return new Response(r.value, { status: 200, headers: { ...cors, 'x-mod': String(+(r.metadata?.mod || 0)), 'access-control-expose-headers': 'x-mod, x-nuvem, x-nuvem-volta', 'content-type': aud ? (r.metadata?.tipo || 'audio/webm') : img ? 'image/webp' : 'application/json', 'cache-control': aud || img ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
       }
       if (req.method === 'POST' || req.method === 'PUT') {
-        if (!KPR.test(k) || k === 'preparativos/cores.json') return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        if (!KPR.test(k) || /^preparativos\/(cores|personagens)\.json$/.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         const id = k.split('/')[1], buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (k.startsWith('preparativos/pers/')) { // foto do personagem (o navegador já manda em WEBP pequeno)
+          if (!(await podeP('organizar'))) return nega('organizar');
+          const u8 = new Uint8Array(buf, 0, Math.min(12, buf.byteLength)), webp = String.fromCharCode(...u8.slice(0, 4)) === 'RIFF' && String.fromCharCode(...u8.slice(8, 12)) === 'WEBP';
+          if (!webp) return json({ error: { message: 'A foto precisa estar em WEBP.' } }, 400, cors);
+          if (buf.byteLength > 512 * 1024) return json({ error: { message: 'Foto grande demais (máx. 512 KB).' } }, 413, cors);
+          await env.EQUIPE.put(k, buf, { metadata: { tipo: 'image/webp', tam: buf.byteLength, mod: Date.now(), por: login.email, em: new Date().toISOString() } });
+          return json({ ok: true, k }, 200, cors);
+        }
         if (k.includes('/aud/')) { // áudio de uma fala
           if (!(await podeP('gravar'))) return nega('gravar');
           if (buf.byteLength > 8 * 1048576) return json({ error: { message: 'Áudio maior que 8 MB. Grave a fala em pedaços menores.' } }, 413, cors);
@@ -998,8 +1025,10 @@ export default {
         P.status = pp ? (STAT.includes(P.status) ? P.status : 'rascunho') : (o?.P.status || 'rascunho');
         P.usadoPor = Array.isArray(o?.P.usadoPor) ? o.P.usadoPor : []; P.v = 1;
         if (!pr && o) { P.roteiro = o.P.roteiro; P.partes = o.P.partes; P.nome = o.P.nome; } // quem só organiza não muda o texto (só as legendas)
-        if (P.legenda) P.legenda = { ativa: P.legenda.ativa !== false, cores: limpaCores(P.legenda.cores) };
+        if (P.legenda) P.legenda = { ativa: P.legenda.ativa !== false, mostrarNome: P.legenda.mostrarNome === true, cores: limpaCores(P.legenda.cores) };
         const mod = await gravaP(P, o?.m);
+        { const novos = {}; for (const pt of P.partes) for (const f of pt.falas || []) { const kk = chaveP(f.personagem); if (kk && !novos[kk]) novos[kk] = { nome: String(f.personagem).replace(/[<>:*#\[\]()]/g, '').trim().slice(0, 40) }; }
+          if (Object.keys(novos).length) ctx.waitUntil(juntaPers(novos, true).catch(() => { })); } // personagem novo num roteiro = já aparece na lista da equipe
         if (P.legenda && Object.keys(P.legenda.cores).length && po) ctx.waitUntil(juntaCores(P.legenda.cores).catch(() => { }));
         return json({ ok: true, k, mod }, 200, cors);
       }
