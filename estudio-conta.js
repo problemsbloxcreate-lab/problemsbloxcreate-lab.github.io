@@ -638,7 +638,7 @@ window.EstudioPerm ||= (() => {
 .ep-msgs .epm-m.epm-meu .epm-b{background:#1d6fd6!important}
 .ep-msgs textarea,.ep-msgs input{border-radius:0!important}
 /* calendário */
-.ep-cal{box-shadow:0 30px 80px rgba(0,20,50,.5)!important;top:0!important;right:0!important;bottom:0!important;left:auto!important;transform:none!important;width:min(460px,100%)!important;max-height:none!important;height:100%;grid-template-columns:1fr!important;grid-template-rows:auto 1fr;overflow:auto!important;animation:epEntraDir .45s cubic-bezier(.1,.9,.2,1) both} /* entra pela direita, como a nuvem (pedido da dona) */
+.ep-cal{box-shadow:0 30px 80px rgba(0,20,50,.5)!important;top:0!important;right:0!important;bottom:0!important;left:auto!important;transform:none;width:min(460px,100%)!important;max-height:none!important;height:100%;grid-template-columns:1fr!important;grid-template-rows:auto 1fr;overflow:auto!important;animation:epEntraDir .45s cubic-bezier(.1,.9,.2,1) both} /* entra pela direita, como a nuvem (pedido da dona) */
 .ep-cal .m{border-right:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;padding:22px 20px 16px!important}.ep-cal .d{padding:16px 20px!important;min-height:0}
 .ep-cal .cab b{font:300 20px "Segoe UI Light","Segoe UI",system-ui,sans-serif}
 .ep-cal .g button{border-radius:0!important}.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}.ep-cal .g button.hoje{box-shadow:inset 0 0 0 2px #fff!important}
@@ -664,6 +664,17 @@ window.EstudioPerm ||= (() => {
 .ep-msgs.ep-saindo,.ep-pg.ep-saindo,.ep-admj.ep-saindo,.modal.ep-saindo{animation:epSome .22s ease both!important}
 .ep-msgs.ep-saindo .cx,.ep-pg.ep-saindo .cx,.ep-admj.ep-saindo .cx,.modal.ep-saindo .mc{animation:epEncolhe .22s ease both!important}
 .ep-conta-pop.ep-saindo,.ep-notif.ep-saindo{animation:epSome .16s ease both!important}
+/* calendário: luz do Windows 10 (as bordas dos dias perto do mouse acendem; o dia embaixo do mouse ganha a borda clara) */
+.ep-cal .g{position:relative;gap:2px!important;padding:2px;--mx:-200px;--my:-200px}
+.ep-cal .g::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle 90px at var(--mx) var(--my),rgba(255,255,255,.55),rgba(255,255,255,0) 100%)}
+.ep-cal .g.luz::before{opacity:1}
+.ep-cal .g>*{position:relative;z-index:1}
+.ep-cal .g button{background:rgb(17,37,64)!important;transition:box-shadow .12s,background .12s}
+.ep-cal .g button:hover{box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)!important;background:radial-gradient(circle 40px at 50% 50%,rgba(255,255,255,.12),rgba(255,255,255,0)),rgb(17,37,64)!important}
+.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}
+.ep-cal .g button.fora{color:rgba(255,255,255,.35)}
+.ep-cal .g .sem{background:rgb(17,37,64);padding:4px 0}
+@media (prefers-reduced-motion:reduce){.ep-cal .g::before{transition:none}}
 @keyframes epSaiDir{to{transform:translateX(100%)}}@keyframes epSome{to{opacity:0}}@keyframes epEncolhe{to{transform:scale(.97)}}
 @media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
@@ -1969,6 +1980,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     poeCss(); document.querySelector('.ep-cal:not(.ep-saindo)')?.remove();
     const base = ev ? new Date(ev.em) : new Date(); CAL.sel = new Date(base); CAL.sel.setHours(0, 0, 0, 0); CAL.mes = new Date(base.getFullYear(), base.getMonth(), 1); CAL.alvo = ev?.id || null;
     const c = document.createElement('div'); c.className = 'ep-cal'; c.setAttribute('role', 'dialog'); c.setAttribute('aria-label', 'Seu calendário'); document.body.appendChild(c); pintaCal();
+    c.addEventListener('mousemove', e => { const g = c.querySelector('.g'); if (!g) return; const r = g.getBoundingClientRect(); g.style.setProperty('--mx', (e.clientX - r.left) + 'px'); g.style.setProperty('--my', (e.clientY - r.top) + 'px'); g.classList.toggle('luz', e.clientX >= r.left - 60 && e.clientX <= r.right + 60 && e.clientY >= r.top - 60 && e.clientY <= r.bottom + 60); }); // luz do Windows 10 nos dias
+    c.addEventListener('mouseleave', () => c.querySelector('.g')?.classList.remove('luz'));
     const fora = e => { if (!c.isConnected) return tira(); if (!e.target.closest('.ep-cal,.ep-relogio,.ep-notif')) { c.remove(); tira(); } };
     const esc1 = e => { if (e.key === 'Escape') { c.remove(); tira(); } };
     const tira = () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc1); };
