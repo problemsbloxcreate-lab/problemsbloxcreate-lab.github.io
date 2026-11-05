@@ -435,7 +435,8 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
    O limite que mais aperta na principal é o de PEDIDOS (100 mil por dia na conta toda). Os dados ficam todos no D1 "equipe" da
    principal; o turma-reserva (outra conta) agora fala com ESSE MESMO banco pela API da Cloudflare (a PONTE, abaixo): lê e grava
    nos mesmos dados, sem cópia velha. Assim os pedidos de DADOS (animações, personagens, cenários…) podem ir por qualquer uma das
-   duas portas sem ninguém notar. DIVIDIR: a partir de 60% dos pedidos do dia gastos na principal, uma parte dos navegadores
+   duas portas sem ninguém notar (vale para TODA rota de dados, inclusive as novas; o site só não divide a IA e o que depende de
+   segredos que existem só aqui — lista NAO_DIV no estudio-conta.js). DIVIDIR: a partir de 60% dos pedidos do dia gastos na principal, uma parte dos navegadores
    (sorteada uma vez por navegador, para cada pessoa ficar sempre na mesma porta) passa a usar o turma-reserva; com 90% vão todos.
    O site lê a parte no cabeçalho x-divide (estudio-conta.js). A IA, a transcrição e o uso continuam só na principal. */
 function d1Rest(conta, id, token) {
@@ -655,6 +656,15 @@ export default {
       if (R3) { const c = await R3.contaJa().catch(() => null), o = c?.contas?.principal; if (o?.bytes != null) { out.bytes = o.bytes; out.em = c.em; }
         try { if (await R3.ativa()) for (const it of (await R3.indice()).values()) { if (it.metadata?._del) continue; out.reserva.n++; out.reserva.bytes += +it.metadata?.tam || 0; if (out.reserva.itens.length < 300) out.reserva.itens.push(await semEmail({ k: it.name, ...(it.metadata || {}) })); } } catch { } }
       return json(out, 200, { ...cors, 'cache-control': 'no-store' });
+    }
+    // USO DE HOJE para QUALQUER pessoa da equipe (botão da nuvem, pedido da dona, 05/11/2026): a SOMA das nuvens da equipe (principal,
+    // reserva e terciária), que trabalham como uma só. Só números (sem e-mails nem nomes de conta); a medida é da Action "Uso da nuvem".
+    if (new URL(req.url).pathname === '/nuvem-hoje') {
+      const R4 = reservaDe(env, auth0), c = R4 ? await R4.contaJa().catch(() => null) : null, L = c?.limites || {}, hoje = new Date().toISOString().slice(0, 10);
+      const ps = c && c.dia === hoje ? ['principal', 'nova', 'terc'].map(k => c.contas?.[k]).filter(o => o && !o.erro && o.d1) : [], n = ps.length, soma = f => ps.reduce((t, o) => t + (+f(o) || 0), 0);
+      const par = (v, lim) => ({ v, lim: n * lim });
+      return json(n ? { em: c.em, gravacoes: par(soma(o => o.d1.write), L.d1Write || 1e5), leituras: par(soma(o => o.d1.read), L.d1Read || 5e6), pedidos: par(soma(o => o.workers), L.workers || 1e5), espaco: par(soma(o => o.d1bytes ?? o.bytes ?? 0), L.d1Bytes || 524288000) } : { em: c?.em || null, semMedida: true },
+        200, { ...cors, 'cache-control': 'no-store' });
     }
     // ADM › Nuvem: gasto de hoje das duas contas (medido pela Action "Uso da nuvem" de 30 em 30 min) + o que está na reserva agora
     if (new URL(req.url).pathname === '/nuvem-painel') {

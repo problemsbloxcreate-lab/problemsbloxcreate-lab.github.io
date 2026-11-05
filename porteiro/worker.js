@@ -147,19 +147,38 @@ async function versaoDe(env, u, s) {
   VERS.set(u, { v, t: Date.now() }); if (VERS.size > 3000) VERS.clear();
   return v;
 }
+// arquivo de projeto que o GitHub Pages serve (público): o endereço dele lá. Não vale para a porta reserva (lá os scripts precisam
+// da troca de endereços), nem para página HTML, config.js (leva a chave) ou projeto atrás de Worker/assinatura.
+function direto(env, caminho) {
+  if (env.TROCA_DE) return null; const p = achaProjeto(env, caminho); if (!p?.resto || p.para || p.servico || p.assinar) return null;
+  let o; try { o = new URL(p.origem.replace(/\/?$/, '/')); } catch { return null; }
+  if (!/\.github\.io$/.test(o.hostname) || /(^|\/)config\.js$/.test(p.resto) || /\.html?$/i.test(p.resto)) return null;
+  return { pref: p.pref, url: new URL(p.resto, o).href };
+}
 async function comVersoes(env, html, paginaUrl, s) {
   const base = (() => { const m = html.match(/<base\s[^>]*href=["']([^"']+)["']/i); try { return new URL(m ? m[1] : '', paginaUrl); } catch { return new URL(paginaUrl); } })();
   const re = /(<(?:script)\b[^>]*?\bsrc=|<link\b(?=[^>]*\brel=["']?(?:stylesheet|modulepreload|preload)\b)[^>]*?\bhref=)(["'])([^"']+)\2/gi;
   const achados = []; let m;
-  while ((m = re.exec(html)) && achados.length < 45) {
+  while ((m = re.exec(html)) && achados.length < 200) {
     const src = m[3]; if (/^(?:[a-z][\w+.-]*:|\/\/|#)/i.test(src) || /[?&]_ev=/.test(src)) continue;
     let abs; try { abs = new URL(src, base); } catch { continue; } if (abs.origin !== new URL(paginaUrl).origin) continue;
-    achados.push({ i: m.index + m[1].length + 1, src, u: abs.origin + abs.pathname });
+    achados.push({ i: m.index + m[1].length + 1, src, u: abs.origin + abs.pathname, gh: direto(env, abs.pathname) });
   }
   if (!achados.length) return html;
-  const vs = await Promise.all(achados.map(a => versaoDe(env, a.u, s)));
+  // carimbo de versão: no máximo 45 por página (cada um é uma consulta e o Worker grátis aceita 50 por pedido)
+  const vs = await Promise.all(achados.map((a, k) => k < 45 ? versaoDe(env, a.u, s) : null));
+  /* ARQUIVOS FIXOS DIRETO DO GITHUB (05/11/2026, as nuvens juntas): o código dos programas que estão no GitHub Pages PÚBLICO
+     (Animador, Modelador…) não precisa passar pelo porteiro — cada arquivo pedido aqui gastava 1 dos 100 mil pedidos do dia da
+     conta principal (o Animador tem mais de 80 scripts e só 45 ganhavam carimbo: o resto era pedido de novo a cada abertura).
+     Agora a página aponta direto para o GitHub, que não conta pedidos: com carimbo (_ev) quando dá; sem carimbo, com o número
+     que muda a cada 30 s (_at), que é o mesmo frescor de antes. Só para projetos que o GitHub serve de verdade (algum arquivo
+     ganhou versão lá; projeto privado responde 404 e continua pelo porteiro). config.js (leva a chave) fica aqui. */
+  const publico = new Set(achados.filter((a, k) => a.gh && vs[k]).map(a => a.gh.pref)), at = Math.floor(Date.now() / 30000);
   let out = '', pos = 0;
-  achados.forEach((a, k) => { if (!vs[k]) return; out += html.slice(pos, a.i) + a.src + (a.src.includes('?') ? '&' : '?') + '_ev=' + vs[k]; pos = a.i + a.src.length; });
+  achados.forEach((a, k) => {
+    const gh = a.gh && publico.has(a.gh.pref) ? a.gh.url : null; if (!vs[k] && !gh) return;
+    const novo = gh ? gh + '?' + (vs[k] ? '_ev=' + vs[k] : '_at=' + at) : a.src + (a.src.includes('?') ? '&' : '?') + '_ev=' + vs[k];
+    out += html.slice(pos, a.i) + novo; pos = a.i + a.src.length; });
   return out + html.slice(pos);
 }
 // "não mudou" sem ETag: a Cloudflare tira o ETag das páginas HTML deste endereço (ela mexe no HTML), então a página
@@ -1021,9 +1040,6 @@ function perfisCom(kv) {
         LISTAS_P.set(pre, { t: Date.now(), keys }); return { keys, list_complete: true }; }
       catch (e) { if (c) return { keys: c.keys, list_complete: true }; throw e; } } };
 }
-// MEDIDA: o TIPO do pedido (1º e 2º pedaço do caminho sem números/ids, extensão, se tem carimbo _ev, método e status) — nada de e-mail nem conteúdo
-function tipoDoPedido(req, r) { const u = new URL(req.url), ps = u.pathname.split("/").filter(Boolean).map(x => /\d{3,}|^[a-z0-9]{16,}$|^u[0-9a-f]{16}$/i.test(x) ? "#" : x.slice(0, 30)), ext = (u.pathname.match(/\.([a-z0-9]{1,5})$/i) || [])[1] || "";
-  return [ps[0] || "/", ps.length > 2 ? ps[1] : (ps[1] && !ext ? ps[1] : ""), ext, u.searchParams.has("_ev") ? "ev" : "", req.method, String(r?.status || 0), (req.headers.get("upgrade") || "").slice(0, 10)]; }
 /* PORTA RESERVA (decisão do dono, 02/11/2026): este mesmo porteiro roda numa conta reserva, com outro endereço, para quando a conta
    principal passa dos pedidos do dia (erro 1027). Lá, TROCA_DE/TROCA_PARA trocam nas páginas e scripts os endereços da principal
    (o menu e o turma-ia) pelos da porta reserva, para tudo falar com ela. Fora da porta reserva, nada muda. */
@@ -1036,7 +1052,7 @@ async function comTrocasP(env, r) {
 }
 
 export default {
-  async fetch(req, env, ctx) { const r = await this.fetch0(req, env, ctx); try { if (env.MEDIDA && Math.random() < 0.2) env.MEDIDA.writeDataPoint({ blobs: tipoDoPedido(req, r), doubles: [1], indexes: ["p"] }); } catch { } return env.TROCA_DE ? comTrocasP(env, r) : r; },
+  async fetch(req, env, ctx) { const r = await this.fetch0(req, env, ctx); return env.TROCA_DE ? comTrocasP(env, r) : r; },
   async fetch0(req, env, ctx) {
     if (env.PERFIS && !env.PERFIS._comLista) env = { ...env, PERFIS: perfisCom(env.PERFIS) }; try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
   async atende(req, env) {

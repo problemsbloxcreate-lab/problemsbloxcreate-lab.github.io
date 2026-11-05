@@ -170,7 +170,10 @@ window.EstudioPerm ||= (() => {
      desviar no cabeçalho x-divide (0 a 1); cada navegador tem um número sorteado uma vez (ep-sorte) e, se ele for menor que a
      parte, os pedidos de DADOS vão pelo turma-reserva. Se a principal não responder, o mesmo pedido é repetido lá. A IA não muda. */
   const T_PRI = 'turma-ia.problemsraiz.workers.dev', T_RES = 'turma-reserva.editorcustomizado.workers.dev';
-  const ROTAS_DIV = /^\/(animacoes|personagens|jester|cenarios|equipe|preparativos|menu-midia|menu-links|ideias)(\/|$)/;
+  // TODOS os programas e rotas novas usam as 3 juntas (pedido da dona, 05/11/2026): só NÃO divide o que depende de algo que existe
+  // apenas na principal (IA e o gasto dela, transcrição, login ao vivo /quem, chave do app, robôs, reserva e o painel do ADM)
+  const NAO_DIV = /^\/(v1|transcrever|uso|tt|yt|quem|app-key|permissoes|nuvem-(uso|resumo|painel)|robo|reserva|confere)(\/|$)/;
+  const ROTAS_DIV = { test: p => p !== '/' && !NAO_DIV.test(p) };
   const sorte = (() => { try { let v = parseFloat(localStorage.getItem('ep-sorte')); if (!(v >= 0 && v < 1)) { v = Math.random(); localStorage.setItem('ep-sorte', String(v)); } return v; } catch { return Math.random(); } })();
   const parteDiv = () => { try { const o = JSON.parse(localStorage.getItem('ep-divide') || 'null'); return o && o.ate > Date.now() ? +o.p || 0 : 0; } catch { return 0; } };
   const guardaDiv = p => { if (!(p >= 0 && p <= 1)) return; try { const fim = new Date(); fim.setUTCHours(24, 0, 0, 0); localStorage.setItem('ep-divide', JSON.stringify({ p, ate: Math.min(Date.now() + 15 * 60e3, fim.getTime()) })); } catch { } };
@@ -1001,6 +1004,22 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const ta = typeof TurmaAuth !== 'undefined' ? TurmaAuth : window.TurmaAuth; // eslint-disable-line no-undef
     if (ta?.token) { const t = await ta.token(); return t ? (/^Bearer /.test(t) ? t : 'Bearer ' + t) : null; }
   } catch { } return null; };
+  // USO DE HOJE da nuvem (pedido da dona, 05/11/2026): gravações, leituras e pedidos do dia da nuvem da equipe inteira (as contas
+  // trabalham como uma só, então mostra só o total). Guardado 5 min neste navegador; um pedido só ao abrir o botão da nuvem.
+  async function usoHoje(novo) {
+    const K = 'ep-nuvem-hoje'; let j = null;
+    if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 300e3) j = c.j; } catch { } }
+    if (!j) { const tk = await tokenNuvem(); if (!tk) return '';
+      const r = await fetch('https://turma-ia.problemsraiz.workers.dev/nuvem-hoje', { cache: 'no-store', headers: { authorization: tk } }); j = await r.json().catch(() => null); if (!r.ok || !j) return '';
+      try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { } }
+    if (j.semMedida) return '';
+    const num = n => Number(n || 0).toLocaleString('pt-BR');
+    const barra = (nome, o, f = num) => { const p = o.lim ? Math.min(100, o.v / o.lim * 100) : 0, cor = p >= 90 ? '#ff6b6b' : p >= 70 ? '#ffb84d' : '#2fd0a8';
+      return `<div class="hj-l"><div class="hj-t"><span>${nome}</span><b style="color:${cor}">${p < 1 && o.v ? '<1' : Math.round(p)}%</b></div><div class="barra"><i style="width:${p.toFixed(1)}%;background:${cor}"></i></div><small>${f(o.v)} de ${f(o.lim)}</small></div>`; };
+    const quando = j.em ? new Date(j.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    if (!document.getElementById('ep-hoje-css')) { const st = document.createElement('style'); st.id = 'ep-hoje-css'; st.textContent = '.ep-esp .ep-hoje h3{margin:14px 0 8px}.ep-esp .hj-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.ep-esp .hj-t{display:flex;justify-content:space-between;font-size:12.5px}.ep-esp .hj-l small{display:block;font-size:11px;color:#a9adb7;margin-top:3px}@media (max-width:520px){.ep-esp .hj-g{grid-template-columns:1fr}}'; document.head.appendChild(st); }
+    return `<h3>Uso de hoje <small>(medido ${quando ? 'às ' + quando : 'há pouco'} · zera às ${new Date(new Date().setUTCHours(24, 0, 0, 0)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</small></h3><div class="hj-g">${barra('Gravações', j.gravacoes)}${barra('Leituras', j.leituras)}${barra('Pedidos', j.pedidos)}</div>`;
+  }
   async function usoNuvem(novo) {
     const K = 'ep-nuvem-uso'; // guardado 15 min (economia, 03/11/2026; antes 5) e o MESMO para todas as abas — 'Medir de novo' mede na hora (cada medida lista a nuvem inteira; o porteiro também guarda)
     if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 900e3) return c.j; } catch { } }
@@ -1058,6 +1077,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         ${avisoReserva(j) || '<div class="ep-estado"><i></i><div><b>Nuvem principal funcionando</b><small>Tudo o que você salva vai direto para ela.</small></div></div>'}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
+        <div class="ep-hoje"></div>
         ${legenda}
         <details class="grp sec"><summary><span class="seta">${ICONES.seta || '›'}</span><b>Por programa</b><span class="sp"></span><span class="tam">${P.length} ${P.length === 1 ? 'programa' : 'programas'}</span></summary><div class="grp-l">
         ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}">${pastaIc(pr.nome)}<div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%;background:${corProg(pr.nome)}"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || '<div class="vazio">A nuvem está vazia.</div>'}</div></details>
@@ -1068,6 +1088,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
         <div class="pe"><span class="nota">${j.adm ? 'Para ouvir, ver e baixar tudo, abra o menu › ADM › Nuvem.' : 'O que está só neste computador fica no círculo do espaço no navegador.'}</span><span class="sp"></span>${j.adm ? '<a class="bt" href="/adm">Abrir ADM › Nuvem</a>' : ''}<button class="bt" data-atu>Medir de novo</button></div>`;
       cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true);
+      usoHoje(novo).then(h => { const el = cx.querySelector('.ep-hoje'); if (el && h) el.innerHTML = h; }).catch(() => { });
       cx.querySelectorAll('[data-ap]').forEach(b => b.onclick = async () => {
         const it = its[+b.dataset.ap];
         if (!j.adm) return pedeAdm(it.nome);
