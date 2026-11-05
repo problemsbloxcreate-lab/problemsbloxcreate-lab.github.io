@@ -1,0 +1,30 @@
+{
+  "_leia": "Catálogo dos NÍVEIS DE ACESSO (ADM › Níveis de acesso). Cada sessão/programa acrescenta as suas chaves aqui. Programa: { id, nome }. Função: { id: 'programa.funcao', programa, nome, desc } (programa 'geral' = vale para o Estúdio todo). Chave nova já nasce LIBERADA para todos os cargos; o ADM tira depois. No código: EstudioPerm.pode('<id>') / EstudioPerm.programa('<id>') no navegador e pode(env, email, '<id>') no turma-ia.",
+  "programas": [
+    { "id": "animador", "nome": "Animador" },
+    { "id": "shorts", "nome": "Criar Shorts" },
+    { "id": "editor", "nome": "Editar vídeos" },
+    { "id": "modelador", "nome": "Modelador" },
+    { "id": "jester", "nome": "Jester Dreams" },
+    { "id": "preparativos", "nome": "Preparativos" }
+  ],
+  "funcoes": [
+    { "id": "geral.mensagens", "programa": "geral", "nome": "Mensagens", "desc": "Conversar com a equipe pelas Mensagens (no Dock e na foto da conta)." },
+    { "id": "geral.ia", "programa": "geral", "nome": "Usar a IA", "desc": "Pedir coisas para a IA do Estúdio (edição automática, ideias, roteiros). Sem isso o servidor recusa o pedido." },
+    { "id": "geral.apagar-nuvem", "programa": "geral", "nome": "Apagar da nuvem", "desc": "Tirar da nuvem da equipe o que a própria pessoa mandou (ex.: uma animação). Apagar o que é dos outros continua só para ADM." },
+
+    { "id": "animador.atelie", "programa": "animador", "nome": "Ateliê", "desc": "Abrir o Ateliê de personagens (criar e editar personagens da biblioteca)." },
+    { "id": "animador.cenarios", "programa": "animador", "nome": "Cenários", "desc": "Abrir e editar os cenários do Animador." },
+    { "id": "animador.exportar", "programa": "animador", "nome": "Exportar vídeo", "desc": "Gerar o vídeo final (MP4/WebM) de uma animação." },
+    { "id": "animador.nuvem", "programa": "animador", "nome": "Mandar para a nuvem", "desc": "Salvar animações na nuvem da equipe (sem isso, só no computador)." },
+    { "id": "animador.youtube", "programa": "animador", "nome": "Publicar no YouTube", "desc": "Mandar a animação pronta direto para o canal do YouTube." },
+
+    { "id": "shorts.exportar", "programa": "shorts", "nome": "Exportar o Short", "desc": "Gerar o vídeo final do Short." },
+    { "id": "shorts.youtube", "programa": "shorts", "nome": "Publicar no YouTube", "desc": "Mandar o Short pronto direto para o canal do YouTube." },
+
+    { "id": "editor.exportar", "programa": "editor", "nome": "Exportar vídeo", "desc": "Gerar o vídeo final da edição." },
+    { "id": "editor.youtube", "programa": "editor", "nome": "Publicar no YouTube", "desc": "Mandar o vídeo pronto direto para o canal do YouTube." },
+
+    { "id": "modelador.exportar", "programa": "modelador", "nome": "Exportar modelo", "desc": "Baixar o modelo 3D (.bbmodel e outros formatos)." }
+  ]
+}

@@ -68,6 +68,28 @@ const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), { 
 // "nuvem": o projeto fala com o servidor de sons da equipe: o porteiro entrega o sons-url.json apontando para /nuvem/
 //          (que leva o passe) e deixa a "senha da equipe" do navegador preenchida com um aviso — ninguém digita senha.
 function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch { return {}; } }
+/* ---------- NÍVEIS DE ACESSO (05/11/2026): quem vê cada programa (o modelo e a conta ficam no turma-ia, rota /permissoes) ----------
+   O porteiro pergunta pela ligação direta (TURMA) mandando o e-mail da sessão (x-porteiro-email; o turma-ia só aceita esse
+   cabeçalho de pedido SEM req.cf, ou seja, pela ligação). Guarda 60 s por pessoa; e quando NINGUÉM tem nada bloqueado
+   ("livre") guarda isso 2 min para todo mundo — sem custo a mais até um ADM configurar. Falhou = deixa passar (nada quebra). */
+const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos' };
+const PERM_MEM = new Map(), PERM_LIVRE = { t: 0 };
+async function permDe(env, email, url, forcar, atalho) { // atalho: vale o "ninguém tem nada bloqueado" guardado (só para barrar páginas)
+  email = String(email || '').toLowerCase(); if (!email || !env.SERVIDOR) return null;
+  if (atalho && !forcar && Date.now() - PERM_LIVRE.t < 120e3) return PERM_LIVRE.j;
+  const c = PERM_MEM.get(email); if (!forcar && c && Date.now() - c.t < 60e3) return c.j;
+  try { const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/permissoes', { headers: { 'x-porteiro-email': email, origin: url.origin } });
+    const r = env.TURMA ? await env.TURMA.fetch(ped) : null; if (!r || !r.ok) return c?.j || null; const j = await r.json();
+    const o = { adm: !!j.adm, livre: !!j.livre, programas: j.programas || [], funcoes: j.funcoes || [], sem: j.sem || { programas: [], funcoes: [] }, cargos: j.cargos || [] };
+    if (o.livre && !o.adm) { PERM_LIVRE.t = Date.now(); PERM_LIVRE.j = o; } else PERM_LIVRE.t = 0;
+    PERM_MEM.set(email, { t: Date.now(), j: o }); if (PERM_MEM.size > 500) PERM_MEM.clear(); return o;
+  } catch { return c?.j || null; }
+}
+const semPermissao = () => new Response(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem acesso · Estúdio Problems</title><link rel="icon" href="/favicon.svg">
+<style>html,body{margin:0;height:100%;background:#000;color:#f5f5f7;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}main{min-height:100%;display:grid;place-items:center;text-align:center;padding:24px;box-sizing:border-box}
+.c{max-width:420px}svg{color:#8e8e93}h1{font-size:20px;margin:14px 0 6px}p{color:#a1a1a6;margin:0 0 20px}a{display:inline-block;padding:9px 18px;border-radius:9px;background:#0a84ff;color:#fff;text-decoration:none;font-weight:500}</style></head>
+<body><main><div class="c"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+<h1>Você não tem acesso a este programa</h1><p>O seu cargo no Estúdio Problems não inclui este programa. Se precisar dele, peça para um ADM liberar.</p><a href="/">Voltar ao menu</a></div></main></body></html>`, { status: 403, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
 function achaProjeto(env, caminho) {
   // o caminho mais comprido ganha (ex.: /shorts/modelador/ antes de /shorts/)
   for (const [pref, v] of Object.entries(projetos(env)).sort((a, b) => b[0].length - a[0].length)) {
@@ -102,7 +124,7 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
    Ao entregar uma página, o porteiro troca  <script src="js/app.js">  por  js/app.js?_ev=<versão do arquivo>.
    Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
    quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
-const RAIZ_ASSETS = new Set(['/estudio-icones.js', '/estudio-edicao.js', '/estudio-youtube.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
+const RAIZ_ASSETS = new Set(['/permissoes.json', '/estudio-icones.js', '/estudio-edicao.js', '/estudio-youtube.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png']);
 const VERS = new Map();
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
@@ -1092,6 +1114,11 @@ export default {
       if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
       return conta(req, env, url, s);
     }
+    if (caminho === '/permissoes') { // NÍVEIS DE ACESSO: as permissões de quem está logado (o turma-ia calcula; sem e-mail na resposta)
+      const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+      const j = await permDe(env, s.e, url, url.searchParams.get('novo') === '1'); if (!j) return json({ error: { message: 'Não consegui ler os níveis de acesso agora.' } }, 503, { 'cache-control': 'no-store' });
+      return json(j, 200, { 'cache-control': 'no-store' });
+    }
     if (caminho === '/sessao') { const s = await leSessao(env, req); return json(s ? { email: s.e, ate: s.x * 1000 } : { email: null }); }
 
     // projetos: só com cookie válido
@@ -1105,12 +1132,14 @@ export default {
         if (pagina) return new Response(null, { status: 302, headers: { location: '/?volta=' + encodeURIComponent(caminho + url.search), 'cache-control': 'no-store' } });
         return new Response('Entre pelo menu do Estúdio Problems.', { status: 401, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
       }
+      // NÍVEIS DE ACESSO: a PÁGINA de um programa que o cargo da pessoa não vê não é entregue (os arquivos soltos seguem; sem a página não abre)
+      const progP = PERM_PROG[p.pref]; if (progP && req.method === 'GET' && (req.headers.get('accept') || '').includes('text/html')) { const pe = await permDe(env, s.e, url, false, true); if (pe && !pe.adm && (pe.sem?.programas || []).includes(progP)) return semPermissao(); }
       return repassa(req, url, p, env, s);
     }
 
     // menu e arquivos dele
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
-    if (caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-youtube.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { if (caminho === '/estudio-login.js' || caminho === '/estudio-youtube.js') { const r0 = await env.ASSETS.fetch(new Request(new URL(caminho, url))); if (r0.ok) return new Response(comChaveYt(env, comChaveFb(env, await r0.text())), { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } }); } const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
+    if (caminho === '/permissoes.json' || caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-youtube.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png') { if (caminho === '/estudio-login.js' || caminho === '/estudio-youtube.js') { const r0 = await env.ASSETS.fetch(new Request(new URL(caminho, url))); if (r0.ok) return new Response(comChaveYt(env, comChaveFb(env, await r0.text())), { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } }); } const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);

@@ -494,6 +494,77 @@ async function comTrocas(env, r) {
    (1000 por dia na conta). Para o MENU (Recentes na nuvem, ?menu=1) ela fica 5 min guardada aqui na memória do servidor, sem
    gravar nada; é jogada fora quando alguém salva um projeto ou tira uma animação da nuvem. O Animador continua pedindo sem ?menu=1
    e sempre recebe a lista na hora (ex.: logo depois de salvar). */
+/* ===================== NÍVEIS DE ACESSO (pedido da dona, 05/11/2026) =====================
+   Quem pode ver cada PROGRAMA e cada FUNÇÃO. Tudo numa chave só da nuvem da equipe: "acesso/permissoes"
+     { v: 1, cargos: [{ id, nome, cor, desc, sem: { programas: [...], funcoes: [...] } }],   ← "sem" = o que o cargo NÃO tem
+       pessoas: { <id da pessoa>: { cargos: [<id do cargo>], pasta: <id da pasta> | null } },
+       pastas: [{ id, nome }], padrao: 'equipe', em, por }
+   - O id da pessoa é o MESMO da ADM › Quem pode entrar (porteiro `idDe`: sha256('acesso:' + e-mail), 16 letras): o e-mail
+     nunca vai para o navegador e o modelo não guarda e-mail nenhum.
+   - O cargo guarda só o que ele TIRA: programa/função nova que aparecer no catálogo (/permissoes.json) já nasce liberada.
+   - Pessoa com vários cargos: soma (pode o que QUALQUER um dos cargos dela pode). Sem cargo = o cargo padrão "Equipe"
+     (tudo liberado até um ADM mudar). Os ADMs (variável ADMINS) sempre têm tudo.
+   - Função "programa.algo" de um programa que a pessoa não vê também fica bloqueada.
+   - Economia: o modelo fica 60 s na memória (e cacheTtl 60 no KV); o catálogo 10 min. Gravar = só quando o ADM salva. */
+const PERM = { m: undefined, t: 0 }, CAT = { j: null, t: 0 };
+const PERM_PADRAO = () => ({ v: 1, cargos: [{ id: 'equipe', nome: 'Equipe', cor: '#8e8e93', desc: 'Cargo padrão: quem não tem cargo fica nele.', sem: { programas: [], funcoes: [] } }], pessoas: {}, pastas: [], padrao: 'equipe' });
+async function permModelo(env, forcar) {
+  if (!forcar && PERM.m !== undefined && Date.now() - PERM.t < 60e3) return PERM.m;
+  try { const v = await env.EQUIPE?.get('acesso/permissoes', { type: 'json', cacheTtl: 60 }); PERM.m = v && Array.isArray(v.cargos) ? v : null; PERM.t = Date.now(); }
+  catch { if (PERM.m === undefined) PERM.m = null; PERM.t = Date.now() - 45e3; } // falhou: tenta de novo em 15 s; sem modelo = tudo liberado
+  return PERM.m;
+}
+async function permCatalogo(env) { // o catálogo do site (permissoes.json): só para devolver as listas "liberadas"; sem ele, nada é bloqueado a mais
+  if (CAT.j && Date.now() - CAT.t < 600e3) return CAT.j;
+  try { const r = await fetch(env.CATALOGO_URL || 'https://problemsbloxcreate-lab.github.io/permissoes.json', { cf: { cacheTtl: 300 } }); if (r.ok) { const j = await r.json(); if (Array.isArray(j?.programas)) { CAT.j = j; CAT.t = Date.now(); } } } catch { }
+  if (!CAT.j) { CAT.j = { programas: [], funcoes: [] }; CAT.t = Date.now() - 540e3; } return CAT.j;
+}
+const b64uE = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const permId = async email => b64uE(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('acesso:' + String(email || '').trim().toLowerCase()))).slice(0, 16); // = idDe do porteiro
+// o que a pessoa NÃO tem (id = permId do e-mail). ADM: nada bloqueado.
+function permSem(m, id, adm) {
+  const vazio = { programas: [], funcoes: [], cargos: [] }; if (adm || !m) return vazio;
+  const ids = (m.pessoas?.[id]?.cargos || []).filter(c => m.cargos.some(x => x.id === c));
+  let cs = ids.map(c => m.cargos.find(x => x.id === c)); if (!cs.length) cs = [m.cargos.find(x => x.id === (m.padrao || 'equipe')) || m.cargos[0]].filter(Boolean);
+  if (!cs.length) return vazio;
+  const todos = t => cs.reduce((a, c) => a.filter(k => (c.sem?.[t] || []).includes(k)), [...(cs[0].sem?.[t] || [])]); // bloqueado só se TODOS os cargos tiram
+  return { programas: todos('programas'), funcoes: todos('funcoes'), cargos: cs.map(c => ({ id: c.id, nome: c.nome, cor: c.cor })) };
+}
+const permBloq = (sem, chave) => { chave = String(chave || ''); if (!chave.includes('.')) return sem.programas.includes(chave); return sem.funcoes.includes(chave) || sem.programas.includes(chave.split('.')[0]); };
+// AJUDANTE para as outras rotas: pode(env, email, 'programa.funcao' | 'programa') → true/false
+async function pode(env, email, chave) { if (ehAdmin(env, email)) return true; const m = await permModelo(env); if (!m) return true; return !permBloq(permSem(m, await permId(email), false), chave); }
+// as permissões efetivas de quem está logado (GET /permissoes): { adm, programas, funcoes, sem, cargos, livre }
+async function permEfetivas(env, email) {
+  const adm = ehAdmin(env, email), m = await permModelo(env), sem = permSem(m, await permId(email), adm), cat = await permCatalogo(env);
+  const livre = !m || m.cargos.every(c => !(c.sem?.programas || []).length && !(c.sem?.funcoes || []).length); // ninguém tem nada bloqueado (o porteiro não precisa conferir cada um)
+  return { adm, livre, cargos: sem.cargos, sem: { programas: sem.programas, funcoes: sem.funcoes },
+    programas: (cat.programas || []).map(p => p.id).filter(k => !permBloq(sem, k)), funcoes: (cat.funcoes || []).map(f => f.id).filter(k => !permBloq(sem, k)) };
+}
+// qual programa é um botão do menu (pelo endereço; sem endereço, pelo nome) — para não mandar o link de quem não pode ver
+function permProgDoLink(l) {
+  let p = String(l?.url || ''); try { p = new URL(p, 'https://x.invalid/').pathname; } catch { }
+  const m = p.match(/^\/(animador|shorts|editor|modelador|jester|jester-dreams|preparativos)(\/|$)/); if (m) return m[1] === 'jester-dreams' ? 'jester' : m[1];
+  const n = String(l?.nome || '').toUpperCase();
+  return /JESTER/.test(n) ? 'jester' : /PREPARA/.test(n) ? 'preparativos' : /SHORT/.test(n) ? 'shorts' : /MODEL/.test(n) ? 'modelador' : /ANIM/.test(n) ? 'animador' : /EDI/.test(n) ? 'editor' : null;
+}
+// ADM salvando: confere tudo o que veio (nada de e-mail; ids e textos curtos)
+function permLimpa(b, porId) {
+  const txt = (v, n) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n), cor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : '#8e8e93';
+  const lista = (a, re, n) => [...new Set((Array.isArray(a) ? a : []).map(String).filter(x => re.test(x)))].slice(0, n);
+  const ID = /^[a-z0-9][a-z0-9-]{0,39}$/, FN = /^[a-z0-9][a-z0-9-]{0,39}\.[a-z0-9][a-z0-9.-]{0,59}$/, PID = /^[A-Za-z0-9_-]{16}$/;
+  if (!b || !Array.isArray(b.cargos)) throw new Error('Modelo inválido.');
+  if (b.cargos.length > 60) throw new Error('No máximo 60 cargos.');
+  const cargos = []; for (const c of b.cargos) { const id = txt(c?.id, 40).toLowerCase(); if (!ID.test(id) || cargos.some(x => x.id === id)) continue;
+    cargos.push({ id, nome: txt(c.nome, 40) || 'Cargo', cor: cor(c.cor), desc: txt(c.desc, 160), sem: { programas: lista(c.sem?.programas, ID, 60), funcoes: lista(c.sem?.funcoes, FN, 600) } }); }
+  if (!cargos.some(c => c.id === 'equipe')) cargos.unshift(PERM_PADRAO().cargos[0]);
+  const pastas = []; for (const p of (Array.isArray(b.pastas) ? b.pastas : []).slice(0, 100)) { const id = txt(p?.id, 40).toLowerCase(); if (ID.test(id) && !pastas.some(x => x.id === id)) pastas.push({ id, nome: txt(p.nome, 40) || 'Pasta' }); }
+  const pessoas = {}; let n = 0;
+  for (const [id, p] of Object.entries(b.pessoas && typeof b.pessoas === 'object' ? b.pessoas : {})) { if (!PID.test(id) || ++n > 2000) continue;
+    const cs = lista(p?.cargos, ID, 10).filter(c => cargos.some(x => x.id === c)), pasta = pastas.some(x => x.id === p?.pasta) ? p.pasta : null;
+    if (cs.length || pasta) pessoas[id] = { cargos: cs, pasta }; } // sem cargo e sem pasta = não precisa guardar
+  const padrao = cargos.some(c => c.id === b.padrao) ? b.padrao : 'equipe';
+  return { v: 1, cargos, pessoas, pastas, padrao, em: new Date().toISOString(), por: porId }; // por = id da pessoa (sem e-mail)
+}
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
@@ -529,7 +600,11 @@ export default {
     else if (!liberado) return json({ error: { type: 'origem', message: 'Este site não está liberado no servidor da turma.' } }, 403, cors);
     if (!env.ANTHROPIC_API_KEY && !env._porta) return json({ error: { type: 'config', message: 'O servidor está sem a chave (ANTHROPIC_API_KEY).' } }, 500, cors);
 
-    const login = await confereLogin(req, env);
+    // NÍVEIS DE ACESSO pelo porteiro (GET /permissoes de qualquer programa, só com a sessão do porteiro): o porteiro fala por
+    // dentro da Cloudflare (Service Binding TURMA) e manda o e-mail da sessão. Pedido da internet SEMPRE tem req.cf; pela ligação
+    // direta não tem — então este caminho só vale pela ligação. Mesmo assim o e-mail precisa estar na lista de quem entra.
+    const peloPorteiro = p00 === '/permissoes' && req.method === 'GET' && !req.cf && req.headers.get('x-porteiro-email');
+    const login = peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google para usar a IA.' } }, 401, cors);
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
     if (R && login.email && !env._porta) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
@@ -556,6 +631,21 @@ export default {
             if (it.metadata?._del) q.apagadas++; else { q.n++; q.bytes += +it.metadata?.tam || 0; } }
           if (out.terc.n || out.terc.apagadas) out.terc.emUso = true; } catch { out.reserva.erro = true; } }
       return json(out, 200, { ...cors, 'cache-control': 'no-store' });
+    }
+    // NÍVEIS DE ACESSO: GET /permissoes = as permissões de quem está logado { adm, livre, programas, funcoes, sem, cargos };
+    // GET ?adm=1 (só ADM) = o modelo inteiro (ADM › Níveis de acesso); POST { modelo } (só ADM) = salva. Sem e-mails.
+    if (p00 === '/permissoes') {
+      if (!login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      const q = new URL(req.url).searchParams, nc = { ...cors, 'cache-control': 'no-store' };
+      if (req.method === 'GET' && !q.get('adm')) return json(await permEfetivas(env, login.email), 200, nc);
+      if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM mexe nos níveis de acesso.' } }, 403, cors);
+      if (req.method === 'GET') { const m = await permModelo(env, q.get('novo') === '1'); return json({ modelo: m || PERM_PADRAO(), salvo: !!m, eu: await permId(login.email) }, 200, nc); }
+      if (req.method !== 'POST') return json({ error: { message: 'Use GET ou POST.' } }, 405, cors);
+      let b = {}; try { b = await req.json(); } catch { }
+      let m; try { m = permLimpa(b.modelo, await permId(login.email)); } catch (e) { return json({ error: { message: e.message } }, 400, cors); }
+      const t = JSON.stringify(m); if (t.length > 900000) return json({ error: { message: 'Os níveis de acesso ficaram grandes demais.' } }, 413, cors);
+      await env.EQUIPE.put('acesso/permissoes', t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: m.em } });
+      PERM.m = m; PERM.t = Date.now(); return json({ ok: true, modelo: m }, 200, nc);
     }
     if (new URL(req.url).pathname === '/confere') return new URL(req.url).searchParams.get('adm') && !ehAdmin(env, login.email) ? json({ error: { type: 'adm' } }, 403, cors) : json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); // a nuvem reserva confere se o login é da equipe (sem e-mail na resposta)
     // SEGURANÇA (não remover): quem é + chave do app criptografado — só com login do Firebase confirmado e e-mail liberado
@@ -724,6 +814,7 @@ export default {
       const BA = p0.startsWith('/jester') ? 'jester' : 'animacoes';
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      if (!(await pode(env, login.email, BA === 'jester' ? 'jester' : 'animador'))) return p0 === '/' + BA && req.method === 'GET' ? json({ itens: [] }, 200, { ...cors, 'cache-control': 'no-store' }) : json({ error: { type: 'permissao', message: 'O seu cargo não tem acesso a este programa.' } }, 403, cors); // NÍVEIS DE ACESSO
       const q = new URL(req.url).searchParams, k = q.get('k') || '';
       const KA = new RegExp('^' + BA + '\\/(pastas\\.json|[A-Za-z0-9_-]{2,40}\\/(projeto\\.json|thumb\\.jpg|arq\\/[A-Za-z0-9._~%-]{1,300}))$'), /* pastas.json = pastas das animações da nuvem (toda a equipe muda) */ KAD = new RegExp('^' + BA + '\\/[A-Za-z0-9_-]{2,40}\\/$');
       const listar = async (prefix) => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
@@ -753,6 +844,7 @@ export default {
       if (req.method === 'DELETE') {
         // REMOVER DA NUVEM (decisão do dono, 30/10/2026): quem mandou a animação para a nuvem ou um ADM
         if (KAD.test(k)) { const dono = await env.EQUIPE.getWithMetadata(k + 'projeto.json', { type: 'stream' }).then(async o => { try { await o.value?.cancel(); } catch { } return o.metadata?.por || ''; }).catch(() => '');
+          if (!ehAdmin(env, login.email) && !(await pode(env, login.email, 'geral.apagar-nuvem'))) return json({ error: { type: 'permissao', message: 'O seu cargo não pode apagar da nuvem. Peça para um ADM tirar.' } }, 403, cors);
           if (!ehAdmin(env, login.email) && String(dono).toLowerCase() !== String(login.email).toLowerCase()) return json({ error: { type: 'adm', message: 'Só quem mandou esta animação para a nuvem (ou um ADM) pode tirar ela de lá.' } }, 403, cors);
           const ks = (await listar(k)).map(x => x.k); if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x); LISTA_ANIM.delete(BA); return json({ ok: true, apagados: ks.length }, 200, cors); }
         if (!KA.test(k) || !/\/arq\//.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors); // arquivos que a animação já não usa: qualquer um da equipe (limpeza do envio)
@@ -852,7 +944,7 @@ export default {
       // SÓ ADM (decisão do dono, 02/11/2026): programa marcado "só para ADMs" nem sai daqui para quem não é ADM. Antes de alguém salvar o
       // menu com a caixinha, o Jester Dreams já conta como marcado.
       const soAdmDe = l => l.soAdm ?? /jester\s*dreams/i.test(l.nome || '');
-      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); const ls = v?.links ? v.links.map(l => ({ ...l, soAdm: soAdmDe(l) })).filter(l => adm || (!l.soAdm && !l.invisivel)) : null; /* invisível: nem sai para quem não é ADM (o ADM recebe só para a ADM › Menu; o menu esconde) */ return json({ links: ls, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); let ls = v?.links ? v.links.map(l => ({ ...l, soAdm: soAdmDe(l) })).filter(l => adm || (!l.soAdm && !l.invisivel)) : null; if (ls && !adm) { const pe = permSem(await permModelo(env), await permId(login.email), false); ls = ls.filter(l => !pe.programas.includes(permProgDoLink(l))); } /* NÍVEIS DE ACESSO: programa que o cargo não vê nem sai daqui */ /* invisível: nem sai para quem não é ADM (o ADM recebe só para a ADM › Menu; o menu esconde) */ return json({ links: ls, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'PUT' || req.method === 'POST') {
         if (!adm) return semAdm();
         let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
@@ -953,6 +1045,7 @@ export default {
     if (uso(u).usd >= limite) return json({ error: { type: 'limite', message: 'Limite de gasto atingido' }, turma_uso: uso(u) }, 402, cors);
 
     // o corpo vem do editor SEM modelo/limites — quem decide é o servidor (sem reler o JSON inteiro, que pode ter imagens)
+    if (login.email && !(await pode(env, login.email, 'geral.ia'))) return json({ error: { type: 'permissao', message: 'O seu cargo não usa a IA. Peça para um ADM liberar em ADM › Níveis de acesso.' } }, 403, cors); // NÍVEIS DE ACESSO
     let txt = (await req.text()).trim();
     if (!txt.startsWith('{') || !txt.endsWith('}') || /"(model|max_tokens|thinking|stream)"\s*:/.test(txt.slice(-400))) return json({ error: { message: 'Pedido inválido' } }, 400, cors);
     // resposta em "stream" (aos pedaços): permite respostas bem grandes sem estourar tempo

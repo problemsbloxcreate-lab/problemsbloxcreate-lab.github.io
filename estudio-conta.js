@@ -55,6 +55,29 @@ window.EstudioPasse ||= (() => {
 window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.length && window.firebase.auth().currentUser; if (!u) return '';
   const j = new TextEncoder().encode(JSON.stringify(u.toJSON())); let t = ''; for (const c of j) t += String.fromCharCode(c);
   return 'ep-conta=' + btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); } catch { return ''; } };
+/* ===================== NÍVEIS DE ACESSO no navegador (05/11/2026) — window.EstudioPerm =====================
+   CONTRATO (todos os programas usam):  await EstudioPerm.pronto;  EstudioPerm.pode('animador.exportar') → true/false;
+   EstudioPerm.programa('animador') → true/false.  Sem regras carregadas (sem porteiro, sem internet, servidor fora) responde
+   TRUE: nada quebra. Quem decide de verdade é o servidor (porteiro + turma-ia `/permissoes`); isto só esconde o que a pessoa
+   não pode usar. Guardado 5 min no sessionStorage 'ep-perm-v1' (não pede a cada página). Evento 'estudio-perm' quando chega.
+   Extras: EstudioPerm.dados() (o que veio do servidor), EstudioPerm.atualizar() (busca de novo agora). */
+window.EstudioPerm ||= (() => {
+  const K = 'ep-perm-v1', VALE = 5 * 60e3; let dados = null;
+  try { const c = JSON.parse(sessionStorage.getItem(K) || 'null'); if (c?.j && Date.now() - c.t < VALE) dados = c.j; } catch { }
+  const bloq = k => { if (!dados || dados.adm) return false; k = String(k || '').trim(); const s = dados.sem || {}, ps = s.programas || [], fs = s.funcoes || [];
+    return k.includes('.') ? fs.includes(k) || ps.includes(k.split('.')[0]) : ps.includes(k); };
+  const busca = async forcar => {
+    try { const r = await fetch('/permissoes' + (forcar ? '?novo=1' : ''), { credentials: 'same-origin', cache: 'no-store' });
+      if (!r.ok || !r.headers.get('x-porteiro')) return false; const j = await r.json(); if (!j || typeof j !== 'object') return false;
+      dados = { adm: !!j.adm, livre: !!j.livre, programas: j.programas || [], funcoes: j.funcoes || [], sem: j.sem || { programas: [], funcoes: [] }, cargos: j.cargos || [] };
+      try { sessionStorage.setItem(K, JSON.stringify({ t: Date.now(), j: dados })); } catch { }
+      try { dispatchEvent(new CustomEvent('estudio-perm', { detail: dados })); } catch { } return true;
+    } catch { return false; } };
+  const P = { pode: k => !bloq(k), programa: id => !bloq(String(id || '').split('.')[0]), dados: () => dados,
+    atualizar: () => (P.pronto = busca(true).then(() => true)), limpar: () => { dados = null; try { sessionStorage.removeItem(K); } catch { } } };
+  P.pronto = dados ? Promise.resolve(true) : (/^https?:$/.test(location.protocol) ? busca(false).then(() => true) : Promise.resolve(true));
+  return P;
+})();
 (() => {
   if (window.EstudioLimite) return;
   const proxima = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
@@ -655,7 +678,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
       pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
-        <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs">${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
+        <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs"${window.EstudioPerm?.pode('geral.mensagens') === false ? ' hidden' : ''}>${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<button class="it" type="button" role="menuitem" data-a="adm">${ICONES.adm}ADM</button>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
@@ -1859,7 +1882,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   let DOCK_PC = null, DOCK_PC_T = 0; // uso do espaço deste computador (0–1), medido no navegador
   function pintaDock() {
     const dk = document.querySelector('.ep-dock'); if (!dk) return;
-    const fixos = [['msgs', 'Mensagens', ICONES.msg, 'linear-gradient(180deg,#3ad466,#1fae47)', MSG.nao ? `<b class="n vm">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''],
+    const fixos = [...(window.EstudioPerm?.pode('geral.mensagens') === false ? [] : [['msgs', 'Mensagens', ICONES.msg, 'linear-gradient(180deg,#3ad466,#1fae47)', MSG.nao ? `<b class="n vm">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : '']]), // NÍVEIS DE ACESSO: sem Mensagens no cargo, o atalho some
       ['conta', 'Personalizar o perfil', ICONES.conta, 'linear-gradient(180deg,#5e9bff,#2f6be6)', ''],
       ...(P?.adm ? [['adm', 'ADM', ICONES.adm, 'linear-gradient(180deg,#8e8e93,#5a5a5f)', MSG.denuncias ? '<b class="n vm">!</b>' : '']] : [])];
     // espaço: abrir o painel não pede nada a mais do que o círculo do cabeçalho já pede (a nuvem usa a medida guardada de 5 min)
@@ -1873,6 +1896,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const bt = ([k, n, ic, bg, extra = '']) => `<button class="di" type="button" data-fixo="${k}" data-dica="${dica(k, n)}" aria-label="${dica(k, n)}"><span class="ic fx" style="background:${bg}">${ic}</span>${k === 'nuvem' ? barra(usoNv) : k === 'pc' ? barra(DOCK_PC) : ''}${extra}</button>`;
     // programas que a pessoa FIXOU no Dock pelo "Organizar" do menu (localStorage 'ep-dock-fixos', só neste navegador)
     let meus = []; try { meus = JSON.parse(localStorage.getItem('ep-dock-fixos') || '[]'); if (!Array.isArray(meus)) meus = []; } catch { }
+    meus = meus.filter(x => { const m = String(x?.url || '').match(/\/(animador|shorts|editor|modelador|jester|preparativos)(\/|$)/); return !m || window.EstudioPerm?.programa(m[1]) !== false; }); // NÍVEIS DE ACESSO: programa que o cargo não vê sai do Dock
     const icMeu = x => { try { if (x.prog && window.EstudioIcones?.svg) return window.EstudioIcones.svg(x.prog); } catch { }
       return x.ic ? `<span class="meu">${x.ic}</span>` : `<span style="display:grid;place-items:center;background:#3a3a3c;font-size:16px">${esc(String(x.nome || '?').slice(0, 2))}</span>`; }; // ícone do cartão: com o quadradinho de fundo do menu
     const meuBt = (x, i) => `<button class="di prog" type="button" data-meu="${i}" data-dica="${esc(x.nome)}" aria-label="${esc(x.nome)} (clique direito: tirar do Dock)"><span class="ic">${icMeu(x)}</span></button>`;
@@ -1881,7 +1905,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       b.onclick = () => { const ev = new CustomEvent('estudio-abrir-prog', { detail: { url: x.url }, cancelable: true }); dispatchEvent(ev); if (!document.getElementById('grid')) location.href = x.url; }; // no menu, ele abre com o escurecer de sempre
       b.oncontextmenu = e => { e.preventDefault(); try { localStorage.setItem('ep-dock-fixos', JSON.stringify(meus.filter(y => y !== x))); } catch { } dispatchEvent(new Event('estudio-dock-fixos')); }; });
     if (DOCK_PC == null || Date.now() - DOCK_PC_T > 60e3) { DOCK_PC_T = Date.now(); estimativa().then(e => { if (e.quota) { DOCK_PC = e.usage / e.quota; pintaDock(); } }); } // o do computador: no máximo uma medida por minuto
-    dk.querySelector('[data-fixo=msgs]').onclick = () => painelMensagens();
+    const dkMsg = dk.querySelector('[data-fixo=msgs]'); if (dkMsg) dkMsg.onclick = () => painelMensagens();
     dk.querySelector('[data-fixo=conta]').onclick = () => { if (CFG.conta) CFG.conta(); else abrirMinhaConta(); };
     dk.querySelector('[data-fixo=adm]')?.addEventListener('click', () => abrirAdm());
     dk.querySelector('[data-fixo=nuvem]')?.addEventListener('click', () => painelNuvem());
@@ -1915,6 +1939,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     setTimeout(confereLembretes, 2500); document.addEventListener('visibilitychange', confereLembretes);
     addEventListener('estudio-mensagens', () => { if (document.querySelector('.ep-dock')) pintaDock(); }); // contagem das Mensagens no Dock
     addEventListener('estudio-dock-fixos', () => pintaDock()); // fixou/tirou pelo menu
+    addEventListener('estudio-perm', () => pintaDock()); // chegaram os níveis de acesso (cargo sem Mensagens ou sem algum programa)
     addEventListener('storage', e => { if (e.key === 'ep-dock-fixos') pintaDock(); }); // ...ou em outra aba
   }
 
