@@ -429,6 +429,12 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
 .ep-conta-fw::before{inset:-2px}
 .ep-conta .ep-conta-nuvem,.ep-conta .ep-conta-espaco{width:38px;height:38px}
 .ep-conta-nuvem svg,.ep-conta-espaco svg{width:32px;height:32px}
+/* ÍCONES DA CONTA IGUAIS (pedido do dono, 05/11/2026): nuvem, navegador, menu e foto com o mesmo tamanho (34 px) e o mesmo espaço entre eles */
+.ep-conta{gap:6px}
+.ep-conta .ep-conta-nuvem,.ep-conta .ep-conta-espaco{width:34px;height:34px}
+.ep-conta .ep-conta-nuvem svg,.ep-conta .ep-conta-espaco svg{width:30px;height:30px}
+.ep-conta .ep-conta-menu{width:34px;padding:0!important;justify-content:center}
+.ep-conta .ep-conta-btn{width:34px;height:34px}
 .ep-conta-pop{top:46px;width:280px;padding:5px;background:rgba(40,40,44,.98);border:.5px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 22px 60px rgba(0,0,0,.55);animation:epPop .14s ease-out}
 @keyframes epPop{from{opacity:0;transform:translateY(-4px) scale(.98)}}
 .ep-conta-head{border-bottom:.5px solid rgba(255,255,255,.12);padding:8px 9px 10px}
