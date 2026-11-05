@@ -832,6 +832,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 @media (max-width:1100px){.mn-col{align-items:center}}
 .mn-progs{min-width:calc(5 * var(--mn-u) + 4 * var(--mn-g))}
 @media (max-width:720px){.mn-progs{min-width:0;width:100%}}
+#menu #estudio.pronto .et,#menu #atalhos.pronto .et{animation:none}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1691,7 +1692,11 @@ const estudio = {
     T.push(clima.html());
     const ORD = ['cal', 'nuvem', 'pc', 'msgs', 'perfil', 'adm', 'clima'], et = h => ORD.indexOf((h.match(/data-et="(\w+)"/) || [])[1]);
     T.sort((a, b) => et(a) - et(b)); // ordem pedida pela dona: Calendário, Nuvem, Este computador, Mensagens, Perfil, ADM, Clima
+    // SEM PISCAR (05/11/2026): só redesenha se algo mudou de verdade (antes cada clique no calendário, cada conferência das Mensagens
+    // e o clima redesenhavam tudo com a animação de entrada); a animação de entrada toca só na primeira vez
+    const html = T.join('').replace(/style="--i:\d+"/, ''); if (html === this._html && box.children.length) return; this._html = html;
     box.innerHTML = T.join(''); box.style.setProperty('--cols', 4); clima.liga(box);
+    if (!this._uma) { this._uma = true; setTimeout(() => box.classList.add('pronto'), 1500); }
     const vai = { clima: () => clima.config(), msgs: () => EC?.mensagens?.abrir?.(), cal: () => EC?.calendario?.(), nuvem: () => EC?.nuvem?.painel?.(), pc: () => EC?.painelEspaco?.(), perfil: () => abrirConta(), adm: () => EC?.adm?.abrir?.() };
     $$('[data-et]', box).forEach(b => b.onclick = () => vai[b.dataset.et]?.());
     if (this.pc == null && !this._med) { this._med = 1; navigator.storage?.estimate?.().then(e => { if (e?.quota) { this.pc = e.usage / e.quota; this.pinta(); } }).catch(() => { }); }
@@ -1772,7 +1777,7 @@ const atalhos = {
     const box = $('#atalhos'); if (!box) return; const L = this.lista();
     box.innerHTML = L.map((a, k) => `<a class="et at" href="${esc(a.url)}" data-at="${k}" style="--c:${esc(a.cor || this.CORES[0])}" title="${esc(a.nome)} · ${esc(a.url)}" target="${/^https?:/i.test(a.url) && !a.url.startsWith(location.origin) ? '_blank' : '_self'}" rel="noopener"><span class="at-l">${esc(String(a.nome || '?').slice(0, 2))}</span><span class="nm">${esc(a.nome)}</span><button type="button" class="at-ed" data-ed="${k}" title="Editar" aria-label="Editar ${esc(a.nome)}">${ICE('<path d="M4 20h4L19 9l-4-4L4 16z"/>', 14)}</button></a>`).join('')
       + `<button type="button" class="et at-mais" title="Adicionar um atalho (só neste computador)"><span class="gi">${ICE('<path d="M12 5v14M5 12h14"/>', 34)}</span><span class="nm">Adicionar</span></button>`;
-    box.style.setProperty('--cols', Math.max(1, Math.min(4, L.length + 1)));
+    box.style.setProperty('--cols', Math.max(1, Math.min(4, L.length + 1))); if (!this._uma) { this._uma = true; setTimeout(() => box.classList.add('pronto'), 1500); }
     $('.at-mais', box).onclick = () => this.edita(-1);
     $$('[data-ed]', box).forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); this.edita(+b.dataset.ed); });
   },
