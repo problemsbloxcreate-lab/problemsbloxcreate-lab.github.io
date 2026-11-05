@@ -788,6 +788,39 @@ export default {
       }
       return json({ error: { message: 'Pedido inválido' } }, 400, cors);
     }
+    // PUBLICAÇÕES (programa /publicacoes/, pedido da dona, 05/11/2026): UM JSON só com o que a equipe publicou no YouTube
+    //   (publicacoes/lista.json). O VÍDEO nunca passa por aqui: vai do navegador direto para o YouTube; aqui só fica a linha da lista.
+    //   GET → { itens, mod } (por = código u…, nunca e-mail; meu = é seu) · POST { item } → grava/atualiza 1 item (o seu, ou ADM)
+    //   DELETE ?id= → tira da lista (não apaga no YouTube). Uma gravação por publicação; o navegador guarda a lista e lê de vez em quando.
+    if (p0 === '/publicacoes') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      const KP = 'publicacoes/lista.json', eu = String(login.email).toLowerCase(), adm = ehAdmin(env, login.email);
+      const leP = async () => { try { const v = JSON.parse((await env.EQUIPE.get(KP)) || 'null'); return v && Array.isArray(v.itens) ? v : { itens: [], mod: 0 }; } catch { return { itens: [], mod: 0 }; } };
+      const saida = async v => json({ itens: await Promise.all(v.itens.map(async x => ({ ...(await semEmail(x)), meu: String(x.por || '').toLowerCase() === eu }))), mod: v.mod || 0 }, 200, { ...cors, 'cache-control': 'no-store' });
+      const dono = x => adm || String(x?.por || '').toLowerCase() === eu;
+      const grava = async v => { v.mod = Date.now(); const t = JSON.stringify(v); await env.EQUIPE.put(KP, t, { metadata: { tipo: 'application/json', tam: t.length, mod: v.mod, em: new Date().toISOString() } }); };
+      if (req.method === 'GET') return saida(await leP());
+      if (req.method === 'POST') {
+        let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
+        const i = b?.item; if (!i || typeof i !== 'object' || !/^[A-Za-z0-9_-]{6,20}$/.test(String(i.id || ''))) return json({ error: { message: 'Item inválido.' } }, 400, cors);
+        const txt = (x, n) => String(x ?? '').slice(0, n), num = x => Number.isFinite(+x) && +x > 0 ? +x : null;
+        const limpo = { id: i.id, titulo: txt(i.titulo, 100), canal: { id: txt(i.canal?.id, 40), nome: txt(i.canal?.nome, 100), foto: /^https:\/\//.test(i.canal?.foto || '') ? txt(i.canal.foto, 300) : '' },
+          modo: ['naoListado', 'agora', 'agendado'].includes(i.modo) ? i.modo : 'naoListado', privacidade: ['public', 'unlisted', 'private'].includes(i.privacidade) ? i.privacidade : 'unlisted',
+          publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm) };
+        const v = await leP(), k = v.itens.findIndex(x => x.id === limpo.id), antes = k >= 0 ? JSON.stringify(v.itens[k]) : null;
+        if (k >= 0) { if (!dono(v.itens[k])) return json({ error: { type: 'adm', message: 'Só quem publicou (ou um ADM) muda este item.' } }, 403, cors); v.itens[k] = { ...limpo, por: v.itens[k].por, enviadoEm: v.itens[k].enviadoEm }; }
+        else { v.itens.unshift({ ...limpo, por: eu }); if (v.itens.length > 3000) v.itens.length = 3000; }
+        if (antes && antes === JSON.stringify(v.itens[k])) return saida(v); // nada mudou: não grava
+        await grava(v); return saida(v);
+      }
+      if (req.method === 'DELETE') {
+        const id = new URL(req.url).searchParams.get('id') || '', v = await leP(), x = v.itens.find(y => y.id === id);
+        if (!x) return saida(v); if (!dono(x)) return json({ error: { type: 'adm', message: 'Só quem publicou (ou um ADM) tira da lista.' } }, 403, cors);
+        v.itens = v.itens.filter(y => y.id !== id); await grava(v); return saida(v);
+      }
+      return json({ error: { message: 'Pedido inválido' } }, 400, cors);
+    }
     // GOSTO APRENDIDO da edição (legendas, decupagem…): o que o dono corrigiu vira regra para os próximos vídeos, para a equipe toda.
     //   GET /gosto?de=animador → { gosto } · PUT /gosto?de=animador { gosto } (uma gravação, só quando o dono aprova uma etapa)
     //   Cada programa tem o seu (decisão do dono, 26/10/2026: o 2D do Animador NÃO mistura com o Minecraft do Shorts).

@@ -35,7 +35,7 @@
       appId: '1:105930517340:web:665cfdcffdcd8283e8af99',
     },
   };
-  const NOME_PROG = ((p => [['/animador/', 'ANIMADOR'], ['/jester/', 'JESTER DREAMS'], ['/editor/', 'EDITOR'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/shorts/', 'SHORTS']].find(([k]) => p.startsWith(k))?.[1] || 'ESTÚDIO PROBLEMS')(location.pathname));
+  const NOME_PROG = ((p => [['/animador/', 'ANIMADOR'], ['/jester/', 'JESTER DREAMS'], ['/editor/', 'EDITOR'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/shorts/', 'SHORTS'], ['/publicacoes/', 'PUBLICAÇÕES']].find(([k]) => p.startsWith(k))?.[1] || 'ESTÚDIO PROBLEMS')(location.pathname));
   const root = document.documentElement;
   // logo da tela de carregamento = o ícone do próprio programa (o mesmo da aba e do cabeçalho); sem programa, o do menu
   const LOGO_PROG = { ANIMADOR: '/animador/icones/simbolo.svg', 'JESTER DREAMS': '/jester/icone.svg', EDITOR: '/editor/icone.svg', MODELADOR: '/modelador/icone.svg', SHORTS: '/shorts/icone-shorts-180.png', BLOCKBENCH: '/modelador/icone.svg' }[NOME_PROG] || '';

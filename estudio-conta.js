@@ -820,9 +820,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // bancos do navegador (IndexedDB) de cada programa: nome do banco → programa e endereço
   const BANCOS = {
     'animador-v2': ['Animador', '/animador/'], 'turma-studios': ['Animador antigo', '/animador/', 'animações da versão antiga'], 'ep-edicao': ['Editor', '/editor/'], 'ep-whisper-edicao': ['Editor', '/editor/', 'transcrição guardada'],
-    'estudio-problems': ['Shorts', '/shorts/'], 'ep-gravacao': ['Shorts', '/shorts/gravacao/'], 'ep-menu': ['Menu', '/', 'fundo próprio'], 'jester-dreams': ['Jester Dreams (teste)', '/jester/'], 'ep-preparativos': ['Preparativos', '/preparativos/', 'rascunhos e gravações que faltam enviar'],
+    'estudio-problems': ['Shorts', '/shorts/'], 'ep-gravacao': ['Shorts', '/shorts/gravacao/'], 'ep-menu': ['Menu', '/', 'fundo próprio'], 'jester-dreams': ['Jester Dreams (teste)', '/jester/'], 'ep-publicacoes': ['Publicações', '/publicacoes/', 'vídeos esperando publicação'], 'ep-preparativos': ['Preparativos', '/preparativos/', 'rascunhos e gravações que faltam enviar'],
   };
-  const PROGRAMAS = { '/animador/': 'Animador', '/jester/': 'Jester Dreams (teste)', '/editor/': 'Editor', '/shorts/': 'Shorts', '/modelador/': 'Modelador', '/preparativos/': 'Preparativos' };
+  const PROGRAMAS = { '/animador/': 'Animador', '/jester/': 'Jester Dreams (teste)', '/editor/': 'Editor', '/shorts/': 'Shorts', '/modelador/': 'Modelador', '/preparativos/': 'Preparativos', '/publicacoes/': 'Publicações' };
   const fmt = b => { b = b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; };
   const dataTxt = t => { if (!t) return ''; const d = new Date(t); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
   function anel(pct) {
