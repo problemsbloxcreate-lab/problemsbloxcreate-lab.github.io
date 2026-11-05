@@ -25,6 +25,12 @@
     { "id": "editor.exportar", "programa": "editor", "nome": "Exportar vídeo", "desc": "Gerar o vídeo final da edição." },
     { "id": "editor.youtube", "programa": "editor", "nome": "Publicar no YouTube", "desc": "Mandar o vídeo pronto direto para o canal do YouTube." },
 
-    { "id": "modelador.exportar", "programa": "modelador", "nome": "Exportar modelo", "desc": "Baixar o modelo 3D (.bbmodel e outros formatos)." }
+    { "id": "modelador.exportar", "programa": "modelador", "nome": "Exportar modelo", "desc": "Baixar o modelo 3D (.bbmodel e outros formatos)." },
+
+    { "id": "preparativos.gravar", "programa": "preparativos", "nome": "Gravar falas", "desc": "Gravar pelo navegador o áudio das falas e enviar para a nuvem." },
+    { "id": "preparativos.roteiro", "programa": "preparativos", "nome": "Editar roteiro", "desc": "Escrever e mudar o roteiro e as partes (sem isso, só lê o roteiro)." },
+    { "id": "preparativos.organizar", "programa": "preparativos", "nome": "Organizar", "desc": "Usar o botão Organizar e mudar as legendas e as cores dos personagens." },
+    { "id": "preparativos.pronto", "programa": "preparativos", "nome": "Marcar destino e pronto", "desc": "Escolher para qual programa o roteiro vai (Animador, Shorts, Editor) e marcar quando está pronto." },
+    { "id": "preparativos.ideias", "programa": "preparativos", "nome": "Ideias", "desc": "Criar, mudar e tirar ideias (as mesmas do Animador) e pedir a análise dos canais." }
   ]
 }
