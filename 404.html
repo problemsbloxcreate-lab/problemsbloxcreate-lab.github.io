@@ -1531,8 +1531,8 @@ function comPartes(lista) { const out = [];
   return out.map((l, i) => ({ l, i, p: ORDEM.includes(id(l)) ? ORDEM.indexOf(id(l)) : 100 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 /* EM TESTE (pedido da dona, 05/11/2026): selo discreto no bloco. Vem da ADM › Botões (caixinha "Em teste", campo etiqueta);
    o Publicações nasce marcado. Desmarcar grava etiqueta '-' (= sem selo), para o padrão não voltar sozinho. */
-const ETIQUETA_PADRAO = { publicacoes: 'Em teste' };
-function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) return l.etiqueta; try { const u = new URL(l?.url || '', location.href); return u.origin === location.origin ? ETIQUETA_PADRAO[u.pathname.split('/').filter(Boolean)[0]] || '' : ''; } catch { return ''; } }
+const ETIQUETA_PADRAO = { publicacoes: 'Em teste', cenarios: 'Em teste' }; // cenarios = parte do Animador (sem botão na ADM: tira-se aqui)
+function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) return l.etiqueta; if (l?.id && ETIQUETA_PADRAO[l.id]) return ETIQUETA_PADRAO[l.id]; try { const u = new URL(l?.url || '', location.href); return u.origin === location.origin ? ETIQUETA_PADRAO[u.pathname.split('/').filter(Boolean)[0]] || '' : ''; } catch { return ''; } }
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
 const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
 function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
