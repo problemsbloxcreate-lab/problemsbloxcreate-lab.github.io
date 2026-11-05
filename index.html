@@ -1830,7 +1830,17 @@ const recentes = {
     if (!j) { try { j = await api('/animacoes?menu=1' + (forcar ? '&novo=1' : '')); try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { } } catch { return this.nuvem; } }
     return (j?.itens || []).filter(x => x?.id);
   },
-  async doComputador() { // só abre o banco se ele já existe (não cria um banco vazio do Animador em quem nunca abriu o Animador)
+  async doComputador() { return [...await this.doAnimador(), ...await this.doEditor()]; },
+  // EDITAR (05/11/2026): a lista dos projetos fica no banco 'ep-edicao' (store 'k', chave 'lista'); abre com /editor/?p=<id>. Só neste computador.
+  async doEditor() {
+    try { const ns = await indexedDB.databases?.(); if (ns && !ns.some(d => d.name === 'ep-edicao')) return []; } catch { }
+    try { const db = await new Promise((ok, no) => { const r = indexedDB.open('ep-edicao'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); r.onupgradeneeded = () => { try { r.transaction.abort(); } catch { } }; });
+      if (!db.objectStoreNames.contains('k')) { db.close(); return []; }
+      const L = await new Promise(ok => { const q = db.transaction('k').objectStore('k').get('lista'); q.onsuccess = () => ok(Array.isArray(q.result) ? q.result : []); q.onerror = () => ok([]); });
+      db.close(); return L.filter(x => x?.id).map(x => ({ id: x.id, tipo: 'ed', nome: x.nome, mod: +x.mod || 0 }));
+    } catch { return []; }
+  },
+  async doAnimador() { // só abre o banco se ele já existe (não cria um banco vazio do Animador em quem nunca abriu o Animador)
     try { const ns = await indexedDB.databases?.(); if (ns && !ns.some(d => d.name === 'animador-v2')) return []; } catch { }
     try { const db = await new Promise((ok, no) => { const r = indexedDB.open('animador-v2'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); r.onupgradeneeded = () => { try { r.transaction.abort(); } catch { } }; });
       if (!db.objectStoreNames.contains('projetos')) { db.close(); return []; }
@@ -1856,8 +1866,9 @@ const recentes = {
   lista() {
     const eu = this.eu, nv = new Map((this.nuvem || []).map(x => [x.id, x])), out = new Map();
     for (const x of nv.values()) if (eu && this.criador(x) === eu) out.set(x.id, { id: x.id, nome: x.nome, mod: +x.mod || Date.parse(x.em) || 0, onde: 'nuvem' });
+    for (const p of this.locais || []) if (p.tipo === 'ed') out.set('ed:' + p.id, { id: p.id, tipo: 'ed', nome: p.nome, mod: p.mod, onde: 'local' });
     for (const p of this.locais || []) if (p.tipo === 'at' && eu && p.editou === eu) out.set('at:' + p.id, { id: p.id, tipo: 'at', nome: p.nome, mod: p.mod, onde: p.nuvem ? 'nuvem' : 'local' });
-    for (const p of this.locais || []) { if (p.tipo === 'at' || !p.id || p.anterior || out.has(p.id)) continue;
+    for (const p of this.locais || []) { if (p.tipo === 'at' || p.tipo === 'ed' || !p.id || p.anterior || out.has(p.id)) continue;
       const c = nv.get(p.id); if (c) { if (eu && this.criador(c) === eu) out.set(p.id, { id: p.id, nome: c.nome || p.nome, mod: Math.max(+c.mod || 0, p.mod), onde: 'nuvem' }); continue; } // está na nuvem mas é de outra pessoa
       if (p.autor && eu && p.autor !== eu) continue; // copiado de outra pessoa
       out.set(p.id, { id: p.id, nome: p.nome, mod: p.mod, onde: this.nuvem ? 'local' : '?' }); }
@@ -1873,9 +1884,9 @@ const recentes = {
   pinta() {
     const el = $('#rec'); if (!el) return; const L = this.lista();
     if (!L.length) { el.innerHTML = `<div class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : (this.filtro() === 'nuvem' ? 'Nenhum projeto seu na nuvem.' : this.filtro() === 'local' ? 'Nenhum projeto seu só neste computador.' : 'Você ainda não criou nenhum projeto. As animações e os personagens do Ateliê que você fizer aparecem aqui.')}</div>`; return; }
-    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', at = x.tipo === 'at', href = at ? '/animador/?atelie=' + encodeURIComponent(x.id) : nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
+    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', at = x.tipo === 'at', edt = x.tipo === 'ed', href = edt ? '/editor/?p=' + encodeURIComponent(x.id) : at ? '/animador/?atelie=' + encodeURIComponent(x.id) : nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
       const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Só neste computador</span>` : `<span class="onde lc">${this.IC.local}Neste computador</span>`;
-      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="${at ? 'Abrir no Ateliê' : 'Abrir no Animador'}" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || (at ? 'Personagem sem nome' : 'Animação sem nome'))}</b><small>${at ? 'Personagem · ' : ''}${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="${at ? 'at' : 'an'}"></span></a>`; }).join('');
+      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="${edt ? 'Abrir no Editar' : at ? 'Abrir no Ateliê' : 'Abrir no Animador'}" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || (at ? 'Personagem sem nome' : 'Animação sem nome'))}</b><small>${edt ? 'Edição · ' : at ? 'Personagem · ' : ''}${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="${edt ? 'ed' : at ? 'at' : 'an'}"></span></a>`; }).join('');
     try { window.EstudioIcones?.pinta?.(el); } catch { }
   },
 };

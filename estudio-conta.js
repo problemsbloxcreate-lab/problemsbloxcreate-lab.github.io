@@ -659,20 +659,21 @@ window.EstudioPerm ||= (() => {
 :is(.ep-esp,.ep-msgs,.ep-cal,.ep-pg,.ep-conta-pop,.ep-notif,.ep-admj,.ep-conta-aviso) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.epm-on):not(.ep-carr):not(.ep-carr *):not(.ep-estado>i){border-radius:0!important}
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
-.ep-esp.ep-saindo{animation:epSome .3s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .3s cubic-bezier(.4,0,1,1) both!important}
-.ep-cal.ep-saindo{animation:epSaiDir .3s cubic-bezier(.4,0,1,1) both!important}
+.ep-esp.ep-saindo{animation:epSome .2s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
+.ep-cal.ep-saindo{animation:epSaiDir .18s cubic-bezier(.4,0,1,1) both!important}
 .ep-msgs.ep-saindo,.ep-pg.ep-saindo,.ep-admj.ep-saindo,.modal.ep-saindo{animation:epSome .22s ease both!important}
 .ep-msgs.ep-saindo .cx,.ep-pg.ep-saindo .cx,.ep-admj.ep-saindo .cx,.modal.ep-saindo .mc{animation:epEncolhe .22s ease both!important}
 .ep-conta-pop.ep-saindo,.ep-notif.ep-saindo{animation:epSome .16s ease both!important}
 /* calendário: luz do Windows 10 (as bordas dos dias perto do mouse acendem; o dia embaixo do mouse ganha a borda clara) */
 .ep-cal .g{position:relative;gap:2px!important;padding:2px;--mx:-200px;--my:-200px}
-.ep-cal .g::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle 90px at var(--mx) var(--my),rgba(255,255,255,.55),rgba(255,255,255,0) 100%)}
+.ep-cal .g::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle 80px at var(--mx) var(--my),rgba(255,255,255,.2),rgba(255,255,255,0) 100%)}
 .ep-cal .g.luz::before{opacity:1}
 .ep-cal .g>*{position:relative;z-index:1}
 .ep-cal .g button{background:rgb(17,37,64)!important;transition:box-shadow .12s,background .12s}
-.ep-cal .g button:hover{box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)!important;background:radial-gradient(circle 40px at 50% 50%,rgba(255,255,255,.12),rgba(255,255,255,0)),rgb(17,37,64)!important}
+.ep-cal .g button:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)!important;background:radial-gradient(circle 40px at 50% 50%,rgba(255,255,255,.12),rgba(255,255,255,0)),rgb(17,37,64)!important}
 .ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}
 .ep-cal .g button.fora{color:rgba(255,255,255,.35)}
+.ep-cal .g button.hoje:not(.sel){color:#7fc4ff!important;font-weight:700;box-shadow:inset 0 0 0 1px rgba(127,196,255,.6)!important}
 .ep-cal .g .sem{background:rgb(17,37,64);padding:4px 0}
 @media (prefers-reduced-motion:reduce){.ep-cal .g::before{transition:none}}
 @keyframes epSaiDir{to{transform:translateX(100%)}}@keyframes epSome{to{opacity:0}}@keyframes epEncolhe{to{transform:scale(.97)}}
@@ -2093,7 +2094,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
 
   // SAÍDA ANIMADA (05/11/2026): quem fecha estas janelas chama .remove(); aqui elas tocam a animação de saída e só então saem
   { const SAI = '.ep-esp,.ep-cal,.ep-msgs,.ep-pg,.ep-admj,.ep-conta-pop,.ep-notif,.modal', rm0 = Element.prototype.remove, calmo = matchMedia('(prefers-reduced-motion: reduce)');
-    if (!Element.prototype.remove.epSai) { const rm = function () { if (this.isConnected && !calmo.matches && this.matches?.(SAI) && !this.classList.contains('ep-saindo')) { this.classList.add('ep-saindo'); setTimeout(() => rm0.call(this), 300); return; } return rm0.call(this); }; rm.epSai = true; Element.prototype.remove = rm; } }
+    if (!Element.prototype.remove.epSai) { const rm = function () { if (this.isConnected && !calmo.matches && this.matches?.(SAI) && !this.classList.contains('ep-saindo')) { this.classList.add('ep-saindo'); setTimeout(() => rm0.call(this), 220); return; } return rm0.call(this); }; rm.epSai = true; Element.prototype.remove = rm; } }
   window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
     calendario: ev => calendario(ev), dock: { atualizar: () => pintaDock() },
     preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas, abrir: abrirAdm }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
