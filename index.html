@@ -616,18 +616,18 @@ body{background:#5ea9e6}
 #pagebg::after{background:linear-gradient(180deg,rgba(12,58,112,.55) 0%,rgba(12,58,112,.18) 45%,rgba(12,58,112,0) 70%),rgba(0,0,0,var(--esc,.08))}
 /* cabeçalho: nome grande e fino à esquerda, relógio e conta à direita, sem barra */
 #top{max-width:none;padding:28px 28px 0 max(56px,env(safe-area-inset-left,0px));background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-#top{position:sticky;top:0;padding-bottom:10px;transition:background .25s,-webkit-backdrop-filter .25s,backdrop-filter .25s}
+#top{position:sticky;top:0;height:auto;min-height:0;flex-wrap:wrap;row-gap:6px;padding-top:clamp(12px,2vw,24px)!important;padding-bottom:clamp(8px,1.2vw,12px);padding-right:clamp(16px,2vw,28px)!important;padding-left:max(clamp(16px,4vw,56px),env(safe-area-inset-left,0px))!important; /* altura acompanha o conteúdo (antes ficava presa em 48px e o título saía para fora) */transition:background .25s,-webkit-backdrop-filter .25s,backdrop-filter .25s}
 #top.rolou{background:rgba(12,40,80,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)} /* rolou a página: desfoque leve atrás do cabeçalho */
-#top .brand .logo{width:42px;height:42px}
-#top .brand b,#top .brand #top-nome{font:300 40px/1.1 var(--mn-leve);letter-spacing:-.3px;text-shadow:0 1px 18px rgba(0,40,100,.3)}
+#top .brand .logo{width:clamp(30px,3vw,42px);height:clamp(30px,3vw,42px)}
+#top .brand b,#top .brand #top-nome{font:300 clamp(24px,3vw,40px)/1.1 var(--mn-leve);letter-spacing:-.3px;text-shadow:0 1px 18px rgba(0,40,100,.3)}
 #top .brand small{font-size:13px}
 #top .top-centro{position:static;transform:none;margin-left:auto}
 #top .ep-relogio{height:auto;min-height:0;line-height:1.15;background:none;border:0;border-radius:0;padding:6px 12px;display:flex;flex-direction:column;align-items:flex-end;gap:0;color:#fff;text-shadow:0 1px 10px rgba(0,40,100,.3)}
 #top .ep-relogio:hover{background:rgba(255,255,255,.14)}
-#top .ep-relogio .hr{order:-1;font:300 32px/1 var(--mn-leve)}
+#top .ep-relogio .hr{order:-1;font:300 clamp(20px,2.3vw,32px)/1 var(--mn-leve)}
 #top .ep-relogio .dt{font-size:13px;opacity:.85;text-transform:none;display:block!important;margin-top:3px}
 /* área do menu */
-#menu.main{align-items:stretch;justify-content:flex-start;padding:8px 28px 70px max(56px,env(safe-area-inset-left,0px))}
+#menu.main{align-items:stretch;justify-content:flex-start;padding:8px clamp(16px,2vw,28px) 70px max(clamp(16px,4vw,56px),env(safe-area-inset-left,0px))}
 #menu .mn-cab{position:relative;display:flex;justify-content:center;text-align:center;margin-top:6px}
 #menu .mn-cab>div{display:flex;flex-direction:column;align-items:center}
 #menu .mn-cab>.sp{display:none}#menu .mn-cab .mn-lupa{position:absolute;right:0;top:0}
@@ -638,7 +638,7 @@ body{background:#5ea9e6}
 .mn-lupa:hover{background:rgba(255,255,255,.14)}
 .mn-busca{display:flex;align-items:center;gap:10px;max-width:520px;width:100%;height:42px;margin:14px auto 0;padding:0 14px;background:rgba(255,255,255,.96);color:#13324f;animation:mnSobe .35s var(--mn-entra) both}
 .mn-busca input{flex:1;border:0;outline:none;background:none;color:#13324f;font-size:16px}.mn-busca small{color:#5a6a80}
-.mn-area{display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px 56px;margin-top:20px}
+.mn-area{display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px clamp(24px,4vw,56px);margin-top:20px}
 .mn-grupo{min-width:0}
 .mn-grupo h2{margin:0 0 12px;font:300 21px/1.2 var(--mn-leve);color:#fff;text-shadow:0 1px 10px rgba(0,30,70,.35)}
 #menu .progs-cab{width:auto;margin:0 0 12px;gap:12px;min-height:0}#menu .progs-cab h2{margin:0}
@@ -705,13 +705,13 @@ body{background:#5ea9e6}
 #menu [data-estudio-dock],#menu .ep-dock{display:none}
 @media (max-width:720px){
   :root{--mn-u:calc((100vw - 32px - 3 * var(--mn-g)) / 4)}
-  #top{padding:16px 16px 0}#top .brand b,#top .brand #top-nome{font-size:28px}#top .ep-relogio .hr{font-size:24px}
+  #top .ep-relogio .dt{display:none!important}#top .brand small,#top .badge{display:none}
   #menu.main{padding:8px 16px 70px}
   #menu .grid,#menu .grid[data-densidade],#menu .blocos{--cols:4!important}
   #menu .card .ic,#menu .card .ic>span,#menu .card .ic svg,#menu .card .ic img{width:40px;height:40px}
   #menu .card b{font-size:11.5px}#menu .card .txt{left:6px;right:6px;bottom:5px}
   #menu .card .subprog{left:0;top:100%;padding:6px 0 0;flex-direction:row}
-  #menu .et .pct{font-size:24px}#menu .et .dia b{font-size:30px}#menu .et .et-r{left:74px}#menu .et.w .gi{left:36px}#menu .et .gi svg{width:30px;height:30px}
+  #menu .et .pct{font-size:24px}#menu .et .dia b{font-size:30px}#menu .et .et-r{left:64px}#menu .et .et-r b{font-size:15px}#menu .et .et-r small{display:none}#menu .et.w .gi{left:36px}#menu .et .gi svg{width:30px;height:30px}
   .mn-area{gap:22px}
 }
 @media (prefers-reduced-motion:reduce){#menu .card,#menu .mp,#menu .et,.mn-busca{animation:none!important;transition:none}}
