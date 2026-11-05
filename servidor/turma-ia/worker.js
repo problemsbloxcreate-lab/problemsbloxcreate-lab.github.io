@@ -431,6 +431,38 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
   };
   return W;
 }
+/* AS NUVENS TRABALHANDO JUNTAS (pedido da dona, 05/11/2026: "todas agirem como se fosse uma só, sem os usuários perceberem").
+   O limite que mais aperta na principal é o de PEDIDOS (100 mil por dia na conta toda). Os dados ficam todos no D1 "equipe" da
+   principal; o turma-reserva (outra conta) agora fala com ESSE MESMO banco pela API da Cloudflare (a PONTE, abaixo): lê e grava
+   nos mesmos dados, sem cópia velha. Assim os pedidos de DADOS (animações, personagens, cenários…) podem ir por qualquer uma das
+   duas portas sem ninguém notar. DIVIDIR: a partir de 60% dos pedidos do dia gastos na principal, uma parte dos navegadores
+   (sorteada uma vez por navegador, para cada pessoa ficar sempre na mesma porta) passa a usar o turma-reserva; com 90% vão todos.
+   O site lê a parte no cabeçalho x-divide (estudio-conta.js). A IA, a transcrição e o uso continuam só na principal. */
+function d1Rest(conta, id, token) {
+  const hex = v => { const u = v instanceof ArrayBuffer ? new Uint8Array(v) : new Uint8Array(v.buffer, v.byteOffset, v.byteLength); let t = ''; for (let i = 0; i < u.length; i++) t += (u[i] < 16 ? '0' : '') + u[i].toString(16); return t; };
+  const lit = v => v == null ? 'NULL' : typeof v === 'number' ? (Number.isFinite(v) ? String(v) : 'NULL') : typeof v === 'boolean' ? (v ? '1' : '0')
+    : (v instanceof ArrayBuffer || ArrayBuffer.isView(v)) ? "X'" + hex(v) + "'" : "'" + String(v).replace(/'/g, "''") + "'";
+  const monta = (sql, ps) => { let i = 0; return sql.replace(/\?/g, () => lit(ps[i++])); }; // os SQL deste arquivo não têm "?" dentro de texto
+  const roda = async sqls => {
+    const r = await fetch('https://api.cloudflare.com/client/v4/accounts/' + conta + '/d1/database/' + id + '/query', { method: 'POST', headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' }, body: JSON.stringify({ sql: sqls.join(';\n') }) });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j?.success) throw new Error((j?.errors || []).map(e => e.message).join('; ') || 'o banco da principal (pela API) respondeu ' + r.status);
+    const res = Array.isArray(j.result) ? j.result : [j.result]; for (const x of res) if (x && x.success === false) throw new Error(x.error || 'o banco da principal recusou'); return res; };
+  // pedaços de arquivo (BLOB): pela API vêm como texto hex (hex(v)) e voltam a ser bytes aqui
+  const blob = q => /^SELECT v FROM parte\b/.test(q), deHex = t => { t = String(t || ''); const u = new Uint8Array(t.length / 2); for (let i = 0; i < u.length; i++) u[i] = parseInt(t.substr(i * 2, 2), 16); return u; };
+  const st = (sql0, ps = []) => { const b = blob(sql0), sql = b ? sql0.replace(/^SELECT v FROM/, 'SELECT hex(v) AS v FROM') : sql0, conv = rs => b ? rs.map(x => ({ ...x, v: deHex(x.v) })) : rs;
+    return { _sql: () => monta(sql, ps), bind: (...a) => st(sql0, a),
+      first: async () => conv((await roda([monta(sql, ps)]))[0]?.results || [])[0] ?? null,
+      all: async () => ({ results: conv((await roda([monta(sql, ps)]))[0]?.results || []) }),
+      run: async () => ({ success: true, meta: (await roda([monta(sql, ps)]))[0]?.meta || {} }) }; };
+  return { prepare: sql => st(sql), batch: async sts => (await roda(sts.map(x => x._sql()))).map(x => ({ results: x?.results || [], meta: x?.meta || {} })) };
+}
+const DIVIDE = { p: 0, at: 0 };
+async function confereDivide(R) {
+  if (!R || Date.now() - DIVIDE.at < 120e3) return; DIVIDE.at = Date.now();
+  try { const c = await R.contaJa(), o = c?.contas?.principal; if (!o || c.dia !== new Date().toISOString().slice(0, 10)) { DIVIDE.p = 0; return; }
+    const usado = (+o.workers || 0) / 100000; DIVIDE.p = Math.max(0, Math.min(1, Math.round((usado - 0.6) / 0.3 * 20) / 20)); } catch { }
+}
 async function confereCheio(kv, R) {
   if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
   const c = await R.contaJa(), o = c?.contas?.principal, L = c?.limites; if (!o?.kv || !L || c.dia !== new Date().toISOString().slice(0, 10)) return;
@@ -568,7 +600,13 @@ function permLimpa(b, porId) {
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
-    if (env.PORTA === '1') { limiteAte = Date.now() + 864e5; env = { ...env, EQUIPE: principalFora(), _porta: true }; const r = await this.fetch2(req, env, ctx); return comTrocas(env, r); }
+    if (env.PORTA === '1') {
+      const daPrincipal = new URL(req.url).searchParams.has('_pr'); // pedido que veio de uma página da principal (DIVIDIR): sem trocar endereços
+      if (env.D1_CONTA && env.D1_ID && env.D1_TOKEN) { // PONTE: os mesmos dados da principal, pela API da Cloudflare
+        const e2 = { ...env, EQUIPE: principalFora(), EQUIPE_DB: d1Rest(env.D1_CONTA, env.D1_ID, env.D1_TOKEN), _porta: true, _ponte: true };
+        if (await d1Ligado(e2)) { const r = await this.fetch2(req, e2, ctx); return daPrincipal ? r : comTrocas(e2, r); }
+      }
+      limiteAte = Date.now() + 864e5; env = { ...env, EQUIPE: principalFora(), _porta: true }; const r = await this.fetch2(req, env, ctx); return daPrincipal ? r : comTrocas(env, r); }
     return this.fetch2(req, env, ctx);
   },
   async fetch2(req, env, ctx) {
@@ -583,6 +621,7 @@ export default {
       const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? (Date.now() < tercAte ? 'terciaria' : 'reserva') : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial, x-mod');
       r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
+    if (DIVIDE.at) { try { const h = new Headers(r.headers); h.set('x-divide', String(DIVIDE.p)); const ex = h.get('access-control-expose-headers'); h.set('access-control-expose-headers', ex ? ex + ', x-divide' : 'x-divide, x-mod'); r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h }); } catch { } }
     return r;
   },
   async atende(req, env, ctx, flag = {}) {
@@ -607,7 +646,8 @@ export default {
     const login = peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
-    if (R && login.email && !env._porta) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // perto do limite (85%): poupa a principal até as 21h
+    if (R && login.email && !env._porta) bg(confereCheio(env.EQUIPE, R).catch(() => { }));
+    if (R && login.email) bg(confereDivide(R)); // DIVIDIR os pedidos com a outra porta quando a principal estiver gastando muito // perto do limite (85%): poupa a principal até as 21h
     // RESUMO para o círculo da nuvem quando a principal não deixa listar (limite do dia): o espaço medido pela Cloudflare
     // (Action "Uso da nuvem") + o que está na reserva agora. Qualquer conta da equipe; sem e-mails (semEmail)
     if (new URL(req.url).pathname === '/nuvem-resumo') {

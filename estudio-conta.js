@@ -165,17 +165,37 @@ window.EstudioPerm ||= (() => {
       b.textContent = ja ? 'A principal voltou · voltar para o endereço de sempre' : 'Porta reserva · a principal volta às ' + new Date(volta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       if (ja) { b.href = 'https://' + PRINCIPAL + location.pathname + location.search; b.onclick = () => { const fr = window.EstudioPasse?.fragmento?.(); if (fr) b.href = 'https://' + PRINCIPAL + location.pathname + location.search + '#' + fr; }; } else b.removeAttribute('href'); };
     pinta(); setInterval(pinta, 60e3); document.body.appendChild(b); });
+  /* AS NUVENS TRABALHANDO JUNTAS (pedido da dona, 05/11/2026): o turma-reserva (outra conta da Cloudflare) lê e grava no MESMO
+     banco da principal (a "ponte", no servidor). Quando a principal gasta muito dos pedidos do dia, o servidor manda a parte a
+     desviar no cabeçalho x-divide (0 a 1); cada navegador tem um número sorteado uma vez (ep-sorte) e, se ele for menor que a
+     parte, os pedidos de DADOS vão pelo turma-reserva. Se a principal não responder, o mesmo pedido é repetido lá. A IA não muda. */
+  const T_PRI = 'turma-ia.problemsraiz.workers.dev', T_RES = 'turma-reserva.editorcustomizado.workers.dev';
+  const ROTAS_DIV = /^\/(animacoes|personagens|jester|cenarios|equipe|preparativos|menu-midia|menu-links|ideias)(\/|$)/;
+  const sorte = (() => { try { let v = parseFloat(localStorage.getItem('ep-sorte')); if (!(v >= 0 && v < 1)) { v = Math.random(); localStorage.setItem('ep-sorte', String(v)); } return v; } catch { return Math.random(); } })();
+  const parteDiv = () => { try { const o = JSON.parse(localStorage.getItem('ep-divide') || 'null'); return o && o.ate > Date.now() ? +o.p || 0 : 0; } catch { return 0; } };
+  const guardaDiv = p => { if (!(p >= 0 && p <= 1)) return; try { const fim = new Date(); fim.setUTCHours(24, 0, 0, 0); localStorage.setItem('ep-divide', JSON.stringify({ p, ate: Math.min(Date.now() + 15 * 60e3, fim.getTime()) })); } catch { } };
+  const paraReserva = u => { try { const x = new URL(u, location.href); if (x.hostname !== T_PRI || !ROTAS_DIV.test(x.pathname)) return null; x.hostname = T_RES; x.searchParams.set('_pr', '1'); return x.href; } catch { return null; } };
+  const comUrl = (input, novo) => typeof input === 'string' || input instanceof URL ? novo : new Request(novo, input);
   window.fetch = async function (input, init) {
     const url = typeof input === 'string' ? input : input?.url || String(input);
     if (!nosso(url)) return f0(input, init);
     let r;
-    try { r = await f0(input, init); }
+    // AS NUVENS JUNTAS (05/11/2026): pedido de DADOS para a principal vai pela outra porta quando é a vez deste navegador (x-divide)
+    const alt = paraReserva(url), repete = alt && typeof input === 'string' && !(init?.body instanceof ReadableStream);
+    const vai = alt && sorte < parteDiv() ? comUrl(input, alt) : input;
+    try { r = await f0(vai, init); }
     catch (e) {
-      if (e?.name === 'AbortError' || !/fetch|network|load failed/i.test(String(e?.message))) throw e;
-      confere1027(null); // pedido para a nossa nuvem falhou: será o erro 1027 (conta principal sem pedidos)? confere no próprio endereço
-      if (navigator.onLine === false) throw new TypeError('Sem internet agora. O que você fez continua guardado neste computador.');
-      throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
+      // a principal não respondeu (ex.: erro 1027, acabaram os pedidos do dia): o mesmo pedido vai pela outra porta, sem a pessoa perceber
+      if (repete && vai === input && e?.name !== 'AbortError') { try { r = await f0(alt, init); guardaDiv(1); } catch { } }
+      if (!r) {
+        if (e?.name === 'AbortError' || !/fetch|network|load failed/i.test(String(e?.message))) throw e;
+        confere1027(null); // pedido para a nossa nuvem falhou: será o erro 1027 (conta principal sem pedidos)? confere no próprio endereço
+        if (navigator.onLine === false) throw new TypeError('Sem internet agora. O que você fez continua guardado neste computador.');
+        throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
+      }
     }
+    if (r.status === 429 && repete && vai === input) { try { const r2 = await f0(alt, init); if (r2.status !== 429) { r = r2; guardaDiv(1); } } catch { } }
+    { const xd = r.headers.get('x-divide'); if (xd != null && xd !== '') guardaDiv(+xd); }
     if (r.status === 429) confere1027(r);
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
     if (!xn && r.ok && voltando() && /^turma-ia\./.test((() => { try { return new URL(url, location.href).hostname; } catch { return ''; } })())) { try { localStorage.removeItem(KV); } catch { } selo(); } // o servidor respondeu normal: não tem mais nada voltando, o aviso sai na hora (sem F5)
