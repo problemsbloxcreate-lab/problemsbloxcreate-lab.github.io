@@ -772,6 +772,8 @@ export default {
       const le = async k => { try { return JSON.parse((await env.EQUIPE.get(k)) || 'null'); } catch { return null; } };
       const grava = (k, v) => { const t = JSON.stringify(v); return env.EQUIPE.put(k, t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } }); };
       if (req.method === 'GET') { const [analise, ideias, canais] = await Promise.all([le('ideias/analise.json'), le('ideias/ideias.json'), le('ideias/canais.json')]); return json({ analise, ideias, canais: canais?.canais || null }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      // TODO(níveis de acesso): mudar as ideias pede a chave preparativos.ideias quando a função pode() existir (Animador e Preparativos usam esta rota)
+      if (typeof pode === 'function' && !(await pode(env, login.email, 'preparativos.ideias'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode mudar as ideias. Peça para um ADM liberar.' } }, 403, cors);
       let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
       if (req.method === 'POST' && b?.acao === 'atualizar') {
         if (Array.isArray(b.canais)) { const c = [...new Set(b.canais.map(x => String(x || '').trim()).map(x => x.startsWith('@') ? x : '@' + x).filter(x => /^@[\w.\-]{3,40}$/.test(x)))].slice(0, 8);
@@ -852,6 +854,116 @@ export default {
       }
       return json({ error: { message: 'Pedido desconhecido.' } }, 405, cors);
     }
+    // ===================== PREPARATIVOS (programa /preparativos/, pedido da dona, 05/11/2026) — bloco próprio =====================
+    // Roteiros em partes → falas por personagem → áudio de cada fala, destino (animador|shorts|editor) e legendas. Contrato do
+    // formato no CLAUDE.md do site e no README do repo "preparativos". Chaves: preparativos/<id>/prep.json, preparativos/<id>/aud/<fala>-<t>.webm,
+    // preparativos/cores.json (cor da legenda por nome de personagem em minúsculas, para a equipe toda).
+    //   GET    /preparativos                       → { itens: [{ id, nome, destino, status, mod, por, em, n, g, partes }] } (só a lista, sem abrir os arquivos)
+    //   GET    /preparativos/arquivo?k=…           → o arquivo (prep.json leva x-mod)
+    //   POST   /preparativos/arquivo?k=…/prep.json&base=<mod>[&forcar=1] → salva o preparativo inteiro (409 conflito se a nuvem tem outro mod)
+    //   POST   /preparativos/arquivo?k=…/aud/<fala>-<t>.webm → áudio de uma fala (até 8 MB)
+    //   POST   /preparativos/acao { acao: 'falas'|'marca'|'legenda'|'cores'|'usado', … } → mudanças pequenas feitas aqui no servidor (uma gravação)
+    //   DELETE /preparativos/arquivo?k=preparativos/<id>/ → apaga o preparativo inteiro (quem criou ou ADM)
+    if (p0 === '/preparativos' || p0 === '/preparativos/arquivo' || p0 === '/preparativos/acao') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      // TODO(níveis de acesso): quando a função pode(env, email, chave) existir, ela decide (chaves preparativos.* no permissoes.json); até lá, toda a equipe liberada pode
+      const podeP = async c => typeof pode === 'function' ? !!(await pode(env, login.email, c === 'ver' ? 'preparativos' : 'preparativos.' + c)) : true; // ver = o programa
+      const OQUE = { ver: 'ver os roteiros', gravar: 'gravar falas', roteiro: 'mudar o roteiro', organizar: 'organizar o roteiro e as legendas', pronto: 'marcar o destino e o pronto' };
+      const nega = c => json({ error: { type: 'permissao', message: `Sua conta não pode ${OQUE[c] || c} nos Preparativos. Peça para um ADM liberar.` } }, 403, cors);
+      if (!(await podeP('ver'))) return nega('ver');
+      const q = new URL(req.url).searchParams, k = q.get('k') || '', ID = /^[A-Za-z0-9_-]{2,40}$/;
+      const KPR = /^preparativos\/(cores\.json|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
+      const DEST = ['animador', 'shorts', 'editor'], STAT = ['rascunho', 'gravando', 'pronto'];
+      const kP = id => `preparativos/${id}/prep.json`;
+      const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
+      const gravaP = async (P, m0) => { const mod = Date.now(); P.mod = mod; const t = JSON.stringify(P), fs = (P.partes || []).flatMap(p => p.falas || []);
+        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        return mod; };
+      const leCores = async () => { try { return JSON.parse((await env.EQUIPE.get('preparativos/cores.json')) || '{}') || {}; } catch { return {}; } };
+      const limpaCores = o => { const out = {}; for (const [a, b] of Object.entries(o && typeof o === 'object' ? o : {}).slice(0, 200)) { const n = String(a).normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR').slice(0, 40); if (n && /^#[0-9a-f]{6}$/i.test(String(b))) out[n] = String(b).toLowerCase(); } return out; };
+      const juntaCores = async novas => { const c0 = await leCores(), c = { ...c0, ...novas }; if (JSON.stringify(c) !== JSON.stringify(c0)) { const t = JSON.stringify(c); await env.EQUIPE.put('preparativos/cores.json', t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), por: login.email, em: new Date().toISOString() } }); } return c; };
+      if (p0 === '/preparativos') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
+        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0 })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
+        return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (p0 === '/preparativos/acao') {
+        if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
+        let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
+        if (b?.acao === 'cores') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, cores: await juntaCores(limpaCores(b.cores)) }, 200, cors); }
+        if (!ID.test(String(b?.id || ''))) return json({ error: { message: 'Preparativo inválido.' } }, 400, cors);
+        const a = b.acao, precisa = { falas: 'gravar', marca: 'pronto', legenda: 'organizar', usado: 'ver' }[a]; if (!precisa) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
+        if (!(await podeP(precisa))) return nega(precisa);
+        const o = await leP(b.id); if (!o) return json({ error: { message: 'Este roteiro não está na nuvem (mande o roteiro antes).' } }, 404, cors);
+        const P = o.P, extra = {};
+        if (a === 'falas') { // áudios novos das falas (uma gravação para todas); o áudio antigo da fala sai da nuvem
+          const mapa = new Map(); for (const p of P.partes || []) for (const f of p.falas || []) mapa.set(f.id, f);
+          const pre = `preparativos/${b.id}/aud/`, velhos = [];
+          for (const x of (Array.isArray(b.falas) ? b.falas : []).slice(0, 300)) { const f = mapa.get(String(x?.id || '')); if (!f) continue; const au = x.audio == null ? null : String(x.audio);
+            if (au && !(au.startsWith(pre) && KPR.test(au))) return json({ error: { message: 'Áudio inválido.' } }, 400, cors);
+            if (f.audio && f.audio !== au && f.audio.startsWith(pre)) velhos.push(f.audio);
+            f.audio = au; f.duracao = Math.max(0, Math.min(3600, +x.duracao || 0)); delete f.regravar; f.em = new Date().toISOString(); }
+          extra.mod = await gravaP(P, o.m);
+          for (const v of velhos.slice(0, 20)) { try { await env.EQUIPE.delete(v); } catch { } }
+        } else if (a === 'marca') {
+          if ('destino' in b) P.destino = DEST.includes(b.destino) ? b.destino : null;
+          if ('status' in b) P.status = STAT.includes(b.status) ? b.status : 'rascunho';
+          extra.mod = await gravaP(P, o.m);
+        } else if (a === 'legenda') {
+          const cores = limpaCores(b.cores); P.legenda = { ativa: b.ativa !== false, cores: { ...(P.legenda?.cores || {}), ...cores } };
+          extra.mod = await gravaP(P, o.m); extra.cores = await juntaCores(cores);
+        } else if (a === 'usado') { // o programa que usou este preparativo (Animador, Shorts, Editor) avisa aqui
+          const programa = String(b.programa || ''), projeto = String(b.projeto || '').slice(0, 120); if (!DEST.includes(programa)) return json({ error: { message: 'Programa inválido.' } }, 400, cors);
+          const l = (Array.isArray(P.usadoPor) ? P.usadoPor : []).filter(u => !(u.programa === programa && u.projeto === projeto)); l.push({ programa, projeto, quando: new Date().toISOString() }); P.usadoPor = l.slice(-50);
+          extra.mod = await gravaP(P, o.m);
+        }
+        return json({ ok: true, ...extra }, 200, cors);
+      }
+      if (req.method === 'GET') {
+        if (!KPR.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        const aud = k.includes('/aud/');
+        return new Response(r.value, { status: 200, headers: { ...cors, 'x-mod': String(+(r.metadata?.mod || 0)), 'access-control-expose-headers': 'x-mod, x-nuvem, x-nuvem-volta', 'content-type': aud ? (r.metadata?.tipo || 'audio/webm') : 'application/json', 'cache-control': aud ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
+      }
+      if (req.method === 'POST' || req.method === 'PUT') {
+        if (!KPR.test(k) || k === 'preparativos/cores.json') return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const id = k.split('/')[1], buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (k.includes('/aud/')) { // áudio de uma fala
+          if (!(await podeP('gravar'))) return nega('gravar');
+          if (buf.byteLength > 8 * 1048576) return json({ error: { message: 'Áudio maior que 8 MB. Grave a fala em pedaços menores.' } }, 413, cors);
+          if ((await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+          const ext = k.split('.').pop(), tipo = ext === 'm4a' ? 'audio/mp4' : ext === 'ogg' ? 'audio/ogg' : 'audio/webm';
+          await env.EQUIPE.put(k, buf, { metadata: { tipo, tam: buf.byteLength, mod: Date.now(), por: login.email, em: new Date().toISOString() } });
+          return json({ ok: true, k }, 200, cors);
+        }
+        // o preparativo inteiro (roteiro, partes, legendas)
+        const [pr, po] = [await podeP('roteiro'), await podeP('organizar')]; if (!pr && !po) return nega('roteiro');
+        if (buf.byteLength > 1536 * 1024) return json({ error: { message: 'Roteiro grande demais (máx. 1,5 MB). Separe em mais de um.' } }, 413, cors);
+        let P; try { P = JSON.parse(new TextDecoder().decode(buf)); } catch { return json({ error: { message: 'Roteiro inválido.' } }, 400, cors); }
+        if (!P || typeof P !== 'object' || P.id !== id || !Array.isArray(P.partes)) return json({ error: { message: 'Roteiro inválido.' } }, 400, cors);
+        const o = await leP(id), base = +q.get('base') || 0;
+        if (o && q.get('forcar') !== '1' && +(o.m.mod || 0) !== base) { const p = await semEmail({ por: o.m.por }); return json({ error: { type: 'conflito', message: 'Há uma versão mais nova deste roteiro na nuvem.', mod: +o.m.mod || 0, por: p.por || null } }, 409, cors); }
+        // o que tem rota própria fica como está na nuvem: destino/pronto (só quem pode marcar), quem usou (só pela ação "usado")
+        const pp = await podeP('pronto');
+        P.destino = pp ? (DEST.includes(P.destino) ? P.destino : null) : (o?.P.destino || null);
+        P.status = pp ? (STAT.includes(P.status) ? P.status : 'rascunho') : (o?.P.status || 'rascunho');
+        P.usadoPor = Array.isArray(o?.P.usadoPor) ? o.P.usadoPor : []; P.v = 1;
+        if (!pr && o) { P.roteiro = o.P.roteiro; P.partes = o.P.partes; P.nome = o.P.nome; } // quem só organiza não muda o texto (só as legendas)
+        if (P.legenda) P.legenda = { ativa: P.legenda.ativa !== false, cores: limpaCores(P.legenda.cores) };
+        const mod = await gravaP(P, o?.m);
+        if (P.legenda && Object.keys(P.legenda.cores).length && po) ctx.waitUntil(juntaCores(P.legenda.cores).catch(() => { }));
+        return json({ ok: true, k, mod }, 200, cors);
+      }
+      if (req.method === 'DELETE') {
+        if (!KPRD.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const o = await leP(k.split('/')[1]).catch(() => null);
+        if (!ehAdmin(env, login.email) && String(o?.m?.por || '').toLowerCase() !== String(login.email).toLowerCase()) return json({ error: { type: 'adm', message: 'Só quem criou este roteiro (ou um ADM) pode apagar.' } }, 403, cors);
+        const ks = []; let cur; do { const r = await env.EQUIPE.list({ prefix: k, cursor: cur }); for (const x of r.keys) ks.push(x.name); cur = r.list_complete ? null : r.cursor; } while (cur);
+        if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x);
+        return json({ ok: true, apagados: ks.length }, 200, cors);
+      }
+      return json({ error: { message: 'Método não aceito.' } }, 405, cors);
+    }
+    // ===================== fim do bloco PREPARATIVOS =====================
     if (p0 === '/cenarios' || p0 === '/cenarios/arquivo') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
