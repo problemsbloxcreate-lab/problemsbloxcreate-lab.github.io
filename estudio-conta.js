@@ -629,6 +629,9 @@ window.EstudioPerm ||= (() => {
 .ep-conta-pop .sep{margin:6px 0!important;background:rgba(255,255,255,.12)!important}
 .ep-conta-pop .av,.ep-conta-pop img{border-radius:0!important}
 .ep-conta-pop b{font-weight:600}
+/* avisos, selos e a chave de ADM no visual novo (cantos retos, azul escuro) */
+.ep-conta-aviso{background:rgba(14,32,58,.95)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 14px 40px rgba(0,20,50,.45)!important}
+.ep-selo,.ep-chave{border-radius:0!important;background:#1d6fd6!important}
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
 .ep-esp.ep-saindo{animation:epSome .3s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .3s cubic-bezier(.4,0,1,1) both!important}
