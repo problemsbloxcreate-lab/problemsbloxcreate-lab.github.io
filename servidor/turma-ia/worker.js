@@ -1012,6 +1012,15 @@ export default {
       const gravaP = async (P, m0) => { const mod = Date.now(); P.mod = mod; const t = JSON.stringify(P), fs = (P.partes || []).flatMap(p => p.falas || []);
         await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), uso: [...new Set((Array.isArray(P.usadoPor) ? P.usadoPor : []).map(u => u.programa).filter(x => DEST.includes(x)))], quem: quemDe(P), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return mod; };
+      // ESTILO DA LEGENDA (o Animador, o Shorts e o Editor leem): números em fração do quadro; quadro = tamanho do vídeo em px
+      const num = (v, a, z, d) => { v = +v; return Number.isFinite(v) ? Math.min(z, Math.max(a, v)) : d; }, corOk = (c, d) => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? String(c).toLowerCase() : d;
+      const limpaEstilo = e => { if (!e || typeof e !== 'object') return undefined; const sb = e.sombra || {}, ct = e.contorno || {}, fd = e.fundo || {};
+        return { fonte: String(e.fonte || 'Rubik').replace(/[^\w ,'-]/g, '').slice(0, 40) || 'Rubik', tamanho: num(e.tamanho, .01, .2, .045), peso: Math.round(num(e.peso, 100, 900, 800) / 100) * 100,
+          x: num(e.x, 0, 1, .5), y: num(e.y, 0, 1, .82), largura: num(e.largura, .1, 1, .86), alinhar: ['left', 'center', 'right'].includes(e.alinhar) ? e.alinhar : 'center', maiusculas: e.maiusculas === true,
+          contorno: { ativo: ct.ativo === true, cor: corOk(ct.cor, '#000000'), largura: num(ct.largura, 0, .03, .004) },
+          sombra: { ativa: sb.ativa === true, cor: corOk(sb.cor, '#000000'), desfoque: num(sb.desfoque, 0, .05, .006), x: num(sb.x, -.05, .05, 0), y: num(sb.y, -.05, .05, .003), opacidade: num(sb.opacidade, 0, 1, .8) },
+          fundo: { ativo: fd.ativo === true, cor: corOk(fd.cor, '#000000'), opacidade: num(fd.opacidade, 0, 1, .5) } }; };
+      const limpaQuadro = q => q && typeof q === 'object' ? { w: Math.round(num(q.w, 160, 7680, 1080)), h: Math.round(num(q.h, 160, 7680, 1920)) } : undefined;
       const leCores = async () => { try { return JSON.parse((await env.EQUIPE.get('preparativos/cores.json')) || '{}') || {}; } catch { return {}; } };
       const limpaCores = o => { const out = {}; for (const [a, b] of Object.entries(o && typeof o === 'object' ? o : {}).slice(0, 200)) { const n = String(a).normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR').slice(0, 40); if (n && /^#[0-9a-f]{6}$/i.test(String(b))) out[n] = String(b).toLowerCase(); } return out; };
       // PERSONAGENS DA EQUIPE (preparativos/personagens.json): { "<nome minúsculo>": { nome, cor, foto, grupo, em } } — todo personagem que aparece
@@ -1066,7 +1075,7 @@ export default {
           if ('status' in b) P.status = STAT.includes(b.status) ? b.status : 'rascunho';
           extra.mod = await gravaP(P, o.m);
         } else if (a === 'legenda') {
-          const cores = limpaCores(b.cores); P.legenda = { ativa: b.ativa !== false, mostrarNome: b.mostrarNome === true, cores: { ...(P.legenda?.cores || {}), ...cores } };
+          const cores = limpaCores(b.cores); P.legenda = { ativa: b.ativa !== false, mostrarNome: b.mostrarNome === true, cores: { ...(P.legenda?.cores || {}), ...cores }, estilo: limpaEstilo(b.estilo) || P.legenda?.estilo, quadro: limpaQuadro(b.quadro) || P.legenda?.quadro };
           extra.mod = await gravaP(P, o.m); extra.cores = await juntaCores(cores);
         } else if (a === 'usado') { // o programa que usou este preparativo (Animador, Shorts, Editor) avisa aqui
           const programa = String(b.programa || ''), projeto = String(b.projeto || '').slice(0, 120); if (!DEST.includes(programa)) return json({ error: { message: 'Programa inválido.' } }, 400, cors);
@@ -1113,7 +1122,7 @@ export default {
         P.status = pp ? (STAT.includes(P.status) ? P.status : 'rascunho') : (o?.P.status || 'rascunho');
         P.usadoPor = Array.isArray(o?.P.usadoPor) ? o.P.usadoPor : []; P.v = 1;
         if (!pr && o) { P.roteiro = o.P.roteiro; P.partes = o.P.partes; P.nome = o.P.nome; } // quem só organiza não muda o texto (só as legendas)
-        if (P.legenda) P.legenda = { ativa: P.legenda.ativa !== false, mostrarNome: P.legenda.mostrarNome === true, cores: limpaCores(P.legenda.cores) };
+        if (P.legenda) P.legenda = { ativa: P.legenda.ativa !== false, mostrarNome: P.legenda.mostrarNome === true, cores: limpaCores(P.legenda.cores), estilo: limpaEstilo(P.legenda.estilo), quadro: limpaQuadro(P.legenda.quadro) };
         const mod = await gravaP(P, o?.m);
         { const novos = {}; for (const pt of P.partes) for (const f of pt.falas || []) { const kk = chaveP(f.personagem); if (kk && !novos[kk]) novos[kk] = { nome: String(f.personagem).replace(/[<>:*#\[\]()]/g, '').trim().slice(0, 40) }; }
           if (Object.keys(novos).length) ctx.waitUntil(juntaPers(novos, true).catch(() => { })); } // personagem novo num roteiro = já aparece na lista da equipe
