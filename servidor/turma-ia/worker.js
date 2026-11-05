@@ -562,7 +562,7 @@ async function comTrocas(env, r) {
 const PERM = { m: undefined, t: 0 }, CAT = { j: null, t: 0 };
 // CARGO ADM (pedido da dona, 05/11/2026): sempre na lista, só para o selo dos ADMs no título do menu (nome, cor e "mostrar selo").
 // Quem é ADM vem da lista ADMINS (não dá para pôr alguém neste cargo pela tela); para ADM nada é bloqueado.
-const PERM_ADM = () => ({ id: 'adm', nome: 'ADM', cor: '#1d6fd6', desc: 'Os ADMs do Estúdio (lista do servidor). Só o selo no título do menu.', selo: true, sem: { programas: [], funcoes: [] } });
+const PERM_ADM = () => ({ id: 'adm', nome: 'ADM', cor: '#1d6fd6', desc: 'Os ADMs do Estúdio (lista do servidor). Só o selo no título do menu.', selo: true, seloBorda: '#ffffff', seloFundo: '#0e203a', seloAlfa: .35, sem: { programas: [], funcoes: [] } });
 const comAdm = m => { if (m && Array.isArray(m.cargos) && !m.cargos.some(c => c.id === 'adm')) m.cargos.splice(m.cargos.some(c => c.id === 'equipe') ? 1 : 0, 0, PERM_ADM()); return m; };
 const PERM_PADRAO = () => ({ v: 1, cargos: [{ id: 'equipe', nome: 'Equipe', cor: '#8e8e93', desc: 'Cargo padrão: quem não tem cargo fica nele.', sem: { programas: [], funcoes: [] } }, PERM_ADM()], pessoas: {}, pastas: [], padrao: 'equipe' });
 async function permModelo(env, forcar) {

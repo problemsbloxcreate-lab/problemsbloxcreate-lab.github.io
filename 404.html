@@ -865,6 +865,10 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 .na-selo-aj{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:10px;font-size:13px;color:var(--tx2)}
 .na-selo-aj label{display:inline-flex;align-items:center;gap:8px}.na-selo-aj input[type=color]{width:34px;height:24px;border:0;padding:0;background:none;cursor:pointer}
 .na-selo-aj .al input{width:140px}.na-selo-aj output{min-width:36px;color:#fff}
+
+/* selo no meio do título (a altura das letras do título fica mais embaixo que o centro da caixa) */
+#top .badge,#top .selos-cargo{position:relative;top:calc(clamp(24px,3vw,40px) * .09)}
+.na-selo-prev{cursor:grab;touch-action:none;user-select:none}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -1578,8 +1582,9 @@ function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) re
    só dos cargos em que a ADM › Níveis de acesso marcou "Mostrar selo no título do menu" (por padrão nenhum; o ADM tem o selo ADM). */
 function pintaSeloAdm(s = DADOS?.seloAdm) { const b = $('#badge-adm'); if (!b) return; b.textContent = s?.texto || 'ADM'; const c = /^#[0-9a-f]{6}$/i.test(s?.cor || '') ? s.cor : ''; b.style.borderColor = c; b.style.background = c ? c + '55' : ''; }
 // estilo do selo de um cargo: borda e fundo (padrão = a cor do cargo) e a transparência do fundo (padrão 25%)
-function seloCss(c) { const h = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null, cor = h(c?.cor) || '#8e8e93', b = h(c?.seloBorda) || cor, f = h(c?.seloFundo) || cor;
-  const a = Number.isFinite(+c?.seloAlfa) && c?.seloAlfa !== '' && c?.seloAlfa != null ? Math.max(0, Math.min(1, +c.seloAlfa)) : .25;
+const SELO_PADRAO = c => c?.id === 'adm' ? { b: '#ffffff', f: '#0e203a', a: .35 } : { b: null, f: null, a: .25 }; // ADM: o selo de sempre (borda branca, fundo azul escuro)
+function seloCss(c) { const h = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null, cor = h(c?.cor) || '#8e8e93', P0 = SELO_PADRAO(c), b = h(c?.seloBorda) || P0.b || cor, f = h(c?.seloFundo) || P0.f || cor;
+  const a = Number.isFinite(+c?.seloAlfa) && c?.seloAlfa !== '' && c?.seloAlfa != null ? Math.max(0, Math.min(1, +c.seloAlfa)) : P0.a;
   return `border-color:${b};background:${f}${Math.round(a * 255).toString(16).padStart(2, '0')}`; }
 function pintaSelos() {
   const box = $('#selos-cargo'); if (!box) return; const P = window.EstudioPerm;
@@ -2830,9 +2835,9 @@ function naCargos(box) {
       <label class="na-ck" style="margin-top:10px"><input type="checkbox" id="na-selo" ${c.selo ? 'checked' : ''}><span><b>Mostrar selo no título do menu</b><small>Quem tem este cargo vê o nome do cargo, nesta cor, ao lado de "Estúdio Problems". Desligado = não aparece.</small></span></label>
       <div class="na-selo-cfg" ${c.selo ? '' : 'hidden'}>
         <div class="na-selo-prev" style="background-image:linear-gradient(180deg,rgba(12,58,112,.55),rgba(12,58,112,.18)),url('${esc((DADOS?.fundo?.itens || [])[0]?.src || '/fundo-margarida.jpg')}')"><span class="t">Estúdio Problems</span><span class="badge cargo" id="na-selo-prev" style="${seloCss(c)}">${esc(c.nome)}</span></div>
-        <div class="na-selo-aj"><label>Borda <input type="color" id="na-sb" value="${esc(c.seloBorda || c.cor)}"></label><label>Fundo <input type="color" id="na-sf" value="${esc(c.seloFundo || c.cor)}"></label>
-          <label class="al">Transparência do fundo <input type="range" id="na-sa" min="0" max="100" step="1" value="${Math.round(100 - 100 * (c.seloAlfa ?? .25))}"><output id="na-sa-o">${Math.round(100 - 100 * (c.seloAlfa ?? .25))}%</output></label>
-          <button type="button" class="btn sm" id="na-s0">Usar a cor do cargo</button></div></div>
+        <div class="na-selo-aj"><label>Borda <input type="color" id="na-sb" value="${esc(c.seloBorda || SELO_PADRAO(c).b || c.cor)}"></label><label>Fundo <input type="color" id="na-sf" value="${esc(c.seloFundo || SELO_PADRAO(c).f || c.cor)}"></label>
+          <label class="al">Transparência do fundo <input type="range" id="na-sa" min="0" max="100" step="1" value="${Math.round(100 - 100 * (c.seloAlfa ?? SELO_PADRAO(c).a))}"><output id="na-sa-o">${Math.round(100 - 100 * (c.seloAlfa ?? SELO_PADRAO(c).a))}%</output></label>
+          <button type="button" class="btn sm" id="na-s0">Voltar ao padrão</button></div><p class="hint" style="margin:6px 0 0">Na prévia dá para arrastar e dar zoom (rodinha) no fundo, só para ver; isso não é salvo.</p></div>
       ${c.id === 'adm' ? '<p class="hint" style="margin:12px 0 0">Cargo dos <b>ADMs</b> (a lista de ADMs do servidor): aqui você muda só o nome, a cor e o selo deles no título do menu. Para ADM nada é bloqueado, então não há programas nem funções para marcar.</p>' : ''}
       ${padrao ? '<p class="hint" style="margin:12px 0 0">Este é o cargo PADRÃO: quem não tem nenhum cargo fica nele. Com tudo marcado, ninguém perde nada. Desmarque aqui só se quiser tirar algo de todo mundo que não tem cargo.</p>' : ''}
       <div ${c.id === 'adm' ? 'hidden' : ''}>
@@ -2855,6 +2860,11 @@ function naCargos(box) {
   $$('[data-cor]', box).forEach(b => b.onclick = () => { c.cor = b.dataset.cor; muda(); });
   $('#na-cor').onchange = e => { c.cor = e.target.value; muda(); };
   $('#na-selo').onchange = e => { if (e.target.checked) c.selo = true; else delete c.selo; muda(); };
+  { const pb = $('.na-selo-prev'); if (pb) { let px = 50, py = 70, z = 100, arr = null; const aplica = () => { pb.style.backgroundPosition = `0 0, ${px}% ${py}%`; pb.style.backgroundSize = `100% 100%, ${z}% auto`; }; aplica();
+    pb.onpointerdown = e => { arr = { x: e.clientX, y: e.clientY, px, py }; pb.setPointerCapture?.(e.pointerId); pb.style.cursor = 'grabbing'; };
+    pb.onpointermove = e => { if (!arr) return; px = Math.max(0, Math.min(100, arr.px - (e.clientX - arr.x) / 4)); py = Math.max(0, Math.min(100, arr.py - (e.clientY - arr.y) / 2)); aplica(); };
+    pb.onpointerup = pb.onpointercancel = () => { arr = null; pb.style.cursor = ''; };
+    pb.onwheel = e => { e.preventDefault(); z = Math.max(100, Math.min(400, z - Math.sign(e.deltaY) * 10)); aplica(); }; } } // só a prévia: nada disso é salvo
   const pv = () => { const p = $('#na-selo-prev'); if (p) { p.setAttribute('style', seloCss(c)); p.textContent = c.nome || 'Cargo'; } };
   $('#na-sb')?.addEventListener('input', e => { c.seloBorda = e.target.value; pv(); muda(false); });
   $('#na-sf')?.addEventListener('input', e => { c.seloFundo = e.target.value; pv(); muda(false); });
@@ -2984,7 +2994,7 @@ function showAdm(sobre) {
   $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); if (renderNuvem.feito) await renderNuvem(true); else await renderUsoDia(true); b.classList.remove('girando'); b.disabled = false; };
   try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
   $$('#nuvem-fontes [data-fonte]').forEach(b => b.onclick = () => nvTrocaFonte(b.dataset.fonte));
-  $('#adm').hidden = false; $('#badge-adm').hidden = false;
+  $('#adm').hidden = false; $('#badge-adm').hidden = !DADOS?.adm; pintaSelos(); // um selo só (o do cargo ADM, quando as permissões chegam)
   const ver = $('#btn-ver'); ver.hidden = !!sobre || window.ESTUDIO_EMBED_ADM; ver.href = BASE;
   if (!sobre) { document.title = 'ADM · Estúdio Problems'; const n = $('#top-nome'); if (n) n.textContent = 'ADM'; const s = $('#top-sub'); if (s) s.hidden = false; }
   const copia = () => JSON.parse(JSON.stringify({ links: DADOS.links, fundo: DADOS.fundo, mensagens: DADOS.mensagens, seloAdm: DADOS.seloAdm || { texto: 'ADM' } }));
