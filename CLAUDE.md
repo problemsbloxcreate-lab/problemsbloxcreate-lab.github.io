@@ -175,3 +175,14 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
 - Menu (`index.html` = `404.html`): grupos de BLOCOS estilo tela Iniciar — Fixados (alfinete do "Organizar", localStorage `ep-dock-fixos`), Programas (todos do mesmo tamanho, ícones estilo Adobe do `/estudio-icones.js`; Ateliê e Cenários aparecem DO LADO do Animador com o mouse em cima; nada vira sozinho), Meus projetos (os que ESTA pessoa criou, azul = na nuvem, grafite = só neste computador, sem miniatura) e Estúdio (Mensagens, Calendário, Nuvem, Este computador, Perfil, ADM — no lugar do Dock, que saiu do menu). Busca: começar a digitar abre a caixa. Programas filtrados por `EstudioPerm.programa(id)`.
 - Fundo: SEM VÍDEO (nem no fundo nem nos cartões). Padrão = fotos do Estúdio `/fundo-margarida.jpg` (Linh Pham) e `/fundo-margarida-2.jpg` (Csaba), licença do Unsplash, servidas pelo porteiro (RAIZ_ASSETS). ADM › Fundo: só imagem, "Usar como padrão", "Pôr as fotos do Estúdio", sempre a padrão / aleatória / slideshow. Sem imagem salva = as fotos do Estúdio (`soImagens`).
 - Janelas do `/estudio-conta.js` no mesmo estilo (azul escuro translúcido, cantos retos): Espaço na nuvem e no computador entram pela direita, seções e pastas FECHADAS por padrão, pasta e barra com a cor do programa dono (`corProg`, a do ícone), anel da nuvem pela quantidade usada (verde/amarelo 60%/vermelho 85%; reserva/terciária vão escritas). Mensagens com abas Privadas / Grupos (a geral fica em Grupos). "Online" sem o nome do programa; o `/online` do porteiro só responde para ADM.
+
+## AS NUVENS TRABALHANDO JUNTAS (pedido da dona, 05/11/2026)
+- Os dados da equipe ficam no D1 "equipe" da principal. O turma-reserva (4ª conta, porta reserva) fala com ESSE MESMO banco pela API
+  da Cloudflare (`d1Rest` no servidor/turma-ia/worker.js, "ponte"; segredos D1_CONTA/D1_ID/D1_TOKEN/ROBO postos pela Action
+  "Publicar a porta reserva" do repo estudio-problems). Sem a ponte (ou se ela falhar), a porta volta ao modo antigo (cópia de segurança).
+- DIVIDIR: o servidor manda `x-divide` (0–1) conforme os PEDIDOS do dia da principal (60% → começa, 90% → todos). O estudio-conta.js
+  sorteia um número por navegador (`ep-sorte`) e manda os pedidos de DADOS (animacoes, personagens, jester, cenarios, equipe,
+  preparativos, menu-midia, menu-links, ideias) para o turma-reserva com `_pr=1` (sem trocar endereços). Se a principal não
+  responder (1027/429), o mesmo pedido é repetido lá. IA, transcrição e uso continuam só na principal.
+- ADM › Nuvem mostra no topo o TOTAL de hoje das 3 nuvens da equipe (principal, reserva, terciária); a dos sons fica fora.
+- Falta: o porteiro (menu/páginas, ~55% dos pedidos da principal) ainda só roda na principal.
