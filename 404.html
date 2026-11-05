@@ -604,6 +604,112 @@ body.arrasta-dock .ep-dock{outline:2px dashed rgba(var(--ac-rgb),.8);outline-off
 .na-ve{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .na-ve span{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(48,209,88,.16);color:#7ee69a}.na-ve span.nao{background:rgba(255,69,58,.14);color:#ff8a80;text-decoration:line-through}
 @media (max-width:720px){.na-cargos{grid-template-columns:1fr}.na-abre{padding-left:0}}
+
+/* ===================== VISUAL NOVO DO MENU (05/11/2026, aprovado pela dona) =====================
+   Grupos de blocos estilo tela Iniciar (Fixados, Programas, Meus projetos, Estúdio), ícones dos programas no estilo Adobe, foto de
+   margaridas no fundo (ADM › Fundo), letras finas e grandes. Tudo com #menu/#top na frente: a ADM e a prévia dos cartões não mudam. */
+:root{--mn-u:124px;--mn-g:8px;--mn-leve:"Segoe UI Light","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;--mn-entra:cubic-bezier(.1,.9,.2,1);
+  --mn-ok:#3ccf7f;--mn-at:#f0b232;--mn-er:#f0584f;--mn-bloco:rgba(12,20,30,.72);--mn-bloco2:rgba(20,32,46,.84)}
+body{background:#5ea9e6}
+/* véu azul em cima da foto: o texto branco lê bem no céu claro */
+#pagebg{background:#5ea9e6}
+#pagebg::after{background:linear-gradient(180deg,rgba(12,58,112,.55) 0%,rgba(12,58,112,.18) 45%,rgba(12,58,112,0) 70%),rgba(0,0,0,var(--esc,.08))}
+/* cabeçalho: nome grande e fino à esquerda, relógio e conta à direita, sem barra */
+#top{max-width:none;padding:28px 28px 0 max(56px,env(safe-area-inset-left,0px));background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+#top .brand .logo{width:42px;height:42px}
+#top .brand b,#top .brand #top-nome{font:300 40px/1.1 var(--mn-leve);letter-spacing:-.3px;text-shadow:0 1px 18px rgba(0,40,100,.3)}
+#top .brand small{font-size:13px}
+#top .top-centro{position:static;transform:none;margin-left:auto}
+#top .ep-relogio{background:none;border:0;border-radius:0;padding:4px 10px;display:flex;flex-direction:column;align-items:flex-end;gap:0;color:#fff;text-shadow:0 1px 10px rgba(0,40,100,.3)}
+#top .ep-relogio:hover{background:rgba(255,255,255,.14)}
+#top .ep-relogio .hr{order:-1;font:300 32px/1 var(--mn-leve)}
+#top .ep-relogio .dt{font-size:13px;opacity:.85;text-transform:none}
+/* área do menu */
+#menu.main{align-items:stretch;justify-content:flex-start;padding:8px 28px 70px max(56px,env(safe-area-inset-left,0px))}
+#menu .mn-cab{display:flex;align-items:flex-start;gap:12px}
+#menu h1{font:300 20px/1.3 var(--mn-leve);text-align:left;margin:0;letter-spacing:0;text-shadow:0 1px 12px rgba(0,40,100,.35)}
+#menu .sub{text-align:left;margin:2px 0 0;font-size:13.5px;color:rgba(255,255,255,.85)}
+#menu .frase{margin:6px 0 0;display:inline-block;border-radius:0;background:rgba(0,30,70,.28)}
+.mn-lupa{width:40px;height:40px;border:0;background:none;color:#fff;cursor:pointer;display:grid;place-items:center}
+.mn-lupa:hover{background:rgba(255,255,255,.14)}
+.mn-busca{display:flex;align-items:center;gap:10px;max-width:520px;height:42px;margin:12px 0 0;padding:0 14px;background:rgba(255,255,255,.96);color:#13324f;animation:mnSobe .35s var(--mn-entra) both}
+.mn-busca input{flex:1;border:0;outline:none;background:none;color:#13324f;font-size:16px}.mn-busca small{color:#5a6a80}
+.mn-area{display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px 56px;margin-top:20px}
+.mn-grupo{min-width:0}
+.mn-grupo h2{margin:0 0 12px;font:300 21px/1.2 var(--mn-leve);color:#fff;text-shadow:0 1px 10px rgba(0,30,70,.35)}
+#menu .progs-cab{width:auto;margin:0 0 12px;gap:12px;min-height:0}#menu .progs-cab h2{margin:0}
+#menu .progs-cab .hint{color:rgba(255,255,255,.85)}
+#menu .btn-org,#menu .rec-atu{height:26px;padding:0 10px;border-radius:0;border:1px solid rgba(255,255,255,.6);background:none;color:#fff;font:600 12px/1 var(--font);cursor:pointer;margin:0}
+#menu .rec-atu{width:28px;padding:0;display:grid;place-items:center}
+#menu .btn-org:hover,#menu .rec-atu:hover{background:rgba(255,255,255,.14)}#menu .btn-org[aria-pressed=true]{background:#fff;color:#0d3a66;border-color:#fff}
+/* grade de blocos (todos do mesmo tamanho) */
+#menu .grid-caixa,#menu .grid-caixa.rola{width:auto;max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none;padding:0;display:block}
+#menu .grid,#menu .grid[data-densidade],#menu .blocos{display:grid;grid-template-columns:repeat(var(--cols,4),var(--mn-u));grid-auto-rows:var(--mn-u);gap:var(--mn-g);width:auto;max-width:none;justify-content:start;flex-direction:initial}
+#menu .card{position:relative;width:auto;min-height:0;height:auto;padding:0;gap:0;display:block;border-radius:0;border:0;overflow:visible;isolation:auto;text-align:left;color:#fff;
+  background:var(--mn-bloco);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:none;transform-origin:left center;
+  animation:mnGira .6s var(--mn-entra) both;transition:transform .18s ease,background .2s,box-shadow .15s,opacity .3s,filter .3s}
+#menu .card:hover,#menu .card:focus-visible{transform:none;background:var(--mn-bloco2);box-shadow:inset 0 0 0 3px rgba(255,255,255,.55);border:0;outline:none;z-index:5}
+#menu .card .bg,#menu .card .grid3,#menu .card .qe-on{display:none}
+#menu .card .ic,#menu .grid[data-densidade] .card .ic{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:0;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+#menu .card .ic>span,#menu .card .ic svg,#menu .card .ic img{display:block;width:58px;height:58px}
+#menu .card .ic:not(.prog) svg{width:38px;height:38px;margin:10px}
+#menu .card .txt{position:absolute;left:10px;right:10px;bottom:8px;gap:0;text-align:left}
+#menu .card b,#menu .grid[data-densidade] .card b{display:block;font-size:13.5px;font-weight:400;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:none}
+#menu .card small{display:none}
+#menu .card .tag,#menu .card .tag-adm{top:6px;right:6px;left:auto;bottom:auto;transform:none;border-radius:0;font-size:10.5px;padding:1px 6px}
+#menu .card .tag-adm~.tag.teste,#menu .card .tag.teste:has(~.tag-adm){top:26px}
+#menu .card:has(.tag-adm):has(.tag.teste){padding-top:0}
+#menu .card.soon{opacity:.5;cursor:default}
+#menu .card.apaga,#menu .mp.apaga{opacity:.18;filter:grayscale(1);pointer-events:none}
+#menu .card .fixar{border-radius:0;left:6px;top:6px;width:28px;height:28px}
+#menu .grid.org .card{animation:epTreme .26s ease-in-out infinite alternate;cursor:grab}
+#menu .grid.org .card:nth-child(2n){animation-delay:-.13s}
+#menu .grid .card.arrastando{animation:none;z-index:20}
+@keyframes mnGira{from{opacity:0;transform:perspective(900px) translateX(60px) rotateY(-70deg)}}
+@keyframes mnSobe{from{opacity:0;transform:translateY(-8px)}}
+/* partes de dentro (Ateliê, Cenários): aparecem DO LADO do bloco com o mouse em cima */
+#menu .card .subprog{top:0;right:auto;left:100%;padding-left:6px;flex-direction:column;gap:6px;transform:translateX(-10px);transition:opacity .2s,transform .35s var(--mn-entra)}
+#menu .card:hover .subprog,#menu .card:focus-within .subprog{transform:none}
+#menu .subprog .sp-it{width:auto;height:auto;display:flex;align-items:center;gap:10px;padding:7px 12px 7px 7px;border-radius:0;background:rgba(12,20,30,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(0,20,50,.35);white-space:nowrap}
+#menu .subprog .sp-it:hover,#menu .subprog .sp-it:focus-visible{transform:none;background:rgba(30,46,64,.96)}
+#menu .subprog .sp-it>span,#menu .subprog .sp-it svg,#menu .subprog .sp-it img{width:40px;height:40px}
+#menu .subprog .sp-it i{position:static;opacity:1;transform:none;background:none;border:0;padding:0;font-size:13.5px;font-weight:400;color:#fff}
+/* meus projetos: nuvem = azul (céu), só neste computador = grafite */
+#menu .meus{--cols:4}
+#menu .mp{grid-column:span 2;position:relative;display:block;padding:10px 12px;color:#fff;text-decoration:none;background:#40505f;animation:mnGira .6s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s,opacity .3s,filter .3s}
+#menu .mp.nv{background:#1d6fd6}
+#menu .mp:hover,#menu .mp:focus-visible{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55);outline:none}
+#menu .mp b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.25}
+#menu .mp small{display:block;margin-top:3px;font-size:12px;color:rgba(255,255,255,.8)}
+#menu .mp .onde{position:absolute;left:12px;bottom:9px;display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.85);padding:0;background:none}
+#menu .mp .pg{position:absolute;right:10px;bottom:8px;width:26px;height:26px}#menu .mp .pg svg,#menu .mp .pg img,#menu .mp .pg>span{display:block;width:26px;height:26px}
+#menu .meus .vz{grid-column:1/-1;padding:6px 0;color:rgba(255,255,255,.9);font-size:13px;text-shadow:0 1px 8px rgba(0,30,70,.4)}
+/* grupo Estúdio */
+#menu .et{position:relative;border:0;padding:0;cursor:pointer;color:#fff;text-align:left;background:var(--c);font:inherit;overflow:hidden;animation:mnGira .6s .25s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s}
+#menu .et.w{grid-column:span 2}
+#menu .et:hover,#menu .et:focus-visible{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55);outline:none}
+#menu .et .nm{position:absolute;left:10px;right:10px;bottom:8px;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#menu .et .gi{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%)}#menu .et.w .gi{left:54px}
+#menu .et .et-r{position:absolute;left:104px;top:50%;transform:translateY(-50%)}#menu .et .et-r b{display:block;font:300 22px var(--mn-leve)}#menu .et .et-r small{color:rgba(255,255,255,.78)}
+#menu .et .pct{position:absolute;left:12px;top:10px;font:300 34px/1 var(--mn-leve)}#menu .et .pct small{font-size:16px}
+#menu .et .barra{position:absolute;left:12px;right:12px;bottom:34px;height:5px;background:rgba(255,255,255,.22)}#menu .et .barra i{display:block;height:100%}
+#menu .et .dia{position:absolute;left:12px;top:8px}#menu .et .dia b{display:block;font:300 44px/1 var(--mn-leve)}#menu .et .dia small{font-size:12px;color:rgba(255,255,255,.8)}
+#menu .et .foto{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:58px;height:58px;display:grid;place-items:center;overflow:hidden;font:300 30px var(--mn-leve)}
+#menu .et .foto>*{width:58px!important;height:58px!important;border-radius:0!important;font-size:26px}#menu .et .foto img{object-fit:cover}
+/* sem o Dock e sem o "Organizar" antigo arredondado */
+#menu [data-estudio-dock],#menu .ep-dock{display:none}
+@media (max-width:720px){
+  :root{--mn-u:calc((100vw - 32px - 3 * var(--mn-g)) / 4)}
+  #top{padding:16px 16px 0}#top .brand b,#top .brand #top-nome{font-size:28px}#top .ep-relogio .hr{font-size:24px}
+  #menu.main{padding:8px 16px 70px}
+  #menu .grid,#menu .grid[data-densidade],#menu .blocos{--cols:4!important}
+  #menu .card .ic,#menu .card .ic>span,#menu .card .ic svg,#menu .card .ic img{width:40px;height:40px}
+  #menu .card b{font-size:11.5px}#menu .card .txt{left:6px;right:6px;bottom:5px}
+  #menu .card .subprog{left:0;top:100%;padding:6px 0 0;flex-direction:row}
+  #menu .et .pct{font-size:24px}#menu .et .dia b{font-size:30px}#menu .et .et-r{left:74px}#menu .et.w .gi{left:36px}#menu .et .gi svg{width:30px;height:30px}
+  .mn-area{gap:22px}
+}
+@media (prefers-reduced-motion:reduce){#menu .card,#menu .mp,#menu .et,.mn-busca{animation:none!important;transition:none}}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -646,17 +752,20 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 
 <!-- 2) MENU — só aparece depois que o servidor confirma a conta -->
 <main class="main view" id="menu" hidden>
-  <h1 id="hello">Olá!</h1>
-  <p class="sub" id="boasvindas"></p>
-  <p class="frase" id="frase" aria-live="polite"></p>
-  <div class="progs-cab" id="progs-cab"><label class="prog-busca" id="prog-busca" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="prog-q" placeholder="Buscar programa" aria-label="Buscar programa" autocomplete="off"></label><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no Dock (ou arraste até ele)</span><span class="sp"></span><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no Dock (só para você, fica neste navegador)">Organizar</button></div>
-  <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div>
-  <!-- MEUS PROJETOS (05/11/2026): os últimos projetos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
-  <section class="recentes" id="recentes" hidden>
-    <div class="rec-cab"><h4><span id="rec-tit">Meus projetos</span></h4><span class="sp"></span><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
-    <ul class="meus" id="rec"></ul>
-  </section>
-  <nav data-estudio-dock aria-label="Abas abertas e atalhos"></nav><!-- redesign: o /estudio-conta.js preenche o Dock -->
+  <!-- VISUAL NOVO (05/11/2026, aprovado pela dona): grupos de blocos estilo tela Iniciar, ícones dos programas no estilo Adobe -->
+  <div class="mn-cab"><div><h1 id="hello">Olá!</h1><p class="sub" id="boasvindas"></p><p class="frase" id="frase" aria-live="polite"></p></div><span class="sp"></span>
+    <button type="button" class="mn-lupa" id="lupa" title="Buscar (ou só comece a digitar)" aria-label="Buscar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></button></div>
+  <label class="mn-busca" id="prog-busca" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="prog-q" placeholder="Buscar programa ou projeto" aria-label="Buscar programa ou projeto" autocomplete="off"><small>Esc limpa</small></label>
+  <div class="mn-area">
+    <section class="mn-grupo" id="g-fix" hidden><h2>Fixados</h2><div class="blocos" id="fixos"></div></section>
+    <section class="mn-grupo"><div class="progs-cab" id="progs-cab"><h2>Programas</h2><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no topo (só para você, fica neste navegador)">Organizar</button><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no topo · só para você</span></div>
+      <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div></section>
+    <!-- MEUS PROJETOS: os últimos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
+    <section class="mn-grupo recentes" id="recentes" hidden><div class="progs-cab"><h2 id="rec-tit">Meus projetos</h2><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
+      <div class="blocos meus" id="rec"></div></section>
+    <!-- ESTÚDIO: Mensagens, Calendário, nuvem, este computador, perfil e ADM (no lugar do Dock) -->
+    <section class="mn-grupo" id="g-est"><h2>Estúdio</h2><div class="blocos" id="estudio"></div></section>
+  </div>
 </main>
 
 <!-- 3) ADM — abre com ?adm (ou /adm) e só depois do login -->
@@ -714,7 +823,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <div class="box">
       <div class="fields" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="bg-cfg"></div>
       <div class="bgitems" id="bg-items"></div>
-      <div class="acts" style="margin-top:12px"><button class="btn sm" data-addbg="arquivo">Enviar imagem, GIF ou vídeo</button><button class="btn sm" data-addbg="link">Colar link</button><span class="hint">Arquivos de até 25 MB. Vídeo maior: use um link https.</span></div>
+      <div class="acts" style="margin-top:12px"><button class="btn sm" data-addbg="arquivo">Enviar imagem</button><button class="btn sm" data-addbg="link">Colar link de imagem</button><button class="btn sm" id="bg-fotos">Pôr as fotos do Estúdio</button><span class="hint">Só imagens (JPG, PNG, WebP ou GIF): vídeo não entra mais no fundo do menu.</span></div>
     </div>
   </div>
     <section id="acesso-sec" class="adm-pag" data-pag="acesso">
@@ -873,11 +982,17 @@ async function signOut() { try { await fetch('/sair', { method: 'POST', credenti
 const MSG_PADRAO = { boasVindas: 'Bem-vindo(a) de volta à equipe do Problems! Escolha um projeto para começar.', intervalo: 7, frases: [
   'Um vídeo por dia, uma cena de cada vez. 🎬', 'Capricha nos detalhes: é o que o público sente.', 'Hoje é dia de fazer o melhor Short do canal!',
   'Errou? Ctrl+Z e bora de novo. 💪', 'Ideia boa é ideia anotada.', 'A equipe Problems faz acontecer! 🚀', 'Bloco por bloco, a gente constrói tudo. ⛏️'] };
-const padrao = () => ({ mensagens: JSON.parse(JSON.stringify(MSG_PADRAO)), links: MENU_CONFIG.projetos.map(p => ({ nome: p.nome, desc: p.desc || '', url: p.url || null, icone: p.icone || p.id, fundo: null, escurecer: .45 })), fundo: { modo: 'nenhum', intervalo: 8, escurecer: .55, itens: [] } });
+/* FOTOS DO ESTÚDIO (05/11/2026): fundo padrão do menu, no lugar do vídeo. Licença do Unsplash (uso livre): Linh Pham e Csaba (unsplash.com).
+   A ADM › Fundo escolhe a primeira (padrão), aleatória ou slideshow; vídeo não entra mais no fundo nem nos cartões. */
+const FOTOS_ESTUDIO = [{ tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
+  { tipo: 'imagem', src: '/fundo-margarida-2.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Margarida sozinha', credito: 'Csaba · Unsplash' }];
+const fundoPadrao = () => ({ modo: 'um', intervalo: 30, escurecer: .08, itens: JSON.parse(JSON.stringify(FOTOS_ESTUDIO)) });
+function soImagens(f) { const itens = (f?.itens || []).filter(m => m?.src && m.tipo !== 'video'); return itens.length ? { ...f, itens, modo: f.modo === 'nenhum' ? 'um' : f.modo } : fundoPadrao(); }
+const padrao = () => ({ mensagens: JSON.parse(JSON.stringify(MSG_PADRAO)), links: MENU_CONFIG.projetos.map(p => ({ nome: p.nome, desc: p.desc || '', url: p.url || null, icone: p.icone || p.id, fundo: null, escurecer: .45 })), fundo: fundoPadrao() });
 // PREPARATIVOS (05/11/2026): enquanto a ADM não puser o cartão no menu, ele entra no fim (salvar a ADM › Menu guarda ele junto)
 const comPrep = ls => (ls || []).some(l => /\/preparativos(\/|$)/.test(String(l.url || ''))) ? ls : [...(ls || []), { nome: 'PREPARATIVOS', desc: 'Roteiros, falas e gravações', url: '/preparativos/', icone: 'link', fundo: null, escurecer: .45 }];
 async function carregar() {
-  try { const j = await api('/menu-links'); const d = padrao(); return { links: comPrep(j.links || d.links), fundo: { ...d.fundo, ...(j.fundo || {}) }, mensagens: { ...d.mensagens, ...(j.mensagens || {}) }, adm: !!j.adm, em: j.em, por: j.por, servidor: true }; }
+  try { const j = await api('/menu-links'); const d = padrao(); return { links: comPrep(j.links || d.links), fundo: soImagens(j.fundo), mensagens: { ...d.mensagens, ...(j.mensagens || {}) }, adm: !!j.adm, em: j.em, por: j.por, servidor: true }; }
   catch (e) { return { ...padrao(), adm: false, servidor: false, erro: e }; }
 }
 
@@ -1244,7 +1359,7 @@ function irCom(url, trocar) {
 // abrir um programa: na mesma aba, com o fade de sempre (o Dock só tem atalhos; não guarda as abas abertas)
 const abrirProg = url => irCom(url);
 document.addEventListener('click', e => {
-  const a = e.target.closest?.('a.card[href], .rec a[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
+  const a = e.target.closest?.('a.card[href], .rec a[href], #rec a[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
   let u; try { u = new URL(a.href, location.href); } catch { return; }
   if (u.origin !== location.origin || u.href === location.href) return; // só os programas deste endereço
   e.preventDefault(); abrirProg(u.href);
@@ -1283,6 +1398,7 @@ function showMenu() {
   pintaGrid();
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
+  estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
 }
 function pintaGrid() {
@@ -1292,13 +1408,13 @@ function pintaGrid() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, l); if (ok) subProgs(el, l); g.appendChild(el); // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (l.etiqueta ? `<span class="tag teste">${esc(l.etiqueta)}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (ok) subProgs(el, l); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
-  const n = menuVis.length; g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
+  const n = menuVis.length; g.style.setProperty('--cols', n > 15 ? 6 : n > 8 ? 5 : 4); g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
   if (!menuVis.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   if (!organizar.ligado) { organizar.ligado = true; organizar.liga(); }
-  organizar.pinta(); buscaProgs.aplica();
+  organizar.pinta(); pintaFixos(); buscaProgs.aplica();
 }
 
 /* ORGANIZAR: "Organizar" faz os cartões tremerem; arrastar (mouse ou dedo) muda a ordem; o alfinete (ou soltar o cartão no Dock)
@@ -1311,18 +1427,18 @@ const organizar = {
   fixa(l, sim) { const k = chaveL(l), v = this.fixos().filter(x => x.k !== k);
     if (sim) { const ic = $('#grid .card[data-k="' + CSS.escape(k) + '"] .ic')?.innerHTML || ''; // o mesmo ícone do cartão (se for pequeno)
       v.push({ k, url: normUrl(l.url || ''), nome: l.nome || '', prog: progDaUrl(l.url, l.nome), ic: ic.length < 8000 ? ic : '' }); }
-    this.grava(v.slice(-8)); toast(sim ? 'Fixado no Dock (só neste navegador).' : 'Tirado do Dock.'); },
+    this.grava(v.slice(-8)); pintaFixos(); toast(sim ? 'Fixado no topo (só neste navegador).' : 'Tirado dos fixados.'); },
   pinta() { // botão, dica, rolagem e os alfinetes
     const g = $('#grid'), cx = $('#grid-caixa'), b = $('#btn-org'); if (!g || !cx || !b) return;
     b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on; g.classList.toggle('org', this.on);
-    $('#progs-cab').hidden = menuVis.length < 2;
+    $('#btn-org').hidden = menuVis.length < 2;
     cx.classList.toggle('rola', g.dataset.densidade !== 'grande'); this.fimDaRolagem();
     const fx = new Set(this.fixos().map(x => x.k));
     $$('.card', g).forEach((el, i) => { const l = menuVis[i]; let p = el.querySelector('.fixar');
       if (!l?.url || l.embreve) { p?.remove(); return; }
       if (!p) { p = document.createElement('button'); p.type = 'button'; p.className = 'fixar'; p.innerHTML = PINO; el.appendChild(p);
         p.onclick = e => { e.preventDefault(); e.stopPropagation(); const lk = menuVis.find(x => chaveL(x) === el.dataset.k); if (lk) this.fixa(lk, p.getAttribute('aria-pressed') !== 'true'); }; }
-      const sim = fx.has(el.dataset.k); p.setAttribute('aria-pressed', String(sim)); p.title = sim ? 'Tirar do Dock' : 'Fixar no Dock'; p.setAttribute('aria-label', p.title); });
+      const sim = fx.has(el.dataset.k); p.setAttribute('aria-pressed', String(sim)); p.title = sim ? 'Tirar dos fixados' : 'Fixar no topo'; p.setAttribute('aria-label', p.title); });
   },
   fimDaRolagem() { const cx = $('#grid-caixa'); if (cx) cx.classList.toggle('fim', cx.scrollHeight - cx.scrollTop - cx.clientHeight < 4); },
   salvaOrdem() { const ks = $$('#grid .card').map(el => el.dataset.k); try { localStorage.setItem('ep-menu-ordem', JSON.stringify(ks)); } catch { }
@@ -1364,20 +1480,62 @@ function idProg(l) { try { const u = new URL(l.url || '', location.href); const 
   return String(l.nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 const podeVer = l => permProg(idProg(l));
 
-/* BUSCA DOS PROGRAMAS (05/11/2026): com mais de 6 programas aparece a caixa "Buscar programa" (nome e descrição, sem acento).
-   Só esconde os cartões (não muda a ordem nem os fixados); Enter abre o primeiro que sobrou; Esc limpa. */
+/* BUSCA (visual novo, 05/11/2026): a caixa aparece ao começar a digitar em qualquer lugar do menu (ou pela lupa). Apaga (deixa
+   clarinho) o que não combina, nos programas, fixados e projetos; Enter abre o primeiro programa que sobrou; Esc limpa. */
 const buscaProgs = {
   norm: t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(),
+  mostra(sim) { const box = $('#prog-busca'), q = $('#prog-q'); if (!box || !q) return; box.hidden = !sim; if (sim) q.focus(); else { q.value = ''; this.aplica(); } },
   liga() { const q = $('#prog-q'); if (!q) return; q.addEventListener('input', () => this.aplica());
-    q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { e.stopPropagation(); q.value = ''; this.aplica(); }
-      if (e.key === 'Enter') { const c = $$('#grid .card:not([hidden])')[0]; if (c?.href) { e.preventDefault(); c.click(); } } }); },
-  aplica() { const box = $('#prog-busca'), q = $('#prog-q'), g = $('#grid'); if (!box || !q || !g) return;
-    box.hidden = menuVis.length <= 6; if (box.hidden) q.value = ''; if (!box.hidden) $('#progs-cab').hidden = false;
-    const t = this.norm(q.value.trim()); let n = 0;
-    $$('.card', g).forEach((el, i) => { const l = menuVis[i]; const ok = !t || this.norm((l?.nome || '') + ' ' + (l?.desc || '')).includes(t); el.hidden = !ok; if (ok) n++; });
-    let vz = $('#grid .busca-vazia'); if (t && !n) { if (!vz) { vz = document.createElement('div'); vz.className = 'empty busca-vazia'; g.appendChild(vz); } vz.textContent = 'Nenhum programa com esse nome.'; } else vz?.remove();
-    organizar.fimDaRolagem?.(); },
+    q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); this.mostra(false); }
+      if (e.key === 'Enter') { const c = $$('#grid .card:not(.apaga)')[0]; if (c?.href) { e.preventDefault(); c.click(); } } });
+    $('#lupa').onclick = () => this.mostra($('#prog-busca').hidden);
+    addEventListener('keydown', e => { if ($('#menu').hidden || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || !/\S/.test(e.key)) return;
+      if (document.activeElement?.closest?.('input,textarea,select,[contenteditable]') || document.querySelector('.ep-msgs,.ep-esp,.ep-cal,.ep-pg,.ep-admj,.conta,html.adm-sobre')) return;
+      if ($('#prog-busca').hidden) this.mostra(true); }); },
+  aplica() { const q = $('#prog-q'); if (!q) return; const t = this.norm(q.value.trim());
+    $$('#grid .card, #fixos .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); el.classList.toggle('apaga', !!t && !this.norm((l?.nome || '') + ' ' + (l?.desc || '') + (/animador/i.test(l?.url || '') ? ' atelie cenarios' : '')).includes(t)); });
+    $$('#rec .mp').forEach(el => el.classList.toggle('apaga', !!t && !this.norm(el.dataset.busca).includes(t))); },
 };
+// FIXADOS: os programas que a pessoa fixou pelo "Organizar" (localStorage 'ep-dock-fixos', só neste navegador) ficam num grupo no topo
+function pintaFixos() {
+  const box = $('#fixos'), sec = $('#g-fix'); if (!box || !sec) return; box.innerHTML = '';
+  const ls = organizar.fixos().map(x => menuVis.find(l => chaveL(l) === x.k)).filter(l => l?.url && !l.embreve);
+  for (const l of ls) { const o = $('#grid .card[data-k="' + CSS.escape(chaveL(l)) + '"]'); if (!o) continue;
+    const c = o.cloneNode(true); c.querySelector('.fixar')?.remove(); c.querySelector('.subprog')?.remove(); c.classList.remove('apaga'); c.style.animationDelay = '0s'; subProgs(c, l); box.appendChild(c); }
+  box.style.setProperty('--cols', Math.max(1, Math.min(4, box.children.length))); sec.hidden = !box.children.length;
+}
+/* GRUPO ESTÚDIO (no lugar do Dock): Mensagens, Calendário, nuvem da equipe, este computador, perfil e ADM. Abre as mesmas janelas do
+   /estudio-conta.js. Nada pede à nuvem: a nuvem usa a medida guardada ('ep-nuvem-uso'), o computador o navigator.storage. */
+const ICE = (d, t = 40) => `<svg width="${t}" height="${t}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const estudio = {
+  pc: null,
+  liga() { this.pinta(); if (this._ok) return; this._ok = true;
+    ['estudio-mensagens', 'estudio-perm', 'estudio-nuvem-estado'].forEach(ev => addEventListener(ev, () => this.pinta()));
+    addEventListener('storage', e => { if (/^ep-(nuvem-uso|calendario)$/.test(e.key || '')) this.pinta(); });
+    setInterval(() => { if (!document.hidden && !$('#menu').hidden) this.pinta(); }, 60e3); },
+  pinta() {
+    const box = $('#estudio'); if (!box) return; const EC = window.EstudioConta, nao = EC?.mensagens?.naoLidas || 0;
+    let nv = null; try { const j = JSON.parse(localStorage.getItem('ep-nuvem-uso') || 'null')?.j; if (j?.limite) nv = j.total / j.limite; } catch { }
+    let hoje = 0; try { const d = new Date().toDateString(); hoje = JSON.parse(localStorage.getItem('ep-calendario') || '[]').filter(e => new Date(e.em).toDateString() === d).length; } catch { }
+    const cor = p => p == null ? 'rgba(255,255,255,.35)' : p > .85 ? 'var(--mn-er)' : p > .6 ? 'var(--mn-at)' : 'var(--mn-ok)';
+    const esp = (k, nome, p, bg) => `<button type="button" class="et" data-et="${k}" style="--c:${bg}" title="${nome}${p == null ? '' : ' · ' + Math.round(p * 100) + '% usado'}"><span class="pct">${p == null ? '—' : Math.round(p * 100) + '<small>%</small>'}</span><span class="barra"><i style="width:${p == null ? 0 : Math.max(3, Math.min(100, p * 100)).toFixed(0)}%;background:${cor(p)}"></i></span><span class="nm">${nome}</span></button>`;
+    const d = new Date(), T = [];
+    if (window.EstudioPerm?.pode?.('geral.mensagens') !== false) T.push(`<button type="button" class="et w" data-et="msgs" style="--c:#0f5d8f"><span class="gi">${ICE('<path d="M4 5.5h16v11H9l-5 4z"/>')}</span><span class="et-r"><b>${nao ? (nao > 99 ? '99+' : nao) + (nao > 1 ? ' novas' : ' nova') : 'Nenhuma nova'}</b><small>privadas e grupos</small></span><span class="nm">Mensagens</span></button>`);
+    T.push(`<button type="button" class="et" data-et="cal" style="--c:#1f7a5c" title="Seu calendário (lembretes e metas)"><span class="dia"><b>${d.getDate()}</b><small>${esc(d.toLocaleDateString('pt-BR', { weekday: 'long' }))}</small></span><span class="nm">${hoje ? hoje + (hoje > 1 ? ' lembretes hoje' : ' lembrete hoje') : 'Calendário'}</span></button>`);
+    T.push(esp('nuvem', 'Nuvem da equipe', nv, '#1a5fb4'), esp('pc', 'Este computador', this.pc, '#3b4b5b'));
+    T.push(`<button type="button" class="et" data-et="perfil" style="--c:#6a4fd8"><span class="foto">${avatarHtml(CONTA?.foto, CONTA?.nome || fb?.currentUser?.displayName)}</span><span class="nm">Perfil e fundo</span></button>`);
+    if (DADOS?.adm) T.push(`<button type="button" class="et" data-et="adm" style="--c:#24364a"><span class="gi">${ICE('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L4 16.7V20h3.3l5.3-5.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>')}</span><span class="nm">ADM</span></button>`);
+    box.innerHTML = T.join(''); box.style.setProperty('--cols', 4);
+    const vai = { msgs: () => EC?.mensagens?.abrir?.(), cal: () => EC?.calendario?.(), nuvem: () => EC?.nuvem?.painel?.(), pc: () => EC?.painelEspaco?.(), perfil: () => abrirConta(), adm: () => EC?.adm?.abrir?.() };
+    $$('[data-et]', box).forEach(b => b.onclick = () => vai[b.dataset.et]?.());
+    if (this.pc == null && !this._med) { this._med = 1; navigator.storage?.estimate?.().then(e => { if (e?.quota) { this.pc = e.usage / e.quota; this.pinta(); } }).catch(() => { }); }
+  },
+};
+// apertar um bloco: ele inclina para o lado onde o mouse/dedo apertou (fora do modo Organizar)
+document.addEventListener('pointerdown', e => { const b = e.target.closest?.('#menu .card:not(.soon), #menu .mp, #menu .et'); if (!b || organizar.on || e.target.closest('.subprog,.fixar')) return;
+  const r = b.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+  b.style.animation = 'none'; b.style.transform = `perspective(700px) rotateY(${(x * 12).toFixed(1)}deg) rotateX(${(-y * 12).toFixed(1)}deg) scale(.96)`;
+  const solta = () => { b.style.transform = ''; b.removeEventListener('pointerup', solta); b.removeEventListener('pointerleave', solta); }; b.addEventListener('pointerup', solta); b.addEventListener('pointerleave', solta); });
 
 /* MEUS PROJETOS (pedido da dona, 05/11/2026; no lugar de "Recentes na nuvem" e "Ao vivo", que mostravam coisa a quem não devia):
    os últimos projetos que ESTA pessoa criou, dizendo se estão na nuvem ou só neste computador. SEM miniatura (poupa pedidos).
@@ -1432,10 +1590,10 @@ const recentes = {
     local: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg>' },
   pinta() {
     const el = $('#rec'); if (!el) return; const L = this.lista();
-    if (!L.length) { el.innerHTML = `<li class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : 'Você ainda não criou nenhum projeto. Os que você criar no Animador aparecem aqui.'}</li>`; return; }
+    if (!L.length) { el.innerHTML = `<div class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : 'Você ainda não criou nenhum projeto. Os que você criar no Animador aparecem aqui.'}</div>`; return; }
     el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', href = nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
       const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Só neste computador</span>` : `<span class="onde lc">${this.IC.local}Neste computador</span>`;
-      return `<li><a href="${href}" title="Abrir no Animador"><span class="pg" data-estudio-icone="an"></span><span class="rt"><b>${esc(x.nome || 'Animação sem nome')}</b><small>${esc(this.quando(x.mod))}</small></span>${onde}</a></li>`; }).join('');
+      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="Abrir no Animador" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || 'Animação sem nome')}</b><small>${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="an"></span></a>`; }).join('');
     try { window.EstudioIcones?.pinta?.(el); } catch { }
   },
 };
@@ -1598,8 +1756,8 @@ function renderLinks() {
 function renderFundo() {
   const f = EDIT.fundo;
   $('#bg-cfg').innerHTML = `<label class="f"><span>Como mostrar</span><select data-k="modo">
-      <option value="nenhum">Sem fundo (cor do tema)</option><option value="um">Sempre o primeiro</option>
-      <option value="slideshow">Slideshow (um depois do outro)</option><option value="aleatorio">Aleatório a cada visita</option></select></label>
+      <option value="um">Sempre a padrão (a primeira)</option>
+      <option value="slideshow">Slideshow (um depois do outro)</option><option value="aleatorio">Uma aleatória a cada visita</option></select></label>
     <label class="f"><span>Slideshow: trocar a cada (segundos)</span><input type="number" min="2" max="120" step="1" data-k="intervalo" value="${f.intervalo}"></label>
     ${rng('Escurecer o fundo', f.escurecer, 0, .9, .01, pct, 'escurecer')}`;
   $('[data-k=modo]', $('#bg-cfg')).value = f.modo;
@@ -1608,11 +1766,12 @@ function renderFundo() {
     mudou();
   }));
   const box = $('#bg-items'); box.innerHTML = '';
-  if (!f.itens.length) box.innerHTML = '<div class="empty" style="grid-column:1/-1">Nenhum fundo ainda. Envie imagens, GIFs ou vídeos abaixo.</div>';
+  const bf = $('#bg-fotos'); if (bf) bf.onclick = () => { for (const m of FOTOS_ESTUDIO) if (!f.itens.some(x => x.src === m.src)) f.itens.push(JSON.parse(JSON.stringify(m))); if (f.modo === 'nenhum') f.modo = 'um'; mudou(); renderFundo(); };
+  if (!f.itens.length) box.innerHTML = '<div class="empty" style="grid-column:1/-1">Nenhuma imagem: o menu usa as fotos do Estúdio. Envie imagens abaixo ou use "Pôr as fotos do Estúdio".</div>';
   f.itens.forEach((m, i) => {
     const it = document.createElement('div'); it.className = 'bgit';
     it.innerHTML = `<div class="frame wide"><i class="grid3"></i></div>${rng('Zoom', m.zoom, 1, 4, .01, vez, 'zoom')}${rng('Blur', m.blur || 0, 0, 30, 1, px, 'blur')}
-      <div class="acts"><span class="hint">${m.tipo === 'video' ? 'Vídeo (passe o mouse para tocar)' : 'Imagem/GIF'} ${i + 1}</span><span class="sp"></span>
+      <div class="acts"><span class="hint">${i === 0 ? '<b>Padrão</b> · ' : ''}${m.tipo === 'video' ? 'Vídeo (não aparece mais no menu)' : esc(m.nome || 'Imagem') + (m.credito ? ' · ' + esc(m.credito) : '')}</span>${i ? '<button class="btn sm" data-a="padrao" title="Passa a ser a primeira (a que aparece em Sempre o primeiro)">Usar como padrão</button>' : ''}<span class="sp"></span>
       <button class="btn sm" data-a="centro">Centralizar</button>
       <button class="btn sm" data-a="up" ${i ? '' : 'disabled'} title="Mover para antes">↑</button><button class="btn sm danger" data-a="del">Remover</button></div>`;
     const fr = $('.frame', it), el = midiaEl(m, { tocar: false }); fr.prepend(el);
@@ -1625,6 +1784,7 @@ function renderFundo() {
       const a = b.dataset.a;
       if (a === 'centro') Object.assign(m, { x: 50, y: 50, zoom: 1 });
       if (a === 'up') f.itens.splice(i - 1, 0, f.itens.splice(i, 1)[0]);
+      if (a === 'padrao') f.itens.unshift(f.itens.splice(i, 1)[0]);
       if (a === 'del') { if (!confirm('Remover este fundo?')) return; f.itens.splice(i, 1); }
       mudou(); renderFundo();
     });
@@ -2374,7 +2534,7 @@ function showAdm(sobre) {
   EDIT = copia(); EDIT.links.forEach(l => { if (l.url) { const n = normUrl(l.url); if (n !== l.url) { l.url = n; sujo = true; } } }); renderLinks(); renderMensagens(); renderFundo(); if (!sobre) fundoTela(null); // na ADM o fundo da tela não toca (por cima do menu, o do menu continua atrás)
   st(DADOS.em ? `Última mudança: ${new Date(DADOS.em).toLocaleString('pt-BR')}${DADOS.por ? ` por <span data-quem="${esc(DADOS.por)}"></span>` : ''}.` : 'Ainda não salvo no servidor: mostrando os botões padrão.');
   $('#add-link').onclick = () => { EDIT.links.push({ nome: 'Novo link', desc: '', url: null, embreve: false, modo: 'sempre', icone: 'link', iconeImg: null, iconeTam: 62, iconeCaixa: true, fundo: null, escurecer: .45 }); mudou(); renderLinks(); $('#links').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-  $$('[data-addbg]').forEach(b => b.onclick = async () => { const m = await novaMidia(b.dataset.addbg); if (!m) return; EDIT.fundo.itens.push(m); if (EDIT.fundo.modo === 'nenhum') EDIT.fundo.modo = 'um'; mudou(); renderFundo(); });
+  $$('[data-addbg]').forEach(b => b.onclick = async () => { const m = await novaMidia(b.dataset.addbg); if (!m) return; if (m.tipo === 'video') return toast('Vídeo não entra mais no fundo do menu: use uma imagem.'); EDIT.fundo.itens.push(m); if (EDIT.fundo.modo === 'nenhum') EDIT.fundo.modo = 'um'; mudou(); renderFundo(); });
   $('#btn-undo').onclick = () => { if (sujo && !confirm('Desfazer tudo o que ainda não foi salvo?')) return; EDIT = copia(); sujo = false; renderLinks(); renderMensagens(); renderFundo(); st('Mudanças desfeitas.'); };
   $('#btn-save').onclick = async () => {
     EDIT.links.forEach(l => { if (l.url) l.url = normUrl(l.url); });
