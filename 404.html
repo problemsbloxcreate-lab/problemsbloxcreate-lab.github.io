@@ -1512,9 +1512,9 @@ const organizar = {
   pinta() { // botão, dica, rolagem e os alfinetes
     const g = $('#grid'), cx = $('#grid-caixa'), b = $('#btn-org'); if (!g || !cx || !b) return;
     b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on;
-    // "Voltar à ordem padrão": só no modo Organizar e só quando a ordem desta pessoa é diferente da padrão
+    // "Voltar à ordem padrão": aparece sempre que a ordem desta pessoa é diferente da padrão
     const padraoKs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l))).map(chaveL).join('\n'), bp = $('#org-padrao');
-    if (bp) { bp.hidden = !this.on || padraoKs === menuVis.map(chaveL).join('\n'); bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
+    if (bp) { bp.hidden = padraoKs === menuVis.map(chaveL).join('\n'); /* sempre à vista quando a ordem não é a padrão (pedido da dona) */ bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
     $('#btn-org').hidden = menuVis.length < 2;
     cx.classList.toggle('rola', g.dataset.densidade !== 'grande'); this.fimDaRolagem();
     const fx = new Set(this.fixos().map(x => x.k));
@@ -1842,7 +1842,8 @@ function renderFundo() {
   $('[data-k=modo]', $('#bg-cfg')).value = f.modo;
   $$('#bg-cfg [data-k]').forEach(inp => inp.addEventListener('input', () => {
     const k = inp.dataset.k; if (k === 'modo') f.modo = inp.value; else if (k === 'intervalo') f.intervalo = clamp(+inp.value || 8, 2, 120); else { f.escurecer = +inp.value; inp.nextElementSibling.textContent = pct(inp.value); }
-    mudou(); clearTimeout(renderFundo.tp); renderFundo.tp = setTimeout(() => fundoTela(soImagens(f)), 300); // prévia na hora, atrás da ADM
+    mudou(); if (k === 'escurecer') return $('#pagebg').style.setProperty('--esc', f.escurecer); // escurecer: só escurece (não sorteia/recomeça a foto)
+    clearTimeout(renderFundo.tp); renderFundo.tp = setTimeout(() => fundoTela(soImagens(f)), 300); // modo e tempo: prévia na hora, atrás da ADM
   }));
   const box = $('#bg-items'); box.innerHTML = '';
   const bf = $('#bg-fotos'); if (bf) bf.onclick = () => { for (const m of FOTOS_ESTUDIO) if (!f.itens.some(x => x.src === m.src)) f.itens.push(JSON.parse(JSON.stringify(m))); if (f.modo === 'nenhum') f.modo = 'um'; mudou(); renderFundo(); };
