@@ -742,6 +742,10 @@ html.no-menu #top .ep-conta-nuvem,html.no-menu #top .ep-conta-espaco{display:non
 #adm .lrow,#adm .bgit{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
 #adm .savebar{background:rgba(14,32,58,.95);border:1px solid rgba(255,255,255,.2)}
 html.adm-sobre #adm{inset:0;background:rgba(5,20,45,.35)}
+/* o X de fechar fica dentro da coluna das áreas: não pega o estilo dos botões/ícones das áreas (quadrado cinza e espaçamento) */
+#adm .adm-abas .adm-x{width:32px;height:32px;padding:0!important;display:grid;place-items:center;border:0!important;background:none!important;color:rgba(255,255,255,.8);flex:none}
+#adm .adm-abas .adm-x:hover,#adm .adm-abas .adm-x:focus-visible{background:rgba(255,255,255,.14)!important;color:#fff;outline:none}
+#adm .adm-abas .adm-x svg{width:14px!important;height:14px!important;padding:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;color:currentColor!important}
 
 /* ADM › Botões: a prévia é o BLOCO do menu novo (sem fundo de mídia, nome centralizado) */
 #adm .lrow .card{position:relative;width:124px;height:124px;min-height:0;padding:0;display:block;border:0;border-radius:0;overflow:hidden;background:rgba(12,20,30,.72);box-shadow:none;cursor:default;transform:none;color:#fff}
