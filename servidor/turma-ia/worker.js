@@ -1216,7 +1216,7 @@ export default {
       // SÓ ADM (decisão do dono, 02/11/2026): programa marcado "só para ADMs" nem sai daqui para quem não é ADM. Antes de alguém salvar o
       // menu com a caixinha, o Jester Dreams já conta como marcado.
       const soAdmDe = l => l.soAdm ?? /jester\s*dreams/i.test(l.nome || '');
-      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); let ls = v?.links ? v.links.map(l => ({ ...l, soAdm: soAdmDe(l) })).filter(l => adm || (!l.soAdm && !l.invisivel)) : null; if (ls && !adm) { const pe = permSem(await permModelo(env), await permId(login.email), false); ls = ls.filter(l => !pe.programas.includes(permProgDoLink(l))); } /* NÍVEIS DE ACESSO: programa que o cargo não vê nem sai daqui */ /* invisível: nem sai para quem não é ADM (o ADM recebe só para a ADM › Menu; o menu esconde) */ return json({ links: ls, fundo: v?.fundo || null, mensagens: v?.mensagens || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') { const v = await env.EQUIPE.get('menu/links', { type: 'json' }); let ls = v?.links ? v.links.map(l => ({ ...l, soAdm: soAdmDe(l) })).filter(l => adm || (!l.soAdm && !l.invisivel)) : null; if (ls && !adm) { const pe = permSem(await permModelo(env), await permId(login.email), false); ls = ls.filter(l => !pe.programas.includes(permProgDoLink(l))); } /* NÍVEIS DE ACESSO: programa que o cargo não vê nem sai daqui */ /* invisível: nem sai para quem não é ADM (o ADM recebe só para a ADM › Menu; o menu esconde) */ return json({ links: ls, fundo: v?.fundo || null, mensagens: v?.mensagens || null, seloAdm: v?.seloAdm || null, por: (await semEmail({ por: v?.por || null })).por, em: v?.em || null, adm }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (req.method === 'PUT' || req.method === 'POST') {
         if (!adm) return semAdm();
         let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
@@ -1236,7 +1236,8 @@ export default {
         const f = b.fundo || {}, fundo = { modo: ['nenhum', 'um', 'slideshow', 'aleatorio'].includes(f.modo) ? f.modo : 'nenhum', intervalo: num(f.intervalo, 2, 120, 8), escurecer: num(f.escurecer, 0, .9, .55), itens: (Array.isArray(f.itens) ? f.itens : []).slice(0, 20).map(midia).filter(Boolean) };
         const mg = b.mensagens || {}, mensagens = { boasVindas: txt(mg.boasVindas, 160), intervalo: num(mg.intervalo, 3, 60, 7),
           frases: (Array.isArray(mg.frases) ? mg.frases : []).map(x => txt(x, 140)).filter(Boolean).slice(0, 40) };
-        const v = { links, fundo, mensagens, por: login.email, em: new Date().toISOString() };
+        const sa = b.seloAdm || {}, seloAdm = { texto: txt(sa.texto, 16) || 'ADM', ...(/^#[0-9a-f]{6}$/i.test(sa.cor || '') ? { cor: sa.cor.toLowerCase() } : {}) }; // selo ADM no título do menu (texto e cor)
+        const v = { links, fundo, mensagens, seloAdm, por: login.email, em: new Date().toISOString() };
         await env.EQUIPE.put('menu/links', JSON.stringify(v));
         // apaga as mídias do menu que ninguém usa mais
         const usadas = new Set([...links.map(l => l.fundo?.src), ...links.map(l => l.iconeImg?.src), ...fundo.itens.map(m => m.src)].filter(s => s?.startsWith('kv:')).map(s => s.slice(3)));
