@@ -620,19 +620,21 @@ body{background:#5ea9e6}
 #top .brand b,#top .brand #top-nome{font:300 40px/1.1 var(--mn-leve);letter-spacing:-.3px;text-shadow:0 1px 18px rgba(0,40,100,.3)}
 #top .brand small{font-size:13px}
 #top .top-centro{position:static;transform:none;margin-left:auto}
-#top .ep-relogio{background:none;border:0;border-radius:0;padding:4px 10px;display:flex;flex-direction:column;align-items:flex-end;gap:0;color:#fff;text-shadow:0 1px 10px rgba(0,40,100,.3)}
+#top .ep-relogio{height:auto;min-height:0;line-height:1.15;background:none;border:0;border-radius:0;padding:6px 12px;display:flex;flex-direction:column;align-items:flex-end;gap:0;color:#fff;text-shadow:0 1px 10px rgba(0,40,100,.3)}
 #top .ep-relogio:hover{background:rgba(255,255,255,.14)}
 #top .ep-relogio .hr{order:-1;font:300 32px/1 var(--mn-leve)}
-#top .ep-relogio .dt{font-size:13px;opacity:.85;text-transform:none}
+#top .ep-relogio .dt{font-size:13px;opacity:.85;text-transform:none;display:block!important;margin-top:3px}
 /* área do menu */
 #menu.main{align-items:stretch;justify-content:flex-start;padding:8px 28px 70px max(56px,env(safe-area-inset-left,0px))}
-#menu .mn-cab{display:flex;align-items:flex-start;gap:12px}
-#menu h1{font:300 20px/1.3 var(--mn-leve);text-align:left;margin:0;letter-spacing:0;text-shadow:0 1px 12px rgba(0,40,100,.35)}
-#menu .sub{text-align:left;margin:2px 0 0;font-size:13.5px;color:rgba(255,255,255,.85)}
+#menu .mn-cab{position:relative;display:flex;justify-content:center;text-align:center;margin-top:6px}
+#menu .mn-cab>div{display:flex;flex-direction:column;align-items:center}
+#menu .mn-cab>.sp{display:none}#menu .mn-cab .mn-lupa{position:absolute;right:0;top:0}
+#menu h1{font:300 30px/1.25 var(--mn-leve);text-align:center;margin:0;letter-spacing:0;text-shadow:0 1px 12px rgba(0,40,100,.35)}
+#menu .sub{text-align:center;margin:2px 0 0;font-size:13.5px;color:rgba(255,255,255,.85)}
 #menu .frase{margin:6px 0 0;display:inline-block;border-radius:0;background:rgba(0,30,70,.28)}
 .mn-lupa{width:40px;height:40px;border:0;background:none;color:#fff;cursor:pointer;display:grid;place-items:center}
 .mn-lupa:hover{background:rgba(255,255,255,.14)}
-.mn-busca{display:flex;align-items:center;gap:10px;max-width:520px;height:42px;margin:12px 0 0;padding:0 14px;background:rgba(255,255,255,.96);color:#13324f;animation:mnSobe .35s var(--mn-entra) both}
+.mn-busca{display:flex;align-items:center;gap:10px;max-width:520px;width:100%;height:42px;margin:14px auto 0;padding:0 14px;background:rgba(255,255,255,.96);color:#13324f;animation:mnSobe .35s var(--mn-entra) both}
 .mn-busca input{flex:1;border:0;outline:none;background:none;color:#13324f;font-size:16px}.mn-busca small{color:#5a6a80}
 .mn-area{display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px 56px;margin-top:20px}
 .mn-grupo{min-width:0}
@@ -676,12 +678,13 @@ body{background:#5ea9e6}
 #menu .subprog .sp-it i{position:static;opacity:1;transform:none;background:none;border:0;padding:0;font-size:13.5px;font-weight:400;color:#fff}
 /* meus projetos: nuvem = azul (céu), só neste computador = grafite */
 #menu .meus{--cols:4}
-#menu .mp{grid-column:span 2;position:relative;display:block;padding:10px 12px;color:#fff;text-decoration:none;background:#40505f;animation:mnGira .6s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s,opacity .3s,filter .3s}
+/* blocos QUADRADOS, do tamanho dos programas (pedido da dona, 05/11/2026) */
+#menu .mp{grid-column:span 1;position:relative;display:block;padding:10px 12px;color:#fff;text-decoration:none;background:#40505f;animation:mnGira .6s var(--mn-entra) both;transform-origin:left center;transition:transform .18s,box-shadow .15s,opacity .3s,filter .3s}
 #menu .mp.nv{background:#1d6fd6}
 #menu .mp:hover,#menu .mp:focus-visible{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55);outline:none}
-#menu .mp b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.25}
+#menu .mp b{display:-webkit-box!important;-webkit-line-clamp:3;font-size:13px!important;white-space:normal;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.25}
 #menu .mp small{display:block;margin-top:3px;font-size:12px;color:rgba(255,255,255,.8)}
-#menu .mp .onde{position:absolute;left:12px;bottom:9px;display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.85);padding:0;background:none}
+#menu .mp .onde{position:absolute;left:10px;bottom:9px;display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.85);padding:0;background:none}
 #menu .mp .pg{position:absolute;right:10px;bottom:8px;width:26px;height:26px}#menu .mp .pg svg,#menu .mp .pg img,#menu .mp .pg>span{display:block;width:26px;height:26px}
 #menu .meus .vz{grid-column:1/-1;padding:6px 0;color:rgba(255,255,255,.9);font-size:13px;text-shadow:0 1px 8px rgba(0,30,70,.4)}
 /* grupo Estúdio */
@@ -1592,7 +1595,7 @@ const recentes = {
     const el = $('#rec'); if (!el) return; const L = this.lista();
     if (!L.length) { el.innerHTML = `<div class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : 'Você ainda não criou nenhum projeto. Os que você criar no Animador aparecem aqui.'}</div>`; return; }
     el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', href = nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
-      const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Só neste computador</span>` : `<span class="onde lc">${this.IC.local}Neste computador</span>`;
+      const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Neste PC</span>` : `<span class="onde lc">${this.IC.local}Neste PC</span>`;
       return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="Abrir no Animador" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || 'Animação sem nome')}</b><small>${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="an"></span></a>`; }).join('');
     try { window.EstudioIcones?.pinta?.(el); } catch { }
   },
