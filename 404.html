@@ -834,6 +834,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 @media (max-width:720px){.mn-progs{min-width:0;width:100%}}
 #menu #estudio.pronto .et,#menu #atalhos.pronto .et{animation:none}
 #adm .f.chk input[type=checkbox]{border-radius:10px!important}
+#menu .mp-prog{height:26px;margin-left:6px;padding:0 6px;border:1px solid rgba(255,255,255,.5);background:rgba(14,32,58,.6);color:#fff;font:600 12px var(--font)}
+#menu .mp-prog option{color:#10233a;background:#fff}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -887,7 +889,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
       <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div></section>
     </div>
     <!-- MEUS PROJETOS: os últimos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
-    <section class="mn-grupo recentes" id="recentes" hidden><div class="progs-cab"><h2 id="rec-tit">Meus projetos</h2><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="mp-filtro" role="group" aria-label="Mostrar"><button type="button" data-mf="todos" aria-pressed="true">Todos</button><button type="button" data-mf="nuvem" aria-pressed="false">Na nuvem</button><button type="button" data-mf="local" aria-pressed="false">Neste computador</button></span></div>
+    <section class="mn-grupo recentes" id="recentes" hidden><div class="progs-cab"><h2 id="rec-tit">Meus projetos</h2><button type="button" class="rec-atu" id="rec-atu" title="Atualizar a lista (busca de novo na nuvem, sem F5)" aria-label="Atualizar a lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="mp-filtro" role="group" aria-label="Mostrar"><button type="button" data-mf="todos" aria-pressed="true">Todos</button><button type="button" data-mf="nuvem" aria-pressed="false">Na nuvem</button><button type="button" data-mf="local" aria-pressed="false">Neste computador</button></span><select id="mp-prog" class="mp-prog" aria-label="Programa"><option value="">Todos os programas</option><option value="an">Animador</option><option value="at">Ateliê</option><option value="ed">Editar</option><option value="pr">Preparativos</option><option value="pu">Publicações</option></select></div>
       <div class="blocos meus" id="rec"></div></section>
     <!-- ESTÚDIO: Mensagens, Calendário, nuvem, este computador, perfil e ADM (no lugar do Dock) -->
     <div class="mn-col"><!-- Estúdio e, logo abaixo, Meus atalhos (mesma coluna) -->
@@ -1815,7 +1817,7 @@ document.addEventListener('pointerdown', e => { const b = e.target.closest?.('#m
      outra pessoa, cópia "(anterior)" e projeto de outro autor não entram.
    O id da animação é o mesmo nos dois lugares: na nuvem abre /animador/?nuvem=<id>, só aqui abre /animador/?projeto=<id>. */
 const recentes = {
-  N: 8, eu: null, nuvem: null, locais: null,
+  N: 12, eu: null, nuvem: null, locais: null,
   async liga() {
     const box = $('#recentes'); if (!box) return;
     if (!permProg('animador')) { box.hidden = true; return; } // por enquanto só o Animador guarda projetos que aparecem aqui
@@ -1831,7 +1833,20 @@ const recentes = {
     if (!j) { try { j = await api('/animacoes?menu=1' + (forcar ? '&novo=1' : '')); try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { } } catch { return this.nuvem; } }
     return (j?.itens || []).filter(x => x?.id);
   },
-  async doComputador() { return [...await this.doAnimador(), ...await this.doEditor()]; },
+  async doComputador() { return [...await this.doAnimador(), ...await this.doEditor(), ...await this.doPrepLocal(), ...await this.doPubLocal()]; },
+  // lê um banco do navegador SÓ se ele já existe (nunca cria banco vazio de outro programa)
+  async lerBanco(nome, loja) {
+    try { const ns = await indexedDB.databases?.(); if (ns && !ns.some(d => d.name === nome)) return []; } catch { }
+    try { const db = await new Promise((ok, no) => { const r = indexedDB.open(nome); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); r.onblocked = () => no(new Error('ocupado')); r.onupgradeneeded = () => { try { r.transaction.abort(); } catch { } }; });
+      if (!db.objectStoreNames.contains(loja)) { db.close(); return []; }
+      const out = await new Promise(ok => { const L = [], c = db.transaction(loja).objectStore(loja).openCursor(); c.onsuccess = () => { const k = c.result; if (!k) return ok(L); L.push([k.key, k.value]); k.continue(); }; c.onerror = () => ok(L); });
+      db.close(); return out;
+    } catch { return []; }
+  },
+  // PREPARATIVOS deste computador: os rascunhos ('ep-preparativos' › 'rasc'); novo ou nunca enviado = só aqui
+  async doPrepLocal() { return (await this.lerBanco('ep-preparativos', 'rasc')).map(([, v]) => v?.P?.id ? { id: v.P.id, tipo: 'pr', nome: v.P.nome || 'Preparativo', mod: +v.em || +v.P.mod || 0, onde: v.P.novo || !v.base?.mod ? 'local' : 'nuvem', rasc: true } : null).filter(Boolean); },
+  // PUBLICAÇÕES deste computador: os vídeos esperando para publicar ('ep-publicacoes' › 'videos'); abre com ?video=<id>
+  async doPubLocal() { return (await this.lerBanco('ep-publicacoes', 'videos')).map(([, v]) => v?.id ? { id: v.id, tipo: 'pu', nome: v.titulo || v.nome || 'Vídeo', mod: +v.em || 0, onde: 'local', esp: true } : null).filter(Boolean); },
   // EDITAR (05/11/2026): a lista dos projetos fica no banco 'ep-edicao' (store 'k', chave 'lista'); abre com /editor/?p=<id>. Só neste computador.
   async doEditor() {
     try { const ns = await indexedDB.databases?.(); if (ns && !ns.some(d => d.name === 'ep-edicao')) return []; } catch { }
@@ -1872,9 +1887,10 @@ const recentes = {
     if (!forcar && c && Date.now() - c.t < 15 * 6e4) return c.L;
     const L = [], eu = this.eu, ok = id => window.EstudioPerm?.programa?.(id) !== false;
     const quando = x => +x?.mod || Date.parse(x?.em || '') || Date.parse(x?.publicado || x?.quando || '') || +x?.criado || 0;
-    if (ok('preparativos')) try { const j = await api('/preparativos'); for (const x of j?.itens || []) if (x?.id && eu && x.por === eu) L.push({ id: x.id, tipo: 'pr', nome: x.nome || 'Preparativo', mod: quando(x), onde: 'nuvem' }); } catch { }
+    const velho = t => (c?.L || []).filter(x => x.tipo === t);
+    if (ok('preparativos')) try { const j = await api('/preparativos'); for (const x of j?.itens || []) if (x?.id && eu && x.por === eu) L.push({ id: x.id, tipo: 'pr', nome: x.nome || 'Preparativo', mod: quando(x), onde: 'nuvem' }); } catch { L.push(...velho('pr')); }
     if (ok('publicacoes')) { let P = null; try { const v = JSON.parse(localStorage.getItem('ep-publicacoes-v1') || 'null'); if (!forcar && v?.itens && Date.now() - (v.em || 0) < 864e5) P = v.itens; } catch { }
-      if (!P) try { P = (await api('/publicacoes'))?.itens || []; } catch { P = []; }
+      if (!P) try { P = (await api('/publicacoes'))?.itens || []; } catch { P = null; L.push(...velho('pu')); }
       for (const x of P || []) if (x?.id && x.meu) L.push({ id: x.id, tipo: 'pu', nome: x.titulo || x.arquivo?.nome || 'Publicação', mod: quando(x), onde: 'nuvem' }); }
     try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), L })); } catch { }
     return L;
@@ -1885,16 +1901,18 @@ const recentes = {
     for (const x of nv.values()) if (eu && this.criador(x) === eu) out.set(x.id, { id: x.id, nome: x.nome, mod: +x.mod || Date.parse(x.em) || 0, onde: 'nuvem' });
     for (const p of this.locais || []) if (p.tipo === 'ed') out.set('ed:' + p.id, { id: p.id, tipo: 'ed', nome: p.nome, mod: p.mod, onde: 'local' });
     for (const p of this.equipe || []) out.set(p.tipo + ':' + p.id, p);
+    for (const p of this.locais || []) if ((p.tipo === 'pr' || p.tipo === 'pu') && !(p.tipo === 'pr' && out.has('pr:' + p.id) && p.onde === 'nuvem')) out.set(p.tipo + ':' + p.id, p);
     for (const p of this.locais || []) if (p.tipo === 'at' && eu && p.editou === eu) out.set('at:' + p.id, { id: p.id, tipo: 'at', nome: p.nome, mod: p.mod, onde: p.nuvem ? 'nuvem' : 'local' });
-    for (const p of this.locais || []) { if (p.tipo === 'at' || p.tipo === 'ed' || !p.id || p.anterior || out.has(p.id)) continue;
+    for (const p of this.locais || []) { if (p.tipo === 'at' || p.tipo === 'ed' || p.tipo === 'pr' || p.tipo === 'pu' || !p.id || p.anterior || out.has(p.id)) continue;
       const c = nv.get(p.id); if (c) { if (eu && this.criador(c) === eu) out.set(p.id, { id: p.id, nome: c.nome || p.nome, mod: Math.max(+c.mod || 0, p.mod), onde: 'nuvem' }); continue; } // está na nuvem mas é de outra pessoa
       if (p.autor && eu && p.autor !== eu) continue; // copiado de outra pessoa
       out.set(p.id, { id: p.id, nome: p.nome, mod: p.mod, onde: this.nuvem ? 'local' : '?' }); }
-    const f = this.filtro(); return [...out.values()].filter(x => f === 'todos' || (f === 'nuvem' ? x.onde === 'nuvem' : x.onde !== 'nuvem')).sort((a, b) => b.mod - a.mod).slice(0, this.N);
+    const f = this.filtro(), g = this.prog(); return [...out.values()].filter(x => (f === 'todos' || (f === 'nuvem' ? x.onde === 'nuvem' : x.onde !== 'nuvem')) && (!g || (x.tipo || 'an') === g)).sort((a, b) => b.mod - a.mod).slice(0, this.N);
   },
   // FILTRO (pedido da dona, 05/11/2026): Todos / Na nuvem / Neste computador — só filtra a lista que já está aqui (zero pedido à nuvem)
   filtro() { try { return localStorage.getItem('ep-meus-filtro') || 'todos'; } catch { return 'todos'; } },
-  ligaFiltro() { $$('[data-mf]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mf === this.filtro())); b.onclick = () => { try { localStorage.setItem('ep-meus-filtro', b.dataset.mf); } catch { } this.ligaFiltro(); this.pinta(); }; });
+  prog() { try { return localStorage.getItem('ep-meus-prog') || ''; } catch { return ''; } },
+  ligaFiltro() { const sp = $('#mp-prog'); if (sp) { sp.value = this.prog(); sp.onchange = () => { try { localStorage.setItem('ep-meus-prog', sp.value); } catch { } this.pinta(); }; } $$('[data-mf]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mf === this.filtro())); b.onclick = () => { try { localStorage.setItem('ep-meus-filtro', b.dataset.mf); } catch { } this.ligaFiltro(); this.pinta(); }; });
   },
   quando(t) { if (!t) return ''; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : m < 2880 ? 'ontem' : m < 43200 ? `há ${Math.round(m / 1440)} dias` : new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); },
   IC: { nuvem: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg>',
@@ -1902,9 +1920,9 @@ const recentes = {
   pinta() {
     const el = $('#rec'); if (!el) return; const L = this.lista();
     if (!L.length) { el.innerHTML = `<div class="vz">${this.nuvem === null && !(this.locais || []).length ? 'Não deu para ver a nuvem agora. Tente o botão de atualizar.' : (this.filtro() === 'nuvem' ? 'Nenhum projeto seu na nuvem.' : this.filtro() === 'local' ? 'Nenhum projeto seu só neste computador.' : 'Você ainda não criou nenhum projeto. As animações e os personagens do Ateliê que você fizer aparecem aqui.')}</div>`; return; }
-    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', at = x.tipo === 'at', edt = x.tipo === 'ed', pr = x.tipo === 'pr', pu = x.tipo === 'pu', href = pr ? '/preparativos/?id=' + encodeURIComponent(x.id) : pu ? '/publicacoes/' : edt ? '/editor/?p=' + encodeURIComponent(x.id) : at ? '/animador/?atelie=' + encodeURIComponent(x.id) : nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
+    el.innerHTML = L.map(x => { const nv = x.onde === 'nuvem', at = x.tipo === 'at', edt = x.tipo === 'ed', pr = x.tipo === 'pr', pu = x.tipo === 'pu', href = pr ? '/preparativos/?id=' + encodeURIComponent(x.id) : pu ? '/publicacoes/' + (x.esp ? '?video=' + encodeURIComponent(x.id) : '') : edt ? '/editor/?p=' + encodeURIComponent(x.id) : at ? '/animador/?atelie=' + encodeURIComponent(x.id) : nv ? '/animador/?nuvem=' + encodeURIComponent(x.id) : '/animador/?projeto=' + encodeURIComponent(x.id);
       const onde = nv ? `<span class="onde nv" title="Está na nuvem da equipe">${this.IC.nuvem}Na nuvem</span>` : x.onde === 'local' ? `<span class="onde lc" title="Ainda não foi para a nuvem: só existe neste computador">${this.IC.local}Só neste computador</span>` : `<span class="onde lc">${this.IC.local}Neste computador</span>`;
-      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="${pr ? 'Abrir no Preparativos' : pu ? 'Abrir o Publicações' : edt ? 'Abrir no Editar' : at ? 'Abrir no Ateliê' : 'Abrir no Animador'}" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || (at ? 'Personagem sem nome' : 'Animação sem nome'))}</b><small>${pr ? 'Preparativo · ' : pu ? 'Publicação · ' : edt ? 'Edição · ' : at ? 'Personagem · ' : ''}${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="${pr ? 'pr' : pu ? 'pu' : edt ? 'ed' : at ? 'at' : 'an'}"></span></a>`; }).join('');
+      return `<a class="mp ${nv ? 'nv' : 'lc'}" href="${href}" data-busca="${esc(x.nome || '')}" title="${pr ? 'Abrir no Preparativos' : pu ? 'Abrir o Publicações' : edt ? 'Abrir no Editar' : at ? 'Abrir no Ateliê' : 'Abrir no Animador'}" style="animation-delay:${(.15 + L.indexOf(x) * .05).toFixed(2)}s"><b>${esc(x.nome || (at ? 'Personagem sem nome' : 'Animação sem nome'))}</b><small>${pr ? 'Preparativo · ' : pu ? (x.esp ? 'Esperando publicar · ' : 'Publicação · ') : edt ? 'Edição · ' : at ? 'Personagem · ' : ''}${esc(this.quando(x.mod))}</small>${onde}<span class="pg" data-estudio-icone="${pr ? 'pr' : pu ? 'pu' : edt ? 'ed' : at ? 'at' : 'an'}"></span></a>`; }).join('');
     try { window.EstudioIcones?.pinta?.(el); } catch { }
   },
 };
