@@ -615,7 +615,8 @@ window.EstudioPerm ||= (() => {
 .ep-msgs .epm-m.epm-meu .epm-b{background:#1d6fd6!important}
 .ep-msgs textarea,.ep-msgs input{border-radius:0!important}
 /* calendário */
-.ep-cal{box-shadow:0 30px 80px rgba(0,20,50,.5)!important}
+.ep-cal{box-shadow:0 30px 80px rgba(0,20,50,.5)!important;top:0!important;right:0!important;bottom:0!important;left:auto!important;transform:none!important;width:min(460px,100%)!important;max-height:none!important;height:100%;grid-template-columns:1fr!important;grid-template-rows:auto 1fr;overflow:auto!important;animation:epEntraDir .45s cubic-bezier(.1,.9,.2,1) both} /* entra pela direita, como a nuvem (pedido da dona) */
+.ep-cal .m{border-right:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;padding:22px 20px 16px!important}.ep-cal .d{padding:16px 20px!important;min-height:0}
 .ep-cal .cab b{font:300 20px "Segoe UI Light","Segoe UI",system-ui,sans-serif}
 .ep-cal .g button{border-radius:0!important}.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}.ep-cal .g button.hoje{box-shadow:inset 0 0 0 2px #fff!important}
 .ep-cal input,.ep-cal .seg,.ep-cal .seg button,.ep-cal .ev{border-radius:0!important}
