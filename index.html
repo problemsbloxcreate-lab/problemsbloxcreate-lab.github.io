@@ -854,6 +854,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #menu #recentes .progs-cab{flex-wrap:nowrap}
 #top .badge{display:inline-grid;place-items:center;align-self:center;margin-left:10px;height:22px;padding:0 8px;border:1.5px solid rgba(255,255,255,.85);background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 var(--font);letter-spacing:.8px}
 #top .badge[hidden]{display:none!important}
+#top .selos-cargo{display:inline-flex;gap:6px;align-self:center}#top .selos-cargo:empty{display:none}
+#top .badge.cargo{margin-left:6px;text-transform:none;letter-spacing:.2px;font-weight:600}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -887,7 +889,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 
 <!-- topo (menu e ADM) -->
 <header class="top view" id="top" hidden>
-  <div class="brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg></span><span class="t"><b id="top-nome">Estúdio Problems</b><small id="top-sub" hidden>Estúdio Problems</small></span><span class="badge" id="badge-adm" hidden>ADM</span></div>
+  <div class="brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg></span><span class="t"><b id="top-nome">Estúdio Problems</b><small id="top-sub" hidden>Estúdio Problems</small></span><span class="badge" id="badge-adm" hidden>ADM</span><span class="selos-cargo" id="selos-cargo"></span></div>
   <span class="sp"></span>
   <button type="button" class="mn-lupa" hidden id="lupa" title="Buscar (ou só comece a digitar)" aria-label="Buscar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></button>
   <span class="top-centro" data-estudio-relogio></span><!-- redesign: relógio + calendário pessoal (o /estudio-conta.js preenche) -->
@@ -1563,6 +1565,14 @@ function comPartes(lista) { const out = [];
    o Publicações nasce marcado. Desmarcar grava etiqueta '-' (= sem selo), para o padrão não voltar sozinho. */
 const ETIQUETA_PADRAO = { publicacoes: 'Em teste', cenarios: 'Em teste' }; // só o começo: depois vale o que a ADM › Botões salvar (Ateliê e Cenários ficam no botão do Animador)
 function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) return l.etiqueta; if (l?.id && ETIQUETA_PADRAO[l.id]) return ETIQUETA_PADRAO[l.id]; try { const u = new URL(l?.url || '', location.href); return u.origin === location.origin ? ETIQUETA_PADRAO[u.pathname.split('/').filter(Boolean)[0]] || '' : ''; } catch { return ''; } }
+/* SELO DO CARGO NO TÍTULO (pedido da dona, 05/11/2026): o nome do cargo da pessoa, na cor do cargo, ao lado de "Estúdio Problems" —
+   só dos cargos em que a ADM › Níveis de acesso marcou "Mostrar selo no título do menu" (por padrão nenhum; o ADM tem o selo ADM). */
+function pintaSelos() {
+  const box = $('#selos-cargo'); if (!box) return; const P = window.EstudioPerm;
+  const desenha = () => { let cs = []; try { cs = (P?.dados?.()?.cargos || []).filter(c => c?.selo && c.nome); } catch { }
+    box.innerHTML = cs.map(c => { const cor = /^#[0-9a-f]{6}$/i.test(c.cor || '') ? c.cor : '#8e8e93'; return `<span class="badge cargo" style="border-color:${cor};background:${cor}40" title="Seu cargo">${esc(c.nome)}</span>`; }).join(''); };
+  desenha(); if (!pintaSelos.ok) { pintaSelos.ok = true; try { P?.pronto?.then?.(desenha); } catch { } addEventListener('estudio-perm', desenha); }
+}
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
 const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
 function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
@@ -1570,7 +1580,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); $('#lupa').hidden = false; $('#badge-adm').hidden = !DADOS?.adm; // selo ADM no título (só para quem é ADM) document.documentElement.classList.add('no-menu');
+  pintaGrid(); $('#lupa').hidden = false; $('#badge-adm').hidden = !DADOS?.adm; pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
@@ -2789,6 +2799,7 @@ function naCargos(box) {
       <div class="fields"><label class="f"><span>Nome do cargo</span><input type="text" id="na-nome" maxlength="40" value="${esc(c.nome)}"></label>
         <label class="f"><span>Descrição (opcional)</span><input type="text" id="na-desc" maxlength="160" value="${esc(c.desc || '')}" placeholder="Ex.: quem só anima, sem exportar"></label></div>
       <h3>Cor</h3><div class="na-cores">${NA_CORES.map(k => `<button type="button" data-cor="${k}" style="background:${k}" aria-pressed="${k === c.cor}" aria-label="Cor ${k}"></button>`).join('')}<input type="color" id="na-cor" value="${esc(c.cor)}" title="Outra cor"></div>
+      <label class="na-ck" style="margin-top:10px"><input type="checkbox" id="na-selo" ${c.selo ? 'checked' : ''}><span><b>Mostrar selo no título do menu</b><small>Quem tem este cargo vê o nome do cargo, nesta cor, ao lado de "Estúdio Problems". Desligado = não aparece (o ADM sempre tem o selo ADM).</small></span></label>
       ${padrao ? '<p class="hint" style="margin:12px 0 0">Este é o cargo PADRÃO: quem não tem nenhum cargo fica nele. Com tudo marcado, ninguém perde nada. Desmarque aqui só se quiser tirar algo de todo mundo que não tem cargo.</p>' : ''}
       <h3>Programas que este cargo vê<span class="sp" style="flex:1"></span><button type="button" class="btn sm" data-tudo="1">Marcar tudo</button><button type="button" class="btn sm" data-tudo="0">Desmarcar tudo</button></h3>
       <div class="na-progs">${naProgs().map(p => `<label class="na-ck"><input type="checkbox" data-prog="${esc(p.id)}" ${sp.includes(p.id) ? '' : 'checked'}><span><b>${esc(p.nome)}</b></span></label>`).join('') || '<div class="hint">Sem a lista de programas.</div>'}</div>
@@ -2807,6 +2818,7 @@ function naCargos(box) {
   $('#na-desc').oninput = e => { c.desc = e.target.value.slice(0, 160); muda(false); };
   $$('[data-cor]', box).forEach(b => b.onclick = () => { c.cor = b.dataset.cor; muda(); });
   $('#na-cor').onchange = e => { c.cor = e.target.value; muda(); };
+  $('#na-selo').onchange = e => { if (e.target.checked) c.selo = true; else delete c.selo; muda(); };
   $$('[data-prog]', box).forEach(i => i.onchange = () => { const k = i.dataset.prog; c.sem.programas = i.checked ? sp.filter(x => x !== k) : [...new Set([...sp, k])]; muda(); });
   $$('[data-fn]', box).forEach(i => i.onchange = () => { const k = i.dataset.fn; c.sem.funcoes = i.checked ? c.sem.funcoes.filter(x => x !== k) : [...new Set([...c.sem.funcoes, k])]; muda(); });
   $$('[data-tudo]', box).forEach(b => b.onclick = () => { const tudo = b.dataset.tudo === '1'; c.sem.programas = tudo ? [] : naProgs().map(p => p.id); c.sem.funcoes = tudo ? [] : (NA.cat?.funcoes || []).map(f => f.id); muda(); });
