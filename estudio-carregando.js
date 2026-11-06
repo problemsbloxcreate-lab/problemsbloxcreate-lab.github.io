@@ -33,7 +33,14 @@ window.EstudioDiario ||= (() => {
   // nomes e o e-mail MASCARADO como na ADM). Só credenciais não aparecem (token de login, JWT/passe, chave de API, senha, assinatura de link):
   // no lugar fica o que era, para quem ler saber que existia.
   const mascara = e => { const [u, d = ''] = String(e).split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; }; // a mesma da ADM (porteiro)
-  const filtra = t => String(t ?? '')
+  // LINK DE DUBLAGEM (Preparativos, página pública): o token no endereço É a senha do link. Sai SEMPRE (endereço, pedidos, erros, qualquer texto).
+  const DUB = '[link de dublagem omitido]';
+  const semDub = t => t
+    .replace(/(x-dub-token["']?\s*[:=]\s*["']?)(?!\[)[A-Za-z0-9_-]+/gi, '$1' + DUB)
+    .replace(/([#?&;](?:t|tk|tok|token|dub|link|k)=)(?!\[)[A-Za-z0-9_%-]{8,}/gi, '$1' + DUB)
+    .replace(/(\/dublar\/)(?!api\/|index\.html|dublar\.(?:js|css)|#|\?|\[)[A-Za-z0-9_-]{8,}/gi, '$1' + DUB)
+    .replace(/(?<![A-Za-z0-9_-])[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/g, DUB);
+  const filtra = t => semDub(String(t ?? ''))
     .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, m => mascara(m)).replace(/•••＠•••|\[e-mail\]/g, '(e-mail, mascarado)')
     .replace(/Bearer\s+(?!\[)[^\s`'")]+/gi, '[token de login omitido]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[token de login/passe omitido]')
     .replace(/AIza[\w-]{10,}/g, '[chave de API omitida]').replace(/\bsk-[\w-]{16,}/g, '[chave de API omitida]')
@@ -73,7 +80,17 @@ window.EstudioDiario ||= (() => {
     if (!r.ok) anota(r.status >= 500 || r.status === 429 ? 'erro' : 'aviso', 'pedido', r.status + ' ' + rota(u));
     const xn = r.headers.get('x-nuvem'); if (xn) anota('aviso', 'nuvem', 'x-nuvem: ' + xn + (r.headers.get('x-nuvem-volta') ? ' (volta ' + r.headers.get('x-nuvem-volta') + ')' : ''), rota(u)); };
 
+  if (/^\/dublar(\/|$)/.test(location.pathname) && window.fetch && !window.EstudioConta) { const f0 = window.fetch.bind(window);
+    window.fetch = async function (input, init) { const u = typeof input === 'string' ? input : input?.url || String(input);
+      try { const r = await f0(input, init); try { pedido(u, r); } catch { } return r; } catch (e) { try { pedido(u, null, e?.message || 'sem resposta'); } catch { } throw e; } }; }
   /* ---------- o relatório (.md) ---------- */
+  const CONTEXTO_PUB = `## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
+O Estúdio Problems é o site de uma equipe de animação e vídeos (só entra quem tem login liberado). Este relatório foi gerado numa página PÚBLICA ou SEM LOGIN
+(por exemplo, o link de dublagem do Preparativos, que qualquer pessoa com o link abre para gravar as falas de um roteiro). Por isso ele só traz o que aconteceu
+nesta página e neste navegador: nada da equipe, nenhum e-mail, nenhum token (o próprio link de dublagem é uma senha e nunca entra).
+Quem for resolver: o código e as decisões estão no repositório do site (\`CLAUDE.md\`) e no do Preparativos (pasta \`dublar/\`).
+
+**Sobre o diário abaixo:** cada navegador anota só nele mesmo (nada vai para a nuvem). Repetições seguidas viram uma linha com "×N".`;
   const CONTEXTO = `## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
 O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica num endereço só, **https://estudio.problemsraiz.workers.dev**, e só entra quem tem login do Google liberado.
 
@@ -98,8 +115,8 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
   // + sem HTML: nenhum < ou > entra cru (mensagens da URL, do servidor ou do Google viram texto)
   const censura = t => filtra(t).replace(/</g, '&lt;').replace(/>/g, '&gt;'); // filtro final no texto inteiro, antes de baixar
   // publico = gerado numa tela SEM login liberado (login do menu, erro do estudio-login.js): sem dados da equipe (o que foi feito, espaço da nuvem)
-  async function relatorio(o = {}) { const pub = !!o.publico;
-    poda(); const l = le().slice().sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
+  async function relatorio(o = {}) { const so = /^\/dublar(\/|$)/.test(location.pathname) ? 'dublar' : null, pub = !!o.publico || !!so; // página de dublagem: sempre pública
+    poda(); const l = le().filter(x => !so || x.p === so).sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
     let esp = ''; try { const e = await navigator.storage?.estimate?.(); if (e?.quota) esp = `${(e.usage / 1048576).toFixed(1)} MB de ${(e.quota / 1048576).toFixed(0)} MB`; } catch { }
     const lj = k => { try { const v = localStorage.getItem(k); return v == null ? null : v[0] === '{' ? JSON.parse(v) : v; } catch { return null; } }, hm = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     const mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(1).replace('.', ',') + ' GB' : Math.round(b / 1048576) + ' MB', marcas = [];
@@ -109,21 +126,21 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
     { let v = null; try { v = sessionStorage.getItem('ep-porta-volta'); } catch { } if (v) marcas.push(`- **Porta reserva:** a principal volta às ${hm(+v)}`); }
     const EL = window.EstudioLimite, nivelN = EL?.marcado?.() > Date.now() ? (EL?.nivel?.() || 0) : 0;
     marcas.unshift(`- **Porta em uso:** ${/estudio-reserva\./.test(location.hostname) ? 'PORTA RESERVA (' + location.hostname + ')' : location.hostname === 'estudio.problemsraiz.workers.dev' ? 'principal (estudio.problemsraiz.workers.dev)' : location.hostname} · **nuvem em uso:** ${nivelN >= 2 ? 'terciária' : nivelN >= 1 ? 'reserva' : 'principal'}`);
+    if (pub) marcas.splice(1);
     let fbLogin = '?'; try { const dbs = await indexedDB.databases?.(); if (dbs) fbLogin = dbs.some(d => d.name === 'firebaseLocalStorageDb') ? 'presente' : 'não encontrado'; } catch { }
     let contaOk = 'não'; try { contaOk = sessionStorage.getItem('ep-conta-v1') ? 'sim' : 'não'; } catch { }
     const scr = [...document.scripts].map(s => s.src).filter(s => /estudio-|\/js\//.test(s)).map(s => s.replace(location.origin, '')).slice(0, 12);
     const md = `# Relatório de suporte — Estúdio Problems
 Gerado em ${new Date().toLocaleString('pt-BR')} (${Intl.DateTimeFormat().resolvedOptions().timeZone}) pelo botão "Gerar relatório de suporte"${pub ? ' numa tela sem login liberado (sem dados da equipe)' : ''}.
 
-${CONTEXTO}
+${pub ? CONTEXTO_PUB : CONTEXTO}
 
 ## Versão, navegador e tela
 - **Versão do site:** ${window.EstudioVersao.nome}
 - **Página aberta:** \`${location.pathname}\` (programa: ${prog()}) em \`${location.hostname}\`
 - **Navegador:** ${navigator.userAgent}
 - **Tela:** ${screen.width}×${screen.height} · janela ${innerWidth}×${innerHeight} · zoom/densidade ${devicePixelRatio}
-- **Login:** login do Google neste navegador: ${fbLogin} · conta do Estúdio carregada nesta aba: ${contaOk} (tokens, passes e chaves nunca entram no relatório)
-- **Idioma:** ${navigator.language} · **internet agora:** ${navigator.onLine ? 'sim' : 'não'}${navigator.deviceMemory ? ` · **memória:** ~${navigator.deviceMemory} GB` : ''}${esp ? ` · **espaço do site no navegador:** ${esp}` : ''}
+${pub ? '' : `- **Login:** login do Google neste navegador: ${fbLogin} · conta do Estúdio carregada nesta aba: ${contaOk} (tokens, passes e chaves nunca entram no relatório)\n`}- **Idioma:** ${navigator.language} · **internet agora:** ${navigator.onLine ? 'sim' : 'não'}${navigator.deviceMemory ? ` · **memória:** ~${navigator.deviceMemory} GB` : ''}${esp ? ` · **espaço do site no navegador:** ${esp}` : ''}
 - **Arquivos carregados (com a versão):** ${scr.map(s => '`' + limpa(s) + '`').join(', ') || '—'}
 
 **Nuvem e porta (marcas guardadas neste navegador):**
@@ -136,7 +153,7 @@ ${err.map(linha).join('\n') || '- Nenhum erro anotado.'}
 ${av.map(linha).join('\n') || '- Nenhum.'}
 
 ## O que foi feito hoje (${inf.length})
-${pub ? '- (não entra: relatório gerado numa tela sem login liberado)' : inf.slice(0, 300).map(linha).join('\n') || '- Nada anotado.'}
+${pub && !so ? '- (não entra: relatório gerado numa tela sem login liberado)' : inf.slice(0, 300).map(linha).join('\n') || '- Nada anotado.'}
 `;
     return censura(md);
   }
