@@ -895,6 +895,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 #menu .pasta-pop .pp-tira{position:absolute;top:6px;left:6px;z-index:4;height:22px;padding:0 6px;border:0;background:rgba(0,0,0,.5);color:#fff;font:600 11px var(--font);cursor:pointer}
 #menu .pasta-pop .card{animation:none}
 @media (max-width:720px){#menu .pasta-pop{left:8px!important;right:8px}}
+.versao-site{pointer-events:auto!important;cursor:pointer}.versao-site:hover{background:rgba(14,32,58,.6)}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -957,7 +958,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <section class="mn-grupo" id="g-atalhos"><h2>Meus atalhos</h2><div class="blocos" id="atalhos"></div></section>
     </div>
   </div>
-  <span class="versao-site" id="versao-site" title="Versão do site"></span><!-- VERSÃO (06/11/2026): o texto vem de window.ESTUDIO_VERSAO, no /estudio-conta.js -->
+  <span class="versao-site" id="versao-site" role="button" tabindex="0" title="Gerar relatório de erro"></span><!-- VERSÃO (06/11/2026): o texto vem de window.ESTUDIO_VERSAO, no /estudio-conta.js -->
 </main>
 
 <!-- 3) ADM — abre com ?adm (ou /adm) e só depois do login -->
@@ -1679,7 +1680,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) vs.textContent = window.ESTUDIO_VERSAO || ''; } $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
+  pintaGrid(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.ESTUDIO_VERSAO || ''; vs.onclick = () => window.EstudioConta?.relatorio?.(); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de erro $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)

@@ -772,6 +772,7 @@ window.EstudioPerm ||= (() => {
 .ep-conta-pop .sep{margin:6px 0!important;background:rgba(255,255,255,.12)!important}
 .ep-conta-pop .av,.ep-conta-pop img{border-radius:0!important}
 .ep-conta-pop b{font-weight:600}
+.ep-pg .cx{position:relative}.ep-pg .pg-x{position:absolute!important;top:8px;right:8px;width:30px!important;height:30px!important;padding:0!important;border:0!important;background:none!important;color:rgba(255,255,255,.8)!important;font-size:14px;cursor:pointer}.ep-pg .pg-x:hover{background:rgba(255,255,255,.14)!important;color:#fff!important}
 /* avisos, selos e a chave de ADM no visual novo (cantos retos, azul escuro) */
 .ep-conta-aviso{background:rgba(14,32,58,.95)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 14px 40px rgba(0,20,50,.45)!important}
 .ep-selo,.ep-chave{border-radius:0!important;background:#1d6fd6!important}
@@ -825,19 +826,27 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
 
   // janela de confirmação no visual do Estúdio Problems (no lugar do confirm() do navegador); resolve true/false
   // trabalho: async () => {...} roda ao confirmar, com o botão em "Salvando…"; se der erro, mostra e oferece seguir mesmo assim
-  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim', aviso = false, icone = null }) {
+  // RELATÓRIO DE ERRO: a janela antes de baixar (menu da conta e selo da versão no menu)
+  async function pedeRelatorio() {
+    const L = window.EstudioDiario?.lista?.() || [], ts = L.map(x => x.t2 || x.t).filter(Boolean), f = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const periodo = ts.length ? `Tem o que aconteceu de ${f(Math.min(...L.map(x => x.t)))} até agora (${f(Date.now())}).` : 'Ainda não há nada anotado neste navegador.';
+    if (!(await pergunta({ titulo: 'Gerar relatório de erro?', icone: ICONES.lista, azul: true, ok: 'Entendi, gerar',
+      texto: 'Não mande este arquivo para qualquer pessoa, só para quem vai resolver o problema. ' + periodo }))) return;
+    window.EstudioDiario?.baixar();
+  }
+  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim', aviso = false, icone = null, azul = false }) {
     return new Promise(fim => {
       const d = document.createElement('div'); d.className = 'ep-pg';
-      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}"><div class="ic${aviso ? ' azul' : ''}">${icone || ICONES.sair}</div><div class="t">${esc(titulo)}</div>
+      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}">${azul ? '<button type="button" class="pg-x" data-n title="Fechar (Esc)" aria-label="Fechar">✕</button>' : ''}<div class="ic${aviso || azul ? ' azul' : ''}">${icone || ICONES.sair}</div><div class="t">${esc(titulo)}</div>
         ${pp ? `<div class="quem"><span class="av">${av(pp)}</span><span><b>${esc(pp.nome)}</b><small>${esc(pp.email)}</small></span></div>` : ''}
-        <p class="x">${esc(texto)}</p><div class="acts">${aviso ? '' : '<button type="button" data-n>Cancelar</button>'}<button type="button" class="sim${aviso ? ' azul' : ''}" data-s>${esc(ok)}</button></div></div>`;
+        <p class="x">${esc(texto)}</p><div class="acts">${aviso ? '' : '<button type="button" data-n>Cancelar</button>'}<button type="button" class="sim${aviso || azul ? ' azul' : ''}" data-s>${esc(ok)}</button></div></div>`;
       document.body.appendChild(d);
       const sai = v => { d.remove(); document.removeEventListener('keydown', tecla, true); fim(v); };
       const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); if (!ocupado) sai(false); } };
       document.addEventListener('keydown', tecla, true);
       const bS = d.querySelector('[data-s]'), bN = d.querySelector('[data-n]'), px = d.querySelector('.x');
       let falhou = false, ocupado = false;
-      if (bN) bN.onclick = () => { if (!ocupado) sai(false); };
+      d.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { if (!ocupado) sai(false); });
       bS.onclick = async () => {
         if (!trabalho || falhou) return sai(true);
         ocupado = true; bS.disabled = true; if (bN) bN.disabled = true; bS.textContent = okTrabalho;
@@ -931,10 +940,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.querySelector('[data-a=msgs]').onclick = () => { fecha(); painelMensagens(); };
       pop.querySelector('[data-a=adm]')?.addEventListener('click', ev => { fecha(); abrirAdm(ev.currentTarget.dataset.aba); }); // janela por cima, sem trocar de aba
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
-      pop.querySelector('[data-a=relatorio]').onclick = async () => { fecha();
-        if (!(await pergunta({ titulo: 'Gerar relatório de erro?', icone: ICONES.lista, aviso: true, ok: 'Entendi, gerar',
-          texto: 'Este arquivo serve só para resolver problemas do Estúdio. Não mande para qualquer pessoa: só para quem vai consertar (por exemplo, colar num chat do Claude). Senhas, chaves e tokens de login não entram; o e-mail aparece mascarado, como na ADM.' }))) return;
-        window.EstudioDiario?.baixar(); };
+      pop.querySelector('[data-a=relatorio]').onclick = () => { fecha(); pedeRelatorio(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
         const temQueSalvar = salvadores().length > 0;
         if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu.' + (temQueSalvar ? ' O projeto aberto é salvo antes de sair.' : '') + ' Seus projetos salvos aqui continuam.',
@@ -2249,7 +2255,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // SAÍDA ANIMADA (05/11/2026): quem fecha estas janelas chama .remove(); aqui elas tocam a animação de saída e só então saem
   { const SAI = '.ep-esp,.ep-cal,.ep-msgs,.ep-pg,.ep-admj,.ep-conta-pop,.ep-notif,.modal', rm0 = Element.prototype.remove, calmo = matchMedia('(prefers-reduced-motion: reduce)');
     if (!Element.prototype.remove.epSai) { const rm = function () { if (this.isConnected && !calmo.matches && this.matches?.(SAI) && !this.classList.contains('ep-saindo')) { this.classList.add('ep-saindo'); setTimeout(() => rm0.call(this), 220); return; } return rm0.call(this); }; rm.epSai = true; Element.prototype.remove = rm; } }
-  window.EstudioConta = { perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
+  window.EstudioConta = { relatorio: () => pedeRelatorio(), perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
     calendario: ev => calendario(ev), dock: { atualizar: () => pintaDock() },
     preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas, abrir: abrirAdm }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
