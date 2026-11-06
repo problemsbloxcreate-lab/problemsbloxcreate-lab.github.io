@@ -77,7 +77,7 @@ window.EstudioDiario ||= (() => {
   // no lugar fica o que era, para quem ler saber que existia.
   const mascara = e => { const [u, d = ''] = String(e).split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; }; // a mesma da ADM (porteiro)
   const filtra = t => String(t ?? '')
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, m => mascara(m))
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, m => mascara(m)).replace(/•••＠•••|\[e-mail\]/g, '(e-mail, mascarado)')
     .replace(/Bearer\s+(?!\[)[^\s`'")]+/gi, '[token de login omitido]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[token de login/passe omitido]')
     .replace(/AIza[\w-]{10,}/g, '[chave de API omitida]').replace(/\bsk-[\w-]{16,}/g, '[chave de API omitida]')
     .replace(/((?:senha|password|passwd|secret|segredo)\s*[:=]\s*)(?!\[)[^\s,;&`'"]+/gi, '$1[senha omitida]')
@@ -108,7 +108,8 @@ window.EstudioDiario ||= (() => {
     anota(ms > 8000 ? 'aviso' : 'info', 'carregou', (ms / 1000).toFixed(1) + ' s' + (ms > 8000 ? ' (demorou)' : '')); } catch { } }, 0));
   // ações principais: o nome do botão/link clicado (rótulo da tela, não o conteúdo de arquivos)
   document.addEventListener('click', e => { const b = e.target?.closest?.('button,a,[role=button],[role=menuitem]'); if (!b) return;
-    const r = (b.getAttribute('aria-label') || b.title || b.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 50); if (r) anota('info', 'clicou', r); }, true);
+    const partes = []; try { const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const v = n.nodeValue.replace(/\s+/g, ' ').trim(); if (v && !n.parentElement?.closest('svg,style,script')) partes.push(v); } } catch { }
+    const r = (partes.join(' · ') || b.getAttribute('aria-label') || b.title || '').replace(/\s+/g, ' ').trim().slice(0, 100); if (r) anota('info', 'clicou', r); }, true);
   // pedido à nossa nuvem (chamado pelo fetch do estudio-conta.js): só a rota, sem o que foi enviado
   const rota = u => { try { const x = new URL(u, location.href); return x.hostname.split('.')[0] + x.pathname.replace(/[A-Za-z0-9_-]{20,}/g, '…'); } catch { return '?'; } };
   const pedido = (u, r, falhou) => { if (falhou) return anota('erro', 'pedido-sem-resposta', rota(u), String(falhou).slice(0, 120));
@@ -141,7 +142,14 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
   async function relatorio() {
     poda(); const l = le().slice().sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
     let esp = ''; try { const e = await navigator.storage?.estimate?.(); if (e?.quota) esp = `${(e.usage / 1048576).toFixed(1)} MB de ${(e.quota / 1048576).toFixed(0)} MB`; } catch { }
-    const marcas = ['estudio-limite-cf', 'ep-divide', 'ep-nuvem-uso', 'ep-porta-volta'].map(k => { let v = null; try { v = localStorage.getItem(k) ?? sessionStorage.getItem(k); } catch { } return v == null ? null : `- \`${k}\`: ${limpa(v).slice(0, 160)}`; }).filter(Boolean);
+    const lj = k => { try { const v = localStorage.getItem(k); return v == null ? null : v[0] === '{' ? JSON.parse(v) : v; } catch { return null; } }, hm = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(1).replace('.', ',') + ' GB' : Math.round(b / 1048576) + ' MB', marcas = [];
+    { const v = lj('ep-nuvem-uso'), j = v?.j; if (j?.limite) marcas.push(`- **Espaço da nuvem (última medida guardada):** ${mb(j.total)} de ${mb(j.limite)} (${Math.round(j.total / j.limite * 100)}%) às ${hm(v.t)}${j.nuvem ? ' · medido na nuvem ' + j.nuvem : ''}`); }
+    { const v = lj('ep-divide'); if (v && v.ate > Date.now()) marcas.push(`- **Nuvens trabalhando juntas (ep-divide):** ${Math.round((+v.p || 0) * 100)}% dos pedidos de dados deste navegador vão pela outra conta (turma-reserva), até ${hm(v.ate)}`); }
+    { const v = lj('estudio-limite-cf'), o = typeof v === 'object' ? v : v ? { t: +v } : null; if (o?.t) marcas.push(`- **Aviso de limite guardado (estudio-limite-cf):** ${o.t > Date.now() ? `vale até ${hm(o.t)} (quando a principal volta)` : 'já venceu'}${o.r ? ' · nuvem em uso: ' + (+o.r >= 2 ? 'terciária' : 'reserva') : ''}`); }
+    { let v = null; try { v = sessionStorage.getItem('ep-porta-volta'); } catch { } if (v) marcas.push(`- **Porta reserva:** a principal volta às ${hm(+v)}`); }
+    const EL = window.EstudioLimite, nivelN = EL?.marcado?.() > Date.now() ? (EL?.nivel?.() || 0) : 0;
+    marcas.unshift(`- **Porta em uso:** ${/estudio-reserva\./.test(location.hostname) ? 'PORTA RESERVA (' + location.hostname + ')' : location.hostname === 'estudio.problemsraiz.workers.dev' ? 'principal (estudio.problemsraiz.workers.dev)' : location.hostname} · **nuvem em uso:** ${nivelN >= 2 ? 'terciária' : nivelN >= 1 ? 'reserva' : 'principal'}`);
     let fbLogin = '?'; try { const dbs = await indexedDB.databases?.(); if (dbs) fbLogin = dbs.some(d => d.name === 'firebaseLocalStorageDb') ? 'presente' : 'não encontrado'; } catch { }
     let contaOk = 'não'; try { contaOk = sessionStorage.getItem('ep-conta-v1') ? 'sim' : 'não'; } catch { }
     const scr = [...document.scripts].map(s => s.src).filter(s => /estudio-|\/js\//.test(s)).map(s => s.replace(location.origin, '')).slice(0, 12);
@@ -158,7 +166,10 @@ ${CONTEXTO}
 - **Login:** login do Google neste navegador: ${fbLogin} · conta do Estúdio carregada nesta aba: ${contaOk} (tokens, passes e chaves nunca entram no relatório)
 - **Idioma:** ${navigator.language} · **internet agora:** ${navigator.onLine ? 'sim' : 'não'}${navigator.deviceMemory ? ` · **memória:** ~${navigator.deviceMemory} GB` : ''}${esp ? ` · **espaço do site no navegador:** ${esp}` : ''}
 - **Arquivos carregados (com a versão):** ${scr.map(s => '`' + limpa(s) + '`').join(', ') || '—'}
-${marcas.length ? '\n**Marcas da nuvem guardadas neste navegador:**\n' + marcas.join('\n') + '\n' : ''}
+
+**Nuvem e porta (marcas guardadas neste navegador):**
+${marcas.join('\n')}
+
 ## Erros (${err.length}, mais recentes primeiro; ficam 7 dias)
 ${err.map(linha).join('\n') || '- Nenhum erro anotado.'}
 
@@ -1046,7 +1057,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     try {
       if (navigator.serviceWorker?.getRegistrations) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.update(); } catch { } }
       if (window.caches?.keys) for (const k of await caches.keys()) { try { await caches.delete(k); } catch { } } // só cópias offline de arquivos do site
-      const raizes = new Set(['/', '/estudio-login.js', '/estudio-conta.js', '/shorts/', '/shorts/producao/', '/shorts/roteiro/', '/shorts/gravacao/', '/editor/', '/modelador/', '/modelador/blockbench/app/', '/animador/', '/animador/animar.html', location.pathname, ...extras]);
+      const raizes = new Set(['/', '/estudio-login.js', '/estudio-conta.js', '/shorts/', '/shorts/producao/', '/shorts/roteiro/', '/shorts/gravacao/', '/editor/', '/modelador/', '/modelador/blockbench/app/', '/animador/', location.pathname, ...extras]);
       if (P?.foto?.startsWith('/')) raizes.add(P.foto);
       const feitos = new Set(), fila = [...raizes];
       const pega = async caminho => {
