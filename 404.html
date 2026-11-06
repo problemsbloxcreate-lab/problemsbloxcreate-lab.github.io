@@ -1267,6 +1267,8 @@ function montarCard(el, l) {
 // nome, foto e fundo do menu de cada pessoa. Os outros projetos do mesmo endereço leem a mesma conta.
 let CONTA = null;
 async function carregaConta() {
+  // ECONOMIA (06/11/2026): o /estudio-conta.js (botão da conta) já busca a mesma conta — usa a mesma busca (antes eram 2 pedidos iguais)
+  if (window.EstudioConta?.perfil) { try { const j = await EstudioConta.perfil(); if (j) { CONTA = j; return CONTA; } } catch { } }
   try { const r = await fetch('/conta', { credentials: 'same-origin', cache: 'no-store' }); if (r.ok && r.headers.get('x-porteiro')) CONTA = await r.json(); } catch { }
   return CONTA;
 }

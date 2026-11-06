@@ -132,7 +132,7 @@ async function versaoDe(env, u, s) {
   let v = null;
   try {
     const url = new URL(u);
-    if (RAIZ_ASSETS.has(url.pathname)) { const r = await env.ASSETS.fetch(new Request(url.origin + url.pathname, { method: 'HEAD' })); v = r.ok ? (r.headers.get('etag') || r.headers.get('last-modified')) : null; }
+    if (RAIZ_ASSETS.has(url.pathname) || url.pathname === '/') { const r = await env.ASSETS.fetch(new Request(url.origin + url.pathname, { method: 'HEAD' })); v = r.ok ? (r.headers.get('etag') || r.headers.get('last-modified')) : null; }
     else {
       const p = achaProjeto(env, url.pathname); if (!p?.resto || p.para) return null;
       const alvo = new URL(p.resto, p.origem.replace(/\/?$/, '/'));
@@ -459,6 +459,20 @@ async function pessoa(req, env, url) {
   const nomeG = p.google?.nome || (porCodigo ? null : mascara(em));
   const adm = (await admsDe(env)).has(await codigoU(em));
   return json({ adm, nome: p.nome || nomeG, foto: p.fotoV ? (porCodigo ? '/pessoa/foto?u=' + encodeURIComponent(u) : '/pessoa/foto?e=' + encodeURIComponent(em)) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true }, 200, { 'cache-control': 'private, max-age=300' });
+}
+// VÁRIAS PESSOAS NUM PEDIDO SÓ (06/11/2026, economia de pedidos): GET /pessoa?us=u1,u2,… → { pessoas: { u1: { nome, foto, adm, conta } | null } }
+// (o Animador/Mensagens pediam uma por uma: 5 pedidos a cada abertura). Mesmas regras do /pessoa?u= (nunca devolve e-mail).
+async function pessoas(req, env, url) {
+  const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+  const us = [...new Set(String(url.searchParams.get('us') || '').split(','))].filter(u => /^u[0-9a-f]{16}$/.test(u)).slice(0, 60), out = {};
+  for (const u of us) {
+    try { const em = await emailDoCodigo(env, u); if (!em) { out[u] = { nome: null, foto: null, conta: false }; continue; }
+      let p = {}; if (env.PERFIS) { const c = PESSOA_MEM.get(em); if (c && Date.now() - c.t < 120e3) p = c.p; else { p = await lePerfil(env, em); PESSOA_MEM.set(em, { p, t: Date.now() }); if (PESSOA_MEM.size > 500) PESSOA_MEM.clear(); } }
+      if (!p.google && !p.nome) { out[u] = { nome: null, foto: null, conta: false }; continue; }
+      out[u] = { adm: (await admsDe(env)).has(u), nome: p.nome || p.google?.nome || null, foto: p.fotoV ? '/pessoa/foto?u=' + encodeURIComponent(u) + '&v=' + p.fotoV : (p.google?.foto || null), conta: true };
+    } catch { out[u] = null; }
+  }
+  return json({ pessoas: out }, 200, { 'cache-control': 'private, max-age=300' });
 }
 /* ---------- quem está online (objeto durável "Presenca": só memória, some sozinho em ~2,5 min sem aviso) ---------- */
 const PROGS = ['MENU', 'ADM', 'ANIMADOR', 'EDITOR', 'SHORTS', 'MODELADOR', 'BLOCKBENCH'];
@@ -1105,6 +1119,16 @@ export default {
     if (caminho === '/nuvem-uso') return nuvemUso(req, env, url).catch(e => json({ error: { message: 'O porteiro falhou: ' + String(e?.message || e).slice(0, 200) } }, 500)); // mostra o motivo na tela
     if (caminho === '/nuvem-uso/arq') return nuvemArq(req, env, url);
     if (caminho.startsWith('/nuvem-sons/')) return nuvemSons(req, env, url, caminho);
+    /* VERSÕES DE UMA VEZ (06/11/2026, economia de pedidos): a aba líder do Estúdio conferia "tem versão nova?" baixando cada página
+       e script (6 a 10 pedidos a cada 3,5 min por pessoa). Agora manda a lista inteira num pedido só e recebe a versão de cada um
+       (a mesma do carimbo _ev: ETag da origem, guardada 20 s aqui). GET /versoes?u=/|/animador/|/estudio-conta.js → { v: { caminho: versão|null } } */
+    if (caminho === '/versoes') {
+      const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
+      const us = [...new Set(String(url.searchParams.get('u') || '').split('|'))].filter(x => /^\/[^\s|]{0,300}$/.test(x)).slice(0, 40), out = {};
+      await Promise.all(us.map(async x => { try { const a = new URL(x, url.origin); const pg = /^\/(index\.html|adm\/?)?$/i.test(a.pathname) ? '/' : a.pathname; out[x] = await versaoDe(env, url.origin + pg, s); } catch { out[x] = null; } }));
+      return json({ v: out }, 200, { 'cache-control': 'no-store' });
+    }
+    if (caminho === '/pessoa' && url.searchParams.has('us')) return pessoas(req, env, url);
     if (caminho === '/pessoa' || caminho === '/pessoa/foto') return pessoa(req, env, url);
     if (caminho === '/mensagens' || caminho === '/mensagens/anexo' || caminho === '/mensagens/ao-vivo') return mensagens(req, env, url);
     if (caminho === '/online') { // MENU: quem está em cada programa agora (foto + nome + código, NUNCA o e-mail); só para quem está logado
@@ -1163,7 +1187,10 @@ export default {
     if (caminho === '/' || caminho === '/index.html') return menu(env, url, 200, req);
     if (caminho === '/permissoes.json' || caminho === '/estudio-icones.js' || caminho === '/estudio-edicao.js' || caminho === '/estudio-youtube.js' || caminho === '/estudio-login.js' || caminho === '/estudio-conta.js' || caminho === '/estudio-carregando.js' || caminho === '/favicon.svg' || caminho === '/favicon.ico' || caminho === '/icone-180.png' || caminho === '/fundo-margarida.jpg' || caminho === '/fundo-margarida-2.jpg') { if (caminho === '/estudio-login.js' || caminho === '/estudio-youtube.js') { const r0 = await env.ASSETS.fetch(new Request(new URL(caminho, url))); if (r0.ok) return new Response(comChaveYt(env, comChaveFb(env, await r0.text())), { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' } }); } const r = await env.ASSETS.fetch(req); if (r.ok || r.status === 304) { // login, carregamento e conta: o navegador sempre confere se tem versão nova (304 quando não mudou)
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
-      if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); } return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
+      if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); }
+      // ECONOMIA (06/11/2026): fotos de fundo e ícones quase nunca mudam — o navegador guarda 1 dia sem perguntar (antes: 1 pedido a cada abertura do menu)
+      if (r.ok && /\.(jpe?g|png|ico|svg)$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'public, max-age=86400'); return new Response(r.body, { status: r.status, headers: h }); }
+      return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);
     return menu(env, url, 404, req);
   },

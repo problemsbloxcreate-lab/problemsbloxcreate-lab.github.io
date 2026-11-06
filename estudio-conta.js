@@ -186,8 +186,12 @@ window.EstudioPerm ||= (() => {
     // AS NUVENS JUNTAS (05/11/2026): pedido de DADOS para a principal vai pela outra porta quando é a vez deste navegador (x-divide)
     const alt = paraReserva(url), repete = alt && typeof input === 'string' && !(init?.body instanceof ReadableStream);
     const vai = alt && sorte < parteDiv() ? comUrl(input, alt) : input;
-    try { r = await f0(vai, init); }
+    try { r = await f0(vai, init);
+      // 06/11/2026: a outra porta não deu conta (erro do servidor dela): o mesmo pedido volta para a principal, sem a pessoa perceber
+      if (vai !== input && repete && r.status >= 500 && r.status !== 507) { try { const r2 = await f0(input, init); if (r2.status < 500) r = r2; } catch { } }
+    }
     catch (e) {
+      if (vai !== input && repete && e?.name !== 'AbortError') { try { r = await f0(input, init); } catch { } } // a outra porta não respondeu: tenta a principal
       // a principal não respondeu (ex.: erro 1027, acabaram os pedidos do dia): o mesmo pedido vai pela outra porta, sem a pessoa perceber
       if (repete && vai === input && e?.name !== 'AbortError') { try { r = await f0(alt, init); guardaDiv(1); } catch { } }
       if (!r) {
@@ -1218,9 +1222,17 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // nomes e fotos ficam guardados neste navegador (30 min): abrir as mensagens não pede de novo um por um
   const QUEM_LS = 'ep-quem-v1'; let quemLs = {}; try { quemLs = JSON.parse(localStorage.getItem(QUEM_LS) || '{}') || {}; } catch { }
   let quemGrava = 0; const gravaQuem = () => { clearTimeout(quemGrava); quemGrava = setTimeout(() => { try { localStorage.setItem(QUEM_LS, JSON.stringify(quemLs)); } catch { } }, 400); };
-  const buscaQuem = u => fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).then(q => { if (q?.nome) { NOMES.set(u, q.nome); quemLs[u] = { q, t: Date.now() }; gravaQuem(); } return q; }).catch(() => null);
+  const buscaUm = u => fetch('/pessoa?u=' + encodeURIComponent(u), { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  // ECONOMIA (06/11/2026): quem é pedido junto (ex.: as 5 pessoas da equipe ao abrir o Animador) vai num pedido só (/pessoa?us=);
+  // porteiro antigo (sem ?us=) → um por um, como antes
+  const FILA_Q = { us: new Map(), t: 0 };
+  const buscaQuem = u => new Promise(ok => { const f = FILA_Q; if (!f.us.has(u)) f.us.set(u, []); f.us.get(u).push(ok); clearTimeout(f.t);
+    f.t = setTimeout(async () => { const lote = new Map(f.us); f.us.clear(); const cods = [...lote.keys()]; let res = null;
+      if (cods.length > 1) { try { const r = await fetch('/pessoa?us=' + cods.join(','), { credentials: 'same-origin' }); const j = r.ok ? await r.json() : null; if (j?.pessoas) res = j.pessoas; } catch { } }
+      await Promise.all(cods.map(async c => { const q = res && c in res ? res[c] : await buscaUm(c);
+        if (q?.nome) { NOMES.set(c, q.nome); quemLs[c] = { q, t: Date.now() }; gravaQuem(); } for (const fim of lote.get(c)) fim(q); })); }, 60); });
   const quemU = u => { if (!QUEMU.has(u)) { const g = quemLs[u];
-      if (g?.q && Date.now() - g.t < 7 * 864e5) { NOMES.set(u, g.q.nome); QUEMU.set(u, Promise.resolve(g.q)); if (Date.now() - g.t > 30 * 6e4) buscaQuem(u).then(q => { if (q) QUEMU.set(u, Promise.resolve(q)); }); } // guardado: na hora (e confere por trás se ficou velho)
+      if (g?.q && Date.now() - g.t < 7 * 864e5) { NOMES.set(u, g.q.nome); QUEMU.set(u, Promise.resolve(g.q)); if (Date.now() - g.t > 3 * 3600e3) buscaQuem(u).then(q => { if (q) QUEMU.set(u, Promise.resolve(q)); }); } // guardado: na hora (e confere por trás se tem mais de 3 h — antes 30 min)
       else QUEMU.set(u, buscaQuem(u)); } return QUEMU.get(u); };
   // conversas já abertas ficam guardadas (neste navegador, só da sua conta): abrem na hora e só baixam o que chegou de novo
   const CONV_LS = 'ep-conv-v1', CONV_MAX = 80;
@@ -1925,8 +1937,24 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       // antes eram até 30 arquivos a cada conferência, por aba; cada um = 1 pedido do porteiro, limite de 100 mil por dia na conta)
       const anim = location.pathname.startsWith('/animador/');
       const lista = anim ? [location.pathname + location.search, '/estudio-conta.js', '/animador/versao.json'] : primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : [...new Set([...recursosDaPagina(), ...SITES])];
+      // VERSÕES NUM PEDIDO SÓ (06/11/2026, economia de pedidos): depois da abertura, a lista inteira vai junta para o /versoes do porteiro,
+      // que devolve a versão de cada arquivo (a mesma do carimbo _ev). Antes: um pedido por arquivo (6 a 10 a cada 3,5 min).
+      // Porteiro antigo (sem /versoes) → como antes, um por um.
+      if (!primeira) {
+        const doGh = u => { try { const x = new URL(u, location.href); if (!/\.github\.io$/.test(x.hostname)) return null; return x.pathname.replace(/^\/jester-dreams\//, '/jester/'); } catch { return null; } };
+        const daPagina = anim ? [] : [...document.querySelectorAll('script[src],link[rel~="stylesheet"][href]')].map(e => { const s = e.src || e.href, m = mesmaOrigem(s); return m ? m.replace(/[?&]_ev=[^&]*/, '') : doGh(s); }).filter(Boolean);
+        const l2 = [...new Set([...lista, ...SITES, ...daPagina])].slice(0, 40);
+        let v = null; try { const r = await fetch('/versoes?u=' + encodeURIComponent(l2.join('|')), { credentials: 'same-origin', cache: 'no-store', epFundo: 1 }); const j = r.ok ? await r.json().catch(() => null) : null; v = j?.v || null; } catch { }
+        if (v) { for (const u of l2) { const a = v[u]; if (!a) continue; const k = 'v:' + u;
+            if (!VERSAO.base.has(k)) { VERSAO.base.set(k, a); continue; } if (VERSAO.base.get(k) === a) continue;
+            if (telaDeCarregamento() && (await recarregaJa())) return; marcaNova(u); return; }
+          return; }
+      }
+      // a página acabou de vir do porteiro (ou ele disse "não mudou") ao abrir: ela já é a mais nova, não precisa pedir de novo (06/11/2026)
+      const navFresca = (() => { try { const n = performance.getEntriesByType('navigation')[0]; return !!n && n.transferSize > 0 && n.type !== 'back_forward'; } catch { return false; } })();
       for (const u of lista) {
         if (VERSAO.instavel.has(u) || VERSAO.nova) continue;
+        if (primeira && navFresca && u === location.pathname + location.search) continue;
         let agora; try { agora = await digital(u, 'no-cache'); } catch { continue; }
         if (!agora) continue;
         if (!VERSAO.base.has(u)) {

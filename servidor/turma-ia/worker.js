@@ -197,17 +197,19 @@ const CH_D1 = 1900000, d1Est = { at: 0, on: false, arq: false, prep: false, poda
 const ARQUIVOS_URL = 'https://arquivos-problems.problemsraizz.workers.dev';
 async function d1Ligado(env) {
   if (!env.EQUIPE_DB) return false; if (Date.now() - d1Est.at < 60e3) return d1Est.on;
-  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1';
+  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('ativo', 'arquivos', 'casas')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); d1Est.on = v.ativo === '1'; d1Est.arq = v.arquivos === '1'; d1Est.casas = v.casas === '1';
     if (d1Est.on && !d1Est.prep) { const db = env.EQUIPE_DB; await db.batch([db.prepare('CREATE TABLE IF NOT EXISTS apagados (k TEXT PRIMARY KEY, em INTEGER NOT NULL)'), db.prepare('CREATE INDEX IF NOT EXISTS arq_em ON arq (em)'), db.prepare('CREATE INDEX IF NOT EXISTS apagados_em ON apagados (em)')]); d1Est.prep = true; } }
   catch (e) { // D1 no limite do dia (03/11/2026: antes caía no KV ANTIGO, com dados velhos): continua no D1 e o kvComLista passa para a reserva/cópia
     if (ehLimite(e)) { d1Est.on = true; d1Est.arq = true; limiteAte = fimDoDia(); } else if (!d1Est.at) d1Est.on = false; }
   d1Est.at = Date.now(); return d1Est.on;
 }
 // Worker da nuvem dos arquivos (senha dos robôs = segredo ROBO): grava/lê/apaga só o conteúdo, sem metadata nem e-mails
-function arquivosDe(env) {
-  if (!env.ROBO || env.ARQUIVOS === 'nao') return null; const base = (env.ARQUIVOS_URL || ARQUIVOS_URL).replace(/\/+$/, '');
+function arquivosDe(env, qual) {
+  if (!env.ROBO || env.ARQUIVOS === 'nao') return null; const base = (qual === 't' ? env.ARQUIVOS_T_URL || ARQUIVOS_T_URL : env.ARQUIVOS_URL || ARQUIVOS_URL).replace(/\/+$/, '');
   const call = async (path, o = {}, ms = 20000) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
-    try { return await fetch(base + path, { ...o, headers: { 'x-senha': env.ROBO, ...(o.headers || {}) }, signal: ac.signal }); } finally { clearTimeout(t); } };
+    // terciária: o turma-reserva mora na MESMA conta, então fala pela ligação direta ARQ_T (pelo endereço público a Cloudflare recusa)
+    const f = qual === 't' && env.ARQ_T ? (u, x) => env.ARQ_T.fetch(u, x) : fetch;
+    try { return await f(base + path, { ...o, headers: { 'x-senha': env.ROBO, ...(o.headers || {}) }, signal: ac.signal }); } finally { clearTimeout(t); } };
   const ok = async r => { if (!r.ok) { let j = null; try { j = await r.clone().json(); } catch { } throw new Error(j?.erro === 'cheio' ? 'ARQUIVOS_CHEIO' : 'a nuvem dos arquivos respondeu ' + r.status); } return r; };
   return {
     async grava(k, buf) { await ok(await call('/arq?k=' + encodeURIComponent(k), { method: 'PUT', body: buf }, 60000)); },
@@ -217,21 +219,66 @@ function arquivosDe(env) {
   };
 }
 const bytesDe = async v => v == null ? new Uint8Array(0) : typeof v === 'string' ? new TextEncoder().encode(v) : v instanceof ArrayBuffer ? new Uint8Array(v) : ArrayBuffer.isView(v) ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : new Uint8Array(await new Response(v).arrayBuffer());
+/* CADA ARQUIVO MORA NUMA NUVEM (decisão da dona, 06/11/2026: "espalhar os arquivos desde o começo").
+   O ÍNDICE continua um só, pequeno, na tabela arq do D1 da principal (uma linha por arquivo: nome, metadata, tamanho, data e ONDE
+   o conteúdo mora). A lista sai desse índice (e da foto dele no cache da Cloudflare, listaDoCache), então não vira gargalo.
+   O CONTEÚDO mora em uma de três casas:  onde = null → D1 da principal (tabela parte) · 'a' → nuvem dos arquivos na conta
+   "nova" (arquivos-problems, T3) · 't' → nuvem dos arquivos na conta terciária (mesmo Worker, T4).
+   - Arquivo NOVO: a casa é escolhida pelo peso do que cada nuvem ainda tem LIVRE hoje (gravações, leituras, pedidos e espaço, da
+     medida da Action "Uso da nuvem"), não sorteio puro: quem gastou mais recebe menos, quem está quase cheia não recebe.
+     O próprio nome do arquivo decide dentro dos pesos (o mesmo nome cai na mesma casa enquanto os pesos não mudam).
+   - Arquivo que JÁ EXISTE fica na casa dele ao ser regravado (só muda se a casa dele estiver quase cheia ou falhar).
+   - NUNCA VERSÃO VELHA: o conteúdo novo é gravado PRIMEIRO na casa nova; só depois o índice passa a apontar para ela; e só depois
+     disso o conteúdo da casa antiga é apagado (conferindo antes que o índice ainda aponta para a nova). Ler segue sempre o índice.
+   - Ligar/desligar: /robo/casas?v=1|0 (cfg 'casas'). Desligado = como antes (≥ 32 KB na 'a', o resto na principal). */
+const ARQUIVOS_T_URL = 'https://arquivos-problems.editorcustomizado.workers.dev';
+const CASAS = { t: null, w: null, at: 0 }; // t = loja da terciária (montada junto com a 'a'); w = pesos { p, a, t } (de 2 em 2 min)
+const lojaDe = (onde, A) => onde === 'a' ? A : onde === 't' ? CASAS.t : null;
+// pesos pelo que cada nuvem tem livre (0 = não recebe nada novo). Sem medida: as três iguais.
+function pesosCasas(c) {
+  const L = c?.limites || {}, hoje = new Date().toISOString().slice(0, 10), W = L.d1Write || 1e5, R = L.d1Read || 5e6, P = L.workers || 1e5, B = L.d1Bytes || 524288000;
+  if (!c || c.dia !== hoje) return { p: 1, a: 1, t: 1 };
+  const livre = (o, pedidos, espaco) => { if (!o || o.erro || !o.d1) return 0;
+    const us = [o.d1.write / W, o.d1.read / R]; if (pedidos) us.push((+o.workers || 0) / P); if (espaco) us.push((+(o.d1bytes ?? o.bytes) || 0) / B);
+    const sobra = 1 - Math.max(...us.map(x => +x || 0)); return Math.max(0, sobra - 0.15) ** 2; }; // abaixo de 15% livre: não recebe
+  return { p: livre(c.contas?.principal, false, true), a: livre(c.contas?.nova, true, false), t: livre(c.contas?.terc, true, false) };
+}
+function escolheCasa(k, tam, ant, A) {
+  if (!d1Est.casas || !d1Est.arq) return A && d1Est.arq && tam >= ARQ_MIN ? 'a' : null; // desligado: como antes
+  const w = { ...(CASAS.w || { p: 1, a: 1, t: 1 }) }; if (!A) w.a = 0; if (!CASAS.t) w.t = 0;
+  if (ant) { const c0 = ant.onde || 'p'; if ((w[c0] || 0) > 0.01) return ant.onde || null; } // já mora numa casa com folga: fica lá
+  const tot = w.p + w.a + w.t; if (!(tot > 0)) return ant ? ant.onde || null : (A && tam >= ARQ_MIN ? 'a' : null);
+  let h = 2166136261; for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 16777619); const x = (h >>> 0) / 4294967296 * tot;
+  return x < w.p ? null : x < w.p + w.a ? 'a' : 't';
+}
 async function d1Grava(db, k, buf, meta, A) {
-  const fora = !!A && d1Est.arq && buf.byteLength >= ARQ_MIN; // arquivo grande: o conteúdo vai para a nuvem dos arquivos
   const ant = d1Est.arq ? await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first() : null;
-  await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); let n = 0;
-  if (fora) await A.grava(k, buf);
-  else for (let i = 0; i < buf.byteLength; i += CH_D1, n++) await db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(k, n, buf.subarray(i, i + CH_D1)).run();
-  if (d1Est.arq) await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em, onde) VALUES (?, ?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now(), fora ? 'a' : null).run();
-  else await db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, Date.now()).run();
-  if (d1Est.prep) await db.prepare('DELETE FROM apagados WHERE k = ?').bind(k).run(); // voltou a existir
-  if (!fora && ant?.onde === 'a' && A) await A.apaga([k]).catch(() => { }); // ficou pequeno: o conteúdo velho sai de lá
+  let casa = escolheCasa(k, buf.byteLength, ant, A), n = 0;
+  if (casa) { // 1º o conteúdo na casa escolhida; se ela falhar (sem ser "cheio" de verdade), tenta a outra nuvem e por fim a principal
+    const ordem = [casa, ...['a', 't'].filter(c => c !== casa && lojaDe(c, A) && d1Est.casas && (CASAS.w?.[c] ?? 1) > 0.01)]; let erro = null; casa = undefined;
+    for (const c of ordem) { try { await lojaDe(c, A).grava(k, buf); casa = c; break; } catch (e) { erro = erro || e; console.log('casa ' + c + ' falhou:', String(e?.message || e).slice(0, 100)); } }
+    if (casa === undefined) { if (!d1Est.casas) throw erro; casa = null; } }
+  const em = Date.now(), linhaArq = d1Est.arq
+    ? db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em, onde) VALUES (?, ?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), 0, buf.byteLength, em, casa)
+    : db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), 0, buf.byteLength, em);
+  const semApagado = d1Est.prep ? [db.prepare('DELETE FROM apagados WHERE k = ?').bind(k)] : []; // voltou a existir
+  if (casa) { // conteúdo fora: o índice passa a apontar para lá; os pedaços que estavam na principal saem DEPOIS (numa transação só)
+    await db.batch([linhaArq, db.prepare('DELETE FROM parte WHERE k = ?').bind(k), ...semApagado]);
+  } else {
+    const partes = []; for (let i = 0; i < buf.byteLength; i += CH_D1, n++) partes.push(db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(k, n, buf.subarray(i, i + CH_D1)));
+    const arqN = d1Est.arq ? db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em, onde) VALUES (?, ?, ?, ?, ?, NULL)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, em)
+      : db.prepare('INSERT OR REPLACE INTO arq (k, meta, n, tam, em) VALUES (?, ?, ?, ?, ?)').bind(k, JSON.stringify(meta || {}), n, buf.byteLength, em);
+    if (buf.byteLength <= CH_D1) await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), ...partes, arqN, ...semApagado]); // pequeno: tudo de uma vez (ninguém lê pela metade)
+    else { await db.prepare('DELETE FROM parte WHERE k = ?').bind(k).run(); for (const p of partes) await p.run(); await arqN.run(); for (const s of semApagado) await s.run(); }
+  }
+  // a casa antiga (outra nuvem) fica sem uso: apaga lá só se o índice ainda aponta para a casa nova (ninguém regravou no meio)
+  const velha = ant?.onde && ant.onde !== casa ? lojaDe(ant.onde, A) : null;
+  if (velha) { const ag = await db.prepare('SELECT onde, em FROM arq WHERE k = ?').bind(k).first().catch(() => null); if (ag && (ag.onde || null) === (casa || null)) await velha.apaga([k]).catch(() => { }); }
 }
 async function d1Le(db, k, A) {
   const a = await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first(); if (!a) return null;
   let corpo = new Uint8Array(0);
-  if (a.onde === 'a') { if (!A) throw new Error('sem a nuvem dos arquivos'); corpo = await A.le(k); }
+  if (a.onde === 'a' || a.onde === 't') { const L = lojaDe(a.onde, A); if (!L) throw new Error('sem a nuvem dos arquivos (' + a.onde + ')'); corpo = await L.le(k); }
   else if (a.n) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(k).all(); const ps = (results || []).map(x => new Uint8Array(x.v)); corpo = new Uint8Array(ps.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of ps) { corpo.set(p, o); o += p.length; } }
   let meta = null; try { meta = JSON.parse(a.meta || 'null'); } catch { } return { buf: corpo, meta: meta && Object.keys(meta).length ? meta : null };
 }
@@ -244,9 +291,10 @@ function kvD1(db, A) {
     async put(k, v, o) { await d1Grava(db, k, await bytesDe(v), o?.metadata, A); },
     async delete(k) { const a = d1Est.arq ? await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first() : null;
       await db.batch([db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k), ...(d1Est.prep ? [db.prepare('INSERT OR REPLACE INTO apagados (k, em) VALUES (?, ?)').bind(k, Date.now())] : [])]);
-      if (a?.onde === 'a' && A) await A.apaga([k]).catch(() => { }); },
+      const L = a?.onde ? lojaDe(a.onde, A) : null; if (L) await L.apaga([k]).catch(() => { }); },
     async deleteLote(ks) { const st = [], em = Date.now(); for (const k of ks) st.push(db.prepare('DELETE FROM parte WHERE k = ?').bind(k), db.prepare('DELETE FROM arq WHERE k = ?').bind(k), ...(d1Est.prep ? [db.prepare('INSERT OR REPLACE INTO apagados (k, em) VALUES (?, ?)').bind(k, em)] : [])); for (let i = 0; i < st.length; i += 400) await db.batch(st.slice(i, i + 400));
-      if (d1Est.arq && A && ks.length) await A.apaga(ks).catch(() => { }); }, // o que não estiver lá é ignorado
+      if (d1Est.arq && A && ks.length) await A.apaga(ks).catch(() => { }); // o que não estiver lá é ignorado
+      if (d1Est.arq && CASAS.t && ks.length) await CASAS.t.apaga(ks).catch(() => { }); }, // e na terciária (06/11/2026: arquivos também moram lá)
     // só o que foi gravado/apagado depois de `desde` (null = ainda sem as tabelas/índices: o kvComLista carrega inteira)
     async mudancas(desde) { if (!d1Est.prep) return null;
       if (Date.now() - d1Est.poda > 3600e3) { d1Est.poda = Date.now(); await db.prepare('DELETE FROM apagados WHERE em < ?').bind(Date.now() - 3 * 864e5).run(); }
@@ -265,10 +313,35 @@ async function robo(req, env) {
   const js = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
   const ok = !!env.ROBO && String(req.headers.get('x-senha') || '') === env.ROBO; if (!ok) return js({ erro: 'senha' }, 401);
   if (!db) return js({ erro: 'sem o banco EQUIPE_DB' }, 501);
-  d1Est.at = 0; await d1Ligado(env); const A = arquivosDe(env);
+  d1Est.at = 0; await d1Ligado(env); const A = arquivosDe(env); CASAS.t = d1Est.arq ? arquivosDe(env, 't') : null;
   if (rota === 'estado') { const a = await db.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first().catch(() => null), n = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq').first().catch(() => null);
     const f = d1Est.arq ? await db.prepare("SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde = 'a'").first().catch(() => null) : null;
-    return js({ ativo: a?.v === '1', n: n?.n || 0, bytes: n?.b || 0, arquivos: d1Est.arq, fora: f?.n || 0, foraBytes: f?.b || 0 }); }
+    const t = d1Est.arq ? await db.prepare("SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde = 't'").first().catch(() => null) : null;
+    return js({ ativo: a?.v === '1', n: n?.n || 0, bytes: n?.b || 0, arquivos: d1Est.arq, fora: f?.n || 0, foraBytes: f?.b || 0, casas: !!d1Est.casas, terc: t?.n || 0, tercBytes: t?.b || 0, pesos: CASAS.w }); }
+  // CADA ARQUIVO NUMA NUVEM (06/11/2026): ligar = arquivos novos escolhem a casa pelo que cada nuvem tem livre; desligar = como antes
+  if (rota === 'casas' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1';
+    if (v === '1') { if (!d1Est.arq || !A) return js({ erro: 'ligue antes a nuvem dos arquivos' }, 409); const T = arquivosDe(env, 't'), e = T ? await T.estado() : { erro: 'sem ROBO' };
+      if (e.erro || !e.ok) return js({ erro: 'a nuvem dos arquivos da terciária não respondeu: ' + JSON.stringify(e).slice(0, 120) }, 502); }
+    await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('casas', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, casas: v === '1' }); }
+  /* MUDANÇA DE CASA DOS ANTIGOS, EM LOTES (06/11/2026): /robo/mudar?n=5&de=a|p&para=t (POST). Lê o arquivo pela casa atual, grava na
+     nova, CONFERE (lê de volta e compara o tamanho), troca o índice só se a linha não mudou no meio (mesmo em), e só então apaga da
+     casa antiga. Para a Action rodar devagar, fora do horário de uso, parando antes de qualquer limite. */
+  if (rota === 'mudar' && req.method === 'POST') {
+    if (!d1Est.casas) return js({ erro: 'casas desligadas' }, 409);
+    const de = u.searchParams.get('de') === 'p' ? null : 'a', para = u.searchParams.get('para') === 'a' ? 'a' : u.searchParams.get('para') === 'p' ? null : 't';
+    if (de === para) return js({ erro: 'de = para' }, 400); const lim = Math.min(Math.max(+u.searchParams.get('n') || 3, 1), 10); let n = 0, b = 0, pulou = 0;
+    const { results } = await db.prepare(de ? 'SELECT k, em, tam, onde FROM arq WHERE onde = ? ORDER BY em LIMIT ?' : 'SELECT k, em, tam, onde FROM arq WHERE onde IS NULL ORDER BY em LIMIT ?').bind(...(de ? [de, lim] : [lim])).all();
+    for (const x of results || []) {
+      const r = await d1Le(db, x.k, A); if (!r || r.buf.byteLength !== x.tam) { pulou++; continue; }
+      if (para) { const L = lojaDe(para, A); await L.grava(x.k, r.buf); const volta = await L.le(x.k); if (volta.byteLength !== r.buf.byteLength) { pulou++; continue; } }
+      else { let i = 0, m = 0; await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run(); for (; i < r.buf.byteLength; i += CH_D1, m++) await db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(x.k, m, r.buf.subarray(i, i + CH_D1)).run(); }
+      const up = await db.prepare(de ? 'UPDATE arq SET onde = ?, n = ? WHERE k = ? AND em = ? AND onde = ?' : 'UPDATE arq SET onde = ?, n = ? WHERE k = ? AND em = ? AND onde IS NULL')
+        .bind(...[para, para ? 0 : Math.ceil(r.buf.byteLength / CH_D1), x.k, x.em, ...(de ? [de] : [])]).run();
+      if (!up.meta?.changes) { pulou++; continue; } // mudou no meio: fica onde estava (a cópia na casa nova é sobra inofensiva)
+      if (de) await lojaDe(de, A)?.apaga([x.k]).catch(() => { }); else await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run();
+      n++; b += r.buf.byteLength; }
+    const resta = await db.prepare(de ? 'SELECT count(*) AS n FROM arq WHERE onde = ?' : 'SELECT count(*) AS n FROM arq WHERE onde IS NULL').bind(...(de ? [de] : [])).first();
+    return js({ ok: true, movidos: n, bytes: b, pulou, resta: resta?.n || 0 }); }
   // NUVEM DOS ARQUIVOS: ligar (cria a coluna onde) / desligar; desligar só deixa de mandar arquivos NOVOS para lá (ler continua)
   if (rota === 'arquivos' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1';
     if (v === '1') { if (!A) return js({ erro: 'sem ROBO ou ARQUIVOS=nao no turma-ia' }, 409); const e = await A.estado(); if (e.erro || !e.ok) return js({ erro: 'a nuvem dos arquivos não respondeu: ' + JSON.stringify(e).slice(0, 120) }, 502);
@@ -478,8 +551,15 @@ function d1Rest(conta, id, token) {
 const DIVIDE = { p: 0, at: 0 };
 async function confereDivide(R) {
   if (!R || Date.now() - DIVIDE.at < 120e3) return; DIVIDE.at = Date.now();
-  try { const c = await R.contaJa(), o = c?.contas?.principal; if (!o || c.dia !== new Date().toISOString().slice(0, 10)) { DIVIDE.p = 0; return; }
-    const usado = (+o.workers || 0) / 100000; DIVIDE.p = Math.max(0, Math.min(1, Math.round((usado - 0.4) / 0.35 * 20) / 20)); } catch { } // 06/11/2026: começa aos 40% (antes 60%) e vão todos aos 75%
+  try { const c = await R.contaJa(), o = c?.contas?.principal; CASAS.w = pesosCasas(c); CASAS.at = Date.now(); // pesos das casas dos arquivos (mesma medida)
+    if (!o || c.dia !== new Date().toISOString().slice(0, 10)) { DIVIDE.p = 0; return; }
+    const L = (c.limites?.workers || 1e5), usado = (+o.workers || 0) / L, rampa = Math.max(0, Math.min(1, (usado - 0.4) / 0.35)); // 06/11/2026: começa aos 40% (antes 60%) e vão todos aos 75%
+    /* DESDE O COMEÇO DO DIA (pedido da dona, 06/11/2026): a parte que vai pela outra porta (turma-reserva, na conta terciária) pesa o
+       quanto cada conta ainda tem LIVRE dos pedidos do dia — com as duas vazias, metade vai por cada uma; a que gastou mais recebe menos.
+       Até 50% pelo peso (a ponte é um pouco mais lenta); acima disso só pela rampa de proteção (40% → 75% da principal). */
+    const t = c.contas?.terc, ut = t && !t.erro ? (+t.workers || 0) / L : 1, livreP = Math.max(0, 0.9 - usado), livreT = Math.max(0, 0.9 - ut);
+    const peso = livreP + livreT > 0 ? Math.min(0.5, livreT / (livreP + livreT)) : 0;
+    DIVIDE.p = Math.max(0, Math.min(1, Math.round(Math.max(rampa, peso) * 20) / 20)); } catch { }
 }
 async function confereCheio(kv, R) {
   if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
@@ -642,7 +722,7 @@ export default {
   async fetch2(req, env, ctx) {
     if (new URL(req.url).pathname.startsWith('/robo/')) { try { return await robo(req, env); } catch (e) { return new Response(JSON.stringify({ erro: String(e?.message || e).slice(0, 200) }), { status: ehLimite(e) ? 503 : 500, headers: { 'content-type': 'application/json' } }); } }
     // a nuvem principal no D1 (depois de ligada): o resto do servidor continua falando "KV" com o adaptador
-    if (await d1Ligado(env)) env = { ...env, EQUIPE: kvD1(env.EQUIPE_DB, arquivosDe(env)), _kvAntigo: env.EQUIPE, _d1: true };
+    if (await d1Ligado(env)) { CASAS.t = d1Est.arq ? arquivosDe(env, 't') : null; env = { ...env, EQUIPE: kvD1(env.EQUIPE_DB, arquivosDe(env)), _kvAntigo: env.EQUIPE, _d1: true }; }
     const flag = { reserva: false }; let r;
     try { r = await this.atende(req, env, ctx, flag); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimite(req, e); }
     if (flag.reserva && !emLimite()) { // a principal JÁ VOLTOU e o que sobrou na reserva está voltando para ela: o site tira o aviso
