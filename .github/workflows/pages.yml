@@ -1,0 +1,34 @@
+name: Publicar no GitHub Pages
+# PUBLICAÇÃO JUNTA (06/11/2026): antes, cada envio virava uma publicação do GitHub Pages ("pages build and deployment") e, com
+# várias sessões mandando mudanças pequenas, passava das ~10 por hora: o GitHub enfileirava e recusava ("Deployment failed,
+# try again later"). Agora espera 45 s e publica só o ÚLTIMO envio (um novo cancela o que ainda estava esperando).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publica.outputs.page_url }}
+    steps:
+      - name: Esperar mais envios (juntar numa publicação só)
+        if: github.event_name != 'workflow_dispatch'
+        run: sleep 45
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: publica
+        uses: actions/deploy-pages@v4
