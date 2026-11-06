@@ -68,13 +68,21 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
    avisos da nuvem (x-nuvem, limite, porta reserva), página que demorou para carregar e as ações principais (botões clicados).
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de erro" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
-   o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. Sem e-mails, tokens, chaves ou conteúdo de arquivos. */
+   o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
 window.ESTUDIO_VERSAO ||= '1.0 - Flower Field';
 window.EstudioDiario ||= (() => {
   const K = 'ep-diario', MAX = 700, MAXCH = 400000, DIAS_ERRO = 7;
-  const limpa = t => String(t ?? '')
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '[e-mail]').replace(/Bearer\s+[\w.\-~+/=]+/gi, 'Bearer [token]').replace(/AIza[\w-]{20,}/g, '[chave]')
-    .replace(/eyJ[\w-]{6,}\.[\w-]{6,}\.[\w-]*/g, '[token]').replace(/([?&](k|key|token|t|passe|code|auth)=)[^&\s]+/gi, '$1[…]').replace(/[A-Za-z0-9_\-+/=]{40,}/g, '[texto longo]').slice(0, 500);
+  // REGRA DA DONA (06/11/2026): entra tudo o que ajuda a resolver (links, rotas, ids, códigos, status, nuvem, porta, versão, horários,
+  // nomes e o e-mail MASCARADO como na ADM). Só credenciais não aparecem (token de login, JWT/passe, chave de API, senha, assinatura de link):
+  // no lugar fica o que era, para quem ler saber que existia.
+  const mascara = e => { const [u, d = ''] = String(e).split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; }; // a mesma da ADM (porteiro)
+  const filtra = t => String(t ?? '')
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, m => mascara(m))
+    .replace(/Bearer\s+(?!\[)[^\s`'")]+/gi, '[token de login omitido]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[token de login/passe omitido]')
+    .replace(/AIza[\w-]{10,}/g, '[chave de API omitida]').replace(/\bsk-[\w-]{16,}/g, '[chave de API omitida]')
+    .replace(/((?:senha|password|passwd|secret|segredo)\s*[:=]\s*)(?!\[)[^\s,;&`'"]+/gi, '$1[senha omitida]')
+    .replace(/([?&](?:token|access_token|id_token|sig|signature|passe|auth|x-[\w-]*signature|x-amz-signature|x-amz-credential|x-amz-security-token)=)(?!\[)[^&\s`'")]+/gi, '$1[assinatura omitida]');
+  const limpa = t => filtra(t).slice(0, 500);
   const prog = () => location.pathname.split('/').filter(Boolean)[0] || 'menu';
   let L = null;
   const le = () => { if (L) return L; try { L = JSON.parse(localStorage.getItem(K) || '[]'); if (!Array.isArray(L)) L = []; } catch { L = []; } return L; };
@@ -100,7 +108,6 @@ window.EstudioDiario ||= (() => {
     anota(ms > 8000 ? 'aviso' : 'info', 'carregou', (ms / 1000).toFixed(1) + ' s' + (ms > 8000 ? ' (demorou)' : '')); } catch { } }, 0));
   // ações principais: o nome do botão/link clicado (rótulo da tela, não o conteúdo de arquivos)
   document.addEventListener('click', e => { const b = e.target?.closest?.('button,a,[role=button],[role=menuitem]'); if (!b) return;
-    if (b.closest('.ep-msgs,.epm-lista,#rec,.pasta-pop,.ep-esp .grp-l,.na-lista,.ac-l,.lrow')) return anota('info', 'clicou', 'item de uma lista (nome omitido)'); // nomes de pessoas, conversas e projetos não vão para o diário
     const r = (b.getAttribute('aria-label') || b.title || b.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 50); if (r) anota('info', 'clicou', r); }, true);
   // pedido à nossa nuvem (chamado pelo fetch do estudio-conta.js): só a rota, sem o que foi enviado
   const rota = u => { try { const x = new URL(u, location.href); return x.hostname.split('.')[0] + x.pathname.replace(/[A-Za-z0-9_-]{20,}/g, '…'); } catch { return '?'; } };
@@ -121,7 +128,7 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
 - **turma-ia** (Cloudflare Worker): o servidor de dados da equipe (animações, personagens, preparativos, publicações, menu, níveis de acesso, IA). Código: \`servidor/turma-ia/worker.js\`.
 - **Nuvens**: a PRINCIPAL (conta problemsraiz, D1/KV) → RESERVA (\`reserva-problems\`, 3ª conta) → TERCIÁRIA (\`terciaria-problems\`, 4ª conta). Arquivos grandes ficam no Worker \`arquivos-problems\`; sons no \`sons-problems\`. Quando a principal chega no limite do dia (plano grátis: 100 mil pedidos), as respostas vêm com o cabeçalho \`x-nuvem\` (reserva, terciaria, limite, voltando) e o site avisa. As "nuvens trabalhando juntas": o cabeçalho \`x-divide\` manda parte dos pedidos pelo \`turma-reserva\`.
 - **Porta reserva**: o mesmo site em outra conta (\`estudio-reserva.editorcustomizado.workers.dev\`), usada quando a principal dá o erro 1027 (sem pedidos no dia).
-- **Login**: Firebase (só o Google). Nenhum e-mail aparece neste relatório.
+- **Login**: Firebase (só o Google). E-mails aparecem mascarados como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link nunca entram (no lugar fica o que era).
 - \`/estudio-conta.js\`: o arquivo comum de todos os programas (botão da conta, Mensagens, espaço na nuvem e no computador, calendário, níveis de acesso, este diário).
 
 **Repositórios** (GitHub \`problemsbloxcreate-lab\`; publicar = push na main): \`problemsbloxcreate-lab.github.io\` (o site: menu \`index.html\` = \`404.html\`, \`estudio-conta.js\`, \`porteiro/\`, \`servidor/turma-ia/\`, **\`CLAUDE.md\` com todos os detalhes e decisões**), \`animador\`, \`editor\`, \`estudio-problems\` (Shorts e os Workers de reserva/arquivos), \`modelador\`, \`preparativos\`, \`publicacoes\`.
@@ -130,16 +137,13 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
   const quando = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const linha = e => `- ${quando(e.t)}${e.c ? ` ×${e.c} (até ${quando(e.t2)})` : ''} · **${e.tipo}** · ${e.p} · ${String(e.m || '').replace(/\n/g, ' ')}${e.x ? ` — \`${String(e.x).replace(/`/g, "'")}\`` : ''}`;
   // FILTRO FINAL (pedido da dona): passa no texto inteiro antes de baixar, mesmo que algo tenha escapado das anotações
-  function censura(t) { return String(t)
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '•••＠•••').replace(/\[e-mail\]/g, '•••＠•••').replace(/\[(token|chave|texto longo)\]/g, '[censurado]')
-    .replace(/Bearer\s+[^\s`'")]+/gi, 'Bearer [censurado]').replace(/AIza[\w-]{10,}/g, '[censurado]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[censurado]')
-    .replace(/((?:senha|password|passwd|secret|segredo|token|apikey|api_key|chave)\s*[:=]\s*)[^\s,;&`'"]+/gi, '$1[censurado]')
-    .replace(/([?&](?:sig|signature|token|t|k|key|passe|code|auth|X-Amz-[\w-]+|Expires|GoogleAccessId)=)[^&\s`'")]+/gi, '$1[censurado]')
-    .replace(/\b(?=[A-Za-z0-9_\-+/=]*\d)(?=[A-Za-z0-9_\-+/=]*[A-Za-z])[A-Za-z0-9_\-+/=]{32,}\b/g, '[censurado]'); }
+  const censura = t => filtra(t); // filtro final no texto inteiro, antes de baixar
   async function relatorio() {
     poda(); const l = le().slice().sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
     let esp = ''; try { const e = await navigator.storage?.estimate?.(); if (e?.quota) esp = `${(e.usage / 1048576).toFixed(1)} MB de ${(e.quota / 1048576).toFixed(0)} MB`; } catch { }
     const marcas = ['estudio-limite-cf', 'ep-divide', 'ep-nuvem-uso', 'ep-porta-volta'].map(k => { let v = null; try { v = localStorage.getItem(k) ?? sessionStorage.getItem(k); } catch { } return v == null ? null : `- \`${k}\`: ${limpa(v).slice(0, 160)}`; }).filter(Boolean);
+    let fbLogin = '?'; try { const dbs = await indexedDB.databases?.(); if (dbs) fbLogin = dbs.some(d => d.name === 'firebaseLocalStorageDb') ? 'presente' : 'não encontrado'; } catch { }
+    let contaOk = 'não'; try { contaOk = sessionStorage.getItem('ep-conta-v1') ? 'sim' : 'não'; } catch { }
     const scr = [...document.scripts].map(s => s.src).filter(s => /estudio-|\/js\//.test(s)).map(s => s.replace(location.origin, '')).slice(0, 12);
     const md = `# Relatório de erro — Estúdio Problems
 Gerado em ${new Date().toLocaleString('pt-BR')} (${Intl.DateTimeFormat().resolvedOptions().timeZone}) pelo botão "Gerar relatório de erro".
@@ -151,6 +155,7 @@ ${CONTEXTO}
 - **Página aberta:** \`${location.pathname}\` (programa: ${prog()}) em \`${location.hostname}\`
 - **Navegador:** ${navigator.userAgent}
 - **Tela:** ${screen.width}×${screen.height} · janela ${innerWidth}×${innerHeight} · zoom/densidade ${devicePixelRatio}
+- **Login:** login do Google neste navegador: ${fbLogin} · conta do Estúdio carregada nesta aba: ${contaOk} (tokens, passes e chaves nunca entram no relatório)
 - **Idioma:** ${navigator.language} · **internet agora:** ${navigator.onLine ? 'sim' : 'não'}${navigator.deviceMemory ? ` · **memória:** ~${navigator.deviceMemory} GB` : ''}${esp ? ` · **espaço do site no navegador:** ${esp}` : ''}
 - **Arquivos carregados (com a versão):** ${scr.map(s => '`' + limpa(s) + '`').join(', ') || '—'}
 ${marcas.length ? '\n**Marcas da nuvem guardadas neste navegador:**\n' + marcas.join('\n') + '\n' : ''}
@@ -916,7 +921,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<button class="it" type="button" role="menuitem" data-a="adm">${ICONES.adm}ADM</button>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
-        <button type="button" role="menuitem" data-a="relatorio" class="it" title="Baixa um arquivo .md com os erros e avisos deste navegador (sem e-mails nem senhas), para mandar a quem for consertar">${ICONES.lista || ''}Gerar relatório de erro</button>
+        <button type="button" role="menuitem" data-a="relatorio" class="it" title="Baixa um arquivo .md com os erros e avisos deste navegador (sem senhas, chaves nem tokens de login; e-mail mascarado), para mandar a quem for consertar">${ICONES.lista || ''}Gerar relatório de erro</button>
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
@@ -928,7 +933,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
       pop.querySelector('[data-a=relatorio]').onclick = async () => { fecha();
         if (!(await pergunta({ titulo: 'Gerar relatório de erro?', icone: ICONES.lista, aviso: true, ok: 'Entendi, gerar',
-          texto: 'Este arquivo serve só para resolver problemas do Estúdio. Não mande para qualquer pessoa: só para quem vai consertar (por exemplo, colar num chat do Claude). E-mails, senhas e chaves saem censurados, mas ele mostra o que foi feito neste navegador.' }))) return;
+          texto: 'Este arquivo serve só para resolver problemas do Estúdio. Não mande para qualquer pessoa: só para quem vai consertar (por exemplo, colar num chat do Claude). Senhas, chaves e tokens de login não entram; o e-mail aparece mascarado, como na ADM.' }))) return;
         window.EstudioDiario?.baixar(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
         const temQueSalvar = salvadores().length > 0;
