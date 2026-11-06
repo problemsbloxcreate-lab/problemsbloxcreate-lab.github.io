@@ -1108,12 +1108,15 @@ export default {
       return new Response(r.body, { status: r.status, headers: sub === '/ouvir' && r.ok ? { 'content-type': r.headers.get('content-type') || 'audio/webm', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } : H });
     }
     if (caminho.startsWith('/dublar/')) {
+      const FFX = { 'ff/ffmpeg.js': 'vendor/ffmpeg/ffmpeg.js', 'ff/814.ffmpeg.js': 'vendor/ffmpeg/814.ffmpeg.js', 'ff/ffmpeg-core.js': 'vendor/ffmpeg/ffmpeg-core.js', 'ff/ffmpeg-core.wasm': 'vendor/ffmpeg/ffmpeg-core.wasm' }; // conversor (só carrega quando precisa)
+      const arq0 = caminho.slice('/dublar/'.length); if (FFX[arq0]) { const r = await fetch('https://problemsbloxcreate-lab.github.io/preparativos/' + FFX[arq0], { cf: { cacheTtl: 86400 } }); if (!r.ok) return new Response('Não encontrado', { status: 404 });
+        return new Response(r.body, { status: 200, headers: { 'content-type': arq0.endsWith('.wasm') ? 'application/wasm' : 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=86400', 'x-content-type-options': 'nosniff' } }); }
       const arq = caminho.slice('/dublar/'.length) || 'index.html', TIPOS = { 'index.html': 'text/html; charset=utf-8', 'dublar.js': 'text/javascript; charset=utf-8', 'dublar.css': 'text/css; charset=utf-8', 'cortes.js': 'text/javascript; charset=utf-8' };
       if (!TIPOS[arq]) return new Response('Não encontrado', { status: 404 });
       const r = await fetch('https://problemsbloxcreate-lab.github.io/preparativos/dublar/' + arq, { cf: { cacheTtl: 60 } }); if (!r.ok) return new Response('Não encontrado', { status: 404 });
       return new Response(r.body, { status: 200, headers: { 'content-type': TIPOS[arq], 'cache-control': arq === 'index.html' ? 'no-store' : 'public, max-age=60', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
         'permissions-policy': 'microphone=(self), camera=(), geolocation=()', 'x-robots-tag': 'noindex, nofollow',
-        'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" } });
+        'content-security-policy': "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" } });
     }
 
     // entrar: o menu manda o token do Google; o servidor do Estúdio Problems diz se o e-mail é liberado
