@@ -69,6 +69,11 @@ class_name = "Conversas"
 tag = "conversas-v1"
 new_sqlite_classes = ["Conversas"]
 
+# MEDIDA (06/11/2026): Analytics Engine (ligado pela dona) — amostra de 20% dos pedidos, só o tipo do caminho e o status
+[[analytics_engine_datasets]]
+binding = "MEDIDA"
+dataset = "porteiro_pedidos"
+
 # mídia da equipe para o Estúdio Problems Local (/midia/… no porteiro). O bucket é criado à mão na Cloudflare (R2 → Create bucket
 # "estudio-midia"); enquanto ele não existir, a Action tira esta ligação antes de publicar e /midia responde 503.
 [[r2_buckets]]

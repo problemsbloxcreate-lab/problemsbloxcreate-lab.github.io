@@ -1076,12 +1076,17 @@ export default {
   async fetch(req, env, ctx) {
     /* CONTAGEM POR ROTA (06/11/2026): para saber o que mais gasta os 100 mil pedidos do dia. Só na memória desta cópia do porteiro
        (não grava nada, some quando ela dorme); GET /contagem só para ADM. Endereço resumido (sem números/códigos), sem e-mails. */
+    let kMed = '';
     try { const u = new URL(req.url), p = u.pathname.replace(/\/[0-9a-f]{8,}|\/u[0-9a-f]{16}/gi, '/:id').split('/').slice(0, 4).join('/').slice(0, 60) || '/';
-      const k = req.method + ' ' + p + (u.searchParams.has('_ev') ? ' (_ev)' : u.searchParams.has('us') ? ' (lote)' : ''); CONTAGEM.m.set(k, (CONTAGEM.m.get(k) || 0) + 1); CONTAGEM.n++;
+      const k = req.method + ' ' + p + (u.searchParams.has('_ev') ? ' (_ev)' : u.searchParams.has('us') ? ' (lote)' : ''); kMed = k; CONTAGEM.m.set(k, (CONTAGEM.m.get(k) || 0) + 1); CONTAGEM.n++;
       if (CONTAGEM.m.size > 400) { const ord = [...CONTAGEM.m].sort((a, b) => b[1] - a[1]).slice(0, 200); CONTAGEM.m = new Map(ord); } } catch { }
     if (new URL(req.url).pathname === '/contagem') { const s = await leSessao(env, req); if (!s?.a) return json({ error: { message: 'Só ADM.' } }, 403);
       return json({ desde: new Date(CONTAGEM.desde).toISOString(), total: CONTAGEM.n, rotas: [...CONTAGEM.m].sort((a, b) => b[1] - a[1]).slice(0, 60) }, 200, { 'cache-control': 'no-store' }); }
-    const r = await this.fetch0(req, env, ctx); return env.TROCA_DE ? comTrocasP(env, r) : r; },
+    const r = await this.fetch0(req, env, ctx);
+    // MEDIDA (Analytics Engine, ligado pela dona em 06/11/2026): amostra de 20% de TODAS as cópias do porteiro (a /contagem só vê uma),
+    // só o tipo do caminho (sem ids/e-mails) e o status — para saber o que gasta os pedidos do dia. Consultar: SQL API do Analytics Engine.
+    try { if (env.MEDIDA && kMed && Math.random() < 0.2) env.MEDIDA.writeDataPoint({ blobs: [kMed, String(r?.status || 0)], doubles: [1], indexes: ['p'] }); } catch { }
+    return env.TROCA_DE ? comTrocasP(env, r) : r; },
   async fetch0(req, env, ctx) {
     if (env.PERFIS && !env.PERFIS._comLista) env = { ...env, PERFIS: perfisCom(env.PERFIS) }; try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
   async atende(req, env) {
