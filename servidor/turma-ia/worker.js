@@ -722,7 +722,7 @@ function tipoAudio(buf) { const u = new Uint8Array(buf, 0, Math.min(16, buf.byte
 // e AQUELAS falas: lê o texto delas e grava o áudio delas; a chave do arquivo é montada aqui. Validade, desligar, "terminei" (só leitura),
 // limite de tamanho (20 MB), tipo pelo conteúdo, envios por fala/link e pedidos por minuto. Os áudios ficam "aguardando aprovação".
 //   dublar-links/<hash> = id do roteiro · preparativos/<id>/dublar.json = { links: { <hash>: {...} }, pend: [ ... ] } · áudios em preparativos/<id>/dub/
-const DUB_RL = new Map(); // pedidos por minuto (na memória do servidor): por IP e por link
+const DUB_RL = new Map(), DUB_RUIM = new Map(); // DUB_RUIM: hashes inválidos vistos há pouco (10 min) // pedidos por minuto (na memória do servidor): por IP e por link
 const hashTok = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('dublar:' + t)))].map(x => x.toString(16).padStart(2, '0')).join('');
 async function leDub(env, id) { try { const o = JSON.parse((await env.EQUIPE.get(`preparativos/${id}/dublar.json`)) || '{}') || {}; return { links: o.links && typeof o.links === 'object' && !Array.isArray(o.links) ? o.links : {}, pend: Array.isArray(o.pend) ? o.pend : [] }; } catch { return { links: {}, pend: [] }; } }
 async function gravaDub(env, id, d) { const t = JSON.stringify(d); await env.EQUIPE.put(`preparativos/${id}/dublar.json`, t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } }); }
@@ -736,7 +736,9 @@ async function dublar(req, env, p) {
   if (!env.EQUIPE) return erro('A nuvem está indisponível agora.', 503);
   if (!dubRl('ip:' + String(req.headers.get('x-dub-ip') || '?').slice(0, 64), 60)) return erro('Muitos pedidos. Espere um minuto.', 429);
   const tok = req.headers.get('x-dub-token') || ''; if (!/^[A-Za-z0-9_-]{43}$/.test(tok)) return erro('Link inválido.', 404);
-  const hs = await hashTok(tok), id = await env.EQUIPE.get('dublar-links/' + hs); if (!id || !/^[A-Za-z0-9_-]{2,40}$/.test(id)) return erro('Link inválido ou desligado.', 404);
+  // link que já se mostrou inválido há pouco: responde sem ler a nuvem de novo (pedidos repetidos com token inventado não gastam leituras)
+  const hs = await hashTok(tok); if ((DUB_RUIM.get(hs) || 0) > Date.now()) return erro('Link inválido ou desligado.', 404);
+  const id = await env.EQUIPE.get('dublar-links/' + hs); if (!id || !/^[A-Za-z0-9_-]{2,40}$/.test(id)) { if (DUB_RUIM.size > 5000) DUB_RUIM.clear(); DUB_RUIM.set(hs, Date.now() + 10 * 60e3); return erro('Link inválido ou desligado.', 404); }
   if (!dubRl('lk:' + hs, 40)) return erro('Muitos pedidos. Espere um minuto.', 429);
   const D = await leDub(env, id), L = D.links[hs]; if (!L) return erro('Link inválido ou desligado.', 404);
   if (L.revogado || L.terminado || (L.expira && Date.now() > +L.expira)) { delete D.links[hs]; try { await env.EQUIPE.delete('dublar-links/' + hs); } catch { } await gravaDub(env, id, D).catch(() => { });
