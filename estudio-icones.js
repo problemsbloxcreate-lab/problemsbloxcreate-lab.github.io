@@ -91,11 +91,14 @@
     pinta(); try { dispatchEvent(new CustomEvent('estudio-icones', { detail: { de } })); } catch { }
   }
   // confere o que está salvo no porteiro (uma vez por abertura; guardado neste navegador para já abrir certo)
-  async function busca() { try { const r = await fetch('/icones', { cache: 'no-cache', credentials: 'same-origin' }); if (!r.ok) return; const j = await r.json(); troca(j.icones || {}, 'nuvem'); } catch { } }
+  async function busca() { try { const r = await fetch('/icones', { cache: 'no-cache', credentials: 'same-origin' }); if (!r.ok) return; const j = await r.json(); troca(j.icones || {}, 'nuvem'); try { localStorage.setItem(K, JSON.stringify({ m: j.icones || {}, t: Date.now() })); } catch { } } catch { } }
   let bc = null; try { bc = new BroadcastChannel('estudio-icones'); bc.onmessage = e => troca(e.data?.m, 'outra aba'); } catch { }
   addEventListener('storage', e => { if (e.key === K) { try { troca(JSON.parse(e.newValue || 'null')?.m, 'outra aba'); } catch { } } });
   // a tela de carregamento espera os ícones de agora (é rápido; o desenho já sai do que está guardado neste navegador)
-  const pronto = location.protocol.startsWith('http') ? busca() : Promise.resolve();
+  // ECONOMIA DE PEDIDOS (06/11/2026): conferidos há menos de 5 min neste navegador = não pergunta de novo a cada página aberta
+  // (mudança da ADM chega na hora pelas outras abas deste navegador e, nos outros computadores, em até 5 min)
+  const recente = (() => { try { return Date.now() - (JSON.parse(localStorage.getItem(K) || 'null')?.t || 0) < 5 * 60e3; } catch { return false; } })();
+  const pronto = location.protocol.startsWith('http') && !recente ? busca() : Promise.resolve();
   const naTarefa = () => { try { window.EstudioProgresso?.tarefa?.(pronto, 'Ícones dos programas'); } catch { } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', naTarefa, { once: true }); else naTarefa();
   window.EstudioIcones = {

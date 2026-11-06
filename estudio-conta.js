@@ -1334,8 +1334,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     // ECONOMIA (03/11/2026): de 2 em 2 min só a aba LÍDER confere (com alguma aba do Estúdio à vista); se a sessão mudou, ela avisa as
     // outras (sessaoMudou) e cada uma confere uma vez. O porteiro continua barrando quem foi tirado em qualquer pedido.
     const vista = () => document.visibilityState === 'visible' || Date.now() - VIVO.outraVisivel < 45000;
-    setInterval(() => { if (VIVO.lider && vista() && Date.now() - ultimaSessao > 120000) confereSessao(); }, 15000);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (VIVO.lider || !CANAL) && Date.now() - ultimaSessao > 10000) confereSessao(); });
+    setInterval(() => { if (VIVO.lider && vista() && Date.now() - ultimaSessao > 600000) confereSessao(); }, 15000); // 06/11/2026: de 10 em 10 min (antes 2): o porteiro já barra quem saiu em qualquer pedido
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (VIVO.lider || !CANAL) && Date.now() - ultimaSessao > 120000) confereSessao(); }); // voltar para a aba: no máximo 1 conferência a cada 2 min (06/11/2026; antes 10 s)
   }
 
   /* ---------- Mensagens: conversa geral da equipe + conversas privadas ----------
