@@ -596,10 +596,23 @@ window.EstudioPerm ||= (() => {
 @media (max-width:820px){.ep-dock{gap:6px;padding:6px 8px;border-radius:16px}.ep-dock .ic{width:40px;height:40px}}
 /* ADM como janela por cima (fora do menu): a página /adm?embed=1 num quadro */
 .ep-admj{position:fixed;inset:0;z-index:2147483002;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:24px;animation:epPgF .18s ease}
-.ep-admj .cx{position:relative;width:min(1100px,100%);height:100%;border-radius:14px;overflow:hidden;background:#1e1e21;border:.5px solid rgba(255,255,255,.12);box-shadow:0 24px 70px rgba(0,0,0,.6)}
-.ep-admj iframe{width:100%;height:100%;border:0;display:block}
-.ep-admj .x{position:absolute;top:10px;right:12px;z-index:1;width:28px;height:28px;border-radius:7px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);color:#f5f5f7;display:grid;place-items:center;cursor:pointer}
-@media (max-width:820px){.ep-admj{padding:0}.ep-admj .cx{border-radius:0;border:0}}
+.ep-admj .cx{position:relative;width:min(1100px,100%);height:100%;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+/* (06/11/2026, pedido da dona) atrás da ADM: a foto de fundo padrão desfocada com o azul do menu por cima, nada de branco.
+   color-scheme escuro dos dois lados: com esquemas diferentes o Chrome pinta o quadro de branco (e a barra de rolagem fica clara) */
+.ep-admj .cx::before{content:'';position:absolute;inset:-40px;background:#163449 url(/fundo-margarida.jpg) center/cover;filter:blur(24px)}
+.ep-admj .cx::after{content:'';position:absolute;inset:0;background:rgba(14,32,58,.55)}
+.ep-admj iframe{position:relative;z-index:1;width:100%;height:100%;border:0;display:block;background:transparent;color-scheme:dark}
+/* tela de carregamento da ADM no quadro: o fundo padrão do Estúdio, ícone, barrinha que anda até 100% e o selo da versão */
+.ep-admj .car{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:#163449 url(/fundo-margarida.jpg) center/cover;color:#fff;transition:opacity .3s ease}
+.ep-admj .car::before{content:'';position:absolute;inset:0;background:rgba(5,20,45,.45)}
+.ep-admj .car.sai{opacity:0;pointer-events:none}
+.ep-admj .car .c{position:relative;display:grid;justify-items:center}
+.ep-admj .car .lg{width:84px;height:84px;display:grid;place-items:center;background:#0e203a;box-shadow:0 14px 40px rgba(0,0,0,.45);animation:epRespiraA 2.6s ease-in-out infinite}.ep-admj .car .lg svg{width:44px;height:44px}
+.ep-admj .car .br{width:200px;height:5px;background:rgba(255,255,255,.22);margin:46px 0 12px;position:relative;overflow:hidden}.ep-admj .car .br>i{position:absolute;left:0;top:0;bottom:0;width:0;background:#e8e9ec;transition:width .2s linear}
+.ep-admj .car .pc{display:flex;gap:8px;align-items:baseline;font-size:11.5px;color:rgba(255,255,255,.75)}.ep-admj .car .pc b{color:#fff;font-weight:700;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+.ep-admj .car .selo{position:absolute;right:16px;bottom:12px;height:22px;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);background:rgba(14,32,58,.35);font:700 11px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:.5px;white-space:nowrap}
+@keyframes epRespiraA{50%{transform:scale(1.045)}}@media (prefers-reduced-motion:reduce){.ep-admj .car .lg{animation:none}}
+@media (max-width:820px){.ep-admj{padding:0}}
 /* ===== VISUAL NOVO (05/11/2026, aprovado pela dona): janelas no mesmo estilo do menu (azul escuro translúcido, cantos retos, letras finas).
    Espaço na nuvem e no computador entram pela DIREITA; seções e pastas fechadas por padrão; pasta e barra com a cor do programa dono. */
 .ep-pg .cx,.ep-esp .cx,.ep-msgs .cx,.ep-cal,.ep-admj .cx{background:rgba(14,32,58,.92)!important;-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);border:0!important;border-radius:0!important;color:#fff}
@@ -2115,13 +2128,27 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (location.pathname === '/' || /^\/adm\/?$/i.test(location.pathname)) return dispatchEvent(new CustomEvent('estudio-abrir-adm', { detail: { aba: aba || null } }));
     poeCss(); document.querySelector('.ep-admj')?.remove();
     const d = document.createElement('div'); d.className = 'ep-admj'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'ADM');
-    d.innerHTML = `<div class="cx"><button class="x" type="button" title="Fechar (Esc)" aria-label="Fechar">${ICONES.fechar}</button><iframe src="/adm?embed=1${aba ? '#' + encodeURIComponent(aba) : ''}" title="ADM"></iframe></div>`;
+    d.innerHTML = `<div class="cx"><iframe src="/adm?embed=1${aba ? '#' + encodeURIComponent(aba) : ''}" title="ADM"></iframe><div class="car" role="status" aria-live="polite"><div class="c"><div class="lg">${ICONES.adm}</div><div class="br"><i></i></div><div class="pc"><b>0%</b><span>Abrindo a ADM…</span></div></div><span class="selo"></span></div></div>`;
+    d.querySelector('.selo').textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || '';
     document.body.appendChild(d);
-    const fechar = () => { d.remove(); removeEventListener('message', ouve); document.removeEventListener('keydown', esc1); };
+    // barrinha que anda sozinha (vai chegando perto de 90%); quando a ADM aparece no quadro, corre até 100% e a tela some
+    const car = d.querySelector('.car'), barra = car.querySelector('.br>i'), pct = car.querySelector('.pc b'), t0 = performance.now(); let mostra = 0, pronto = 0, de = 0, acabou = false;
+    const pinta = v => { barra.style.width = v.toFixed(1) + '%'; pct.textContent = Math.round(v) + '%'; };
+    const fim = () => { if (acabou) return; acabou = true; clearInterval(vigia); car.classList.add('sai'); setTimeout(() => car.remove(), 320); };
+    const anda = () => { if (acabou || !d.isConnected) return; const t = performance.now();
+      if (pronto) { const k = Math.min(1, (t - pronto) / 400); mostra = de + (100 - de) * (1 - (1 - k) * (1 - k)); pinta(mostra); if (k >= 1) return setTimeout(fim, 120); }
+      else { mostra = Math.max(mostra, 90 * (1 - Math.exp(-(t - t0) / 1600))); pinta(mostra); }
+      requestAnimationFrame(anda); };
+    requestAnimationFrame(anda);
+    const termina = () => { if (!pronto) { pronto = performance.now(); de = mostra; setTimeout(() => { pinta(100); fim(); }, 900); } }; // aba escondida (sem desenho): termina pelo relógio
+    const vis = e => !!e && e.getClientRects().length > 0 && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden';
+    const vigia = setInterval(() => { try { const w = d.querySelector('iframe').contentDocument; if (w && w.readyState === 'complete' && vis(w.getElementById('adm')) && ![...w.querySelectorAll('.login')].some(vis)) termina(); } catch { termina(); } }, 150);
+    setTimeout(termina, 20000); // segurança: a tela nunca prende a ADM
+    const fechar = () => { clearInterval(vigia); acabou = true; d.remove(); removeEventListener('message', ouve); document.removeEventListener('keydown', esc1); };
     const ouve = e => { if (e.origin === location.origin && e.data?.estudioAdm === 'fechar') fechar(); };
     const esc1 = e => { if (e.key === 'Escape') fechar(); };
     addEventListener('message', ouve); document.addEventListener('keydown', esc1);
-    d.onclick = e => { if (e.target === d) fechar(); }; d.querySelector('.x').onclick = fechar;
+    d.onclick = e => { if (e.target === d) fechar(); };
   }
   // marcadores do menu: relógio no meio do cabeçalho e o Dock
   function poeMarcas() {

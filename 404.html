@@ -16,7 +16,7 @@ if (window.ESTUDIO_EMBED_ADM) document.documentElement.classList.add('embed-adm'
 const avisaPai = t => { try { if (window.ESTUDIO_EMBED) parent.postMessage({ epConta: t }, location.origin); } catch { } };
 const avisaAdm = t => { try { if (window.ESTUDIO_EMBED_ADM) parent.postMessage({ estudioAdm: t }, location.origin); } catch { } }; // 'pronto' · 'login' · 'fechar'</script>
 <style>html.embed,html.embed body{background:transparent!important}html.embed body>*:not(.modal){display:none!important}html.embed .modal{animation:none}
-html.embed-adm,html.embed-adm body{background:transparent!important}html.embed-adm #top,html.embed-adm #pagebg,html.embed-adm #menu,html.embed-adm #saida{display:none!important}</style>
+html.embed-adm,html.embed-adm body{background:transparent!important}html.embed-adm{color-scheme:dark}html.embed-adm #top,html.embed-adm #pagebg,html.embed-adm #menu,html.embed-adm #saida{display:none!important}</style>
 <script src="/estudio-icones.js"></script><!-- ícones dos programas (Sh, Ed, An, At, Md; ADM › Ícones) -->
 <script src="/estudio-carregando.js" data-so-progresso></script><!-- porcentagem e o que está carregando (a tela é a do próprio menu) -->
 <style>
