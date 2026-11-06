@@ -100,6 +100,7 @@ window.EstudioDiario ||= (() => {
     anota(ms > 8000 ? 'aviso' : 'info', 'carregou', (ms / 1000).toFixed(1) + ' s' + (ms > 8000 ? ' (demorou)' : '')); } catch { } }, 0));
   // ações principais: o nome do botão/link clicado (rótulo da tela, não o conteúdo de arquivos)
   document.addEventListener('click', e => { const b = e.target?.closest?.('button,a,[role=button],[role=menuitem]'); if (!b) return;
+    if (b.closest('.ep-msgs,.epm-lista,#rec,.pasta-pop,.ep-esp .grp-l,.na-lista,.ac-l,.lrow')) return anota('info', 'clicou', 'item de uma lista (nome omitido)'); // nomes de pessoas, conversas e projetos não vão para o diário
     const r = (b.getAttribute('aria-label') || b.title || b.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 50); if (r) anota('info', 'clicou', r); }, true);
   // pedido à nossa nuvem (chamado pelo fetch do estudio-conta.js): só a rota, sem o que foi enviado
   const rota = u => { try { const x = new URL(u, location.href); return x.hostname.split('.')[0] + x.pathname.replace(/[A-Za-z0-9_-]{20,}/g, '…'); } catch { return '?'; } };
@@ -128,6 +129,13 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
 **Sobre o diário abaixo:** cada navegador anota só nele mesmo (nada vai para a nuvem). "p" = programa onde aconteceu. Repetições seguidas viram uma linha com "×N".`;
   const quando = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const linha = e => `- ${quando(e.t)}${e.c ? ` ×${e.c} (até ${quando(e.t2)})` : ''} · **${e.tipo}** · ${e.p} · ${String(e.m || '').replace(/\n/g, ' ')}${e.x ? ` — \`${String(e.x).replace(/`/g, "'")}\`` : ''}`;
+  // FILTRO FINAL (pedido da dona): passa no texto inteiro antes de baixar, mesmo que algo tenha escapado das anotações
+  function censura(t) { return String(t)
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '•••＠•••').replace(/\[e-mail\]/g, '•••＠•••').replace(/\[(token|chave|texto longo)\]/g, '[censurado]')
+    .replace(/Bearer\s+[^\s`'")]+/gi, 'Bearer [censurado]').replace(/AIza[\w-]{10,}/g, '[censurado]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[censurado]')
+    .replace(/((?:senha|password|passwd|secret|segredo|token|apikey|api_key|chave)\s*[:=]\s*)[^\s,;&`'"]+/gi, '$1[censurado]')
+    .replace(/([?&](?:sig|signature|token|t|k|key|passe|code|auth|X-Amz-[\w-]+|Expires|GoogleAccessId)=)[^&\s`'")]+/gi, '$1[censurado]')
+    .replace(/\b(?=[A-Za-z0-9_\-+/=]*\d)(?=[A-Za-z0-9_\-+/=]*[A-Za-z])[A-Za-z0-9_\-+/=]{32,}\b/g, '[censurado]'); }
   async function relatorio() {
     poda(); const l = le().slice().sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
     let esp = ''; try { const e = await navigator.storage?.estimate?.(); if (e?.quota) esp = `${(e.usage / 1048576).toFixed(1)} MB de ${(e.quota / 1048576).toFixed(0)} MB`; } catch { }
@@ -155,7 +163,7 @@ ${av.map(linha).join('\n') || '- Nenhum.'}
 ## O que foi feito hoje (${inf.length})
 ${inf.slice(0, 300).map(linha).join('\n') || '- Nada anotado.'}
 `;
-    return md;
+    return censura(md);
   }
   async function baixar() { const md = await relatorio(), b = new Blob([md], { type: 'text/markdown;charset=utf-8' }), u = URL.createObjectURL(b), a = document.createElement('a');
     const d = new Date(), z = n => String(n).padStart(2, '0'); a.href = u; a.download = `relatorio-estudio-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.md`;
@@ -918,7 +926,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.querySelector('[data-a=msgs]').onclick = () => { fecha(); painelMensagens(); };
       pop.querySelector('[data-a=adm]')?.addEventListener('click', ev => { fecha(); abrirAdm(ev.currentTarget.dataset.aba); }); // janela por cima, sem trocar de aba
       pop.querySelector('[data-a=atualizar]').onclick = () => { fecha(); atualizarTudo(); };
-      pop.querySelector('[data-a=relatorio]').onclick = () => { fecha(); window.EstudioDiario?.baixar(); };
+      pop.querySelector('[data-a=relatorio]').onclick = async () => { fecha();
+        if (!(await pergunta({ titulo: 'Gerar relatório de erro?', icone: ICONES.lista, aviso: true, ok: 'Entendi, gerar',
+          texto: 'Este arquivo serve só para resolver problemas do Estúdio. Não mande para qualquer pessoa: só para quem vai consertar (por exemplo, colar num chat do Claude). E-mails, senhas e chaves saem censurados, mas ele mostra o que foi feito neste navegador.' }))) return;
+        window.EstudioDiario?.baixar(); };
       pop.querySelector('[data-a=sair]').onclick = async () => { fecha();
         const temQueSalvar = salvadores().length > 0;
         if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu.' + (temQueSalvar ? ' O projeto aberto é salvo antes de sair.' : '') + ' Seus projetos salvos aqui continuam.',
