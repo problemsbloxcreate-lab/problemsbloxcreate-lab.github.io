@@ -125,6 +125,7 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
    Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
    quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
 const RAIZ_ASSETS = new Set(['/permissoes.json', '/estudio-icones.js', '/estudio-edicao.js', '/estudio-youtube.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png', '/fundo-margarida.jpg', '/fundo-margarida-2.jpg']);
+const CONTAGEM = { m: new Map(), n: 0, desde: Date.now() };
 const VERS = new Map(), VERS_PAGINA = new Set(); // VERS_PAGINA: raízes de projeto ('/animador/') pedidas pelo /versoes
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
@@ -1071,7 +1072,15 @@ async function comTrocasP(env, r) {
 }
 
 export default {
-  async fetch(req, env, ctx) { const r = await this.fetch0(req, env, ctx); return env.TROCA_DE ? comTrocasP(env, r) : r; },
+  async fetch(req, env, ctx) {
+    /* CONTAGEM POR ROTA (06/11/2026): para saber o que mais gasta os 100 mil pedidos do dia. Só na memória desta cópia do porteiro
+       (não grava nada, some quando ela dorme); GET /contagem só para ADM. Endereço resumido (sem números/códigos), sem e-mails. */
+    try { const u = new URL(req.url), p = u.pathname.replace(/\/[0-9a-f]{8,}|\/u[0-9a-f]{16}/gi, '/:id').split('/').slice(0, 4).join('/').slice(0, 60) || '/';
+      const k = req.method + ' ' + p + (u.searchParams.has('_ev') ? ' (_ev)' : u.searchParams.has('us') ? ' (lote)' : ''); CONTAGEM.m.set(k, (CONTAGEM.m.get(k) || 0) + 1); CONTAGEM.n++;
+      if (CONTAGEM.m.size > 400) { const ord = [...CONTAGEM.m].sort((a, b) => b[1] - a[1]).slice(0, 200); CONTAGEM.m = new Map(ord); } } catch { }
+    if (new URL(req.url).pathname === '/contagem') { const s = await leSessao(env, req); if (!s?.a) return json({ error: { message: 'Só ADM.' } }, 403);
+      return json({ desde: new Date(CONTAGEM.desde).toISOString(), total: CONTAGEM.n, rotas: [...CONTAGEM.m].sort((a, b) => b[1] - a[1]).slice(0, 60) }, 200, { 'cache-control': 'no-store' }); }
+    const r = await this.fetch0(req, env, ctx); return env.TROCA_DE ? comTrocasP(env, r) : r; },
   async fetch0(req, env, ctx) {
     if (env.PERFIS && !env.PERFIS._comLista) env = { ...env, PERFIS: perfisCom(env.PERFIS) }; try { return await this.atende(req, env, ctx); } catch (e) { console.log('erro:', String(e?.message || e).slice(0, 200)); return avisoLimitePorteiro(e); } },
   async atende(req, env) {
