@@ -1113,7 +1113,7 @@ export default {
       const r = await fetch('https://problemsbloxcreate-lab.github.io/preparativos/dublar/' + arq, { cf: { cacheTtl: 60 } }); if (!r.ok) return new Response('Não encontrado', { status: 404 });
       return new Response(r.body, { status: 200, headers: { 'content-type': TIPOS[arq], 'cache-control': arq === 'index.html' ? 'no-store' : 'public, max-age=60', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
         'permissions-policy': 'microphone=(self), camera=(), geolocation=()', 'x-robots-tag': 'noindex, nofollow',
-        'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" } });
+        'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" } });
     }
 
     // entrar: o menu manda o token do Google; o servidor do Estúdio Problems diz se o e-mail é liberado
