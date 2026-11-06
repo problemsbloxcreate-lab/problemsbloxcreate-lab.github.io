@@ -728,6 +728,13 @@ function tipoAudio(buf) { const u = new Uint8Array(buf, 0, Math.min(16, buf.byte
 //   dublar-links/<hash> = id do roteiro · preparativos/<id>/dublar.json = { links: { <hash>: {...} }, pend: [ ... ] } · áudios em preparativos/<id>/dub/
 const DUB_RL = new Map(), DUB_RUIM = new Map(); // DUB_RUIM: hashes inválidos vistos há pouco (10 min) // pedidos por minuto (na memória do servidor): por IP e por link
 const hashTok = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('dublar:' + t)))].map(x => x.toString(16).padStart(2, '0')).join('');
+// LINK VISÍVEL DE NOVO (pedido da dona): o token também fica CIFRADO (AES-GCM) com uma chave só do servidor (dublar-chave, fora das
+// rotas da equipe; criada na primeira vez). Só quem pode criar links (preparativos.links) pede para ver de novo (ação dublar/op ver).
+const b64uC = u8 => btoa(String.fromCharCode(...u8)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), deB64C = s => Uint8Array.from(atob(String(s).replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - String(s).length % 4) % 4)), c => c.charCodeAt(0));
+async function chaveDub(env) { let k = await env.EQUIPE.get('dublar-chave'); if (!/^[A-Za-z0-9_-]{43}$/.test(k || '')) { k = b64uC(crypto.getRandomValues(new Uint8Array(32))); await env.EQUIPE.put('dublar-chave', k, { metadata: { tipo: 'text/plain', tam: 43, mod: Date.now() } }); }
+  return crypto.subtle.importKey('raw', deB64C(k), 'AES-GCM', false, ['encrypt', 'decrypt']); }
+async function cifraDub(env, tok) { const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await chaveDub(env), new TextEncoder().encode(tok))); return b64uC(iv) + '.' + b64uC(ct); }
+async function decifraDub(env, c) { const [iv, ct] = String(c || '').split('.'); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64C(iv) }, await chaveDub(env), deB64C(ct))); }
 async function leDub(env, id) { try { const o = JSON.parse((await env.EQUIPE.get(`preparativos/${id}/dublar.json`)) || '{}') || {}; return { links: o.links && typeof o.links === 'object' && !Array.isArray(o.links) ? o.links : {}, pend: Array.isArray(o.pend) ? o.pend : [] }; } catch { return { links: {}, pend: [] }; } }
 async function gravaDub(env, id, d) { const t = JSON.stringify(d); await env.EQUIPE.put(`preparativos/${id}/dublar.json`, t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } }); }
 // texto que veio de fora: sem HTML/script, sem controles e sem e-mails
@@ -1236,13 +1243,13 @@ export default {
         if (b?.acao === 'personagens') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, personagens: await juntaPers(limpaPers(b.itens)) }, 200, cors); }
         if (!ID.test(String(b?.id || ''))) return json({ error: { message: 'Preparativo inválido.' } }, 400, cors);
         if (b.acao === 'dublar') { // LINKS DE DUBLAGEM: listar, criar, desligar; aceitar/recusar o que chegou
-          const op = String(b.op || ''), precisaD = { lista: 'gravar', novo: 'links', desliga: 'links', aceita: 'gravar', recusa: 'gravar' }[op]; if (!precisaD) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
+          const op = String(b.op || ''), precisaD = { lista: 'gravar', novo: 'links', desliga: 'links', ver: 'links', aceita: 'gravar', recusa: 'gravar' }[op]; if (!precisaD) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
           if (!(await podeP(precisaD))) return json({ error: { type: 'permissao', message: precisaD === 'links' ? 'Sua conta não pode criar ou desligar links de dublagem. Peça para um ADM liberar.' : 'Sua conta não pode gravar falas nos Preparativos.' } }, 403, cors);
           const o = await leP(b.id); if (!o) return json({ error: { message: 'Este roteiro não está na nuvem (mande o roteiro antes).' } }, 404, cors);
           const D = await leDub(env, b.id), P = o.P; { const venc = Object.entries(D.links).filter(([, l]) => l.revogado || l.terminado || (l.expira && Date.now() > +l.expira)).map(([h]) => h);
             if (venc.length) { for (const h of venc) { delete D.links[h]; try { await env.EQUIPE.delete('dublar-links/' + h); } catch { } } await gravaDub(env, b.id, D); } }
           const fs = new Map((P.partes || []).flatMap(pt => pt.falas || []).map(f => [f.id, f]));
-          const vista = () => ({ links: Object.entries(D.links).map(([h, l]) => ({ h, rotulo: l.rotulo, falas: l.falas, criado: l.criado, expira: l.expira, revogado: !!l.revogado, unico: !!l.unico, total: l.total || 0, quem: l.quem || null, por: l.por || null })).sort((x, y) => y.criado - x.criado),
+          const vista = () => ({ links: Object.entries(D.links).map(([h, l]) => ({ h, rotulo: l.rotulo, falas: l.falas, criado: l.criado, expira: l.expira, revogado: !!l.revogado, unico: !!l.unico, podeVer: !!l.cifra, total: l.total || 0, quem: l.quem || null, por: l.por || null })).sort((x, y) => y.criado - x.criado),
             pend: D.pend.filter(x => fs.has(x.fala)).map(x => ({ k: x.k, fala: x.fala, dur: x.dur, quem: x.quem, em: x.em, link: x.link })) });
           if (op === 'lista') return json({ ok: true, ...vista() }, 200, { ...cors, 'cache-control': 'no-store' });
           if (op === 'novo') {
@@ -1250,10 +1257,12 @@ export default {
             if (Object.keys(D.links).length >= 30) return json({ error: { message: 'Este roteiro já tem links ligados demais (30). Desligue alguns.' } }, 400, cors);
             const by = crypto.getRandomValues(new Uint8Array(32)), tok = btoa(String.fromCharCode(...by)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), h = await hashTok(tok);
             const eu = await (async () => { try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + String(login.email).toLowerCase())); return 'u' + [...new Uint8Array(d)].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } catch { return null; } })();
-            D.links[h] = { rotulo: txtLimpo(b.rotulo, 80) || 'Link de dublagem', falas, ...(b.de ? { de: chaveP(b.de) } : {}), criado: Date.now(), expira: b.prazo === 'sempre' ? null : Date.now() + 3600e3, por: eu, unico: new Set(falas.map(x => chaveP(fs.get(x)?.personagem))).size <= 1, total: 0, envios: {} };
+            D.links[h] = { rotulo: txtLimpo(b.rotulo, 80) || 'Link de dublagem', falas, ...(b.de ? { de: chaveP(b.de) } : {}), criado: Date.now(), expira: b.prazo === 'sempre' ? null : Date.now() + 3600e3, por: eu, unico: new Set(falas.map(x => chaveP(fs.get(x)?.personagem))).size <= 1, cifra: await cifraDub(env, tok).catch(() => null), total: 0, envios: {} };
             await gravaDub(env, b.id, D); await env.EQUIPE.put('dublar-links/' + h, b.id, { metadata: { tipo: 'text/plain', tam: b.id.length, mod: Date.now() } });
             return json({ ok: true, token: tok, ...vista() }, 200, { ...cors, 'cache-control': 'no-store' }); } // o token aparece SÓ agora (aqui fica só o hash)
           const h = String(b.link || ''), L = /^[0-9a-f]{64}$/.test(h) ? D.links[h] : null;
+          if (op === 'ver') { if (!L) return json({ error: { message: 'Esse link não existe mais (terminou, venceu ou foi encerrado).' } }, 404, cors); if (!L.cifra) return json({ error: { message: 'Esse link é antigo e não dá para ver de novo. Crie outro.' } }, 410, cors);
+            try { return json({ ok: true, token: await decifraDub(env, L.cifra) }, 200, { ...cors, 'cache-control': 'no-store' }); } catch { return json({ error: { message: 'Não consegui abrir esse link agora.' } }, 500, cors); } }
           if (op === 'desliga') { if (!L) return json({ error: { message: 'Link não encontrado.' } }, 404, cors); delete D.links[h]; await gravaDub(env, b.id, D); try { await env.EQUIPE.delete('dublar-links/' + h); } catch { } return json({ ok: true, ...vista() }, 200, cors); }
           const x = D.pend.find(y => y.k === String(b.k || '')); if (!x || !x.k.startsWith(`preparativos/${b.id}/dub/`)) return json({ error: { message: 'Gravação não encontrada (talvez já tenha sido vista).' } }, 404, cors);
           D.pend = D.pend.filter(y => y !== x);
