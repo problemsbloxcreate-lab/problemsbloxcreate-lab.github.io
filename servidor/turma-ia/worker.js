@@ -748,7 +748,9 @@ async function dublar(req, env, p) {
     const d = txtLimpo(req.headers.get('x-dub-nome'), 40); return d ? { nome: d, conta: false } : null; };
   if (p === '/dublar/ver' && req.method === 'GET') {
     const out = []; todas.forEach((f, i) => { if (!minhas.has(f.id)) return; const a = todas[i - 1];
-      out.push({ id: f.id, personagem: txtLimpo(f.personagem, 40), ...(L.de && Array.isArray(f.personagens) ? { voce: txtLimpo(f.personagens.find(n => txtLimpo(n, 40).toLocaleLowerCase('pt-BR') === L.de) || '', 40) } : {}), texto: String(f.texto || '').slice(0, 2000), nota: String(f.nota || '').slice(0, 300), parte: String(f.parte || '').slice(0, 80), antes: a ? { personagem: txtLimpo(a.personagem, 40), texto: String(a.texto || '').slice(0, 160) } : null }); });
+      const juntos = Array.isArray(f.personagens) && f.personagens.length > 1 ? f.personagens.map(n => txtLimpo(n, 40)) : null, kd = n => n.toLocaleLowerCase('pt-BR');
+      out.push({ id: f.id, personagem: txtLimpo(f.personagem, 40), ...(L.de && juntos ? { voce: juntos.find(n => kd(n) === L.de) || '' } : {}),
+        ...(juntos ? { juntoCom: juntos.filter(n => kd(n) !== L.de).map(n => ({ nome: n, k: kd(n), tem: !!f.audios?.[kd(n)]?.audio })) } : {}), texto: String(f.texto || '').slice(0, 2000), nota: String(f.nota || '').slice(0, 300), parte: String(f.parte || '').slice(0, 80), antes: a ? { personagem: txtLimpo(a.personagem, 40), texto: String(a.texto || '').slice(0, 160) } : null }); });
     const enviadas = {}; for (const x of D.pend) if (x.link === hs) enviadas[x.fala] = { em: x.em, dur: x.dur };
     return sai({ roteiro: txtLimpo(P.nome, 80), rotulo: txtLimpo(L.rotulo, 80), falas: out, enviadas, expira: L.expira ? +L.expira : null, unico: !!L.unico, quem: quem(), maxMb: 20, maxSeg: 120 });
   }
@@ -773,6 +775,12 @@ async function dublar(req, env, p) {
   }
   // TERMINEI: link de UMA fala ou de UM personagem morre na hora (apagado: não gasta mais nada). Link de vários personagens pode ter
   // mais de uma pessoa: quem encerra é o responsável, no Preparativos (ou a hora passa, se for de 1 hora). O enviado espera aprovação.
+  // OUVIR a versão do OUTRO personagem de uma fala de vários: só falas do link, só outro membro da MESMA fala, só áudio já ACEITO
+  if (p === '/dublar/ouvir' && req.method === 'GET') { const q = new URL(req.url).searchParams, fala = String(q.get('fala') || ''), de = txtLimpo(q.get('de'), 40).toLocaleLowerCase('pt-BR');
+    const f = minhas.has(fala) ? todas.find(x => x.id === fala) : null; if (!f || !Array.isArray(f.personagens) || de === L.de || !f.personagens.some(n => txtLimpo(n, 40).toLocaleLowerCase('pt-BR') === de)) return erro('Não dá para ouvir isso por este link.', 403);
+    const k = f.audios?.[de]?.audio; if (!k || !String(k).startsWith(`preparativos/${id}/`)) return erro('Esse personagem ainda não tem gravação aceita nesta fala.', 404);
+    const r = await env.EQUIPE.getWithMetadata(k, { type: 'stream' }); if (!r?.value) return erro('Gravação não encontrada.', 404);
+    return new Response(r.value, { status: 200, headers: { 'content-type': r.metadata?.tipo || 'audio/webm', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } }); }
   if (p === '/dublar/terminar' && req.method === 'POST') { if (!L.unico) return sai({ ok: true, continua: true });
     delete D.links[hs]; await gravaDub(env, id, D); try { await env.EQUIPE.delete('dublar-links/' + hs); } catch { } return sai({ ok: true }); }
   return erro('Pedido desconhecido.', 404);
@@ -808,7 +816,7 @@ export default {
     const auth0 = req.headers.get('authorization') || '', p00 = new URL(req.url).pathname;
     const R = env.EQUIPE && p00 !== '/confere' && /^Bearer \S{20,}$/.test(auth0) ? reservaDe(env, auth0) : null, bg = pr => ctx?.waitUntil ? ctx.waitUntil(pr) : null;
     if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE, new URL(req.url).searchParams.get('novo') === '1', R, flag, bg), _kvLista: true, _base: env.EQUIPE };
-    if (p00 === '/dublar/ver' || p00 === '/dublar/enviar' || p00 === '/dublar/terminar') return dublar(req, env, p00);
+    if (p00 === '/dublar/ver' || p00 === '/dublar/enviar' || p00 === '/dublar/terminar' || p00 === '/dublar/ouvir') return dublar(req, env, p00);
     const origin = req.headers.get('origin') || '';
     const origens = (env.ORIGENS || '*').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
     const liberado = origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin); // seu PC: sempre aceito (ainda exige login com e-mail liberado)

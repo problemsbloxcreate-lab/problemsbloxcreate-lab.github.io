@@ -1095,7 +1095,7 @@ export default {
     if (caminho.startsWith('/dublar/api/')) {
       const sub = caminho.slice('/dublar/api'.length), H = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
       const nega = (m, st) => new Response(JSON.stringify({ error: { message: m } }), { status: st, headers: H });
-      if (!/^\/(ver|enviar|terminar)$/.test(sub)) return nega('Pedido desconhecido.', 404);
+      if (!/^\/(ver|enviar|terminar|ouvir)$/.test(sub)) return nega('Pedido desconhecido.', 404);
       if (!['GET', 'POST'].includes(req.method)) return nega('Método não aceito.', 405);
       if (req.method === 'POST' && (req.headers.get('origin') || '') !== url.origin) return nega('Pedido de outro site.', 403); // só a própria página
       if ((+req.headers.get('content-length') || 0) > 21 * 1048576) return nega('Arquivo maior que 20 MB.', 413);
@@ -1105,7 +1105,7 @@ export default {
         hd['x-porteiro-nome'] = encodeURIComponent(String(nome || '').slice(0, 40)); hd['x-porteiro-id'] = 'u' + [...new Uint8Array(dg)].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } } catch { }
       const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/dublar' + sub + url.search, { method: req.method, headers: hd, body: req.method === 'POST' ? req.body : undefined });
       let r; try { if (!env.TURMA) return nega('O link de dublagem não está disponível neste endereço.', 503); r = await env.TURMA.fetch(ped); } catch (e) { return nega('Não consegui falar com a nuvem. Tente de novo em instantes.', 502); }
-      return new Response(r.body, { status: r.status, headers: H });
+      return new Response(r.body, { status: r.status, headers: sub === '/ouvir' && r.ok ? { 'content-type': r.headers.get('content-type') || 'audio/webm', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } : H });
     }
     if (caminho.startsWith('/dublar/')) {
       const arq = caminho.slice('/dublar/'.length) || 'index.html', TIPOS = { 'index.html': 'text/html; charset=utf-8', 'dublar.js': 'text/javascript; charset=utf-8', 'dublar.css': 'text/css; charset=utf-8' };
