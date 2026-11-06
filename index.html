@@ -869,6 +869,32 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 /* selo no meio do título (a altura das letras do título fica mais embaixo que o centro da caixa) */
 #top .badge,#top .selos-cargo{position:relative;top:calc(clamp(24px,3vw,40px) * .09)}
 .na-selo-prev{cursor:grab;touch-action:none;user-select:none}
+
+/* versão do site no canto de baixo à direita (mesmo estilo do selo ADM); em telas pequenas/baixas desce para o fim da página, sem cobrir nada */
+.versao-site{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:4;height:22px;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 var(--font);letter-spacing:.5px;white-space:nowrap;pointer-events:none}
+.versao-site:empty{display:none}
+@media (max-width:1100px),(max-height:640px){.versao-site{position:static;align-self:center;margin:26px auto 0;display:inline-grid}}
+@media (max-width:720px){.versao-site{height:20px;font-size:10px;padding:0 6px}}
+
+/* PASTAS: bloco com até 4 ícones pequenos; janelinha que abre embaixo dele */
+#menu .grid.sem-anim:not(.org) .card{animation:none}
+#menu .card.pasta-b{cursor:pointer;background:rgba(255,255,255,.14)}
+#menu .card.pasta-b:hover{background:rgba(255,255,255,.22)}
+#menu .card.pasta-b.alvo{box-shadow:inset 0 0 0 3px #fff;background:rgba(255,255,255,.3)}
+#menu .pasta-mini{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:grid;grid-template-columns:repeat(2,28px);grid-auto-rows:28px;gap:4px}
+#menu .pasta-mini .mi{position:relative;width:28px;height:28px}
+#menu .pasta-mini .mi .ic{position:static!important;transform:none!important;width:28px!important;height:28px!important}
+#menu .pasta-mini .mi .ic>span,#menu .pasta-mini .mi .ic svg,#menu .pasta-mini .mi .ic img{width:28px!important;height:28px!important;margin:0!important}
+#menu .pasta-mini .vazia{grid-column:1/-1;font-size:11px;color:rgba(255,255,255,.75)}
+#menu .pasta-pop{position:absolute;z-index:40;padding:12px;background:rgba(14,32,58,.95);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:0 24px 60px rgba(0,20,50,.5);animation:mnSobe .25s var(--mn-entra) both;max-width:calc(100% - 16px)}
+#menu .pasta-pop .pp-cab{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+#menu .pasta-pop .pp-cab b{font:300 21px var(--mn-leve)}
+#menu .pasta-pop .pp-nome{height:32px;padding:0 10px;border:0;background:#fff;color:#10233a;font:400 15px var(--font);min-width:0;width:200px}
+#menu .pasta-pop .pp-x{width:30px;height:30px;border:0;background:none;color:#fff;cursor:pointer}#menu .pasta-pop .pp-x:hover{background:rgba(255,255,255,.14)}
+#menu .pasta-pop .pp-vazia{margin:4px 0;color:rgba(255,255,255,.8);font-size:13px;max-width:260px}
+#menu .pasta-pop .pp-tira{position:absolute;top:6px;left:6px;z-index:4;height:22px;padding:0 6px;border:0;background:rgba(0,0,0,.5);color:#fff;font:600 11px var(--font);cursor:pointer}
+#menu .pasta-pop .card{animation:none}
+@media (max-width:720px){#menu .pasta-pop{left:8px!important;right:8px}}
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -918,7 +944,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
   <div class="mn-area">
     <div class="mn-col mn-progs"><!-- Fixados em cima dos Programas (mesma coluna, largura de 5 blocos: cabe ~20 programas) -->
     <section class="mn-grupo" id="g-fix" hidden><h2>Fixados</h2><div class="blocos" id="fixos"></div></section>
-    <section class="mn-grupo"><div class="progs-cab" id="progs-cab"><h2>Programas</h2><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no topo (só para você, fica neste navegador)">Organizar</button><button type="button" class="btn-org" id="org-padrao" hidden title="Tira a sua ordem e volta à ordem padrão do Estúdio (só neste navegador)">Voltar à ordem padrão</button><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no topo · só para você</span></div>
+    <section class="mn-grupo"><div class="progs-cab" id="progs-cab"><h2>Programas</h2><button type="button" class="btn-org" id="btn-org" aria-pressed="false" title="Mudar a ordem dos programas e fixar no topo (só para você, fica neste navegador)">Organizar</button><button type="button" class="btn-org" id="nova-pasta" hidden title="Cria uma pasta: arraste programas para dentro dela (só para você, fica neste navegador)">+ Pasta</button><button type="button" class="btn-org" id="org-padrao" hidden title="Tira a sua ordem e volta à ordem padrão do Estúdio (só neste navegador)">Voltar à ordem padrão</button><span class="hint" id="org-dica" hidden>Arraste para mudar a ordem · o alfinete fixa no topo · só para você</span></div>
       <div class="grid-caixa" id="grid-caixa"><nav class="grid" id="grid"></nav></div></section>
     </div>
     <!-- MEUS PROJETOS: os últimos que ESTA pessoa criou, na nuvem ou só neste computador (sem miniatura) -->
@@ -931,6 +957,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <section class="mn-grupo" id="g-atalhos"><h2>Meus atalhos</h2><div class="blocos" id="atalhos"></div></section>
     </div>
   </div>
+  <span class="versao-site" id="versao-site" title="Versão do site"></span><!-- VERSÃO (06/11/2026): o texto vem de window.ESTUDIO_VERSAO, no /estudio-conta.js -->
 </main>
 
 <!-- 3) ADM — abre com ?adm (ou /adm) e só depois do login -->
@@ -1554,7 +1581,7 @@ function atualizarTudo() {
   window.EstudioConta?.atualizarTudo(extras);
 }
 // ícones mudaram (ADM salvou, outra aba, nuvem): os cartões ligados a um ícone novo trocam na hora
-addEventListener('estudio-icones', () => { $$('#grid .card').forEach((el, i) => { const l = menuVis[i]; if (l) pintarIcone(el, l); }); });
+addEventListener('estudio-icones', () => { $$('#grid .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); if (l && !l.pasta) pintarIcone(el, l); }); });
 // partes de dentro de um programa (decisão do dono, 02/11/2026): no cartão ANIMAR, com o mouse em cima, aparecem os ícones do
 // ATELIÊ e dos CENÁRIOS; com o mouse no ícone aparece o nome; o clique abre direto aquela parte do Animador
 const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens', 'atelie'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios', 'cenarios']] };
@@ -1595,14 +1622,64 @@ function pintaSelos() {
     box.innerHTML = cs.map(c => { const cor = /^#[0-9a-f]{6}$/i.test(c.cor || '') ? c.cor : '#8e8e93'; return `<span class="badge cargo" style="${seloCss(c)}" title="Seu cargo">${esc(c.nome)}</span>`; }).join(''); };
   desenha(); if (!pintaSelos.ok) { pintaSelos.ok = true; try { P?.pronto?.then?.(desenha); } catch { } addEventListener('estudio-perm', desenha); }
 }
+/* PASTAS DE PROGRAMAS (pedido da dona, 06/11/2026): cada pessoa junta programas em pastas (localStorage 'ep-menu-pastas':
+   [{ id, nome, itens: [chave do programa] }]), só neste navegador, como a ordem. No "Organizar": "+ Pasta" cria; arrastar um programa
+   para cima da pasta põe dentro; dentro da pasta, "Tirar" (ou arrastar para fora da janela) devolve; renomear e apagar (os programas
+   voltam para a grade). Fora do Organizar, clicar na pasta abre a janelinha com os programas. */
+const PASTAS = {
+  le() { try { const v = JSON.parse(localStorage.getItem('ep-menu-pastas') || '[]'); return Array.isArray(v) ? v.filter(x => x?.id) : []; } catch { return []; } },
+  grava(L) { try { localStorage.setItem('ep-menu-pastas', JSON.stringify(L.slice(0, 30))); } catch { } },
+};
+let todosProgs = [];
+function blocoPasta(l, i) {
+  const el = document.createElement('div'); el.className = 'card pasta-b'; el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's'; el.tabIndex = 0; el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', 'Pasta ' + l.nome); el.title = l.nome + ' · ' + l.itens.length + (l.itens.length === 1 ? ' programa' : ' programas');
+  el.innerHTML = `<span class="pasta-mini">${l.itens.slice(0, 4).map(() => '<span class="mi"><span class="ic"></span></span>').join('') || '<span class="vazia">vazia</span>'}</span><span class="txt"><b>${esc(l.nome)}</b><small></small></span>`;
+  $$('.mi', el).forEach((mi, k) => pintarIcone(mi, l.itens[k]));
+  const abre = () => abrePasta(l.id, el); el.addEventListener('click', e => { if (Date.now() - (el._arrastou || 0) < 400) return; abre(); }); // depois de arrastar não abre el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abre(); } });
+  return el;
+}
+function pastaNova() { const L = PASTAS.le(), id = 'p' + Date.now().toString(36); L.push({ id, nome: 'Pasta nova', itens: [] }); PASTAS.grava(L); pintaGrid(); setTimeout(() => { const t = $('#grid .pasta-b[data-k="pasta:' + id + '"]'); if (t) abrePasta(id, t, true); }, 60); }
+function pastaPoe(id, k) { const L = PASTAS.le(); L.forEach(x => x.itens = (x.itens || []).filter(y => y !== k)); const p = L.find(x => x.id === id); if (!p) return; p.itens.push(k); PASTAS.grava(L); pintaGrid(); toast('Foi para a pasta "' + p.nome + '".'); }
+function pastaTira(id, k) { const L = PASTAS.le(), p = L.find(x => x.id === id); if (!p) return; p.itens = p.itens.filter(y => y !== k); PASTAS.grava(L);
+  try { const o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'), i = o.indexOf('pasta:' + id); if (Array.isArray(o) && i >= 0) { o.splice(i + 1, 0, k); localStorage.setItem('ep-menu-ordem', JSON.stringify([...new Set(o)])); } } catch { } // volta logo depois da pasta
+  pintaGrid(); }
+function abrePasta(id, tile, renomear) {
+  $('.pasta-pop')?.remove(); const p = PASTAS.le().find(x => x.id === id); if (!p) return;
+  const itens = (p.itens || []).map(k => todosProgs.find(l => chaveL(l) === k)).filter(Boolean), org = organizar.on;
+  const d = document.createElement('div'); d.className = 'pasta-pop'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Pasta ' + p.nome);
+  d.innerHTML = `<div class="pp-cab">${org ? `<input type="text" class="pp-nome" maxlength="30" value="${esc(p.nome)}" aria-label="Nome da pasta">` : `<b>${esc(p.nome)}</b>`}<span class="sp"></span>${org ? '<button type="button" class="btn-org pp-apaga" title="Apaga a pasta (os programas voltam para a grade)">Apagar pasta</button>' : ''}<button type="button" class="pp-x" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>
+    <div class="blocos pp-grade">${itens.map(l => `<a class="card" href="${esc(normUrl(l.url || ''))}" data-k="${esc(chaveL(l))}">${cardHtml(l, '')}${org ? '<button type="button" class="pp-tira" title="Tirar da pasta">Tirar</button>' : ''}</a>`).join('') || `<p class="pp-vazia">${org ? 'Arraste programas para cima desta pasta para colocar aqui.' : 'Pasta vazia. Use "Organizar" para pôr programas aqui.'}</p>`}</div>`;
+  $('#menu').appendChild(d);
+  $$('.pp-grade .card', d).forEach(c => { const l = itens.find(x => chaveL(x) === c.dataset.k); if (l) { pintarIcone(c, l); if (l.parte) c.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}"></span>`); } });
+  try { window.EstudioIcones?.pinta?.(d); } catch { }
+  $('.pp-grade', d).style.setProperty('--cols', Math.max(1, Math.min(4, itens.length || 1)));
+  // posição: logo embaixo do bloco da pasta (no celular, centralizada)
+  const r = tile.getBoundingClientRect(), m = $('#menu').getBoundingClientRect(); d.style.top = (r.bottom - m.top + 8) + 'px'; d.style.left = Math.max(8, Math.min(r.left - m.left, m.width - d.offsetWidth - 8)) + 'px';
+  const fecha = () => { d.remove(); document.removeEventListener('pointerdown', fora, true); removeEventListener('keydown', esc1); };
+  const fora = e => { if (!d.contains(e.target) && !e.target.closest?.('.pasta-b')) fecha(); }, esc1 = e => { if (e.key === 'Escape') fecha(); };
+  setTimeout(() => { document.addEventListener('pointerdown', fora, true); addEventListener('keydown', esc1); });
+  $('.pp-x', d).onclick = fecha;
+  if (org) {
+    const nm = $('.pp-nome', d); nm.onchange = () => { const L = PASTAS.le(), x = L.find(y => y.id === id); if (x) { x.nome = nm.value.trim().slice(0, 30) || 'Pasta'; PASTAS.grava(L); pintaGrid(); } }; nm.onkeydown = e => { if (e.key === 'Enter') nm.blur(); };
+    if (renomear) setTimeout(() => { nm.focus(); nm.select(); }, 30);
+    $('.pp-apaga', d).onclick = () => { PASTAS.grava(PASTAS.le().filter(x => x.id !== id)); fecha(); pintaGrid(); toast('Pasta apagada: os programas voltaram para a grade.'); };
+    $$('.pp-tira', d).forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); pastaTira(id, b.closest('.card').dataset.k); fecha(); });
+    // arrastar um programa para FORA da janela da pasta também tira
+    $$('.pp-grade .card', d).forEach(c => { c.addEventListener('click', e => e.preventDefault()); c.addEventListener('pointerdown', e => { if (e.target.closest('.pp-tira')) return; e.preventDefault(); c.setPointerCapture?.(e.pointerId); const x0 = e.clientX, y0 = e.clientY;
+      const mv = ev => { c.style.transform = `translate(${ev.clientX - x0}px,${ev.clientY - y0}px)`; c.classList.add('arrastando'); };
+      const up = ev => { c.removeEventListener('pointermove', mv); c.removeEventListener('pointerup', up); c.style.transform = ''; c.classList.remove('arrastando'); const rr = d.getBoundingClientRect(); if (ev.clientX < rr.left || ev.clientX > rr.right || ev.clientY < rr.top || ev.clientY > rr.bottom) { pastaTira(id, c.dataset.k); fecha(); } };
+      c.addEventListener('pointermove', mv); c.addEventListener('pointerup', up); }); });
+  }
+}
 let menuVis = []; // os botões na ordem DESTA pessoa (ver "organizar" abaixo)
-const chaveL = l => String(l.url || '') + '|' + String(l.nome || '');
+const chaveL = l => l?.pasta ? 'pasta:' + l.id : String(l.url || '') + '|' + String(l.nome || '');
 function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'); } catch { }
   const pos = new Map(o.map((k, i) => [k, i])); // os novos (que a ADM pôs depois) vão para o fim, na ordem da ADM
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); $('#lupa').hidden = false; $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
+  pintaGrid(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) vs.textContent = window.ESTUDIO_VERSAO || ''; } $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
@@ -1610,15 +1687,19 @@ function showMenu() {
   fundoDaPessoa().then(meu => { if (!meu) fundoTela(DADOS.fundo); });
 }
 function pintaGrid() {
-  const g = $('#grid'); if (!g || !DADOS) return; g.innerHTML = '';
-  menuVis = ordenaLinks(comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l)))); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
+  const g = $('#grid'); if (!g || !DADOS) return; g.innerHTML = ''; g.classList.toggle('sem-anim', !!pintaGrid.uma); pintaGrid.uma = true; // a entrada em onda só na 1ª vez
+  todosProgs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l)));
+  // PASTAS (pedido da dona, 06/11/2026): os programas dentro de uma pasta saem da grade e a pasta vira um bloco
+  const pastas = PASTAS.le(), dentro = new Set(pastas.flatMap(x => x.itens || []));
+  menuVis = ordenaLinks([...todosProgs.filter(l => !dentro.has(chaveL(l))), ...pastas.map(x => ({ pasta: true, id: x.id, nome: x.nome || 'Pasta', itens: (x.itens || []).map(k => todosProgs.find(l => chaveL(l) === k)).filter(Boolean) }))]); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
   menuVis.forEach((l, i) => {
+    if (l.pasta) { g.appendChild(blocoPasta(l, i)); return; }
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
     el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
-  const n = menuVis.length; g.style.setProperty('--cols', n > 20 ? 6 : 5); // espaço reservado para até 20 programas (5 por linha) g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
+  const n = menuVis.length; g.style.setProperty('--cols', n > 20 ? 6 : 5); /* espaço reservado para até 20 programas (5 por linha) */ g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
   if (!menuVis.length) g.innerHTML = '<div class="empty">Nenhum projeto no menu ainda.</div>';
   if (!organizar.ligado) { organizar.ligado = true; organizar.liga(); }
@@ -1640,12 +1721,13 @@ const organizar = {
     const g = $('#grid'), cx = $('#grid-caixa'), b = $('#btn-org'); if (!g || !cx || !b) return;
     b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on;
     // "Voltar à ordem padrão": aparece sempre que a ordem desta pessoa é diferente da padrão
-    const padraoKs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l))).map(chaveL).join('\n'), bp = $('#org-padrao');
-    if (bp) { bp.hidden = padraoKs === menuVis.map(chaveL).join('\n'); /* sempre à vista quando a ordem não é a padrão (pedido da dona) */ bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
+    const dentroP = new Set(PASTAS.le().flatMap(x => x.itens || [])), padraoKs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l))).map(chaveL).filter(k => !dentroP.has(k)).join('\n'), bp = $('#org-padrao');
+    if (bp) { bp.hidden = padraoKs === menuVis.filter(l => !l.pasta).map(chaveL).join('\n'); /* sempre à vista quando a ordem não é a padrão (pedido da dona) */ bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
     $('#btn-org').hidden = menuVis.length < 2;
     cx.classList.toggle('rola', g.dataset.densidade !== 'grande'); this.fimDaRolagem();
     const fx = new Set(this.fixos().map(x => x.k));
-    $$('.card', g).forEach((el, i) => { const l = menuVis[i]; let p = el.querySelector('.fixar');
+    { const np = $('#nova-pasta'); if (np) { np.hidden = !this.on; np.onclick = () => pastaNova(); } }
+    $$('.card', g).forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); let p = el.querySelector('.fixar');
       if (!l?.url || l.embreve) { p?.remove(); return; }
       if (!p) { p = document.createElement('button'); p.type = 'button'; p.className = 'fixar'; p.innerHTML = PINO; el.appendChild(p);
         p.onclick = e => { e.preventDefault(); e.stopPropagation(); const lk = menuVis.find(x => chaveL(x) === el.dataset.k); if (lk) this.fixa(lk, p.getAttribute('aria-pressed') !== 'true'); }; }
@@ -1659,7 +1741,7 @@ const organizar = {
     $('#grid-caixa').addEventListener('scroll', () => this.fimDaRolagem(), { passive: true });
     addEventListener('keydown', e => { if (e.key === 'Escape' && this.on) { this.on = false; this.pinta(); } });
     // no modo Organizar, clicar não abre o programa
-    $('#grid').addEventListener('click', e => { if (this.on && !e.target.closest('.fixar')) { e.preventDefault(); e.stopPropagation(); } }, true);
+    $('#grid').addEventListener('click', e => { if (this.on && !e.target.closest('.fixar,.pasta-b')) { e.preventDefault(); e.stopPropagation(); } }, true);
     // arrastar (mouse e dedo): o cartão segue o ponteiro; passando sobre outro, troca de lugar; solto no Dock, fixa
     let arr = null;
     $('#grid').addEventListener('dragstart', e => e.preventDefault()); // o bloco é um link: sem o "arrastar link" do navegador por cima do nosso
@@ -1669,13 +1751,16 @@ const organizar = {
       if (!arr.foi) { if (Math.hypot(dx, dy) < 6) return; arr.foi = true; arr.el.classList.add('arrastando'); document.body.classList.add('arrasta-dock'); }
       arr.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.04)';
       const sob = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('#grid .card');
-      if (sob && sob !== arr.el) { const r0 = arr.el.getBoundingClientRect(), r = sob.getBoundingClientRect(), depois = (e.clientX > r.left + r.width / 2) || (e.clientY > r.bottom);
+      const naPasta = !!sob?.classList.contains('pasta-b') && !arr.el.classList.contains('pasta-b');
+      $$('#grid .pasta-b.alvo').forEach(x => { if (x !== sob) x.classList.remove('alvo'); }); sob?.classList.toggle('alvo', naPasta);
+      if (sob && sob !== arr.el && !naPasta) { const r0 = arr.el.getBoundingClientRect(), r = sob.getBoundingClientRect(), depois = (e.clientX > r.left + r.width / 2) || (e.clientY > r.bottom);
         sob.parentNode.insertBefore(arr.el, depois ? sob.nextSibling : sob); const r1 = arr.el.getBoundingClientRect(); // o cartão mudou de lugar: corrige o deslocamento
         arr.x0 += r1.left - r0.left; arr.y0 += r1.top - r0.top; arr.el.style.transform = 'translate(' + (e.clientX - arr.x0) + 'px,' + (e.clientY - arr.y0) + 'px) scale(1.04)'; }
       const cx = $('#grid-caixa'), rc = cx.getBoundingClientRect(); // perto da borda da caixa: rola sozinho
       if (cx.classList.contains('rola')) { if (e.clientY > rc.bottom - 30) cx.scrollTop += 12; else if (e.clientY < rc.top + 30) cx.scrollTop -= 12; } });
     const solta = e => { if (!arr) return; const { el, foi } = arr; arr = null; document.body.classList.remove('arrasta-dock');
-      el.classList.remove('arrastando'); el.style.transform = ''; if (!foi) return;
+      el.classList.remove('arrastando'); el.style.transform = ''; const alvoP = $('#grid .pasta-b.alvo'); $$('#grid .pasta-b.alvo').forEach(x => x.classList.remove('alvo')); if (!foi) return; el._arrastou = Date.now();
+      if (alvoP && !el.classList.contains('pasta-b')) { pastaPoe(alvoP.dataset.k.slice(6), el.dataset.k); return; }
       const dk = document.querySelector('.ep-dock')?.getBoundingClientRect();
       if (dk && e.clientX >= dk.left - 10 && e.clientX <= dk.right + 10 && e.clientY >= dk.top - 14 && e.clientY <= dk.bottom + 10) { const l = menuVis.find(x => chaveL(x) === el.dataset.k); if (l?.url && !l.embreve) this.fixa(l, true); }
       this.salvaOrdem(); this.pinta(); };
@@ -1705,13 +1790,14 @@ const buscaProgs = {
       if (document.activeElement?.closest?.('input,textarea,select,[contenteditable]') || document.querySelector('.ep-msgs,.ep-esp,.ep-cal,.ep-pg,.ep-admj,.conta,html.adm-sobre')) return;
       if ($('#prog-busca').hidden) this.mostra(true); }); },
   aplica() { const q = $('#prog-q'); if (!q) return; const t = this.norm(q.value.trim());
-    $$('#grid .card, #fixos .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); el.classList.toggle('apaga', !!t && !this.norm(nomeMenu(l) + ' ' + (l?.nome || '') + ' ' + (l?.desc || '') + (/animador/i.test(l?.url || '') ? ' atelie cenarios' : '')).includes(t)); });
+    const txtL = l => l?.pasta ? l.nome + ' ' + (l.itens || []).map(x => nomeMenu(x) + ' ' + (x.nome || '')).join(' ') : nomeMenu(l) + ' ' + (l?.nome || '') + ' ' + (l?.desc || '') + (/animador/i.test(l?.url || '') ? ' atelie cenarios' : '');
+    $$('#grid .card, #fixos .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k) || todosProgs.find(x => chaveL(x) === el.dataset.k); el.classList.toggle('apaga', !!t && !this.norm(txtL(l)).includes(t)); });
     $$('#rec .mp').forEach(el => el.classList.toggle('apaga', !!t && !this.norm(el.dataset.busca).includes(t))); },
 };
 // FIXADOS: os programas que a pessoa fixou pelo "Organizar" (localStorage 'ep-dock-fixos', só neste navegador) ficam num grupo no topo
 function pintaFixos() {
   const box = $('#fixos'), sec = $('#g-fix'); if (!box || !sec) return; box.innerHTML = '';
-  const ls = organizar.fixos().map(x => menuVis.find(l => chaveL(l) === x.k)).filter(l => l?.url && !l.embreve);
+  const ls = organizar.fixos().map(x => todosProgs.find(l => chaveL(l) === x.k)).filter(l => l?.url && !l.embreve);
   for (const l of ls) { const o = $('#grid .card[data-k="' + CSS.escape(chaveL(l)) + '"]'); if (!o) continue;
     const c = o.cloneNode(true); c.querySelector('.fixar')?.remove(); c.querySelector('.subprog')?.remove(); c.classList.remove('apaga'); c.style.animationDelay = '0s'; const ic = c.querySelector('.ic'); if (ic) delete ic.dataset.k; pintarIcone(c, l); box.appendChild(c); }
   box.style.setProperty('--cols', 5); sec.hidden = !box.children.length; // mesma largura dos Programas try { window.EstudioIcones?.pinta?.(box); } catch { }
