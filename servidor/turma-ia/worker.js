@@ -715,6 +715,67 @@ function tipoAudio(buf) { const u = new Uint8Array(buf, 0, Math.min(16, buf.byte
   if (s(4, 8) === 'ftyp') return { ext: 'm4a', mime: 'audio/mp4' };
   if (s(0, 3) === 'ID3' || (u[0] === 0xff && (u[1] & 0xe0) === 0xe0)) return { ext: 'mp3', mime: 'audio/mpeg' };
   return null; }
+// ===================== LINK DE DUBLAGEM (Preparativos, pedido da dona 06/11/2026) =====================
+// A página pública é a /dublar/ do PORTEIRO (sem login). O porteiro repassa /dublar/api/{ver,enviar,terminar} para cá pela LIGAÇÃO
+// DIRETA (Service Binding TURMA): pedido que vem da internet (tem req.cf) é recusado, então esta rota não fica exposta e não usa CORS.
+// O token (32 bytes aleatórios, base64url) vem no cabeçalho x-dub-token; aqui só fica o HASH (SHA-256). Ele vale só para AQUELE roteiro
+// e AQUELAS falas: lê o texto delas e grava o áudio delas; a chave do arquivo é montada aqui. Validade, desligar, "terminei" (só leitura),
+// limite de tamanho (20 MB), tipo pelo conteúdo, envios por fala/link e pedidos por minuto. Os áudios ficam "aguardando aprovação".
+//   dublar-links/<hash> = id do roteiro · preparativos/<id>/dublar.json = { links: { <hash>: {...} }, pend: [ ... ] } · áudios em preparativos/<id>/dub/
+const DUB_RL = new Map(); // pedidos por minuto (na memória do servidor): por IP e por link
+const hashTok = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('dublar:' + t)))].map(x => x.toString(16).padStart(2, '0')).join('');
+async function leDub(env, id) { try { const o = JSON.parse((await env.EQUIPE.get(`preparativos/${id}/dublar.json`)) || '{}') || {}; return { links: o.links && typeof o.links === 'object' && !Array.isArray(o.links) ? o.links : {}, pend: Array.isArray(o.pend) ? o.pend : [] }; } catch { return { links: {}, pend: [] }; } }
+async function gravaDub(env, id, d) { const t = JSON.stringify(d); await env.EQUIPE.put(`preparativos/${id}/dublar.json`, t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } }); }
+// texto que veio de fora: sem HTML/script, sem controles e sem e-mails
+const txtLimpo = (v, n) => { let x = String(v ?? ''); try { x = decodeURIComponent(x); } catch { } return x.normalize('NFC').replace(/[\u0000-\u001f\u007f<>"'`\\{}]/g, '').replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '').replace(/\s+/g, ' ').trim().slice(0, n); };
+function dubRl(chave, max) { const agora = Date.now(), l = (DUB_RL.get(chave) || []).filter(t => agora - t < 60e3); if (l.length >= max) return false; l.push(agora); DUB_RL.set(chave, l); if (DUB_RL.size > 5000) DUB_RL.clear(); return true; }
+async function dublar(req, env, p) {
+  const H = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
+  const sai = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: H }), erro = (m, st) => sai({ error: { message: m } }, st);
+  if (req.cf) return erro('Abra o link pelo endereço do Estúdio.', 403); // só pela ligação direta do porteiro
+  if (!env.EQUIPE) return erro('A nuvem está indisponível agora.', 503);
+  if (!dubRl('ip:' + String(req.headers.get('x-dub-ip') || '?').slice(0, 64), 60)) return erro('Muitos pedidos. Espere um minuto.', 429);
+  const tok = req.headers.get('x-dub-token') || ''; if (!/^[A-Za-z0-9_-]{43}$/.test(tok)) return erro('Link inválido.', 404);
+  const hs = await hashTok(tok), id = await env.EQUIPE.get('dublar-links/' + hs); if (!id || !/^[A-Za-z0-9_-]{2,40}$/.test(id)) return erro('Link inválido ou desligado.', 404);
+  if (!dubRl('lk:' + hs, 40)) return erro('Muitos pedidos. Espere um minuto.', 429);
+  const D = await leDub(env, id), L = D.links[hs]; if (!L) return erro('Link inválido ou desligado.', 404);
+  if (L.revogado || L.terminado || (L.expira && Date.now() > +L.expira)) { delete D.links[hs]; try { await env.EQUIPE.delete('dublar-links/' + hs); } catch { } await gravaDub(env, id, D).catch(() => { });
+    return erro(L.terminado ? 'Você já terminou este link. Obrigado!' : 'Este link venceu ou foi encerrado. Peça um novo para quem mandou.', 410); }
+  let P = null; try { P = JSON.parse((await env.EQUIPE.get(`preparativos/${id}/prep.json`)) || 'null'); } catch { } if (!P || !Array.isArray(P.partes)) return erro('Este roteiro não existe mais.', 410);
+  const todas = P.partes.flatMap(pt => (pt.falas || []).map(f => ({ ...f, parte: pt.nome }))), minhas = new Set(Array.isArray(L.falas) ? L.falas : []);
+  // quem grava: conta do Estúdio (o PORTEIRO conferiu a sessão e manda nome + código) ou o nome digitado (marcado "sem conta")
+  const quem = () => { const u = String(req.headers.get('x-porteiro-id') || ''), n = txtLimpo(req.headers.get('x-porteiro-nome'), 40); if (n && /^u[0-9a-f]{16}$/.test(u)) return { nome: n, id: u, conta: true };
+    const d = txtLimpo(req.headers.get('x-dub-nome'), 40); return d ? { nome: d, conta: false } : null; };
+  if (p === '/dublar/ver' && req.method === 'GET') {
+    const out = []; todas.forEach((f, i) => { if (!minhas.has(f.id)) return; const a = todas[i - 1];
+      out.push({ id: f.id, personagem: txtLimpo(f.personagem, 40), texto: String(f.texto || '').slice(0, 2000), nota: String(f.nota || '').slice(0, 300), parte: String(f.parte || '').slice(0, 80), antes: a ? { personagem: txtLimpo(a.personagem, 40), texto: String(a.texto || '').slice(0, 160) } : null }); });
+    const enviadas = {}; for (const x of D.pend) if (x.link === hs) enviadas[x.fala] = { em: x.em, dur: x.dur };
+    return sai({ roteiro: txtLimpo(P.nome, 80), rotulo: txtLimpo(L.rotulo, 80), falas: out, enviadas, expira: L.expira ? +L.expira : null, unico: !!L.unico, quem: quem(), maxMb: 20, maxSeg: 120 });
+  }
+  if (p === '/dublar/enviar' && req.method === 'POST') {
+    const q = new URL(req.url).searchParams, fala = String(q.get('fala') || '');
+    if (!minhas.has(fala) || !todas.some(f => f.id === fala)) return erro('Esta fala não é deste link.', 403);
+    const qq = quem(); if (!qq) return erro('Escreva o seu nome antes de enviar.', 400);
+    const n = +(L.envios?.[fala] || 0); if (n >= 10) return erro('Esta fala já foi enviada vezes demais por este link.', 429);
+    if ((+L.total || 0) >= Math.min(400, minhas.size * 6)) return erro('Este link chegou no limite de envios.', 429);
+    if ((+req.headers.get('content-length') || 0) > 20 * 1048576) return erro('Arquivo maior que 20 MB.', 413);
+    const buf = await req.arrayBuffer(); if (!buf.byteLength) return erro('Arquivo vazio.', 400); if (buf.byteLength > 20 * 1048576) return erro('Arquivo maior que 20 MB.', 413);
+    const tipo = tipoAudio(buf); if (!tipo) return erro('Esse arquivo não é um áudio aceito (mp3, wav, ogg, m4a ou webm).', 415);
+    if ((await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return erro('O espaço da equipe está cheio. Avise quem mandou o link.', 507);
+    const k = `preparativos/${id}/dub/${fala}-${Date.now().toString(36)}.${tipo.ext}`; // a chave é montada AQUI (nunca vem de fora)
+    await env.EQUIPE.put(k, buf, { metadata: { tipo: tipo.mime, tam: buf.byteLength, mod: Date.now(), por: 'link', em: new Date().toISOString() } });
+    const velhas = D.pend.filter(x => x.link === hs && x.fala === fala); // fica só a última desta fala por este link
+    D.pend = D.pend.filter(x => !(x.link === hs && x.fala === fala)); D.pend.push({ k, fala, link: hs, dur: Math.max(0, Math.min(3600, +q.get('dur') || 0)), quem: qq, em: Date.now() }); D.pend = D.pend.slice(-500);
+    L.envios = { ...(L.envios || {}), [fala]: n + 1 }; L.total = (+L.total || 0) + 1; L.ultimo = Date.now(); L.quem = qq;
+    await gravaDub(env, id, D); for (const v of velhas) { try { await env.EQUIPE.delete(v.k); } catch { } }
+    return sai({ ok: true });
+  }
+  // TERMINEI: link de UMA fala ou de UM personagem morre na hora (apagado: não gasta mais nada). Link de vários personagens pode ter
+  // mais de uma pessoa: quem encerra é o responsável, no Preparativos (ou a hora passa, se for de 1 hora). O enviado espera aprovação.
+  if (p === '/dublar/terminar' && req.method === 'POST') { if (!L.unico) return sai({ ok: true, continua: true });
+    delete D.links[hs]; await gravaDub(env, id, D); try { await env.EQUIPE.delete('dublar-links/' + hs); } catch { } return sai({ ok: true }); }
+  return erro('Pedido desconhecido.', 404);
+}
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
@@ -746,6 +807,7 @@ export default {
     const auth0 = req.headers.get('authorization') || '', p00 = new URL(req.url).pathname;
     const R = env.EQUIPE && p00 !== '/confere' && /^Bearer \S{20,}$/.test(auth0) ? reservaDe(env, auth0) : null, bg = pr => ctx?.waitUntil ? ctx.waitUntil(pr) : null;
     if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE, new URL(req.url).searchParams.get('novo') === '1', R, flag, bg), _kvLista: true, _base: env.EQUIPE };
+    if (p00 === '/dublar/ver' || p00 === '/dublar/enviar' || p00 === '/dublar/terminar') return dublar(req, env, p00);
     const origin = req.headers.get('origin') || '';
     const origens = (env.ORIGENS || '*').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
     const liberado = origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin); // seu PC: sempre aceito (ainda exige login com e-mail liberado)
@@ -1090,7 +1152,7 @@ export default {
       const nega = c => json({ error: { type: 'permissao', message: `Sua conta não pode ${OQUE[c] || c} nos Preparativos. Peça para um ADM liberar.` } }, 403, cors);
       if (!(await podeP('ver'))) return nega('ver');
       const q = new URL(req.url).searchParams, k = q.get('k') || '', ID = /^[A-Za-z0-9_-]{2,40}$/;
-      const KPR = /^preparativos\/(cores\.json|personagens\.json|pastas\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a|mp3|wav)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KPR = /^preparativos\/(cores\.json|personagens\.json|pastas\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|(aud|dub)\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a|mp3|wav)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
       const DEST = ['animador', 'shorts', 'editor'], STAT = ['rascunho', 'gravando', 'pronto'];
       const kP = id => `preparativos/${id}/prep.json`;
       const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
@@ -1158,6 +1220,35 @@ export default {
           return json({ ok: true, pastas: out }, 200, cors); }
         if (b?.acao === 'personagens') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, personagens: await juntaPers(limpaPers(b.itens)) }, 200, cors); }
         if (!ID.test(String(b?.id || ''))) return json({ error: { message: 'Preparativo inválido.' } }, 400, cors);
+        if (b.acao === 'dublar') { // LINKS DE DUBLAGEM: listar, criar, desligar; aceitar/recusar o que chegou
+          const op = String(b.op || ''), precisaD = { lista: 'gravar', novo: 'links', desliga: 'links', aceita: 'gravar', recusa: 'gravar' }[op]; if (!precisaD) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
+          if (!(await podeP(precisaD))) return json({ error: { type: 'permissao', message: precisaD === 'links' ? 'Sua conta não pode criar ou desligar links de dublagem. Peça para um ADM liberar.' : 'Sua conta não pode gravar falas nos Preparativos.' } }, 403, cors);
+          const o = await leP(b.id); if (!o) return json({ error: { message: 'Este roteiro não está na nuvem (mande o roteiro antes).' } }, 404, cors);
+          const D = await leDub(env, b.id), P = o.P; { const venc = Object.entries(D.links).filter(([, l]) => l.revogado || l.terminado || (l.expira && Date.now() > +l.expira)).map(([h]) => h);
+            if (venc.length) { for (const h of venc) { delete D.links[h]; try { await env.EQUIPE.delete('dublar-links/' + h); } catch { } } await gravaDub(env, b.id, D); } }
+          const fs = new Map((P.partes || []).flatMap(pt => pt.falas || []).map(f => [f.id, f]));
+          const vista = () => ({ links: Object.entries(D.links).map(([h, l]) => ({ h, rotulo: l.rotulo, falas: l.falas, criado: l.criado, expira: l.expira, revogado: !!l.revogado, unico: !!l.unico, total: l.total || 0, quem: l.quem || null, por: l.por || null })).sort((x, y) => y.criado - x.criado),
+            pend: D.pend.filter(x => fs.has(x.fala)).map(x => ({ k: x.k, fala: x.fala, dur: x.dur, quem: x.quem, em: x.em, link: x.link })) });
+          if (op === 'lista') return json({ ok: true, ...vista() }, 200, { ...cors, 'cache-control': 'no-store' });
+          if (op === 'novo') {
+            const falas = [...new Set((Array.isArray(b.falas) ? b.falas : []).map(String))].filter(x => fs.has(x)).slice(0, 300); if (!falas.length) return json({ error: { message: 'Escolha pelo menos uma fala.' } }, 400, cors);
+            if (Object.keys(D.links).length >= 30) return json({ error: { message: 'Este roteiro já tem links ligados demais (30). Desligue alguns.' } }, 400, cors);
+            const by = crypto.getRandomValues(new Uint8Array(32)), tok = btoa(String.fromCharCode(...by)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), h = await hashTok(tok);
+            const eu = await (async () => { try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + String(login.email).toLowerCase())); return 'u' + [...new Uint8Array(d)].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } catch { return null; } })();
+            D.links[h] = { rotulo: txtLimpo(b.rotulo, 80) || 'Link de dublagem', falas, criado: Date.now(), expira: b.prazo === 'sempre' ? null : Date.now() + 3600e3, por: eu, unico: new Set(falas.map(x => chaveP(fs.get(x)?.personagem))).size <= 1, total: 0, envios: {} };
+            await gravaDub(env, b.id, D); await env.EQUIPE.put('dublar-links/' + h, b.id, { metadata: { tipo: 'text/plain', tam: b.id.length, mod: Date.now() } });
+            return json({ ok: true, token: tok, ...vista() }, 200, { ...cors, 'cache-control': 'no-store' }); } // o token aparece SÓ agora (aqui fica só o hash)
+          const h = String(b.link || ''), L = /^[0-9a-f]{64}$/.test(h) ? D.links[h] : null;
+          if (op === 'desliga') { if (!L) return json({ error: { message: 'Link não encontrado.' } }, 404, cors); delete D.links[h]; await gravaDub(env, b.id, D); try { await env.EQUIPE.delete('dublar-links/' + h); } catch { } return json({ ok: true, ...vista() }, 200, cors); }
+          const x = D.pend.find(y => y.k === String(b.k || '')); if (!x || !x.k.startsWith(`preparativos/${b.id}/dub/`)) return json({ error: { message: 'Gravação não encontrada (talvez já tenha sido vista).' } }, 404, cors);
+          D.pend = D.pend.filter(y => y !== x);
+          if (op === 'recusa') { await gravaDub(env, b.id, D); try { await env.EQUIPE.delete(x.k); } catch { } return json({ ok: true, ...vista() }, 200, cors); }
+          const f = fs.get(x.fala); if (!f) return json({ error: { message: 'Essa fala não existe mais no roteiro.' } }, 404, cors);
+          const velho = f.audio; f.audio = x.k; f.duracao = x.dur || 0; f.dub = { nome: x.quem?.nome || '', conta: !!x.quem?.conta, em: x.em }; delete f.regravar; f.em = new Date().toISOString();
+          const mod = await gravaP(P, o.m); await gravaDub(env, b.id, D);
+          if (velho && velho !== x.k && velho.startsWith(`preparativos/${b.id}/`)) { try { await env.EQUIPE.delete(velho); } catch { } }
+          return json({ ok: true, mod, audio: x.k, duracao: f.duracao, ...vista() }, 200, cors);
+        }
         const a = b.acao, precisa = { falas: 'gravar', marca: 'pronto', legenda: 'organizar', usado: 'ver' }[a]; if (!precisa) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
         if (!(await podeP(precisa))) return nega(precisa);
         const o = await leP(b.id); if (!o) return json({ error: { message: 'Este roteiro não está na nuvem (mande o roteiro antes).' } }, 404, cors);
@@ -1167,7 +1258,7 @@ export default {
           const pre = `preparativos/${b.id}/aud/`, velhos = [];
           for (const x of (Array.isArray(b.falas) ? b.falas : []).slice(0, 300)) { const f = mapa.get(String(x?.id || '')); if (!f) continue; const au = x.audio == null ? null : String(x.audio);
             if (au && !(au.startsWith(pre) && KPR.test(au))) return json({ error: { message: 'Áudio inválido.' } }, 400, cors);
-            if (f.audio && f.audio !== au && f.audio.startsWith(pre)) velhos.push(f.audio);
+            if (f.audio && f.audio !== au && (f.audio.startsWith(pre) || f.audio.startsWith(`preparativos/${b.id}/dub/`))) velhos.push(f.audio);
             f.audio = au; f.duracao = Math.max(0, Math.min(3600, +x.duracao || 0)); delete f.regravar; f.em = new Date().toISOString(); }
           extra.mod = await gravaP(P, o.m);
           for (const v of velhos.slice(0, 20)) { try { await env.EQUIPE.delete(v); } catch { } }
@@ -1193,6 +1284,7 @@ export default {
       }
       if (req.method === 'POST' || req.method === 'PUT') {
         if (!KPR.test(k) || /^preparativos\/(cores|personagens|pastas)\.json$/.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        if (k.includes('/dub/')) return json({ error: { message: 'Arquivo inválido' } }, 400, cors); // só o link de dublagem grava aqui
         const id = k.split('/')[1], buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
         if (k.startsWith('preparativos/pers/')) { // foto do personagem (o navegador já manda em WEBP pequeno)
           if (!(await podeP('organizar'))) return nega('organizar');

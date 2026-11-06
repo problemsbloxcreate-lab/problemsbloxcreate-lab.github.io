@@ -297,7 +297,7 @@ window.EstudioPerm ||= (() => {
   const T_PRI = 'turma-ia.problemsraiz.workers.dev', T_RES = 'turma-reserva.editorcustomizado.workers.dev';
   // TODOS os programas e rotas novas usam as 3 juntas (pedido da dona, 05/11/2026): só NÃO divide o que depende de algo que existe
   // apenas na principal (IA e o gasto dela, transcrição, login ao vivo /quem, chave do app, robôs, reserva e o painel do ADM)
-  const NAO_DIV = /^\/(v1|transcrever|uso|tt|yt|quem|app-key|permissoes|nuvem-(uso|resumo|painel)|robo|reserva|confere)(\/|$)/;
+  const NAO_DIV = /^\/(v1|transcrever|uso|tt|yt|quem|app-key|permissoes|nuvem-(uso|resumo|painel)|robo|reserva|confere|dublar)(\/|$)/;
   const ROTAS_DIV = { test: p => p !== '/' && !NAO_DIV.test(p) };
   const sorte = (() => { try { let v = parseFloat(localStorage.getItem('ep-sorte')); if (!(v >= 0 && v < 1)) { v = Math.random(); localStorage.setItem('ep-sorte', String(v)); } return v; } catch { return Math.random(); } })();
   const parteDiv = () => { try { const o = JSON.parse(localStorage.getItem('ep-divide') || 'null'); return o && o.ate > Date.now() ? +o.p || 0 : 0; } catch { return 0; } };

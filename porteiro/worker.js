@@ -1087,6 +1087,34 @@ export default {
     const url = new URL(req.url), caminho = url.pathname;
     if (caminho === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain' } });
 
+    // LINK DE DUBLAGEM (Preparativos, 06/11/2026): página PÚBLICA (sem login) em /dublar/#t=<token>. Os arquivos vêm do repo preparativos
+    // (pasta dublar/, só os da lista) e a API vai para o turma-ia pela ligação direta (TURMA), com o nome e o código de quem tem sessão
+    // aqui (o turma-ia só aceita esses cabeçalhos pela ligação). O token fica no "#" (não vai para servidor nenhum) e no cabeçalho x-dub-token.
+    if (caminho === '/dublar') return Response.redirect(url.origin + '/dublar/', 302);
+    if (caminho.startsWith('/dublar/api/')) {
+      const sub = caminho.slice('/dublar/api'.length), H = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
+      const nega = (m, st) => new Response(JSON.stringify({ error: { message: m } }), { status: st, headers: H });
+      if (!/^\/(ver|enviar|terminar)$/.test(sub)) return nega('Pedido desconhecido.', 404);
+      if (!['GET', 'POST'].includes(req.method)) return nega('Método não aceito.', 405);
+      if (req.method === 'POST' && (req.headers.get('origin') || '') !== url.origin) return nega('Pedido de outro site.', 403); // só a própria página
+      if ((+req.headers.get('content-length') || 0) > 21 * 1048576) return nega('Arquivo maior que 20 MB.', 413);
+      const hd = { 'x-dub-token': String(req.headers.get('x-dub-token') || '').slice(0, 64), 'x-dub-nome': String(req.headers.get('x-dub-nome') || '').slice(0, 200), 'x-dub-ip': req.headers.get('cf-connecting-ip') || '', 'content-type': 'application/octet-stream' };
+      const cl = req.headers.get('content-length'); if (cl) hd['content-length'] = cl;
+      try { const se = await leSessao(env, req); if (se?.e) { const pf = await lePerfil(env, se.e), nome = contaPublica(se.e, pf).nome, dg = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + String(se.e).toLowerCase()));
+        hd['x-porteiro-nome'] = encodeURIComponent(String(nome || '').slice(0, 40)); hd['x-porteiro-id'] = 'u' + [...new Uint8Array(dg)].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } } catch { }
+      const ped = new Request(env.SERVIDOR.replace(/\/+$/, '') + '/dublar' + sub + url.search, { method: req.method, headers: hd, body: req.method === 'POST' ? req.body : undefined });
+      let r; try { if (!env.TURMA) return nega('O link de dublagem não está disponível neste endereço.', 503); r = await env.TURMA.fetch(ped); } catch (e) { return nega('Não consegui falar com a nuvem. Tente de novo em instantes.', 502); }
+      return new Response(r.body, { status: r.status, headers: H });
+    }
+    if (caminho.startsWith('/dublar/')) {
+      const arq = caminho.slice('/dublar/'.length) || 'index.html', TIPOS = { 'index.html': 'text/html; charset=utf-8', 'dublar.js': 'text/javascript; charset=utf-8', 'dublar.css': 'text/css; charset=utf-8' };
+      if (!TIPOS[arq]) return new Response('Não encontrado', { status: 404 });
+      const r = await fetch('https://problemsbloxcreate-lab.github.io/preparativos/dublar/' + arq, { cf: { cacheTtl: 60 } }); if (!r.ok) return new Response('Não encontrado', { status: 404 });
+      return new Response(r.body, { status: 200, headers: { 'content-type': TIPOS[arq], 'cache-control': arq === 'index.html' ? 'no-store' : 'public, max-age=60', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
+        'permissions-policy': 'microphone=(self), camera=(), geolocation=()', 'x-robots-tag': 'noindex, nofollow',
+        'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" } });
+    }
+
     // entrar: o menu manda o token do Google; o servidor do Estúdio Problems diz se o e-mail é liberado
     if (caminho === '/entrar') {
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
