@@ -125,7 +125,7 @@ const NUVEM_JS = `<script>/* Estúdio Problems: a nuvem da equipe usa o login do
    Com o carimbo, o navegador guarda o arquivo de vez ("immutable") e nem pergunta de novo nas próximas aberturas;
    quando o arquivo muda, o carimbo muda e ele baixa só aquele. A versão vem do ETag de cada arquivo (guardada 60 s). */
 const RAIZ_ASSETS = new Set(['/permissoes.json', '/estudio-icones.js', '/estudio-edicao.js', '/estudio-youtube.js', '/estudio-login.js', '/estudio-conta.js', '/estudio-carregando.js', '/favicon.svg', '/favicon.ico', '/icone-180.png', '/fundo-margarida.jpg', '/fundo-margarida-2.jpg']);
-const VERS = new Map();
+const VERS = new Map(), VERS_PAGINA = new Set(); // VERS_PAGINA: raízes de projeto ('/animador/') pedidas pelo /versoes
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
   const c = VERS.get(u); if (c && Date.now() - c.t < (c.ttl || 20000)) return c.v;
@@ -138,7 +138,7 @@ async function versaoDe(env, u, s) {
     const url = new URL(u);
     if (RAIZ_ASSETS.has(url.pathname) || url.pathname === '/') { const r = await env.ASSETS.fetch(new Request(url.origin + url.pathname, { method: 'HEAD' })); v = r.ok ? (r.headers.get('etag') || r.headers.get('last-modified')) : null; }
     else {
-      const p = achaProjeto(env, url.pathname); if (!p?.resto || p.para) return null;
+      const p = achaProjeto(env, url.pathname); if (!p || p.para || (!p.resto && !VERS_PAGINA.has(u))) return null; // a página raiz do projeto só pelo /versoes
       const alvo = new URL(p.resto, p.origem.replace(/\/?$/, '/'));
       if (!p.servico && /\.github\.io$/.test(alvo.hostname)) alvo.searchParams.set('_at', String(Math.floor(Date.now() / 30000)));
       const h = new Headers(); if (p.assinar && s) { const ps = await passe(env, s.e, alvo.host); if (ps) h.set('x-porteiro-passe', ps); }
@@ -1129,7 +1129,7 @@ export default {
     if (caminho === '/versoes') {
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu do Estúdio Problems.' } }, 401);
       const us = [...new Set(String(url.searchParams.get('u') || '').split('|'))].filter(x => /^\/[^\s|]{0,300}$/.test(x)).slice(0, 40), out = {};
-      await Promise.all(us.map(async x => { try { const a = new URL(x, url.origin); const pg = /^\/(index\.html|adm\/?)?$/i.test(a.pathname) ? '/' : a.pathname; out[x] = await versaoDe(env, url.origin + pg, s); } catch { out[x] = null; } }));
+      await Promise.all(us.map(async x => { try { const a = new URL(x, url.origin); const pg = /^\/(index\.html|adm\/?)?$/i.test(a.pathname) ? '/' : a.pathname; if (pg.endsWith("/")) { if (VERS_PAGINA.size > 200) VERS_PAGINA.clear(); VERS_PAGINA.add(url.origin + pg); } out[x] = await versaoDe(env, url.origin + pg, s); } catch { out[x] = null; } }));
       return json({ v: out }, 200, { 'cache-control': 'no-store' });
     }
     if (caminho === '/pessoa' && url.searchParams.has('us')) return pessoas(req, env, url);
