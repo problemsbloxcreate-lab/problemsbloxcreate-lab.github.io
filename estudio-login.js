@@ -94,6 +94,9 @@
   let aberto = false; // depois de liberar, nenhuma mensagem atrasada recria a tela de espera por cima da página
   const mostra = (html) => { if (aberto) return; const el = porta(); el.classList.toggle('ep-erro', html.includes('class="e"')); el.querySelector('[data-m]').innerHTML = html.replace('<span class="s"></span>', ''); }; // aparece já, sem esperar a página
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // RELATÓRIO DE SUPORTE na tela de erro: mora no /estudio-carregando.js (carrega se a página ainda não tiver)
+  const suporte = c => { const f = () => window.EstudioSuporte?.poe(c, { publico: true }); if (window.EstudioSuporte) return f();
+    const s = document.createElement('script'); s.src = '/estudio-carregando.js'; s.setAttribute('data-so-progresso', ''); s.onload = f; (document.head || root).appendChild(s); };
   const carrega = f => new Promise((ok, no) => { const s = document.createElement('script'); s.src = CFG.sdk + f; s.onload = ok; s.onerror = () => no(new Error('Não consegui carregar o login do Google. Verifique a internet e recarregue.')); (document.head || root).appendChild(s); });
 
   let auth = null;
@@ -139,7 +142,8 @@
       document.body ? abreTudo() : addEventListener('DOMContentLoaded', abreTudo, { once: true });
       return j.email;
     } catch (e) {
-      mostra(`<div class="e">${esc(e.message || e)}</div><a class="ep-bt" href="${esc(menuUrl(false))}">Ir para o menu</a>`);
+      mostra(`<div class="e">${esc(String(e.message || e).slice(0, 300))}</div><a class="ep-bt" href="${esc(menuUrl(false))}">Ir para o menu</a>`);
+      suporte(porta().querySelector('[data-m]')); // relatório de suporte + versão (tela sem login liberado: sem dados da equipe)
       return new Promise(() => { });
     }
   })();

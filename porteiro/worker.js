@@ -85,11 +85,12 @@ async function permDe(env, email, url, forcar, atalho) { // atalho: vale o "ning
     PERM_MEM.set(email, { t: Date.now(), j: o }); if (PERM_MEM.size > 500) PERM_MEM.clear(); return o;
   } catch { return c?.j || null; }
 }
-const semPermissao = () => new Response(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem acesso · Estúdio Problems</title><link rel="icon" href="/favicon.svg">
+// página 403: o botão do relatório de suporte e o selo da versão vêm do /estudio-carregando.js (data-ep-suporte); nada do pedido é refletido
+const semPermissao = () => new Response(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem acesso · Estúdio Problems</title><link rel="icon" href="/favicon.svg"><script src="/estudio-carregando.js" data-so-progresso></script>
 <style>html,body{margin:0;height:100%;background:#000;color:#f5f5f7;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}main{min-height:100%;display:grid;place-items:center;text-align:center;padding:24px;box-sizing:border-box}
 .c{max-width:420px}svg{color:#8e8e93}h1{font-size:20px;margin:14px 0 6px}p{color:#a1a1a6;margin:0 0 20px}a{display:inline-block;padding:9px 18px;border-radius:9px;background:#0a84ff;color:#fff;text-decoration:none;font-weight:500}</style></head>
 <body><main><div class="c"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-<h1>Você não tem acesso a este programa</h1><p>O seu cargo no Estúdio Problems não inclui este programa. Se precisar dele, peça para um ADM liberar.</p><a href="/">Voltar ao menu</a></div></main></body></html>`, { status: 403, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+<h1>Você não tem acesso a este programa</h1><p>O seu cargo no Estúdio Problems não inclui este programa. Se precisar dele, peça para um ADM liberar.</p><a href="/">Voltar ao menu</a><div data-ep-suporte></div></div></main></body></html>`, { status: 403, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
 function achaProjeto(env, caminho) {
   // o caminho mais comprido ganha (ex.: /shorts/modelador/ antes de /shorts/)
   for (const [pref, v] of Object.entries(projetos(env)).sort((a, b) => b[0].length - a[0].length)) {

@@ -61,131 +61,10 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
    TRUE: nada quebra. Quem decide de verdade é o servidor (porteiro + turma-ia `/permissoes`); isto só esconde o que a pessoa
    não pode usar. Guardado 5 min no sessionStorage 'ep-perm-v1' (não pede a cada página). Evento 'estudio-perm' quando chega.
    Extras: EstudioPerm.dados() (o que veio do servidor), EstudioPerm.atualizar() (busca de novo agora). */
-/* ===================== VERSÃO DO SITE + DIÁRIO DE USO + RELATÓRIO DE ERRO (pedido da dona, 06/11/2026) =====================
-   VERSÃO: troque só aqui (o menu mostra no canto e o relatório escreve). Não muda sozinha a cada publicação.
-   DIÁRIO: cada navegador anota SÓ NELE MESMO (localStorage 'ep-diario', nada vai para a nuvem): programa aberto, versão, erros de
-   JavaScript (window.onerror, unhandledrejection, console.error), pedidos à nossa nuvem que falharam (status + rota, sem dados),
-   avisos da nuvem (x-nuvem, limite, porta reserva), página que demorou para carregar e as ações principais (botões clicados).
-   Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
-   RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
-   o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.ESTUDIO_VERSAO ||= '1.0 - Flower Field';
-window.EstudioDiario ||= (() => {
-  const K = 'ep-diario', MAX = 700, MAXCH = 400000, DIAS_ERRO = 7;
-  // REGRA DA DONA (06/11/2026): entra tudo o que ajuda a resolver (links, rotas, ids, códigos, status, nuvem, porta, versão, horários,
-  // nomes e o e-mail MASCARADO como na ADM). Só credenciais não aparecem (token de login, JWT/passe, chave de API, senha, assinatura de link):
-  // no lugar fica o que era, para quem ler saber que existia.
-  const mascara = e => { const [u, d = ''] = String(e).split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; }; // a mesma da ADM (porteiro)
-  const filtra = t => String(t ?? '')
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, m => mascara(m)).replace(/•••＠•••|\[e-mail\]/g, '(e-mail, mascarado)')
-    .replace(/Bearer\s+(?!\[)[^\s`'")]+/gi, '[token de login omitido]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[token de login/passe omitido]')
-    .replace(/AIza[\w-]{10,}/g, '[chave de API omitida]').replace(/\bsk-[\w-]{16,}/g, '[chave de API omitida]')
-    .replace(/((?:senha|password|passwd|secret|segredo)\s*[:=]\s*)(?!\[)[^\s,;&`'"]+/gi, '$1[senha omitida]')
-    .replace(/([?&](?:token|access_token|id_token|sig|signature|passe|auth|x-[\w-]*signature|x-amz-signature|x-amz-credential|x-amz-security-token)=)(?!\[)[^&\s`'")]+/gi, '$1[assinatura omitida]');
-  const limpa = t => filtra(t).slice(0, 500);
-  const prog = () => location.pathname.split('/').filter(Boolean)[0] || 'menu';
-  let L = null;
-  const le = () => { if (L) return L; try { L = JSON.parse(localStorage.getItem(K) || '[]'); if (!Array.isArray(L)) L = []; } catch { L = []; } return L; };
-  let tG = 0;
-  const grava = () => { clearTimeout(tG); tG = setTimeout(() => { try { let s = JSON.stringify(L); while (s.length > MAXCH && L.length > 40) { L.splice(0, Math.ceil(L.length / 5)); s = JSON.stringify(L); } localStorage.setItem(K, s); } catch { } }, 500); };
-  const poda = () => { const hoje = new Date().toDateString(), lim = Date.now() - DIAS_ERRO * 864e5; L = le().filter(x => x && (x.n === 'erro' ? x.t > lim : new Date(x.t).toDateString() === hoje)).slice(-MAX); grava(); };
-  // n = 'erro' | 'aviso' | 'info'; tipo = o que foi; m = a mensagem; x = detalhe (tudo passa pelo limpa)
-  function anota(n, tipo, m, x) {
-    try { const l = le(), e = { t: Date.now(), n, tipo: String(tipo).slice(0, 40), p: prog(), m: limpa(m) }; if (x != null && x !== '') e.x = limpa(typeof x === 'string' ? x : JSON.stringify(x));
-      const u = l[l.length - 1]; if (u && u.tipo === e.tipo && u.m === e.m && u.p === e.p && e.t - (u.t2 || u.t) < 120e3) { u.c = (u.c || 1) + 1; u.t2 = e.t; } else l.push(e);
-      if (l.length > MAX) l.splice(0, l.length - MAX); grava(); } catch { }
-  }
-  poda(); anota('info', 'abriu', location.pathname, 'versão ' + window.ESTUDIO_VERSAO);
-  addEventListener('error', e => { const el = e?.target;
-    if (el && el !== window && (el.src || el.href)) return anota('aviso', 'arquivo-nao-carregou', (el.tagName || '') + ' ' + String(el.src || el.href).split('?')[0]);
-    anota('erro', 'js', e.message, String(e.filename || '').split('?')[0].split('/').slice(-2).join('/') + ':' + e.lineno + ':' + e.colno); }, true);
-  addEventListener('unhandledrejection', e => anota('erro', 'promessa', e.reason?.message || String(e.reason), String(e.reason?.stack || '').split('\n').slice(0, 3).join(' | ')));
-  const txt = a => a.map(v => v instanceof Error ? v.message : typeof v === 'object' ? (() => { try { return JSON.stringify(v); } catch { return String(v); } })() : String(v)).join(' ');
-  const ce = console.error.bind(console), cw = console.warn.bind(console);
-  console.error = (...a) => { anota('erro', 'console', txt(a)); ce(...a); };
-  console.warn = (...a) => { anota('aviso', 'console-aviso', txt(a)); cw(...a); };
-  addEventListener('load', () => setTimeout(() => { try { const nv = performance.getEntriesByType('navigation')[0], ms = Math.round(nv?.loadEventEnd || performance.now());
-    anota(ms > 8000 ? 'aviso' : 'info', 'carregou', (ms / 1000).toFixed(1) + ' s' + (ms > 8000 ? ' (demorou)' : '')); } catch { } }, 0));
-  // ações principais: o nome do botão/link clicado (rótulo da tela, não o conteúdo de arquivos)
-  document.addEventListener('click', e => { const b = e.target?.closest?.('button,a,[role=button],[role=menuitem]'); if (!b) return;
-    const partes = []; try { const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const v = n.nodeValue.replace(/\s+/g, ' ').trim(); if (v && !n.parentElement?.closest('svg,style,script')) partes.push(v); } } catch { }
-    const r = (partes.join(' · ') || b.getAttribute('aria-label') || b.title || '').replace(/\s+/g, ' ').trim().slice(0, 100); if (r) anota('info', 'clicou', r); }, true);
-  // pedido à nossa nuvem (chamado pelo fetch do estudio-conta.js): só a rota, sem o que foi enviado
-  const rota = u => { try { const x = new URL(u, location.href); return x.hostname.split('.')[0] + x.pathname.replace(/[A-Za-z0-9_-]{20,}/g, '…'); } catch { return '?'; } };
-  const pedido = (u, r, falhou) => { if (falhou) return anota('erro', 'pedido-sem-resposta', rota(u), String(falhou).slice(0, 120));
-    if (!r.ok) anota(r.status >= 500 || r.status === 429 ? 'erro' : 'aviso', 'pedido', r.status + ' ' + rota(u));
-    const xn = r.headers.get('x-nuvem'); if (xn) anota('aviso', 'nuvem', 'x-nuvem: ' + xn + (r.headers.get('x-nuvem-volta') ? ' (volta ' + r.headers.get('x-nuvem-volta') + ')' : ''), rota(u)); };
-
-  /* ---------- o relatório (.md) ---------- */
-  const CONTEXTO = `## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
-O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica num endereço só, **https://estudio.problemsraiz.workers.dev**, e só entra quem tem login do Google liberado.
-
-**Programas** (cada um é uma pasta do endereço):
-- \`/\` menu (blocos dos programas, Meus projetos, Estúdio, Meus atalhos) e \`/adm\` (ADM: botões, fundo, ícones, quem pode entrar, níveis de acesso, nuvem…)
-- \`/animador/\` Animador (com o Ateliê de personagens e os Cenários), \`/shorts/\` Shorts, \`/editor/\` Editar, \`/modelador/\` Modelador (Blockbench), \`/preparativos/\` Preparativos (roteiro e falas), \`/publicacoes/\` Publicações (YouTube)
-
-**Como funciona por trás:**
-- **Porteiro** (Cloudflare Worker \`estudio\`, conta "problemsraiz"): faz o login, guarda a sessão, entrega as páginas e assina o "passe" dos programas. Código: \`porteiro/worker.js\` do repositório do site.
-- **turma-ia** (Cloudflare Worker): o servidor de dados da equipe (animações, personagens, preparativos, publicações, menu, níveis de acesso, IA). Código: \`servidor/turma-ia/worker.js\`.
-- **Nuvens**: a PRINCIPAL (conta problemsraiz, D1/KV) → RESERVA (\`reserva-problems\`, 3ª conta) → TERCIÁRIA (\`terciaria-problems\`, 4ª conta). Arquivos grandes ficam no Worker \`arquivos-problems\`; sons no \`sons-problems\`. Quando a principal chega no limite do dia (plano grátis: 100 mil pedidos), as respostas vêm com o cabeçalho \`x-nuvem\` (reserva, terciaria, limite, voltando) e o site avisa. As "nuvens trabalhando juntas": o cabeçalho \`x-divide\` manda parte dos pedidos pelo \`turma-reserva\`.
-- **Porta reserva**: o mesmo site em outra conta (\`estudio-reserva.editorcustomizado.workers.dev\`), usada quando a principal dá o erro 1027 (sem pedidos no dia).
-- **Login**: Firebase (só o Google). E-mails aparecem mascarados como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link nunca entram (no lugar fica o que era).
-- \`/estudio-conta.js\`: o arquivo comum de todos os programas (botão da conta, Mensagens, espaço na nuvem e no computador, calendário, níveis de acesso, este diário).
-
-**Repositórios** (GitHub \`problemsbloxcreate-lab\`; publicar = push na main): \`problemsbloxcreate-lab.github.io\` (o site: menu \`index.html\` = \`404.html\`, \`estudio-conta.js\`, \`porteiro/\`, \`servidor/turma-ia/\`, **\`CLAUDE.md\` com todos os detalhes e decisões**), \`animador\`, \`editor\`, \`estudio-problems\` (Shorts e os Workers de reserva/arquivos), \`modelador\`, \`preparativos\`, \`publicacoes\`.
-
-**Sobre o diário abaixo:** cada navegador anota só nele mesmo (nada vai para a nuvem). "p" = programa onde aconteceu. Repetições seguidas viram uma linha com "×N".`;
-  const quando = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const linha = e => `- ${quando(e.t)}${e.c ? ` ×${e.c} (até ${quando(e.t2)})` : ''} · **${e.tipo}** · ${e.p} · ${String(e.m || '').replace(/\n/g, ' ')}${e.x ? ` — \`${String(e.x).replace(/`/g, "'")}\`` : ''}`;
-  // FILTRO FINAL (pedido da dona): passa no texto inteiro antes de baixar, mesmo que algo tenha escapado das anotações
-  const censura = t => filtra(t); // filtro final no texto inteiro, antes de baixar
-  async function relatorio() {
-    poda(); const l = le().slice().sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
-    let esp = ''; try { const e = await navigator.storage?.estimate?.(); if (e?.quota) esp = `${(e.usage / 1048576).toFixed(1)} MB de ${(e.quota / 1048576).toFixed(0)} MB`; } catch { }
-    const lj = k => { try { const v = localStorage.getItem(k); return v == null ? null : v[0] === '{' ? JSON.parse(v) : v; } catch { return null; } }, hm = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(1).replace('.', ',') + ' GB' : Math.round(b / 1048576) + ' MB', marcas = [];
-    { const v = lj('ep-nuvem-uso'), j = v?.j; if (j?.limite) marcas.push(`- **Espaço da nuvem (última medida guardada):** ${mb(j.total)} de ${mb(j.limite)} (${Math.round(j.total / j.limite * 100)}%) medido às ${hm(j.em || v.t)}${j.nuvem ? ' · medido na nuvem ' + j.nuvem : ''}`); }
-    { const v = lj('ep-divide'); if (v && v.ate > Date.now()) marcas.push(`- **Nuvens trabalhando juntas (ep-divide):** ${Math.round((+v.p || 0) * 100)}% dos pedidos de dados deste navegador vão pela outra conta (turma-reserva), até ${hm(v.ate)}`); }
-    { const v = lj('estudio-limite-cf'), o = typeof v === 'object' ? v : v ? { t: +v } : null; if (o?.t) marcas.push(`- **Aviso de limite guardado (estudio-limite-cf):** ${o.t > Date.now() ? `vale até ${hm(o.t)} (quando a principal volta)` : 'já venceu'}${o.r ? ' · nuvem em uso: ' + (+o.r >= 2 ? 'terciária' : 'reserva') : ''}`); }
-    { let v = null; try { v = sessionStorage.getItem('ep-porta-volta'); } catch { } if (v) marcas.push(`- **Porta reserva:** a principal volta às ${hm(+v)}`); }
-    const EL = window.EstudioLimite, nivelN = EL?.marcado?.() > Date.now() ? (EL?.nivel?.() || 0) : 0;
-    marcas.unshift(`- **Porta em uso:** ${/estudio-reserva\./.test(location.hostname) ? 'PORTA RESERVA (' + location.hostname + ')' : location.hostname === 'estudio.problemsraiz.workers.dev' ? 'principal (estudio.problemsraiz.workers.dev)' : location.hostname} · **nuvem em uso:** ${nivelN >= 2 ? 'terciária' : nivelN >= 1 ? 'reserva' : 'principal'}`);
-    let fbLogin = '?'; try { const dbs = await indexedDB.databases?.(); if (dbs) fbLogin = dbs.some(d => d.name === 'firebaseLocalStorageDb') ? 'presente' : 'não encontrado'; } catch { }
-    let contaOk = 'não'; try { contaOk = sessionStorage.getItem('ep-conta-v1') ? 'sim' : 'não'; } catch { }
-    const scr = [...document.scripts].map(s => s.src).filter(s => /estudio-|\/js\//.test(s)).map(s => s.replace(location.origin, '')).slice(0, 12);
-    const md = `# Relatório de suporte — Estúdio Problems
-Gerado em ${new Date().toLocaleString('pt-BR')} (${Intl.DateTimeFormat().resolvedOptions().timeZone}) pelo botão "Gerar relatório de suporte".
-
-${CONTEXTO}
-
-## Versão, navegador e tela
-- **Versão do site:** ${window.ESTUDIO_VERSAO}
-- **Página aberta:** \`${location.pathname}\` (programa: ${prog()}) em \`${location.hostname}\`
-- **Navegador:** ${navigator.userAgent}
-- **Tela:** ${screen.width}×${screen.height} · janela ${innerWidth}×${innerHeight} · zoom/densidade ${devicePixelRatio}
-- **Login:** login do Google neste navegador: ${fbLogin} · conta do Estúdio carregada nesta aba: ${contaOk} (tokens, passes e chaves nunca entram no relatório)
-- **Idioma:** ${navigator.language} · **internet agora:** ${navigator.onLine ? 'sim' : 'não'}${navigator.deviceMemory ? ` · **memória:** ~${navigator.deviceMemory} GB` : ''}${esp ? ` · **espaço do site no navegador:** ${esp}` : ''}
-- **Arquivos carregados (com a versão):** ${scr.map(s => '`' + limpa(s) + '`').join(', ') || '—'}
-
-**Nuvem e porta (marcas guardadas neste navegador):**
-${marcas.join('\n')}
-
-## Erros (${err.length}, mais recentes primeiro; ficam 7 dias)
-${err.map(linha).join('\n') || '- Nenhum erro anotado.'}
-
-## Avisos de hoje (${av.length})
-${av.map(linha).join('\n') || '- Nenhum.'}
-
-## O que foi feito hoje (${inf.length})
-${inf.slice(0, 300).map(linha).join('\n') || '- Nada anotado.'}
-`;
-    return censura(md);
-  }
-  async function baixar() { const md = await relatorio(), b = new Blob([md], { type: 'text/markdown;charset=utf-8' }), u = URL.createObjectURL(b), a = document.createElement('a');
-    const d = new Date(), z = n => String(n).padStart(2, '0'); a.href = u; a.download = `relatorio-suporte-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.md`;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60e3); anota('info', 'relatorio', 'gerou o relatório de suporte'); }
-  return { anota, pedido, relatorio, baixar, lista: () => le().slice() };
-})();
+/* VERSÃO, DIÁRIO E RELATÓRIO DE SUPORTE: moravam aqui até 06/11/2026. Agora ficam num lugar só, o /estudio-carregando.js
+   (window.EstudioVersao, EstudioDiario e EstudioSuporte), que também entra nas telas de erro e de login. Página que não carrega
+   o /estudio-carregando.js (ex.: Animador): ele entra aqui, só com o motor (sem a tela de carregamento). */
+if (!window.EstudioSuporte) { try { const s = document.createElement('script'); s.src = '/estudio-carregando.js'; s.setAttribute('data-so-progresso', ''); (document.head || document.documentElement).appendChild(s); } catch { } }
 window.EstudioPerm ||= (() => {
   const K = 'ep-perm-v1', VALE = 5 * 60e3; let dados = null;
   try { const c = JSON.parse(sessionStorage.getItem(K) || 'null'); if (c?.j && Date.now() - c.t < VALE) dados = c.j; } catch { }
@@ -239,7 +118,7 @@ window.EstudioPerm ||= (() => {
       el.onclick = () => { el._mini = !el._mini; pinta(); };
       document.body.appendChild(el);
     }
-    const pinta = () => { const t2 = visivel();
+    const pinta0 = () => { const t2 = visivel();
       if (!t2 && !voltando()) { const ts = sons(); if (!ts) return selo(); // só a nuvem dos sons no limite
         el.title = MSG_SONS(ts) + ' (clique para encolher)'; el.style.borderColor = 'rgba(255,255,255,.12)'; el.style.color = '#cfd3dc';
         el.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' + (el._mini ? `<span>sons · ${falta(ts)}</span>` : `<span>Nuvem dos sons no limite · volta em <b style="font-weight:600">${falta(ts)}</b> (${hh(ts)})</span>`);
@@ -253,6 +132,10 @@ window.EstudioPerm ||= (() => {
       const r = naReserva(), r3 = naTerciaria(); el.title = (r3 ? `A nuvem principal e a reserva chegaram ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem terciária e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : r ? `A nuvem principal chegou ao limite de hoje. Enquanto isso, o que vocês salvam vai para a nuvem reserva e tudo continua funcionando; quando a principal voltar (${horaTxt(t2)}) passa de volta sozinho.` : MSG) + ' (clique para encolher)';
       el.style.borderColor = r3 ? 'rgba(255,143,209,.6)' : r ? 'rgba(47,208,168,.55)' : 'rgba(255,255,255,.12)'; el.style.color = r3 ? '#ffc2e6' : r ? '#9df0db' : '#cfd3dc'; // reserva = verde-água · terciária = rosa
       el.innerHTML = ic + (el._mini ? `<span>${r3 ? 'terciária · ' : r ? 'reserva · ' : ''}${falta(t2)}</span>` : r3 ? `<span>Usando a nuvem terciária · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>` : r ? `<span>Usando a nuvem reserva · a principal volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>` : `<span>Nuvem no limite de hoje · volta em <b style="font-weight:600">${falta(t2)}</b> (${hh(t2)})</span>`); el.style.opacity = el._mini ? '.45' : '.72'; };
+    const pinta = () => { pinta0(); // + relatório de suporte (só gera o arquivo; não muda nada da nuvem)
+      if (el && !el._mini && window.EstudioSuporte && !el.querySelector('.ep-sup-mini')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ep-sup-mini'; b.textContent = 'Relatório de suporte';
+        b.title = window.EstudioSuporte.DICA + ' · versão ' + (window.EstudioVersao?.nome || ''); b.style.cssText = 'margin-left:4px;padding:1px 8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-size:11px;cursor:pointer;border-radius:999px';
+        b.onclick = e => { e.stopPropagation(); window.EstudioSuporte.gerar(); }; el.appendChild(b); } };
     el._pinta = pinta; pinta(); if (!iv) iv = setInterval(() => el?._pinta?.(), 10e3);
   }
   const f0 = window.fetch?.bind(window); if (!f0) return;
@@ -270,14 +153,15 @@ window.EstudioPerm ||= (() => {
   function vaiPraPorta() {
     const v = new Date(); v.setUTCHours(24, 0, 0, 0); const fr = window.EstudioPasse?.fragmento?.() || '', alvo = PORTA + location.pathname + location.search + '#' + (fr ? fr + '&' : '') + 'ep-1027=' + (+v); let n = 5;
     const o = document.createElement('div'); o.id = 'ep-porta-reserva'; o.setAttribute('role', 'alertdialog');
-    o.innerHTML = '<div class="pr-c"><div class="pr-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><b>Abrindo a porta reserva</b><span>O Estúdio passou do limite de pedidos de hoje e volta às 21h. Enquanto isso, tudo da nuvem continua pela reserva.</span><span class="pr-n"></span><button type="button">Ficar aqui</button></div>';
+    o.innerHTML = '<div class="pr-c"><div class="pr-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><b>Abrindo a porta reserva</b><span>O Estúdio passou do limite de pedidos de hoje e volta às 21h. Enquanto isso, tudo da nuvem continua pela reserva.</span><span class="pr-n"></span><button type="button" data-ficar>Ficar aqui</button><div class="pr-sup"></div></div>';
     const st = document.createElement('style'); st.textContent = '#ep-porta-reserva{position:fixed;inset:0;z-index:2147483647;background:rgba(8,9,12,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;font:14px/1.5 \'Segoe UI\',system-ui,sans-serif;color:#f1f2f4;padding:16px}#ep-porta-reserva .pr-c{display:grid;justify-items:center;gap:8px;max-width:380px;text-align:center}#ep-porta-reserva b{font-size:17px;font-weight:600;margin-top:14px}#ep-porta-reserva span{font-size:12.5px;color:#a3a7ae}#ep-porta-reserva button{margin-top:8px;padding:8px 18px;border-radius:999px;background:rgba(255,255,255,.1);color:#f1f2f4;border:1px solid rgba(255,255,255,.16);font:500 13px inherit;cursor:pointer}'
       + '#ep-porta-reserva .pr-sp{position:relative;width:46px;height:46px}#ep-porta-reserva .pr-sp i{position:absolute;inset:0;opacity:0;animation:epPrGira 4.4s infinite}#ep-porta-reserva .pr-sp i::after{content:\'\';position:absolute;top:0;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff}'
       + [0, 1, 2, 3, 4].map(k => `#ep-porta-reserva .pr-sp i:nth-child(${k + 1}){animation-delay:${(k * .22).toFixed(2)}s}`).join('')
       + '@keyframes epPrGira{0%{transform:rotate(180deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(300deg);animation-timing-function:linear}30%{transform:rotate(470deg);animation-timing-function:ease-in-out}39%{transform:rotate(645deg);animation-timing-function:linear}70%{transform:rotate(770deg);animation-timing-function:ease-out}75%{transform:rotate(900deg);opacity:1}76%,100%{transform:rotate(900deg);opacity:0}}@media (prefers-reduced-motion:reduce){#ep-porta-reserva .pr-sp i{animation-duration:8s}}';
     document.head.appendChild(st); document.body.appendChild(o);
-    const pn = o.querySelector('.pr-n'), tick = () => { pn.textContent = n > 0 ? `em ${n} s…` : 'abrindo…'; if (n-- <= 0) { clearInterval(iv); location.href = alvo; } }, iv = setInterval(tick, 1000); tick();
-    o.querySelector('button').onclick = () => { clearInterval(iv); o.remove(); };
+    try { window.EstudioSuporte?.poe(o.querySelector('.pr-sup')); } catch { } // relatório de suporte + versão (não muda nada da troca)
+    const pn = o.querySelector('.pr-n'), tick = () => { if (window.EstudioSuporte?.aberto) return; /* janela do relatório aberta: a contagem espera */ pn.textContent = n > 0 ? `em ${n} s…` : 'abrindo…'; if (n-- <= 0) { clearInterval(iv); location.href = alvo; } }, iv = setInterval(tick, 1000); tick();
+    o.querySelector('[data-ficar]').onclick = () => { clearInterval(iv); o.remove(); window.EstudioSuporte?.tira?.(); };
   }
   // na porta reserva: selo discreto embaixo à direita; depois das 21h (a principal voltou) vira o link de volta
   if (location.hostname !== PRINCIPAL && /^estudio-reserva\./.test(location.hostname)) addEventListener('DOMContentLoaded', () => {
@@ -838,13 +722,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // janela de confirmação no visual do Estúdio Problems (no lugar do confirm() do navegador); resolve true/false
   // trabalho: async () => {...} roda ao confirmar, com o botão em "Salvando…"; se der erro, mostra e oferece seguir mesmo assim
   // RELATÓRIO DE ERRO: a janela antes de baixar (menu da conta e selo da versão no menu)
-  async function pedeRelatorio() {
-    const L = window.EstudioDiario?.lista?.() || [], ts = L.map(x => x.t2 || x.t).filter(Boolean), f = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const periodo = ts.length ? `Tem o que aconteceu de ${f(Math.min(...L.map(x => x.t)))} até agora (${f(Date.now())}).` : 'Ainda não há nada anotado neste navegador.';
-    if (!(await pergunta({ titulo: 'Gerar relatório de suporte?', icone: ICONES.lista, azul: true, ok: 'Entendi, gerar',
-      texto: 'Não mande este arquivo para qualquer pessoa, só para quem vai resolver o problema. ' + periodo }))) return;
-    window.EstudioDiario?.baixar();
-  }
+  async function pedeRelatorio() { return window.EstudioSuporte?.gerar(); } // a janela e o relatório moram no /estudio-carregando.js
   function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim', aviso = false, icone = null, azul = false }) {
     return new Promise(fim => {
       const d = document.createElement('div'); d.className = 'ep-pg';

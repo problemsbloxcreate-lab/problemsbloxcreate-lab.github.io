@@ -15,6 +15,181 @@
 
    O visual é o MESMO do estudio-login.js: mudou lá, muda aqui também. */
 'use strict';
+/* ===================== VERSÃO DO SITE + DIÁRIO DE USO + RELATÓRIO DE SUPORTE (pedido da dona, 06/11/2026) =====================
+   UM LUGAR SÓ: este arquivo entra em todas as páginas (programas, menu, login, telas de erro, página 403 do porteiro; o
+   /estudio-conta.js carrega ele se faltar). PARA MUDAR A VERSÃO, TROQUE SÓ AQUI (window.EstudioVersao.nome): o menu, o perfil,
+   as telas de erro e o relatório leem daqui. Não muda sozinha a cada publicação.
+   DIÁRIO: cada navegador anota SÓ NELE MESMO (localStorage 'ep-diario', nada vai para a nuvem): programa aberto, versão, erros de
+   JavaScript (window.onerror, unhandledrejection, console.error), pedidos à nossa nuvem que falharam (status + rota, sem dados),
+   avisos da nuvem (x-nuvem, limite, porta reserva), página que demorou para carregar e as ações principais (botões clicados).
+   Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
+   RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
+   o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
+window.EstudioVersao ||= { nome: '1.0 - Flower Field' };
+window.ESTUDIO_VERSAO ||= window.EstudioVersao.nome; // nome antigo (compatibilidade)
+window.EstudioDiario ||= (() => {
+  const K = 'ep-diario', MAX = 700, MAXCH = 400000, DIAS_ERRO = 7;
+  // REGRA DA DONA (06/11/2026): entra tudo o que ajuda a resolver (links, rotas, ids, códigos, status, nuvem, porta, versão, horários,
+  // nomes e o e-mail MASCARADO como na ADM). Só credenciais não aparecem (token de login, JWT/passe, chave de API, senha, assinatura de link):
+  // no lugar fica o que era, para quem ler saber que existia.
+  const mascara = e => { const [u, d = ''] = String(e).split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; }; // a mesma da ADM (porteiro)
+  const filtra = t => String(t ?? '')
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, m => mascara(m)).replace(/•••＠•••|\[e-mail\]/g, '(e-mail, mascarado)')
+    .replace(/Bearer\s+(?!\[)[^\s`'")]+/gi, '[token de login omitido]').replace(/eyJ[\w-]{6,}\.[\w-]{6,}(\.[\w-]*)?/g, '[token de login/passe omitido]')
+    .replace(/AIza[\w-]{10,}/g, '[chave de API omitida]').replace(/\bsk-[\w-]{16,}/g, '[chave de API omitida]')
+    .replace(/((?:senha|password|passwd|secret|segredo)\s*[:=]\s*)(?!\[)[^\s,;&`'"]+/gi, '$1[senha omitida]')
+    .replace(/([?&](?:token|access_token|id_token|sig|signature|passe|auth|x-[\w-]*signature|x-amz-signature|x-amz-credential|x-amz-security-token)=)(?!\[)[^&\s`'")]+/gi, '$1[assinatura omitida]');
+  const limpa = t => filtra(t).slice(0, 500);
+  const prog = () => location.pathname.split('/').filter(Boolean)[0] || 'menu';
+  let L = null;
+  const le = () => { if (L) return L; try { L = JSON.parse(localStorage.getItem(K) || '[]'); if (!Array.isArray(L)) L = []; } catch { L = []; } return L; };
+  let tG = 0;
+  const grava = () => { clearTimeout(tG); tG = setTimeout(() => { try { let s = JSON.stringify(L); while (s.length > MAXCH && L.length > 40) { L.splice(0, Math.ceil(L.length / 5)); s = JSON.stringify(L); } localStorage.setItem(K, s); } catch { } }, 500); };
+  const poda = () => { const hoje = new Date().toDateString(), lim = Date.now() - DIAS_ERRO * 864e5; L = le().filter(x => x && (x.n === 'erro' ? x.t > lim : new Date(x.t).toDateString() === hoje)).slice(-MAX); grava(); };
+  // n = 'erro' | 'aviso' | 'info'; tipo = o que foi; m = a mensagem; x = detalhe (tudo passa pelo limpa)
+  function anota(n, tipo, m, x) {
+    try { const l = le(), e = { t: Date.now(), n, tipo: String(tipo).slice(0, 40), p: prog(), m: limpa(m) }; if (x != null && x !== '') e.x = limpa(typeof x === 'string' ? x : JSON.stringify(x));
+      const u = l[l.length - 1]; if (u && u.tipo === e.tipo && u.m === e.m && u.p === e.p && e.t - (u.t2 || u.t) < 120e3) { u.c = (u.c || 1) + 1; u.t2 = e.t; } else l.push(e);
+      if (l.length > MAX) l.splice(0, l.length - MAX); grava(); } catch { }
+  }
+  poda(); anota('info', 'abriu', location.pathname, 'versão ' + window.EstudioVersao.nome);
+  addEventListener('error', e => { const el = e?.target;
+    if (el && el !== window && (el.src || el.href)) return anota('aviso', 'arquivo-nao-carregou', (el.tagName || '') + ' ' + String(el.src || el.href).split('?')[0]);
+    anota('erro', 'js', e.message, String(e.filename || '').split('?')[0].split('/').slice(-2).join('/') + ':' + e.lineno + ':' + e.colno); }, true);
+  addEventListener('unhandledrejection', e => anota('erro', 'promessa', e.reason?.message || String(e.reason), String(e.reason?.stack || '').split('\n').slice(0, 3).join(' | ')));
+  const txt = a => a.map(v => v instanceof Error ? v.message : typeof v === 'object' ? (() => { try { return JSON.stringify(v); } catch { return String(v); } })() : String(v)).join(' ');
+  const ce = console.error.bind(console), cw = console.warn.bind(console);
+  console.error = (...a) => { anota('erro', 'console', txt(a)); ce(...a); };
+  console.warn = (...a) => { anota('aviso', 'console-aviso', txt(a)); cw(...a); };
+  addEventListener('load', () => setTimeout(() => { try { const nv = performance.getEntriesByType('navigation')[0], ms = Math.round(nv?.loadEventEnd || performance.now());
+    anota(ms > 8000 ? 'aviso' : 'info', 'carregou', (ms / 1000).toFixed(1) + ' s' + (ms > 8000 ? ' (demorou)' : '')); } catch { } }, 0));
+  // ações principais: o nome do botão/link clicado (rótulo da tela, não o conteúdo de arquivos)
+  document.addEventListener('click', e => { const b = e.target?.closest?.('button,a,[role=button],[role=menuitem]'); if (!b) return;
+    const partes = []; try { const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const v = n.nodeValue.replace(/\s+/g, ' ').trim(); if (v && !n.parentElement?.closest('svg,style,script')) partes.push(v); } } catch { }
+    const r = (partes.join(' · ') || b.getAttribute('aria-label') || b.title || '').replace(/\s+/g, ' ').trim().slice(0, 100); if (r) anota('info', 'clicou', r); }, true);
+  // pedido à nossa nuvem (chamado pelo fetch do estudio-conta.js): só a rota, sem o que foi enviado
+  const rota = u => { try { const x = new URL(u, location.href); return x.hostname.split('.')[0] + x.pathname.replace(/[A-Za-z0-9_-]{20,}/g, '…'); } catch { return '?'; } };
+  const pedido = (u, r, falhou) => { if (falhou) return anota('erro', 'pedido-sem-resposta', rota(u), String(falhou).slice(0, 120));
+    if (!r.ok) anota(r.status >= 500 || r.status === 429 ? 'erro' : 'aviso', 'pedido', r.status + ' ' + rota(u));
+    const xn = r.headers.get('x-nuvem'); if (xn) anota('aviso', 'nuvem', 'x-nuvem: ' + xn + (r.headers.get('x-nuvem-volta') ? ' (volta ' + r.headers.get('x-nuvem-volta') + ')' : ''), rota(u)); };
+
+  /* ---------- o relatório (.md) ---------- */
+  const CONTEXTO = `## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
+O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica num endereço só, **https://estudio.problemsraiz.workers.dev**, e só entra quem tem login do Google liberado.
+
+**Programas** (cada um é uma pasta do endereço):
+- \`/\` menu (blocos dos programas, Meus projetos, Estúdio, Meus atalhos) e \`/adm\` (ADM: botões, fundo, ícones, quem pode entrar, níveis de acesso, nuvem…)
+- \`/animador/\` Animador (com o Ateliê de personagens e os Cenários), \`/shorts/\` Shorts, \`/editor/\` Editar, \`/modelador/\` Modelador (Blockbench), \`/preparativos/\` Preparativos (roteiro e falas), \`/publicacoes/\` Publicações (YouTube)
+
+**Como funciona por trás:**
+- **Porteiro** (Cloudflare Worker \`estudio\`, conta "problemsraiz"): faz o login, guarda a sessão, entrega as páginas e assina o "passe" dos programas. Código: \`porteiro/worker.js\` do repositório do site.
+- **turma-ia** (Cloudflare Worker): o servidor de dados da equipe (animações, personagens, preparativos, publicações, menu, níveis de acesso, IA). Código: \`servidor/turma-ia/worker.js\`.
+- **Nuvens**: a PRINCIPAL (conta problemsraiz, D1/KV) → RESERVA (\`reserva-problems\`, 3ª conta) → TERCIÁRIA (\`terciaria-problems\`, 4ª conta). Arquivos grandes ficam no Worker \`arquivos-problems\`; sons no \`sons-problems\`. Quando a principal chega no limite do dia (plano grátis: 100 mil pedidos), as respostas vêm com o cabeçalho \`x-nuvem\` (reserva, terciaria, limite, voltando) e o site avisa. As "nuvens trabalhando juntas": o cabeçalho \`x-divide\` manda parte dos pedidos pelo \`turma-reserva\`.
+- **Porta reserva**: o mesmo site em outra conta (\`estudio-reserva.editorcustomizado.workers.dev\`), usada quando a principal dá o erro 1027 (sem pedidos no dia).
+- **Login**: Firebase (só o Google). E-mails aparecem mascarados como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link nunca entram (no lugar fica o que era).
+- \`/estudio-conta.js\`: o arquivo comum de todos os programas (botão da conta, Mensagens, espaço na nuvem e no computador, calendário, níveis de acesso). \`/estudio-carregando.js\`: tela de carregamento, versão do site, este diário e o relatório.
+
+**Repositórios** (GitHub \`problemsbloxcreate-lab\`; publicar = push na main): \`problemsbloxcreate-lab.github.io\` (o site: menu \`index.html\` = \`404.html\`, \`estudio-conta.js\`, \`porteiro/\`, \`servidor/turma-ia/\`, **\`CLAUDE.md\` com todos os detalhes e decisões**), \`animador\`, \`editor\`, \`estudio-problems\` (Shorts e os Workers de reserva/arquivos), \`modelador\`, \`preparativos\`, \`publicacoes\`.
+
+**Sobre o diário abaixo:** cada navegador anota só nele mesmo (nada vai para a nuvem). "p" = programa onde aconteceu. Repetições seguidas viram uma linha com "×N".`;
+  const quando = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const linha = e => `- ${quando(e.t)}${e.c ? ` ×${e.c} (até ${quando(e.t2)})` : ''} · **${e.tipo}** · ${e.p} · ${String(e.m || '').replace(/\n/g, ' ')}${e.x ? ` — \`${String(e.x).replace(/`/g, "'")}\`` : ''}`;
+  // FILTRO FINAL (pedido da dona): passa no texto inteiro antes de baixar, mesmo que algo tenha escapado das anotações
+  // + sem HTML: nenhum < ou > entra cru (mensagens da URL, do servidor ou do Google viram texto)
+  const censura = t => filtra(t).replace(/</g, '&lt;').replace(/>/g, '&gt;'); // filtro final no texto inteiro, antes de baixar
+  // publico = gerado numa tela SEM login liberado (login do menu, erro do estudio-login.js): sem dados da equipe (o que foi feito, espaço da nuvem)
+  async function relatorio(o = {}) { const pub = !!o.publico;
+    poda(); const l = le().slice().sort((a, b) => b.t - a.t), err = l.filter(x => x.n === 'erro'), av = l.filter(x => x.n === 'aviso'), inf = l.filter(x => x.n === 'info');
+    let esp = ''; try { const e = await navigator.storage?.estimate?.(); if (e?.quota) esp = `${(e.usage / 1048576).toFixed(1)} MB de ${(e.quota / 1048576).toFixed(0)} MB`; } catch { }
+    const lj = k => { try { const v = localStorage.getItem(k); return v == null ? null : v[0] === '{' ? JSON.parse(v) : v; } catch { return null; } }, hm = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(1).replace('.', ',') + ' GB' : Math.round(b / 1048576) + ' MB', marcas = [];
+    { const v = pub ? null : lj('ep-nuvem-uso'), j = v?.j; if (j?.limite) marcas.push(`- **Espaço da nuvem (última medida guardada):** ${mb(j.total)} de ${mb(j.limite)} (${Math.round(j.total / j.limite * 100)}%) medido às ${hm(j.em || v.t)}${j.nuvem ? ' · medido na nuvem ' + j.nuvem : ''}`); }
+    { const v = lj('ep-divide'); if (v && v.ate > Date.now()) marcas.push(`- **Nuvens trabalhando juntas (ep-divide):** ${Math.round((+v.p || 0) * 100)}% dos pedidos de dados deste navegador vão pela outra conta (turma-reserva), até ${hm(v.ate)}`); }
+    { const v = lj('estudio-limite-cf'), o = typeof v === 'object' ? v : v ? { t: +v } : null; if (o?.t) marcas.push(`- **Aviso de limite guardado (estudio-limite-cf):** ${o.t > Date.now() ? `vale até ${hm(o.t)} (quando a principal volta)` : 'já venceu'}${o.r ? ' · nuvem em uso: ' + (+o.r >= 2 ? 'terciária' : 'reserva') : ''}`); }
+    { let v = null; try { v = sessionStorage.getItem('ep-porta-volta'); } catch { } if (v) marcas.push(`- **Porta reserva:** a principal volta às ${hm(+v)}`); }
+    const EL = window.EstudioLimite, nivelN = EL?.marcado?.() > Date.now() ? (EL?.nivel?.() || 0) : 0;
+    marcas.unshift(`- **Porta em uso:** ${/estudio-reserva\./.test(location.hostname) ? 'PORTA RESERVA (' + location.hostname + ')' : location.hostname === 'estudio.problemsraiz.workers.dev' ? 'principal (estudio.problemsraiz.workers.dev)' : location.hostname} · **nuvem em uso:** ${nivelN >= 2 ? 'terciária' : nivelN >= 1 ? 'reserva' : 'principal'}`);
+    let fbLogin = '?'; try { const dbs = await indexedDB.databases?.(); if (dbs) fbLogin = dbs.some(d => d.name === 'firebaseLocalStorageDb') ? 'presente' : 'não encontrado'; } catch { }
+    let contaOk = 'não'; try { contaOk = sessionStorage.getItem('ep-conta-v1') ? 'sim' : 'não'; } catch { }
+    const scr = [...document.scripts].map(s => s.src).filter(s => /estudio-|\/js\//.test(s)).map(s => s.replace(location.origin, '')).slice(0, 12);
+    const md = `# Relatório de suporte — Estúdio Problems
+Gerado em ${new Date().toLocaleString('pt-BR')} (${Intl.DateTimeFormat().resolvedOptions().timeZone}) pelo botão "Gerar relatório de suporte"${pub ? ' numa tela sem login liberado (sem dados da equipe)' : ''}.
+
+${CONTEXTO}
+
+## Versão, navegador e tela
+- **Versão do site:** ${window.EstudioVersao.nome}
+- **Página aberta:** \`${location.pathname}\` (programa: ${prog()}) em \`${location.hostname}\`
+- **Navegador:** ${navigator.userAgent}
+- **Tela:** ${screen.width}×${screen.height} · janela ${innerWidth}×${innerHeight} · zoom/densidade ${devicePixelRatio}
+- **Login:** login do Google neste navegador: ${fbLogin} · conta do Estúdio carregada nesta aba: ${contaOk} (tokens, passes e chaves nunca entram no relatório)
+- **Idioma:** ${navigator.language} · **internet agora:** ${navigator.onLine ? 'sim' : 'não'}${navigator.deviceMemory ? ` · **memória:** ~${navigator.deviceMemory} GB` : ''}${esp ? ` · **espaço do site no navegador:** ${esp}` : ''}
+- **Arquivos carregados (com a versão):** ${scr.map(s => '`' + limpa(s) + '`').join(', ') || '—'}
+
+**Nuvem e porta (marcas guardadas neste navegador):**
+${marcas.join('\n')}
+
+## Erros (${err.length}, mais recentes primeiro; ficam 7 dias)
+${err.map(linha).join('\n') || '- Nenhum erro anotado.'}
+
+## Avisos de hoje (${av.length})
+${av.map(linha).join('\n') || '- Nenhum.'}
+
+## O que foi feito hoje (${inf.length})
+${pub ? '- (não entra: relatório gerado numa tela sem login liberado)' : inf.slice(0, 300).map(linha).join('\n') || '- Nada anotado.'}
+`;
+    return censura(md);
+  }
+  async function baixar(o) { const md = await relatorio(o), b = new Blob([md], { type: 'text/markdown;charset=utf-8' }), u = URL.createObjectURL(b), a = document.createElement('a');
+    const d = new Date(), z = n => String(n).padStart(2, '0'); a.href = u; a.download = `relatorio-suporte-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.md`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60e3); anota('info', 'relatorio', 'gerou o relatório de suporte'); }
+  return { anota, pedido, relatorio, baixar, lista: () => le().slice() };
+})();
+/* RELATÓRIO DE SUPORTE NAS TELAS (pedido da dona, 06/11/2026): EstudioSuporte.gerar() abre o aviso e baixa o .md (100% local:
+   nenhuma rota recebe ou envia relatórios). EstudioSuporte.poe(caixa, { publico }) põe o botão "Gerar relatório de suporte" na caixa
+   e o selo da versão no canto; .tira() tira os dois. Só nas telas de erro, bloqueio, login que não deu certo, porta reserva e aviso
+   de limite. Elementos com  data-ep-suporte  (ex.: página 403 do porteiro) ganham o botão sozinhos; ="publico" = tela sem login.
+   O botão e o selo só geram o arquivo: não abrem nada atrás nem mudam o acesso. Tudo com textContent (nada vira HTML). */
+window.EstudioSuporte ||= (() => {
+  const DICA = 'Gera um relatório para enviar aos ADMs', postos = new Set(); let css = false, selo = null;
+  const estilo = () => { if (css) return; css = true; const st = document.createElement('style');
+    st.textContent = `.ep-sup-bt{display:flex;align-items:center;justify-content:center;margin:12px auto 0;height:34px;padding:0 16px;border:1px solid rgba(255,255,255,.22);border-radius:0;background:rgba(255,255,255,.08);color:#f1f2f4;font:500 13px/1 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-sup-bt:hover{background:rgba(255,255,255,.16)}
+.ep-sup-selo{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:2147483647;height:22px;margin:0;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);border-radius:0;background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:.5px;white-space:nowrap;cursor:pointer}.ep-sup-selo:hover{background:rgba(14,32,58,.6)}
+.ep-sup-pg{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,sans-serif;color:#e9ebef}.ep-sup-pg *{box-sizing:border-box}
+.ep-sup-pg .cx{position:relative;width:min(400px,100%);background:rgba(14,32,58,.96);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 70px rgba(0,0,0,.6);padding:22px 20px 18px;display:grid;justify-items:center;gap:8px;text-align:center}
+.ep-sup-pg .ic{width:46px;height:46px;display:grid;place-items:center;background:rgba(61,139,255,.16);color:#9cc3ff}.ep-sup-pg .ic svg{width:22px;height:22px}
+.ep-sup-pg .t{font-size:17px;font-weight:600}.ep-sup-pg .tx{margin:0 0 4px;color:#b9c3d3;font-size:13.5px}
+.ep-sup-pg .acts{display:flex;gap:8px;justify-content:flex-end;width:100%;margin-top:6px}
+.ep-sup-pg button{height:32px;padding:0 14px;border:1px solid rgba(255,255,255,.16);border-radius:0;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font:inherit;font-size:13px}.ep-sup-pg button:hover{background:rgba(255,255,255,.16)}
+.ep-sup-pg button.sim{background:#0a7aff;border-color:#0a7aff;font-weight:600}.ep-sup-pg button.sim:hover{background:#2a8cff}
+.ep-sup-pg button.x{position:absolute;top:8px;right:8px;width:30px;height:30px;padding:0;border:0;background:none;color:rgba(255,255,255,.8);font-size:14px}.ep-sup-pg button.x:hover{background:rgba(255,255,255,.14)}
+.ep-sup-pg button:focus-visible,.ep-sup-bt:focus-visible,.ep-sup-selo:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}`;
+    (document.head || document.documentElement).appendChild(st); };
+  const IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>';
+  // o MESMO aviso de antes (menu da conta e selo do menu); fica no <html> para aparecer até por cima das telas de carregamento/erro
+  const janela = () => new Promise(fim => { estilo();
+    const L = window.EstudioDiario?.lista?.() || [], f = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const periodo = L.length ? `Tem o que aconteceu de ${f(Math.min(...L.map(x => x.t)))} até agora (${f(Date.now())}).` : 'Ainda não há nada anotado neste navegador.';
+    const d = document.createElement('div'); d.className = 'ep-sup-pg'; d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Gerar relatório de suporte?');
+    d.innerHTML = `<div class="cx"><button type="button" class="x" data-n title="Fechar (Esc)" aria-label="Fechar">✕</button><div class="ic">${IC}</div><div class="t">Gerar relatório de suporte?</div><p class="tx"></p><div class="acts"><button type="button" data-n>Cancelar</button><button type="button" class="sim" data-s>Entendi, gerar</button></div></div>`;
+    d.querySelector('.tx').textContent = 'Não mande este arquivo para qualquer pessoa, só para quem vai resolver o problema. ' + periodo;
+    const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); sai(false); } };
+    const sai = v => { removeEventListener('keydown', tecla, true); d.remove(); fim(v); };
+    addEventListener('keydown', tecla, true); d.querySelectorAll('[data-n]').forEach(x => x.onclick = () => sai(false)); d.querySelector('[data-s]').onclick = () => sai(true); d.onclick = e => { if (e.target === d) sai(false); };
+    document.documentElement.appendChild(d); try { d.querySelector('[data-s]').focus(); } catch { } });
+  async function gerar(o = {}) { if (S.aberto) return; S.aberto = true; try { if (await janela()) await window.EstudioDiario?.baixar({ publico: !!o.publico }); } finally { S.aberto = false; } }
+  function poeSelo(o) { if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.nome || ''; selo.title = DICA;
+    selo.onclick = () => gerar(o); document.documentElement.appendChild(selo); }
+  function poe(c, o = {}) { if (!c) return; estilo();
+    if (!c.querySelector('.ep-sup-bt')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ep-sup-bt'; b.textContent = 'Gerar relatório de suporte'; b.title = DICA;
+      b.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; c.appendChild(b); postos.add(b); }
+    if (o.selo !== false) poeSelo(o); }
+  function tira() { postos.forEach(b => b.remove()); postos.clear(); selo?.remove(); selo = null; }
+  const auto = () => document.querySelectorAll('[data-ep-suporte]').forEach(c => poe(c, { publico: c.getAttribute('data-ep-suporte') === 'publico' }));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else auto();
+  const S = { gerar, poe, tira, aberto: false, DICA }; return S;
+})();
+
 /* ---------- motor do progresso (porcentagem + o que está carregando) ----------
    Conta o que a página baixa enquanto a tela de carregamento está na frente: arquivos da página (scripts, estilos,
    imagens), fetch e XHR. Mostra em qualquer tela que tenha [data-ep-pct], [data-ep-arq] e [data-ep-barra].
@@ -137,7 +312,7 @@
 #estudio-porta .ep-nm,#estudio-porta .ep-sb{display:none}#estudio-porta .ep-jd-selo{margin-top:14px}
 #estudio-porta .ep-br{width:200px;height:5px;border-radius:3px;background:rgba(255,255,255,.16);margin:46px 0 12px}#estudio-porta .ep-br::after{display:none}#estudio-porta .ep-br>i{background:#e8e9ec;border-radius:3px;transition:width .35s ease}
 #estudio-porta .ep-pc{font-size:11.5px;color:#7d8089;margin:0}#estudio-porta .ep-pc b{color:#c3c6cc}
-#estudio-porta:not(.ep-erro) .ep-m{display:none}
+#estudio-porta:not(.ep-erro) .ep-m{display:none}#estudio-porta.ep-erro .ep-br,#estudio-porta.ep-erro .ep-pc{display:none}#estudio-porta.ep-erro .ep-m{color:#ff8a9a}#estudio-porta.ep-erro .ep-m a{display:inline-block;color:#f1f2f4;text-decoration:none}
 /* o ícone do PROGRAMA respira de leve (não fica 100% parado); o do Estúdio fica parado */
 #estudio-porta .ep-lg.ep-prog .ep-img{animation:epRespira 2.6s ease-in-out infinite}@keyframes epRespira{50%{transform:scale(1.045)}}@media (prefers-reduced-motion:reduce){#estudio-porta .ep-lg.ep-prog .ep-img{animation:none}}
 #estudio-porta a.ep-bt{padding:10px 20px;border-radius:999px;background:rgba(255,255,255,.1);color:#f1f2f4;border:1px solid rgba(255,255,255,.16);font-weight:500;font-size:13.5px;margin-top:18px}#estudio-porta a.ep-bt:hover{filter:none;background:rgba(255,255,255,.16)}#estudio-porta .tl-out{color:#9aa0ab;text-decoration:none}#estudio-porta .ep-m{margin-top:18px}`;
@@ -163,6 +338,12 @@
     pronto() { seguros = Math.max(0, seguros - 1); talvez(); },
     mensagem(t) { const m = el.querySelector('[data-m]'); if (m) m.textContent = String(t ?? ''); },
     fechar: fecha,
+    // TELA DE ERRO: o programa chama quando não conseguiu abrir. Mostra a mensagem (texto puro), "Ir para o menu",
+    // o botão "Gerar relatório de suporte" e o selo da versão. Não libera nem bloqueia nada (quem decide é o porteiro).
+    erro(t) { foi = true; el.classList.remove('ep-saindo'); el.classList.add('ep-erro'); if (!el.isConnected) (document.body || root).appendChild(el);
+      const m = el.querySelector('[data-m]'); m.textContent = String(t ?? 'Não consegui abrir o programa.').slice(0, 300);
+      const a = document.createElement('a'); a.className = 'ep-bt'; a.href = '/'; a.textContent = 'Ir para o menu'; m.append(document.createElement('br'), a);
+      window.EstudioSuporte?.poe(m); },
   };
   const aoCarregar = () => { carregou = true; talvez(); };
   if (document.readyState === 'complete') aoCarregar(); else addEventListener('load', aoCarregar, { once: true });

@@ -923,6 +923,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <p id="login-txt">Acesso restrito. Entre com a conta Google liberada para abrir os projetos.</p>
     <button class="gbtn" id="btn-in" disabled><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button>
     <div class="msg" id="msg"><span class="spin ep-det"><i data-ep-barra></i></span><span class="ep-pc2"><b data-ep-pct>0%</b><span data-ep-arq></span></span>Carregando…</div>
+    <div class="login-sup" id="login-sup" hidden></div><!-- login que não deu certo: relatório de suporte + selo da versão (/estudio-carregando.js) -->
     <button class="link" id="btn-other" hidden>Usar outra conta</button>
   </div>
 </section>
@@ -958,7 +959,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
     <section class="mn-grupo" id="g-atalhos"><h2>Meus atalhos</h2><div class="blocos" id="atalhos"></div></section>
     </div>
   </div>
-  <span class="versao-site" id="versao-site" role="button" tabindex="0" title="Gera um relatório para enviar aos ADMs"></span><!-- VERSÃO (06/11/2026): o texto vem de window.ESTUDIO_VERSAO, no /estudio-conta.js -->
+  <span class="versao-site" id="versao-site" role="button" tabindex="0" title="Gera um relatório para enviar aos ADMs"></span><!-- VERSÃO (06/11/2026): o texto vem de window.EstudioVersao.nome, no /estudio-carregando.js (troque só lá) -->
 </main>
 
 <!-- 3) ADM — abre com ?adm (ou /adm) e só depois do login -->
@@ -1135,7 +1136,10 @@ const BASE = location.pathname.replace(/\/adm\/?$/i, '/').replace(/[^/]*$/, '') 
 let fb = null, DADOS = null;
 
 /* ======================= login (Firebase + servidor) ======================= */
-function msg(t, err, spin) { const m = $('#msg'); $('#login')?.classList.toggle('boot', !!spin); m.className = 'msg' + (err ? ' err' : ''); m.innerHTML = (spin ? '<span class="spin ep-det"><i data-ep-barra></i></span><span class="ep-pc2"><b data-ep-pct>0%</b><span data-ep-arq></span></span>' : '') + t; }
+function msg(t, err, spin) { const m = $('#msg'); $('#login')?.classList.toggle('boot', !!spin); m.className = 'msg' + (err ? ' err' : ''); m.innerHTML = (spin ? '<span class="spin ep-det"><i data-ep-barra></i></span><span class="ep-pc2"><b data-ep-pct>0%</b><span data-ep-arq></span></span>' : '') + t;
+  // LOGIN QUE NÃO DEU CERTO (conta não liberada, erro do Google, servidor sem resposta): botão do relatório de suporte + selo da versão.
+  // Cancelar o login não é erro. Tela sem login liberado: o relatório sai sem dados da equipe (publico).
+  const sp = $('#login-sup'); if (sp) { const mostra = !!err && !/^Login cancelado/.test(t); sp.hidden = !mostra; if (mostra) window.EstudioSuporte?.poe(sp, { publico: true }); else window.EstudioSuporte?.tira?.(); } }
 async function loadSdk() {
   if (window.firebase?.auth) return;
   for (const f of ['firebase-app-compat.js', 'firebase-auth-compat.js']) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = SDK + f; s.onload = ok; s.onerror = () => no(new Error('Não consegui carregar o login do Google. Verifique a internet e recarregue.')); document.head.appendChild(s); });
@@ -1680,7 +1684,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.ESTUDIO_VERSAO || ''; vs.onclick = () => window.EstudioConta?.relatorio?.(); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
+  pintaGrid(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || ''; vs.onclick = () => window.EstudioConta?.relatorio?.(); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
@@ -3176,20 +3180,20 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
     } catch (e) {
       if (window.ESTUDIO_EMBED) return avisaPai('login');
       if (window.ESTUDIO_EMBED_ADM) return avisaAdm('login');
-      btn.disabled = false; msg(esc(e.message) + (e.soAviso ? ' <a href="/" style="color:var(--ac);font-weight:600">Voltar ao menu</a>' : ''), true); other.hidden = !fb?.currentUser;
+      btn.disabled = false; msg(esc(String(e.message || '').slice(0, 300)) + (e.soAviso ? ' <a href="/" style="color:var(--ac);font-weight:600">Voltar ao menu</a>' : ''), true); other.hidden = !fb?.currentUser;
       if (e.denied && !e.soAviso) { try { await fb.signOut(); } catch { } other.hidden = true; }
     }
   };
   btn.onclick = async () => {
     btn.disabled = true; msg('Abrindo o login do Google…', false, true);
     try { await signIn(); if (fb.currentUser) await pass(); }
-    catch (e) { btn.disabled = false; msg(/popup-closed|cancelled/.test(e.code || '') ? 'Login cancelado.' : esc(e.message || 'Não deu para entrar.'), true); }
+    catch (e) { btn.disabled = false; msg(/popup-closed|cancelled/.test(e.code || '') ? 'Login cancelado.' : esc(String(e.message || 'Não deu para entrar.').slice(0, 300)), true); }
   };
   // vindo do botão da conta de um projeto: ?sair=1 sai da conta; ?conta=1 abre a Minha conta depois de entrar
   const QS = new URLSearchParams(location.search);
   if (QS.has('sair')) { try { localStorage.removeItem('ep-conv-v1'); } catch { } try { await init(); await fb.signOut(); } catch { } location.replace(BASE); return; }
   try { const u = await init(); if (u) await pass(); else if (window.ESTUDIO_EMBED) avisaPai('login'); else if (window.ESTUDIO_EMBED_ADM) avisaAdm('login'); else { btn.disabled = false; msg(new URLSearchParams(location.search).has('volta') ? 'Entre com o Google para abrir o site.' : ''); } }
-  catch (e) { btn.disabled = true; msg(esc(e.message || String(e)), true); }
+  catch (e) { btn.disabled = true; msg(esc(String(e.message || e).slice(0, 300)), true); }
 })();
 </script>
 </body>
