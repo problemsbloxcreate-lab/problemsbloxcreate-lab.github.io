@@ -748,7 +748,7 @@ async function dublar(req, env, p) {
     const d = txtLimpo(req.headers.get('x-dub-nome'), 40); return d ? { nome: d, conta: false } : null; };
   if (p === '/dublar/ver' && req.method === 'GET') {
     const out = []; todas.forEach((f, i) => { if (!minhas.has(f.id)) return; const a = todas[i - 1];
-      out.push({ id: f.id, personagem: txtLimpo(f.personagem, 40), texto: String(f.texto || '').slice(0, 2000), nota: String(f.nota || '').slice(0, 300), parte: String(f.parte || '').slice(0, 80), antes: a ? { personagem: txtLimpo(a.personagem, 40), texto: String(a.texto || '').slice(0, 160) } : null }); });
+      out.push({ id: f.id, personagem: txtLimpo(f.personagem, 40), ...(L.de && Array.isArray(f.personagens) ? { voce: txtLimpo(f.personagens.find(n => txtLimpo(n, 40).toLocaleLowerCase('pt-BR') === L.de) || '', 40) } : {}), texto: String(f.texto || '').slice(0, 2000), nota: String(f.nota || '').slice(0, 300), parte: String(f.parte || '').slice(0, 80), antes: a ? { personagem: txtLimpo(a.personagem, 40), texto: String(a.texto || '').slice(0, 160) } : null }); });
     const enviadas = {}; for (const x of D.pend) if (x.link === hs) enviadas[x.fala] = { em: x.em, dur: x.dur };
     return sai({ roteiro: txtLimpo(P.nome, 80), rotulo: txtLimpo(L.rotulo, 80), falas: out, enviadas, expira: L.expira ? +L.expira : null, unico: !!L.unico, quem: quem(), maxMb: 20, maxSeg: 120 });
   }
@@ -765,7 +765,8 @@ async function dublar(req, env, p) {
     const k = `preparativos/${id}/dub/${fala}-${Date.now().toString(36)}.${tipo.ext}`; // a chave é montada AQUI (nunca vem de fora)
     await env.EQUIPE.put(k, buf, { metadata: { tipo: tipo.mime, tam: buf.byteLength, mod: Date.now(), por: 'link', em: new Date().toISOString() } });
     const velhas = D.pend.filter(x => x.link === hs && x.fala === fala); // fica só a última desta fala por este link
-    D.pend = D.pend.filter(x => !(x.link === hs && x.fala === fala)); D.pend.push({ k, fala, link: hs, dur: Math.max(0, Math.min(3600, +q.get('dur') || 0)), quem: qq, em: Date.now() }); D.pend = D.pend.slice(-500);
+    D.pend = D.pend.filter(x => !(x.link === hs && x.fala === fala)); const fx = todas.find(f => f.id === fala), deV = L.de && Array.isArray(fx?.personagens) && fx.personagens.some(n => txtLimpo(n, 40).toLocaleLowerCase('pt-BR') === L.de) ? L.de : undefined;
+    D.pend.push({ k, fala, link: hs, ...(deV ? { de: deV } : {}), dur: Math.max(0, Math.min(3600, +q.get('dur') || 0)), quem: qq, em: Date.now() }); D.pend = D.pend.slice(-500);
     L.envios = { ...(L.envios || {}), [fala]: n + 1 }; L.total = (+L.total || 0) + 1; L.ultimo = Date.now(); L.quem = qq;
     await gravaDub(env, id, D); for (const v of velhas) { try { await env.EQUIPE.delete(v.k); } catch { } }
     return sai({ ok: true });
@@ -1235,7 +1236,7 @@ export default {
             if (Object.keys(D.links).length >= 30) return json({ error: { message: 'Este roteiro já tem links ligados demais (30). Desligue alguns.' } }, 400, cors);
             const by = crypto.getRandomValues(new Uint8Array(32)), tok = btoa(String.fromCharCode(...by)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), h = await hashTok(tok);
             const eu = await (async () => { try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('estudio-problems:' + String(login.email).toLowerCase())); return 'u' + [...new Uint8Array(d)].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join(''); } catch { return null; } })();
-            D.links[h] = { rotulo: txtLimpo(b.rotulo, 80) || 'Link de dublagem', falas, criado: Date.now(), expira: b.prazo === 'sempre' ? null : Date.now() + 3600e3, por: eu, unico: new Set(falas.map(x => chaveP(fs.get(x)?.personagem))).size <= 1, total: 0, envios: {} };
+            D.links[h] = { rotulo: txtLimpo(b.rotulo, 80) || 'Link de dublagem', falas, ...(b.de ? { de: chaveP(b.de) } : {}), criado: Date.now(), expira: b.prazo === 'sempre' ? null : Date.now() + 3600e3, por: eu, unico: new Set(falas.map(x => chaveP(fs.get(x)?.personagem))).size <= 1, total: 0, envios: {} };
             await gravaDub(env, b.id, D); await env.EQUIPE.put('dublar-links/' + h, b.id, { metadata: { tipo: 'text/plain', tam: b.id.length, mod: Date.now() } });
             return json({ ok: true, token: tok, ...vista() }, 200, { ...cors, 'cache-control': 'no-store' }); } // o token aparece SÓ agora (aqui fica só o hash)
           const h = String(b.link || ''), L = /^[0-9a-f]{64}$/.test(h) ? D.links[h] : null;
@@ -1244,10 +1245,11 @@ export default {
           D.pend = D.pend.filter(y => y !== x);
           if (op === 'recusa') { await gravaDub(env, b.id, D); try { await env.EQUIPE.delete(x.k); } catch { } return json({ ok: true, ...vista() }, 200, cors); }
           const f = fs.get(x.fala); if (!f) return json({ error: { message: 'Essa fala não existe mais no roteiro.' } }, 404, cors);
-          const velho = f.audio; f.audio = x.k; f.duracao = x.dur || 0; f.dub = { nome: x.quem?.nome || '', conta: !!x.quem?.conta, em: x.em }; delete f.regravar; f.em = new Date().toISOString();
+          let velho; if (x.de && Array.isArray(f.personagens)) { velho = f.audios?.[x.de]?.audio; f.audios = { ...(f.audios || {}), [x.de]: { audio: x.k, duracao: x.dur || 0, dub: { nome: x.quem?.nome || '', conta: !!x.quem?.conta, em: x.em } } }; }
+          else { velho = f.audio; f.audio = x.k; f.duracao = x.dur || 0; f.dub = { nome: x.quem?.nome || '', conta: !!x.quem?.conta, em: x.em }; delete f.regravar; } f.em = new Date().toISOString();
           const mod = await gravaP(P, o.m); await gravaDub(env, b.id, D);
           if (velho && velho !== x.k && velho.startsWith(`preparativos/${b.id}/`)) { try { await env.EQUIPE.delete(velho); } catch { } }
-          return json({ ok: true, mod, audio: x.k, duracao: f.duracao, ...vista() }, 200, cors);
+          return json({ ok: true, mod, audio: x.k, duracao: x.dur || 0, de: x.de || null, ...vista() }, 200, cors);
         }
         const a = b.acao, precisa = { falas: 'gravar', marca: 'pronto', legenda: 'organizar', usado: 'ver' }[a]; if (!precisa) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
         if (!(await podeP(precisa))) return nega(precisa);
@@ -1258,6 +1260,9 @@ export default {
           const pre = `preparativos/${b.id}/aud/`, velhos = [];
           for (const x of (Array.isArray(b.falas) ? b.falas : []).slice(0, 300)) { const f = mapa.get(String(x?.id || '')); if (!f) continue; const au = x.audio == null ? null : String(x.audio);
             if (au && !(au.startsWith(pre) && KPR.test(au))) return json({ error: { message: 'Áudio inválido.' } }, 400, cors);
+            if (x.de) { const de = chaveP(x.de); if (!Array.isArray(f.personagens) || !f.personagens.some(n => chaveP(n) === de)) continue; // FALA DE VÁRIOS: a versão de um deles
+              const ant = f.audios?.[de]?.audio; if (ant && ant !== au && ant.startsWith(`preparativos/${b.id}/`)) velhos.push(ant);
+              f.audios = { ...(f.audios && typeof f.audios === 'object' ? f.audios : {}) }; if (au) f.audios[de] = { audio: au, duracao: Math.max(0, Math.min(3600, +x.duracao || 0)) }; else delete f.audios[de]; continue; }
             if (f.audio && f.audio !== au && (f.audio.startsWith(pre) || f.audio.startsWith(`preparativos/${b.id}/dub/`))) velhos.push(f.audio);
             f.audio = au; f.duracao = Math.max(0, Math.min(3600, +x.duracao || 0)); delete f.regravar; f.em = new Date().toISOString(); }
           extra.mod = await gravaP(P, o.m);
