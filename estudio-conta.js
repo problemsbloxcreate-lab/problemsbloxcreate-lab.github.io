@@ -67,7 +67,7 @@ window.EstudioPasse.fragmento = () => { try { const u = window.firebase?.apps?.l
    JavaScript (window.onerror, unhandledrejection, console.error), pedidos à nossa nuvem que falharam (status + rota, sem dados),
    avisos da nuvem (x-nuvem, limite, porta reserva), página que demorou para carregar e as ações principais (botões clicados).
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
-   RELATÓRIO: "Gerar relatório de erro" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
+   RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
 window.ESTUDIO_VERSAO ||= '1.0 - Flower Field';
 window.EstudioDiario ||= (() => {
@@ -153,8 +153,8 @@ O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica n
     let fbLogin = '?'; try { const dbs = await indexedDB.databases?.(); if (dbs) fbLogin = dbs.some(d => d.name === 'firebaseLocalStorageDb') ? 'presente' : 'não encontrado'; } catch { }
     let contaOk = 'não'; try { contaOk = sessionStorage.getItem('ep-conta-v1') ? 'sim' : 'não'; } catch { }
     const scr = [...document.scripts].map(s => s.src).filter(s => /estudio-|\/js\//.test(s)).map(s => s.replace(location.origin, '')).slice(0, 12);
-    const md = `# Relatório de erro — Estúdio Problems
-Gerado em ${new Date().toLocaleString('pt-BR')} (${Intl.DateTimeFormat().resolvedOptions().timeZone}) pelo botão "Gerar relatório de erro".
+    const md = `# Relatório de suporte — Estúdio Problems
+Gerado em ${new Date().toLocaleString('pt-BR')} (${Intl.DateTimeFormat().resolvedOptions().timeZone}) pelo botão "Gerar relatório de suporte".
 
 ${CONTEXTO}
 
@@ -182,8 +182,8 @@ ${inf.slice(0, 300).map(linha).join('\n') || '- Nada anotado.'}
     return censura(md);
   }
   async function baixar() { const md = await relatorio(), b = new Blob([md], { type: 'text/markdown;charset=utf-8' }), u = URL.createObjectURL(b), a = document.createElement('a');
-    const d = new Date(), z = n => String(n).padStart(2, '0'); a.href = u; a.download = `relatorio-estudio-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.md`;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60e3); anota('info', 'relatorio', 'gerou o relatório de erro'); }
+    const d = new Date(), z = n => String(n).padStart(2, '0'); a.href = u; a.download = `relatorio-suporte-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.md`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60e3); anota('info', 'relatorio', 'gerou o relatório de suporte'); }
   return { anota, pedido, relatorio, baixar, lista: () => le().slice() };
 })();
 window.EstudioPerm ||= (() => {
@@ -322,7 +322,7 @@ window.EstudioPerm ||= (() => {
       if (!r) {
         if (e?.name === 'AbortError' || !/fetch|network|load failed/i.test(String(e?.message))) throw e;
         confere1027(null); // pedido para a nossa nuvem falhou: será o erro 1027 (conta principal sem pedidos)? confere no próprio endereço
-        try { window.EstudioDiario?.pedido(url, null, e?.message || 'sem resposta'); } catch { } // diário local (relatório de erro)
+        try { window.EstudioDiario?.pedido(url, null, e?.message || 'sem resposta'); } catch { } // diário local (relatório de suporte)
         if (navigator.onLine === false) throw new TypeError('Sem internet agora. O que você fez continua guardado neste computador.');
         throw new TypeError(marcado() ? MSG : MSG_TALVEZ);
       }
@@ -841,7 +841,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function pedeRelatorio() {
     const L = window.EstudioDiario?.lista?.() || [], ts = L.map(x => x.t2 || x.t).filter(Boolean), f = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     const periodo = ts.length ? `Tem o que aconteceu de ${f(Math.min(...L.map(x => x.t)))} até agora (${f(Date.now())}).` : 'Ainda não há nada anotado neste navegador.';
-    if (!(await pergunta({ titulo: 'Gerar relatório de erro?', icone: ICONES.lista, azul: true, ok: 'Entendi, gerar',
+    if (!(await pergunta({ titulo: 'Gerar relatório de suporte?', icone: ICONES.lista, azul: true, ok: 'Entendi, gerar',
       texto: 'Não mande este arquivo para qualquer pessoa, só para quem vai resolver o problema. ' + periodo }))) return;
     window.EstudioDiario?.baixar();
   }
@@ -941,7 +941,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<button class="it" type="button" role="menuitem" data-a="adm">${ICONES.adm}ADM</button>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
-        <button type="button" role="menuitem" data-a="relatorio" class="it" title="Baixa um arquivo .md com os erros e avisos deste navegador (sem senhas, chaves nem tokens de login; e-mail mascarado), para mandar a quem for consertar">${ICONES.lista || ''}Gerar relatório de erro</button>
+        <button type="button" role="menuitem" data-a="relatorio" class="it" title="Gera um relatório para enviar aos ADMs">${ICONES.lista || ''}Gerar relatório de suporte</button>
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
