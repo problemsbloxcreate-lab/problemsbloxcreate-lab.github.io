@@ -240,7 +240,11 @@ function pesosCasas(c) {
   if (!c || c.dia !== hoje) return { p: 1, a: 1, t: 1 };
   const livre = (o, pedidos, espaco) => { if (!o || o.erro || !o.d1) return 0;
     const us = [o.d1.write / W, o.d1.read / R]; if (pedidos) us.push((+o.workers || 0) / P); if (espaco) us.push((+(o.d1bytes ?? o.bytes) || 0) / B);
-    const sobra = 1 - Math.max(...us.map(x => +x || 0)); return Math.max(0, sobra - 0.15) ** 2; }; // abaixo de 15% livre: não recebe
+    // DIVIDIDO POR IGUAL (pedido da dona, 06/11/2026): escolher pela folga DO DIA não resolve (amanhã a mais vazia pode ser a mais
+    // cheia). Agora cada arquivo novo vai para uma das 3 por sorteio fixo do nome (1/3 para cada, sempre a mesma casa para o mesmo
+    // arquivo), e a folga do dia só serve de TRAVA: abaixo de 15% livre hoje, aquela nuvem não recebe novos até virar o dia.
+    // A mudança noturna (Action arquivos, mudar-noite) iguala também os antigos.
+    const sobra = 1 - Math.max(...us.map(x => +x || 0)); return sobra > 0.15 ? 1 : 0; };
   return { p: livre(c.contas?.principal, false, true), a: livre(c.contas?.nova, true, false), t: livre(c.contas?.terc, true, false) };
 }
 function escolheCasa(k, tam, ant, A) {
