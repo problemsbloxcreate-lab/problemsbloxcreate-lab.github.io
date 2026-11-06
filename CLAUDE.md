@@ -215,6 +215,7 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
   nomes/fotos da equipe num pedido só (`GET /pessoa?us=u1,u2…`, no estudio-conta.js e no js/nuvem.js do Animador; nomes guardados 3 h);
   o menu usa a mesma busca de `/conta` do estudio-conta.js (eram 2); fotos de fundo e ícones guardados 1 dia no navegador; versões
   dos arquivos dos Shorts/Editor (Workers com ligação direta: cada pergunta = 1 pedido a mais neles) guardadas 10 min (página: 1 min).
+  Ícones (`/icones`) conferidos no máximo a cada 5 min por navegador; sessão (`/sessao`) a cada 10 min (voltar à aba: 2 min).
   `GET /contagem` (só ADM) = pedidos por rota desta cópia do porteiro, só na memória — para achar o que mais gasta.
 - PORTA RESERVA DO PORTEIRO para parte das pessoas (ideia de 06/11/2026): NÃO feita. O endereço é outro (estudio-reserva…), então a
   pessoa precisaria entrar de novo e veria o endereço mudar; e Mensagens/presença (Durable Objects só na principal) teriam de ser
