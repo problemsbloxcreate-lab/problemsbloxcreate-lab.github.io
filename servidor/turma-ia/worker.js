@@ -1090,7 +1090,7 @@ export default {
       const nega = c => json({ error: { type: 'permissao', message: `Sua conta não pode ${OQUE[c] || c} nos Preparativos. Peça para um ADM liberar.` } }, 403, cors);
       if (!(await podeP('ver'))) return nega('ver');
       const q = new URL(req.url).searchParams, k = q.get('k') || '', ID = /^[A-Za-z0-9_-]{2,40}$/;
-      const KPR = /^preparativos\/(cores\.json|personagens\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a|mp3|wav)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KPR = /^preparativos\/(cores\.json|personagens\.json|pastas\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a|mp3|wav)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
       const DEST = ['animador', 'shorts', 'editor'], STAT = ['rascunho', 'gravando', 'pronto'];
       const kP = id => `preparativos/${id}/prep.json`;
       const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
@@ -1143,6 +1143,19 @@ export default {
         if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
         let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
         if (b?.acao === 'cores') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, cores: await juntaCores(limpaCores(b.cores)) }, 200, cors); }
+        // PASTAS DOS ROTEIROS (preparativos/pastas.json = { ordem: [nome…], de: { <id do roteiro>: nome } }), da equipe toda; mudanças pequenas, lidas e gravadas aqui
+        if (b?.acao === 'pastas') { if (!(await podeP('roteiro'))) return nega('roteiro');
+          const nomeOk = x => { const n = String(x ?? '').normalize('NFC').replace(/[^\p{L}\p{N} ._-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40); return n || null; };
+          let o; try { o = JSON.parse((await env.EQUIPE.get('preparativos/pastas.json')) || '{}') || {}; } catch { o = {}; }
+          const ordem = (Array.isArray(o.ordem) ? o.ordem : []).map(nomeOk).filter(Boolean), de = o.de && typeof o.de === 'object' ? o.de : {};
+          if (b.nova) { const n = nomeOk(b.nova); if (n && !ordem.includes(n)) { if (ordem.length >= 100) return json({ error: { message: 'Pastas demais (máx. 100).' } }, 400, cors); ordem.push(n); } }
+          if (b.renomear) { const a1 = nomeOk(b.renomear.de), a2 = nomeOk(b.renomear.para); if (a1 && a2 && a1 !== a2) { const i = ordem.indexOf(a1); if (i >= 0) ordem[i] = a2; else if (!ordem.includes(a2)) ordem.push(a2); for (const id of Object.keys(de)) if (de[id] === a1) de[id] = a2; } }
+          if (b.apagar) { const n = nomeOk(b.apagar), i = ordem.indexOf(n); if (i >= 0) ordem.splice(i, 1); for (const id of Object.keys(de)) if (de[id] === n) delete de[id]; }
+          if (b.mover && typeof b.mover === 'object') for (const [id, n0] of Object.entries(b.mover).slice(0, 200)) { if (!ID.test(id)) continue; const n = n0 == null ? null : nomeOk(n0); if (!n) delete de[id]; else { de[id] = n; if (!ordem.includes(n)) ordem.push(n); } }
+          if (Array.isArray(b.ordem)) { const nv = b.ordem.map(nomeOk).filter(x => x && ordem.includes(x)); ordem.splice(0, ordem.length, ...new Set([...nv, ...ordem])); }
+          const out = { ordem: [...new Set(ordem)], de: Object.fromEntries(Object.entries(de).filter(([id, n]) => ID.test(id) && typeof n === 'string').slice(0, 5000)) }, t = JSON.stringify(out);
+          await env.EQUIPE.put('preparativos/pastas.json', t, { metadata: { tipo: 'application/json', tam: t.length, mod: Date.now(), em: new Date().toISOString() } });
+          return json({ ok: true, pastas: out }, 200, cors); }
         if (b?.acao === 'personagens') { if (!(await podeP('organizar'))) return nega('organizar'); return json({ ok: true, personagens: await juntaPers(limpaPers(b.itens)) }, 200, cors); }
         if (!ID.test(String(b?.id || ''))) return json({ error: { message: 'Preparativo inválido.' } }, 400, cors);
         const a = b.acao, precisa = { falas: 'gravar', marca: 'pronto', legenda: 'organizar', usado: 'ver' }[a]; if (!precisa) return json({ error: { message: 'Ação desconhecida.' } }, 400, cors);
@@ -1179,7 +1192,7 @@ export default {
         return new Response(r.value, { status: 200, headers: { ...cors, 'x-mod': String(+(r.metadata?.mod || 0)), 'access-control-expose-headers': 'x-mod, x-nuvem, x-nuvem-volta', 'content-type': aud ? (r.metadata?.tipo || 'audio/webm') : img ? 'image/webp' : 'application/json', 'cache-control': aud || img ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; sandbox" } });
       }
       if (req.method === 'POST' || req.method === 'PUT') {
-        if (!KPR.test(k) || /^preparativos\/(cores|personagens)\.json$/.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        if (!KPR.test(k) || /^preparativos\/(cores|personagens|pastas)\.json$/.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
         const id = k.split('/')[1], buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
         if (k.startsWith('preparativos/pers/')) { // foto do personagem (o navegador já manda em WEBP pequeno)
           if (!(await podeP('organizar'))) return nega('organizar');
