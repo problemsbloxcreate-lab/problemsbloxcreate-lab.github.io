@@ -128,7 +128,11 @@ const RAIZ_ASSETS = new Set(['/permissoes.json', '/estudio-icones.js', '/estudio
 const VERS = new Map();
 const IMUTAVEL = 'private, max-age=31536000, immutable';
 async function versaoDe(env, u, s) {
-  const c = VERS.get(u); if (c && Date.now() - c.t < 20000) return c.v;
+  const c = VERS.get(u); if (c && Date.now() - c.t < (c.ttl || 20000)) return c.v;
+  /* SHORTS E EDITOR (06/11/2026, economia de pedidos): cada pergunta de versão a um projeto que é Worker desta conta (ligação direta)
+     é 1 pedido a mais NELE (o Worker dos Shorts confere o passe em todo arquivo); uma página dos Shorts tem dezenas de arquivos, então
+     cada abertura perguntava dezenas de vezes. Lá a versão só muda quando o Worker é publicado: guarda 10 min (a página, 1 min). */
+  let ttl = 20000; try { const p0 = achaProjeto(env, new URL(u).pathname); if (p0?.servico) ttl = /(^|\/)$|\.html?$/i.test(p0.resto || '') ? 60e3 : 600e3; } catch { }
   let v = null;
   try {
     const url = new URL(u);
@@ -144,7 +148,7 @@ async function versaoDe(env, u, s) {
     }
   } catch { v = null; }
   if (v) v = [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(v)))].slice(0, 6).map(x => x.toString(16).padStart(2, '0')).join('');
-  VERS.set(u, { v, t: Date.now() }); if (VERS.size > 3000) VERS.clear();
+  VERS.set(u, { v, t: Date.now(), ttl: v ? ttl : 20000 }); if (VERS.size > 3000) VERS.clear();
   return v;
 }
 // arquivo de projeto que o GitHub Pages serve (público): o endereço dele lá. Não vale para a porta reserva (lá os scripts precisam
