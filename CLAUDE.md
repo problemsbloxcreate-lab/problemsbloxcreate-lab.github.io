@@ -190,3 +190,32 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
 - TODA rota de dados divide (lista NAO_DIV do estudio-conta.js = o que fica só na principal: IA, transcrição, /quem, /app-key, robôs, reserva, painel ADM). Programa novo que use a nuvem da equipe já entra na divisão sozinho.
 - Porteiro: scripts/CSS de projeto no GitHub Pages PÚBLICO vão direto do GitHub (função direto() + comVersoes no porteiro/worker.js; config.js, HTML, Workers e a porta reserva continuam pelo porteiro). Botão da nuvem mostra "Uso de hoje" (/nuvem-hoje no turma-ia).
 - As LEITURAS do D1 continuam todas no banco da principal (a ponte lê de lá também): se elas chegarem no limite, entra a reserva como antes.
+- DIVISÃO DESDE O COMEÇO DO DIA (06/11/2026): `confereDivide` (turma-ia) = o maior entre a rampa de proteção (40% → 75% dos pedidos
+  da principal) e o PESO do que cada conta tem livre (principal × terciária, até 50%). Com as duas vazias, metade dos pedidos de
+  dados já vai pelo turma-reserva. Se a porta reserva der erro (5xx ou sem resposta), o `estudio-conta.js` repete o mesmo pedido na principal.
+- CADA ARQUIVO MORA NUMA NUVEM (decisão da dona, 06/11/2026). O ÍNDICE é um só: tabela `arq` do D1 da principal (nome, meta, tam, em,
+  `onde`) + a foto da lista (`listaDoCache`). O CONTEÚDO mora em `onde` = NULL (D1 da principal, tabela parte) · 'a' (arquivos-problems
+  na conta nova, T3) · 't' (arquivos-problems na TERCIÁRIA, T4: https://arquivos-problems.editorcustomizado.workers.dev, 4 bancos).
+  - Arquivo NOVO: `escolheCasa` pesa o que cada nuvem tem livre hoje (`pesosCasas`, da medida do "Uso da nuvem": gravações, leituras,
+    pedidos e espaço; abaixo de 15% livre não recebe) e o nome do arquivo decide dentro dos pesos. Arquivo que JÁ EXISTE fica na casa
+    dele (só muda se ela estiver quase cheia ou falhar). Ligar/desligar: Action "Nuvem dos arquivos" (repo estudio-problems)
+    `ligar-casas` / `desligar-casas` (cfg `casas` no D1). Desligado = como antes (≥ 32 KB na 'a', o resto na principal).
+  - NUNCA VERSÃO VELHA: grava o conteúdo novo PRIMEIRO na casa nova, depois o índice (arquivo pequeno: pedaços + índice numa transação
+    só), e só depois apaga da casa antiga (conferindo antes que o índice ainda aponta para a nova). Ler segue sempre o índice.
+  - A porta reserva (turma-reserva) fala com a 't' pela ligação direta `ARQ_T` (mesma conta; pelo endereço público a Cloudflare recusa).
+    Ela pega o código novo só quando roda `porta-reserva.yml` — rode depois de mudar o turma-ia.
+  - TESTE: `testar-casas` (9 arquivos `_teste-casas/` por cada porta: grava, lê igual, regrava, lê a nova, apaga; desliga as casas se algo
+    falhar; apaga sobras antes). 06/11/2026: passou pelas duas portas, com arquivos nas três casas.
+  - ANTIGOS: ficam onde estão (13.979 arquivos: ~1.766 na 'a', o resto na principal). `mudar-casas` (DE/PARA p|a|t, lotes de 3, confere
+    tamanho lendo de volta, só troca o índice se o arquivo não mudou no meio, só então apaga da casa antiga) existe mas NÃO roda sozinho:
+    rodar à mão depois das 21h de Brasília, aos poucos, olhando o "Uso da nuvem".
+  - `/robo/arq` responde `x-onde` (p/a/t) e `/robo/estado` mostra `casas`, `terc`, `tercBytes`.
+- MENOS PEDIDOS NO PORTEIRO (06/11/2026): conferência de versão da aba líder = UM pedido (`GET /versoes?u=a|b|c` → versão de cada
+  arquivo, a mesma do carimbo _ev; antes 6–10 pedidos a cada 3,5 min); ao abrir, a página que acabou de chegar não é pedida de novo;
+  nomes/fotos da equipe num pedido só (`GET /pessoa?us=u1,u2…`, no estudio-conta.js e no js/nuvem.js do Animador; nomes guardados 3 h);
+  o menu usa a mesma busca de `/conta` do estudio-conta.js (eram 2); fotos de fundo e ícones guardados 1 dia no navegador; versões
+  dos arquivos dos Shorts/Editor (Workers com ligação direta: cada pergunta = 1 pedido a mais neles) guardadas 10 min (página: 1 min).
+  `GET /contagem` (só ADM) = pedidos por rota desta cópia do porteiro, só na memória — para achar o que mais gasta.
+- PORTA RESERVA DO PORTEIRO para parte das pessoas (ideia de 06/11/2026): NÃO feita. O endereço é outro (estudio-reserva…), então a
+  pessoa precisaria entrar de novo e veria o endereço mudar; e Mensagens/presença (Durable Objects só na principal) teriam de ser
+  repassadas à principal, o que gasta o mesmo pedido lá. Só vale com um domínio próprio na frente das duas contas.
