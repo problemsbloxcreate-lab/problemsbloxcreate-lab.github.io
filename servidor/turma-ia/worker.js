@@ -707,6 +707,14 @@ function permLimpa(b, porId) {
   const padrao = cargos.some(c => c.id === b.padrao) ? b.padrao : 'equipe';
   return { v: 1, cargos, pessoas, pastas, padrao, em: new Date().toISOString(), por: porId }; // por = id da pessoa (sem e-mail)
 }
+// TIPO DE UM ÁUDIO PELO CONTEÚDO (assinatura dos primeiros bytes) — usado pelos Preparativos e pelo link de dublagem
+function tipoAudio(buf) { const u = new Uint8Array(buf, 0, Math.min(16, buf.byteLength)), s = (a, b) => String.fromCharCode(...u.slice(a, b));
+  if (u[0] === 0x1a && u[1] === 0x45 && u[2] === 0xdf && u[3] === 0xa3) return { ext: 'webm', mime: 'audio/webm' };
+  if (s(0, 4) === 'OggS') return { ext: 'ogg', mime: 'audio/ogg' };
+  if (s(0, 4) === 'RIFF' && s(8, 12) === 'WAVE') return { ext: 'wav', mime: 'audio/wav' };
+  if (s(4, 8) === 'ftyp') return { ext: 'm4a', mime: 'audio/mp4' };
+  if (s(0, 3) === 'ID3' || (u[0] === 0xff && (u[1] & 0xe0) === 0xe0)) return { ext: 'mp3', mime: 'audio/mpeg' };
+  return null; }
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
@@ -1082,7 +1090,7 @@ export default {
       const nega = c => json({ error: { type: 'permissao', message: `Sua conta não pode ${OQUE[c] || c} nos Preparativos. Peça para um ADM liberar.` } }, 403, cors);
       if (!(await podeP('ver'))) return nega('ver');
       const q = new URL(req.url).searchParams, k = q.get('k') || '', ID = /^[A-Za-z0-9_-]{2,40}$/;
-      const KPR = /^preparativos\/(cores\.json|personagens\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
+      const KPR = /^preparativos\/(cores\.json|personagens\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|aud\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a|mp3|wav)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
       const DEST = ['animador', 'shorts', 'editor'], STAT = ['rascunho', 'gravando', 'pronto'];
       const kP = id => `preparativos/${id}/prep.json`;
       const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
@@ -1183,10 +1191,11 @@ export default {
         }
         if (k.includes('/aud/')) { // áudio de uma fala
           if (!(await podeP('gravar'))) return nega('gravar');
-          if (buf.byteLength > 8 * 1048576) return json({ error: { message: 'Áudio maior que 8 MB. Grave a fala em pedaços menores.' } }, 413, cors);
+          if (buf.byteLength > 20 * 1048576) return json({ error: { message: 'Áudio maior que 20 MB.' } }, 413, cors);
+          // o TIPO vem do conteúdo (os primeiros bytes), não do nome: a extensão da chave precisa bater com o que o arquivo é
+          const ext = k.split('.').pop(), tipo = tipoAudio(buf); if (!tipo || tipo.ext !== ext) return json({ error: { message: 'Esse arquivo não é um áudio aceito (mp3, wav, ogg, m4a ou webm).' } }, 415, cors);
           if ((await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
-          const ext = k.split('.').pop(), tipo = ext === 'm4a' ? 'audio/mp4' : ext === 'ogg' ? 'audio/ogg' : 'audio/webm';
-          await env.EQUIPE.put(k, buf, { metadata: { tipo, tam: buf.byteLength, mod: Date.now(), por: login.email, em: new Date().toISOString() } });
+          await env.EQUIPE.put(k, buf, { metadata: { tipo: tipo.mime, tam: buf.byteLength, mod: Date.now(), por: login.email, em: new Date().toISOString() } });
           return json({ ok: true, k }, 200, cors);
         }
         // o preparativo inteiro (roteiro, partes, legendas)
