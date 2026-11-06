@@ -1498,6 +1498,7 @@ export default {
       if (!env.AI) return json({ error: { type: 'sem_ia', message: 'Falta o binding Workers AI (nome AI) no worker.' } }, 501, cors);
       let b; try { b = await req.json(); } catch { return json({ error: { message: 'Pedido inválido' } }, 400, cors); }
       if (!b.audio || typeof b.audio !== 'string' || b.audio.length > 8e6) return json({ error: { message: 'Áudio inválido ou grande demais' } }, 400, cors);
+      if (b.de === 'preparativos' && typeof pode === 'function' && !(await pode(env, login.email, 'preparativos.transcrever'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode usar a transcrição nos Preparativos. Peça para um ADM liberar.' } }, 403, cors);
       try {
         const o = { audio: b.audio, task: 'transcribe', language: /^[a-z]{2}$/.test(b.language || '') ? b.language : 'pt', vad_filter: true, condition_on_previous_text: false };
         if (b.prompt) o.initial_prompt = String(b.prompt).slice(0, 300);

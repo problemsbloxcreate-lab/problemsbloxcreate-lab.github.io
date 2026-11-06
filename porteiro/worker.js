@@ -1108,7 +1108,7 @@ export default {
       return new Response(r.body, { status: r.status, headers: sub === '/ouvir' && r.ok ? { 'content-type': r.headers.get('content-type') || 'audio/webm', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } : H });
     }
     if (caminho.startsWith('/dublar/')) {
-      const arq = caminho.slice('/dublar/'.length) || 'index.html', TIPOS = { 'index.html': 'text/html; charset=utf-8', 'dublar.js': 'text/javascript; charset=utf-8', 'dublar.css': 'text/css; charset=utf-8' };
+      const arq = caminho.slice('/dublar/'.length) || 'index.html', TIPOS = { 'index.html': 'text/html; charset=utf-8', 'dublar.js': 'text/javascript; charset=utf-8', 'dublar.css': 'text/css; charset=utf-8', 'cortes.js': 'text/javascript; charset=utf-8' };
       if (!TIPOS[arq]) return new Response('Não encontrado', { status: 404 });
       const r = await fetch('https://problemsbloxcreate-lab.github.io/preparativos/dublar/' + arq, { cf: { cacheTtl: 60 } }); if (!r.ok) return new Response('Não encontrado', { status: 404 });
       return new Response(r.body, { status: 200, headers: { 'content-type': TIPOS[arq], 'cache-control': arq === 'index.html' ? 'no-store' : 'public, max-age=60', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
