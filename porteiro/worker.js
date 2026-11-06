@@ -1202,7 +1202,7 @@ export default {
       if (url.searchParams.has('_ev') && r.ok) { const h = new Headers(r.headers); h.set('cache-control', IMUTAVEL); return new Response(r.body, { status: r.status, headers: h }); }
       if (/\.js$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'no-cache'); return new Response(r.body, { status: r.status, headers: h }); }
       // ECONOMIA (06/11/2026): fotos de fundo e ícones quase nunca mudam — o navegador guarda 1 dia sem perguntar (antes: 1 pedido a cada abertura do menu)
-      if (r.ok && /\.(jpe?g|png|ico|svg)$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'public, max-age=86400'); return new Response(r.body, { status: r.status, headers: h }); }
+      if ((r.ok || r.status === 304) && /\.(jpe?g|png|ico|svg)$/.test(caminho)) { const h = new Headers(r.headers); h.set('cache-control', 'public, max-age=86400'); return new Response(r.status === 304 ? null : r.body, { status: r.status, headers: h }); } // 304 também leva a regra nova (o navegador atualiza a que tinha guardada)
       return r; } } // 304 = "não mudou" (o navegador já tem): devolve como está, senão o arquivo some e vira a página do menu
     if (/^\/adm\/?$/i.test(caminho)) return menu(env, url, 200, req);
     return menu(env, url, 404, req);
