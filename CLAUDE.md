@@ -181,7 +181,7 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
 - Os dados da equipe ficam no D1 "equipe" da principal. O turma-reserva (4ª conta, porta reserva) fala com ESSE MESMO banco pela API
   da Cloudflare (`d1Rest` no servidor/turma-ia/worker.js, "ponte"; segredos D1_CONTA/D1_ID/D1_TOKEN/ROBO postos pela Action
   "Publicar a porta reserva" do repo estudio-problems). Sem a ponte (ou se ela falhar), a porta volta ao modo antigo (cópia de segurança).
-- DIVIDIR: o servidor manda `x-divide` (0–1) conforme os PEDIDOS do dia da principal (60% → começa, 90% → todos). O estudio-conta.js
+- DIVIDIR: o servidor manda `x-divide` (0–1) conforme os PEDIDOS do dia da principal (40% → começa, 75% → todos). O estudio-conta.js
   sorteia um número por navegador (`ep-sorte`) e manda os pedidos de DADOS (animacoes, personagens, jester, cenarios, equipe,
   preparativos, menu-midia, menu-links, ideias) para o turma-reserva com `_pr=1` (sem trocar endereços). Se a principal não
   responder (1027/429), o mesmo pedido é repetido lá. IA, transcrição e uso continuam só na principal.

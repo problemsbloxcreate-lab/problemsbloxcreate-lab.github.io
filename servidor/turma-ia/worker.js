@@ -453,8 +453,8 @@ function kvComLista(kv, forcar, R, flag, bg) { // forcar (?novo=1, botão Atuali
    principal; o turma-reserva (outra conta) agora fala com ESSE MESMO banco pela API da Cloudflare (a PONTE, abaixo): lê e grava
    nos mesmos dados, sem cópia velha. Assim os pedidos de DADOS (animações, personagens, cenários…) podem ir por qualquer uma das
    duas portas sem ninguém notar (vale para TODA rota de dados, inclusive as novas; o site só não divide a IA e o que depende de
-   segredos que existem só aqui — lista NAO_DIV no estudio-conta.js). DIVIDIR: a partir de 60% dos pedidos do dia gastos na principal, uma parte dos navegadores
-   (sorteada uma vez por navegador, para cada pessoa ficar sempre na mesma porta) passa a usar o turma-reserva; com 90% vão todos.
+   segredos que existem só aqui — lista NAO_DIV no estudio-conta.js). DIVIDIR: a partir de 40% dos pedidos do dia gastos na principal, uma parte dos navegadores
+   (sorteada uma vez por navegador, para cada pessoa ficar sempre na mesma porta) passa a usar o turma-reserva; com 75% vão todos.
    O site lê a parte no cabeçalho x-divide (estudio-conta.js). A IA, a transcrição e o uso continuam só na principal. */
 function d1Rest(conta, id, token) {
   const hex = v => { const u = v instanceof ArrayBuffer ? new Uint8Array(v) : new Uint8Array(v.buffer, v.byteOffset, v.byteLength); let t = ''; for (let i = 0; i < u.length; i++) t += (u[i] < 16 ? '0' : '') + u[i].toString(16); return t; };
@@ -479,7 +479,7 @@ const DIVIDE = { p: 0, at: 0 };
 async function confereDivide(R) {
   if (!R || Date.now() - DIVIDE.at < 120e3) return; DIVIDE.at = Date.now();
   try { const c = await R.contaJa(), o = c?.contas?.principal; if (!o || c.dia !== new Date().toISOString().slice(0, 10)) { DIVIDE.p = 0; return; }
-    const usado = (+o.workers || 0) / 100000; DIVIDE.p = Math.max(0, Math.min(1, Math.round((usado - 0.6) / 0.3 * 20) / 20)); } catch { }
+    const usado = (+o.workers || 0) / 100000; DIVIDE.p = Math.max(0, Math.min(1, Math.round((usado - 0.4) / 0.35 * 20) / 20)); } catch { } // 06/11/2026: começa aos 40% (antes 60%) e vão todos aos 75%
 }
 async function confereCheio(kv, R) {
   if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
