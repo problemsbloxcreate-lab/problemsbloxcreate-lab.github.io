@@ -280,7 +280,7 @@ async function d1Le(db, k, A) {
   let corpo = new Uint8Array(0);
   if (a.onde === 'a' || a.onde === 't') { const L = lojaDe(a.onde, A); if (!L) throw new Error('sem a nuvem dos arquivos (' + a.onde + ')'); corpo = await L.le(k); }
   else if (a.n) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(k).all(); const ps = (results || []).map(x => new Uint8Array(x.v)); corpo = new Uint8Array(ps.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of ps) { corpo.set(p, o); o += p.length; } }
-  let meta = null; try { meta = JSON.parse(a.meta || 'null'); } catch { } return { buf: corpo, meta: meta && Object.keys(meta).length ? meta : null };
+  let meta = null; try { meta = JSON.parse(a.meta || 'null'); } catch { } return { buf: corpo, meta: meta && Object.keys(meta).length ? meta : null, onde: a.onde || 'p' };
 }
 function kvD1(db, A) {
   const como = (buf, o) => { const t = typeof o === 'string' ? o : o?.type || 'text'; if (t === 'arrayBuffer') return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength); if (t === 'stream') return new Response(buf).body;
@@ -365,7 +365,7 @@ async function robo(req, env) {
   if (rota === 'ligar' && req.method === 'POST') { const v = u.searchParams.get('v') === '0' ? '0' : '1'; await db.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('ativo', ?)").bind(v).run(); d1Est.at = 0; return js({ ok: true, ativo: v === '1' }); }
   if (rota === 'lista') { const out = []; let cur; do { const r = await kvD1(db).list({ prefix: u.searchParams.get('prefix') || '', cursor: cur }); out.push(...r.keys); cur = r.list_complete ? null : r.cursor; } while (cur); return js({ keys: out }); }
   if (rota === 'arq' && k && k.length <= 512) {
-    if (req.method === 'GET') { const r = await d1Le(db, k, A); return r ? new Response(r.buf, { headers: { 'x-meta': encodeURIComponent(JSON.stringify(r.meta || {})), 'cache-control': 'no-store' } }) : js({ erro: 'não achei' }, 404); }
+    if (req.method === 'GET') { const r = await d1Le(db, k, A); return r ? new Response(r.buf, { headers: { 'x-meta': encodeURIComponent(JSON.stringify(r.meta || {})), 'x-onde': r.onde, 'cache-control': 'no-store' } }) : js({ erro: 'não achei' }, 404); }
     if (req.method === 'PUT') { let meta = null; try { meta = JSON.parse(decodeURIComponent(req.headers.get('x-meta') || 'null')); } catch { } const buf = new Uint8Array(await req.arrayBuffer()); if (buf.byteLength > 25 * 1048576) return js({ erro: 'grande' }, 413); await d1Grava(db, k, buf, meta, A); kvLista = null; return js({ ok: true }); }
     if (req.method === 'DELETE') { await kvD1(db, A).delete(k); kvLista = null; return js({ ok: true }); }
   }
