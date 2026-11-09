@@ -828,6 +828,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 
 /* selo "Em teste": discreto, no canto do bloco */
 #menu .card .tag.teste{top:6px;right:6px;left:auto;background:rgba(240,178,50,.92)!important;color:#241600!important;font:600 10px/1.5 var(--font)!important;letter-spacing:.2px!important;text-transform:none!important;padding:0 6px!important}
+#menu .card .tag.externo{background:rgba(127,209,255,.92)!important;color:#06202f!important}#menu .card .tag.teste~.tag.externo{top:26px}#menu .card .tag.teste~.tag.externo:has(~.tag-adm){top:46px}
 .mn-col{display:flex;flex-direction:column;gap:28px;min-width:0}
 @media (max-width:1100px){.mn-col{align-items:center}}
 .mn-progs{min-width:calc(5 * var(--mn-u) + 4 * var(--mn-g))}
@@ -1613,6 +1614,8 @@ function comPartes(lista) { const out = [];
 /* EM TESTE (pedido da dona, 05/11/2026): selo discreto no bloco. Vem da ADM › Botões (caixinha "Em teste", campo etiqueta);
    o Publicações nasce marcado. Desmarcar grava etiqueta '-' (= sem selo), para o padrão não voltar sozinho. */
 const ETIQUETA_PADRAO = { publicacoes: 'Em teste', cenarios: 'Em teste' }; // só o começo: depois vale o que a ADM › Botões salvar (Ateliê e Cenários ficam no botão do Animador)
+// selo "Externo" (ADM › Botões): marcado ou desmarcado por botão; sem escolha salva, só a Central de Jogos já vem com ele
+const externoDe = l => typeof l?.externo === 'boolean' ? l.externo : RE_CENTRAL.test(String(l?.url || ''));
 function etiquetaDe(l) { if (l?.etiqueta === '-') return ''; if (l?.etiqueta) return l.etiqueta; if (l?.id && ETIQUETA_PADRAO[l.id]) return ETIQUETA_PADRAO[l.id]; try { const u = new URL(l?.url || '', location.href); return u.origin === location.origin ? ETIQUETA_PADRAO[u.pathname.split('/').filter(Boolean)[0]] || '' : ''; } catch { return ''; } }
 /* SELO DO CARGO NO TÍTULO (pedido da dona, 05/11/2026): o nome do cargo da pessoa, na cor do cargo, ao lado de "Estúdio Problems" —
    só dos cargos em que a ADM › Níveis de acesso marcou "Mostrar selo no título do menu" (por padrão nenhum; o ADM tem o selo ADM). */
@@ -1704,7 +1707,7 @@ function pintaGrid() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') + (externoDe(l) ? '<span class="tag teste externo" title="Este site fica fora do Estúdio">Externo</span>' : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
   const n = menuVis.length; g.style.setProperty('--cols', n > 20 ? 6 : 5); /* espaço reservado para até 20 programas (5 por linha) */ g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
@@ -2193,6 +2196,7 @@ function renderLinks() {
         <label class="f full chk"><input type="checkbox" data-k="invisivel" ${l.invisivel ? 'checked' : ''}><span><b>Invisível</b>: o programa some do menu para TODOS, inclusive os ADMs (continua guardado aqui na ADM › Menu). Desmarque para ele voltar.</span></label>
         ${progDaUrl(l.url, l.nome) === 'an' ? SUBPROGS.an.map(([, nome, , f]) => `<label class="f full chk"><input type="checkbox" data-k="parte-${f}" ${etiquetaDe({ id: f, etiqueta: l.partes?.[f]?.etiqueta }) ? 'checked' : ''}><span><b>${nome[0] + nome.slice(1).toLowerCase()} em teste</b>: selo "Em teste" no bloco ${nome[0] + nome.slice(1).toLowerCase()} (parte do Animador).</span></label>`).join('') : ''}
         <label class="f full chk"><input type="checkbox" data-k="emteste" ${etiquetaDe(l) ? 'checked' : ''}><span><b>Em teste</b>: mostra o selo "Em teste" no bloco (programa ainda sendo feito). Desmarque quando ficar pronto.</span></label>
+        <label class="f full chk"><input type="checkbox" data-k="externo" ${externoDe(l) ? 'checked' : ''}><span><b>Externo</b>: mostra o selo "Externo" no bloco (site fora do Estúdio).</span></label>
         <label class="f full chk"><input type="checkbox" data-k="embreve" ${l.embreve || !l.url ? 'checked' : ''} ${l.url ? '' : 'disabled'}><span><b>Em breve</b>: o botão aparece apagado, com a etiqueta "em breve", e não abre nada${l.url ? ' (o endereço fica guardado para quando você desligar)' : ' (sempre ligado enquanto não tiver endereço)'}.</span></label>
         <div class="acts full">
           ${l.fundo ? '<span class="hint">Este botão tem um fundo antigo (o menu novo não mostra mais fundo nos blocos).</span><button class="btn sm" data-a="semfundo">Apagar o fundo antigo</button>' : ''}
@@ -2213,6 +2217,7 @@ function renderLinks() {
       else if (k === 'escurecer') { l.escurecer = +inp.value; inp.nextElementSibling.textContent = pct(inp.value); }
       else if (k === 'url') { const tinha = !!l.url; l.url = normUrl(inp.value) || null; inp.classList.toggle('bad', !urlOk(inp.value.trim())); if (tinha !== !!l.url) { mudou(); return renderLinks(); } }
       else if (k === 'emteste') { l.etiqueta = inp.checked ? 'Em teste' : '-'; }
+      else if (k === 'externo') l.externo = inp.checked;
       else if (k.startsWith('parte-')) { (l.partes ||= {})[k.slice(6)] = { etiqueta: inp.checked ? 'Em teste' : '-' }; }
       else if (k === 'embreve') l.embreve = inp.checked;
       else if (k === 'soAdm') l.soAdm = inp.checked;
