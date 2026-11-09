@@ -704,6 +704,14 @@ window.EstudioPerm ||= (() => {
 .ep-conta-pop .sep{margin:6px 0!important;background:rgba(255,255,255,.12)!important}
 .ep-conta-pop .av,.ep-conta-pop img{border-radius:0!important}
 .ep-conta-pop b{font-weight:600}
+.ep-conta-fundo{position:fixed;inset:0;z-index:2147483001;background:rgba(5,20,45,.35)}.ep-conta-fundo[hidden]{display:none}
+.ep-conta-pop{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:auto!important;width:min(460px,100%)!important;height:100%!important;max-height:none!important;overflow-y:auto;z-index:2147483002;padding:22px 22px 18px!important;background:rgba(14,32,58,.92)!important;box-shadow:0 30px 80px rgba(0,20,50,.5)!important;font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;animation:epEntraDir .45s cubic-bezier(.1,.9,.2,1) both!important}
+.ep-conta-pop .ep-pop-tit{font:300 26px/1.2 "Segoe UI Light","Segoe UI",system-ui,sans-serif;color:#fff;display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.ep-conta-pop .ep-pop-x{margin-left:auto;display:inline-flex;align-items:center;height:30px;padding:0 10px;border:1px solid rgba(255,255,255,.75);background:rgba(0,0,0,.25);color:#fff;font:12.5px 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-conta-pop .ep-pop-x:hover,.ep-conta-pop .ep-pop-x:focus-visible{background:#fff;color:#0e203a;outline:none}
+.ep-conta-pop .ep-conta-head{padding:2px 0 14px!important;border-bottom:1px solid rgba(255,255,255,.14)!important}
+.ep-conta-pop .it{padding:12px 6px!important;font-size:14px!important;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.08)!important}
+.ep-conta-pop .ep-conta-head+.it{border-top:0!important}
+.ep-conta-pop .sep{margin:0!important;height:10px!important;background:none!important}
 .ep-pg .cx{position:relative}.ep-pg .pg-x{position:absolute!important;top:8px;right:8px;width:30px!important;height:30px!important;padding:0!important;border:0!important;background:none!important;color:rgba(255,255,255,.8)!important;font-size:14px;cursor:pointer}.ep-pg .pg-x:hover{background:rgba(255,255,255,.14)!important;color:#fff!important}
 /* avisos, selos e a chave de ADM no visual novo (cantos retos, azul escuro) */
 .ep-conta-aviso{background:rgba(14,32,58,.95)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 14px 40px rgba(0,20,50,.45)!important}
@@ -845,12 +853,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i><i class="a" title="Citaram você com @">@</i><i class="d" title="Tem denúncia para os ADMs verem">!</i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
-    const fecha = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    // painel lateral igual ao da nuvem e do computador (pedido da dona, 09/11/2026): mora no body para ficar por cima de tudo em qualquer programa
+    const fundo = document.createElement('div'); fundo.className = 'ep-conta-fundo'; fundo.hidden = true; document.body.append(fundo, pop);
+    const fecha = () => { pop.hidden = true; fundo.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
     const abre = () => {
       let ex = []; try { ex = (typeof CFG.extras === 'function' ? CFG.extras() : CFG.extras) || []; } catch { }
       ex = ex.filter(Boolean);
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
-      pop.innerHTML = `<div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
+      pop.innerHTML = `<h2 class="ep-pop-tit">${ICONES.conta} Sua conta <button type="button" class="ep-pop-x" data-a="fechar">Fechar</button></h2><div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs"${window.EstudioPerm?.pode('geral.mensagens') === false ? ' hidden' : ''}>${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
@@ -861,6 +871,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
         <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
+      pop.querySelector('[data-a=fechar]').onclick = fecha;
       pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else abrirMinhaConta(); };
       pop.querySelectorAll('a.it[href="/"]').forEach(a => a.onclick = ev => { fecha(); irAoMenu(ev); });
       pop.querySelector('[data-a=msgs]').onclick = () => { fecha(); painelMensagens(); };
@@ -873,14 +884,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           ok: 'Sair', perfil: p, trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Sair sem salvar' }))) return;
         try { localStorage.removeItem('ep-conv-v1'); sessionStorage.removeItem('ep-conta-v1'); } catch { } if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
-      pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      pop.hidden = false; fundo.hidden = false; btn.setAttribute('aria-expanded', 'true');
     };
     btn.onclick = e => { e.stopPropagation(); pop.hidden ? abre() : fecha(); };
     box.querySelector('.ep-conta-espaco').onclick = () => { fecha(); painelEspaco(); };
     const bm = box.querySelector('.ep-conta-menu'); if (bm) bm.onclick = ev => irAoMenu(ev); // salva antes de ir (e avisa se demorar)
     const nb = box.querySelector('.ep-conta-nuvem'); if (nb) { nb.onclick = () => { fecha(); painelNuvem(); }; setTimeout(() => atualizaNuvem(), 0); }
     atualizaAneis();
-    document.addEventListener('click', e => { if (!box.contains(e.target)) fecha(); });
+    document.addEventListener('click', e => { if (!box.contains(e.target) && !pop.contains(e.target)) fecha(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') fecha(); });
     return box;
   }
