@@ -709,9 +709,24 @@ window.EstudioPerm ||= (() => {
 .ep-conta-pop .ep-pop-tit{font:300 26px/1.2 "Segoe UI Light","Segoe UI",system-ui,sans-serif;color:#fff;display:flex;align-items:center;gap:10px;margin:0 0 14px}
 .ep-conta-pop .ep-pop-x{margin-left:auto;display:inline-flex;align-items:center;height:30px;padding:0 10px;border:1px solid rgba(255,255,255,.75);background:rgba(0,0,0,.25);color:#fff;font:12.5px 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-conta-pop .ep-pop-x:hover,.ep-conta-pop .ep-pop-x:focus-visible{background:#fff;color:#0e203a;outline:none}
 .ep-conta-pop .ep-conta-head{padding:2px 0 14px!important;border-bottom:1px solid rgba(255,255,255,.14)!important}
-.ep-conta-pop .it{padding:12px 6px!important;font-size:14px!important;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.08)!important}
-.ep-conta-pop .ep-conta-head+.it{border-top:0!important}
-.ep-conta-pop .sep{margin:0!important;height:10px!important;background:none!important}
+.ep-conta-pop:not([hidden]){display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start}
+.ep-conta-pop .ep-pop-tit,.ep-conta-pop .ep-conta-head,.ep-conta-pop .sep,.ep-conta-pop .it.sair,.ep-conta-pop .it[data-ex]{grid-column:1/-1}
+.ep-conta-pop .ep-conta-head{display:flex;align-items:center;gap:14px;border-bottom:0!important;padding:4px 0 12px!important}
+.ep-conta-pop .ep-conta-head .av{width:60px!important;height:60px!important;flex:none}.ep-conta-pop .ep-conta-head .av img{width:100%;height:100%;object-fit:cover}
+.ep-conta-pop .ep-conta-head b{font:300 24px/1.2 "Segoe UI Light","Segoe UI",system-ui,sans-serif}
+.ep-conta-pop .it{width:auto!important;min-height:112px;box-sizing:border-box;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px!important;font-size:14px!important;color:#fff!important;transition:transform .12s ease}
+.ep-conta-pop .it svg{width:28px;height:28px;color:#fff!important;flex:none}
+.ep-conta-pop .it:hover,.ep-conta-pop .it:focus-visible{outline:2px solid rgba(255,255,255,.85);outline-offset:-2px}.ep-conta-pop .it:active{transform:scale(.97)}
+.ep-conta-pop .it .cont{position:absolute;top:10px;right:10px;margin:0}.ep-conta-pop .it{position:relative}
+.ep-conta-pop .it[data-a=conta]{background:#1f6fd6!important}
+.ep-conta-pop .it[data-a=msgs]:not(.msgnova):not(.msgmenc){background:#00857f!important}
+.ep-conta-pop .it[data-a=adm]:not(.denun){background:#603cba!important}
+.ep-conta-pop a.it{background:#1e7145!important}
+.ep-conta-pop .it[data-a=relatorio]{background:#b05a00!important}
+.ep-conta-pop .it[data-a=atualizar]:not(.novo){background:#2b5797!important}
+.ep-conta-pop .it[data-ex]{background:#4b5563!important;min-height:64px;flex-direction:row;align-items:center;justify-content:flex-start}
+.ep-conta-pop .it.sair{background:#b91d47!important;min-height:56px;flex-direction:row;align-items:center;justify-content:flex-start}.ep-conta-pop .it.sair svg,.ep-conta-pop .it[data-ex] svg{width:20px;height:20px}
+.ep-conta-pop .sep{margin:0!important;height:6px!important;background:none!important}
 .ep-pg .cx{position:relative}.ep-pg .pg-x{position:absolute!important;top:8px;right:8px;width:30px!important;height:30px!important;padding:0!important;border:0!important;background:none!important;color:rgba(255,255,255,.8)!important;font-size:14px;cursor:pointer}.ep-pg .pg-x:hover{background:rgba(255,255,255,.14)!important;color:#fff!important}
 /* avisos, selos e a chave de ADM no visual novo (cantos retos, azul escuro) */
 .ep-conta-aviso{background:rgba(14,32,58,.95)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 14px 40px rgba(0,20,50,.45)!important}
