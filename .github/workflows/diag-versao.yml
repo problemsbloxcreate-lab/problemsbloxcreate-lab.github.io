@@ -1,0 +1,25 @@
+name: Diagnóstico das versões publicadas
+
+# Só roda à mão. Não muda nada: mostra qual versão do porteiro e do turma-ia está em uso na Cloudflare (só IDs e datas).
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Versões
+        shell: bash
+        run: |
+          set -uo pipefail
+          API="https://api.cloudflare.com/client/v4"; H=(-H "Authorization: Bearer $CF_TOKEN")
+          for w in estudio turma-ia; do
+            echo "== $w"
+            curl -sS "${H[@]}" "$API/accounts/$CF_ACC/workers/scripts/$w/deployments" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);if(!j.success)return console.log(JSON.stringify(j.errors));for(const d of (j.result.deployments||[]).slice(0,4))console.log(d.created_on,d.source,JSON.stringify(d.versions))})"
+          done
