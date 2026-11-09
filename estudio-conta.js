@@ -737,10 +737,10 @@ window.EstudioPerm ||= (() => {
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
 .ep-esp.ep-saindo{animation:epSome .2s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
-.ep-cal.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
+.ep-cal.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both,epSome .2s ease both!important}
 .ep-msgs.ep-saindo,.ep-pg.ep-saindo,.ep-admj.ep-saindo,.modal.ep-saindo{animation:epSome .22s ease both!important}
 .ep-msgs.ep-saindo .cx,.ep-pg.ep-saindo .cx,.ep-admj.ep-saindo .cx,.modal.ep-saindo .mc{animation:epEncolhe .22s ease both!important}
-.ep-notif.ep-saindo{animation:epSome .16s ease both!important}.ep-conta-pop.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}.ep-conta-fundo.ep-saindo{animation:epSome .2s ease both}
+.ep-notif.ep-saindo{animation:epSome .16s ease both!important}.ep-conta-pop.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both,epSome .2s ease both!important}.ep-conta-fundo.ep-saindo{animation:epSome .2s ease both}
 /* calendário: luz do Windows 10 (as bordas dos dias perto do mouse acendem; o dia embaixo do mouse ganha a borda clara) */
 .ep-cal .g{position:relative;gap:2px!important;padding:2px;--mx:-200px;--my:-200px}
 .ep-cal .g::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle 80px at var(--mx) var(--my),rgba(255,255,255,.2),rgba(255,255,255,0) 100%)}
