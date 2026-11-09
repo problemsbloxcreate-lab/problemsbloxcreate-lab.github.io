@@ -714,6 +714,7 @@ window.EstudioPerm ||= (() => {
 .ep-conta-pop .ep-conta-head{display:flex;align-items:center;gap:14px;border-bottom:0!important;padding:4px 0 12px!important}
 .ep-conta-pop .ep-conta-head .av{width:60px!important;height:60px!important;flex:none}.ep-conta-pop .ep-conta-head .av img{width:100%;height:100%;object-fit:cover}
 .ep-conta-pop .ep-conta-head b{font:300 24px/1.2 "Segoe UI Light","Segoe UI",system-ui,sans-serif}
+.ep-selo-adm{display:inline-grid;place-items:center;height:22px;padding:0 8px;border:1.5px solid #fff;color:#fff;font:600 11px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:.2px;flex:none}
 .ep-conta-pop .it{width:auto!important;min-height:112px;box-sizing:border-box;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px!important;font-size:14px!important;color:#fff!important;transition:transform .12s ease}
 .ep-conta-pop .it svg{width:28px;height:28px;color:#fff!important;flex:none}
 .ep-conta-pop .it:hover,.ep-conta-pop .it:focus-visible{outline:2px solid rgba(255,255,255,.85);outline-offset:-2px}.ep-conta-pop .it:active{transform:scale(.97)}
@@ -736,10 +737,10 @@ window.EstudioPerm ||= (() => {
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
 .ep-esp.ep-saindo{animation:epSome .2s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
-.ep-cal.ep-saindo{animation:epSaiDir .18s cubic-bezier(.4,0,1,1) both!important}
+.ep-cal.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
 .ep-msgs.ep-saindo,.ep-pg.ep-saindo,.ep-admj.ep-saindo,.modal.ep-saindo{animation:epSome .22s ease both!important}
 .ep-msgs.ep-saindo .cx,.ep-pg.ep-saindo .cx,.ep-admj.ep-saindo .cx,.modal.ep-saindo .mc{animation:epEncolhe .22s ease both!important}
-.ep-conta-pop.ep-saindo,.ep-notif.ep-saindo{animation:epSome .16s ease both!important}
+.ep-notif.ep-saindo{animation:epSome .16s ease both!important}.ep-conta-pop.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}.ep-conta-fundo.ep-saindo{animation:epSome .2s ease both}
 /* calendário: luz do Windows 10 (as bordas dos dias perto do mouse acendem; o dia embaixo do mouse ganha a borda clara) */
 .ep-cal .g{position:relative;gap:2px!important;padding:2px;--mx:-200px;--my:-200px}
 .ep-cal .g::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle 80px at var(--mx) var(--my),rgba(255,255,255,.2),rgba(255,255,255,0) 100%)}
@@ -870,12 +871,15 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
     // painel lateral igual ao da nuvem e do computador (pedido da dona, 09/11/2026): mora no body para ficar por cima de tudo em qualquer programa
     const fundo = document.createElement('div'); fundo.className = 'ep-conta-fundo'; fundo.hidden = true; document.body.append(fundo, pop);
-    const fecha = () => { pop.hidden = true; fundo.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    // o mesmo selo do título do menu (nome, borda e fundo do cargo ADM em ADM › Níveis)
+    const seloAdmDe = () => { let c = null; try { c = window.EstudioPerm?.dados?.()?.cargos?.find(x => x?.id === 'adm') || null; } catch { } if (c && !c.selo) return ''; const h = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null, a = Number.isFinite(+c?.seloAlfa) && c?.seloAlfa != null ? Math.max(0, Math.min(1, +c.seloAlfa)) : .35; return `<span class="ep-selo-adm" style="border-color:${h(c?.seloBorda) || '#ffffff'};background:${h(c?.seloFundo) || '#0e203a'}${Math.round(a * 255).toString(16).padStart(2, '0')}" title="ADM do Estúdio Problems">${esc(c?.nome || 'ADM')}</span>`; };
+    let saiT = 0; const calmoP = matchMedia('(prefers-reduced-motion: reduce)'), limpa = () => { clearTimeout(saiT); pop.classList.remove('ep-saindo'); fundo.classList.remove('ep-saindo'); };
+    const fecha = () => { btn.setAttribute('aria-expanded', 'false'); if (pop.hidden || pop.classList.contains('ep-saindo')) return; const some = () => { limpa(); pop.hidden = true; fundo.hidden = true; }; if (calmoP.matches) return some(); pop.classList.add('ep-saindo'); fundo.classList.add('ep-saindo'); saiT = setTimeout(some, 200); };
     const abre = () => {
       let ex = []; try { ex = (typeof CFG.extras === 'function' ? CFG.extras() : CFG.extras) || []; } catch { }
       ex = ex.filter(Boolean);
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
-      pop.innerHTML = `<h2 class="ep-pop-tit">${ICONES.conta} Sua conta <button type="button" class="ep-pop-x" data-a="fechar">Fechar</button></h2><div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? `<i class="ep-selo" title="ADM do Estúdio Problems">${ICONES.chave}</i>` : ''}</b><small>${esc(p.email)}</small></span></div>
+      pop.innerHTML = `<h2 class="ep-pop-tit">${ICONES.conta} Sua conta <button type="button" class="ep-pop-x" data-a="fechar">Fechar</button></h2><div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? seloAdmDe() : ''}</b><small>${esc(p.email)}</small></span></div>
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs"${window.EstudioPerm?.pode('geral.mensagens') === false ? ' hidden' : ''}>${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
@@ -899,7 +903,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
           ok: 'Sair', perfil: p, trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Sair sem salvar' }))) return;
         try { localStorage.removeItem('ep-conv-v1'); sessionStorage.removeItem('ep-conta-v1'); } catch { } if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
-      pop.hidden = false; fundo.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      limpa(); pop.hidden = false; fundo.hidden = false; btn.setAttribute('aria-expanded', 'true');
     };
     btn.onclick = e => { e.stopPropagation(); pop.hidden ? abre() : fecha(); };
     box.querySelector('.ep-conta-espaco').onclick = () => { fecha(); painelEspaco(); };

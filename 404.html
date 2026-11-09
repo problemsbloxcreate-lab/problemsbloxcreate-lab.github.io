@@ -1631,7 +1631,7 @@ function seloCss(c) { const h = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null,
 function pintaSelos() {
   const box = $('#selos-cargo'); if (!box) return; const P = window.EstudioPerm;
   const desenha = () => { let todos = []; try { todos = P?.dados?.()?.cargos || []; } catch { } const cs = todos.filter(c => c?.selo && c.nome);
-    const ba = $('#badge-adm'); if (ba) ba.hidden = !DADOS?.adm || todos.some(c => c?.id === 'adm'); // cargo ADM chegou: o selo dele (nome/cor) substitui o fixo
+    const ba = $('#badge-adm'); if (ba) ba.hidden = !DADOS?.adm || (todos.some(c => c?.id === 'adm') && (cs.some(c => c.id === 'adm') || !todos.find(c => c?.id === 'adm')?.selo)); // cargo ADM chegou: o selo dele (nome/cor) substitui o fixo
     box.innerHTML = cs.map(c => { const cor = /^#[0-9a-f]{6}$/i.test(c.cor || '') ? c.cor : '#8e8e93'; return `<span class="badge cargo" style="${seloCss(c)}" title="Seu cargo">${esc(c.nome)}</span>`; }).join(''); };
   desenha(); if (!pintaSelos.ok) { pintaSelos.ok = true; try { P?.pronto?.then?.(desenha); } catch { } addEventListener('estudio-perm', desenha); }
 }
@@ -1692,7 +1692,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : /\/cerebro(\/|$)/.test(String(l.url || '')) ? -1 /* quem já tinha uma ordem própria também vê o Cérebro primeiro */ : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || ''; vs.onclick = () => window.EstudioConta?.relatorio?.(); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
+  pintaGrid(); pintaSelos(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || ''; vs.onclick = () => window.EstudioConta?.relatorio?.(); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
