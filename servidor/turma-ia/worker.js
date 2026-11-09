@@ -58,7 +58,7 @@ async function extrasAcesso(env) {
   return extrasBom || [];
 }
 // espaço da equipe (KV grátis da Cloudflare: 1 GB por conta; EQUIPE_LIMITE_MB muda o limite)
-const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 + (d1Est.arq ? ARQUIVOS_MB : 0) : 1024)) * 1048576; // com a nuvem dos arquivos: a principal + os bancos de lá
+const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (PRINCIPAL_PAGA ? 5120 /* plano pago: 5 GB (09/11/2026) */ : env._d1 ? 480 + (d1Est.arq ? ARQUIVOS_MB : 0) : 1024)) * 1048576; // com a nuvem dos arquivos: a principal + os bancos de lá
 let usoEq = null; // conta guardada por 1 min (listar a nuvem toda a cada imagem gasta a cota de listagens do dia)
 async function usadoEquipe(env, mais = 0) {
   // sem lista (limite do dia, reserva ainda sem a foto da lista): usa a última conta que tiver (ou 0) — medir o espaço NÃO pode impedir de salvar na reserva
