@@ -780,6 +780,151 @@ function tipoAudio(buf) { const u = new Uint8Array(buf, 0, Math.min(16, buf.byte
   if (s(4, 8) === 'ftyp') return { ext: 'm4a', mime: 'audio/mp4' };
   if (s(0, 3) === 'ID3' || (u[0] === 0xff && (u[1] & 0xe0) === 0xe0)) return { ext: 'mp3', mime: 'audio/mpeg' };
   return null; }
+// ===================== MÚSICAS (pedido da dona, 09/11/2026): o álbum de sons da equipe =====================
+// Tabelas próprias (mus_*) no D1 `equipe`: não entram na tabela arq, então o robô da cópia de segurança não as leva para as reservas.
+// mus_arq/mus_parte = o conteúdo, uma vez só por SHA-256 (BLOB em pedaços de 1,9 MB) · mus_som = os sons novos · mus_copia = cópia da biblioteca antiga
+// (chave = a/<sha1 de "pk:…" ou "mc:…"> do repositório estudio-biblioteca) · mus_oculto = som antigo tirado do álbum (a origem NUNCA é apagada; só some daqui).
+// Somas guardadas em mus_soma: abrir o programa não conta tabela nenhuma. Toda a segurança é conferida aqui, não na página.
+const MUS = { prep: false };
+const MB_ = 1048576, MUS_PED = 1992294, MUS_LIM = {
+  arq: 20 * MB_, // cada arquivo
+  p10N: 15, pDiaN: 60, pDiaB: 300 * MB_, // cada pessoa: envios em 10 minutos, envios e bytes no dia
+  tDiaN: 400, tDiaB: 1536 * MB_, // toda a equipe no dia
+  album: 2560 * MB_, // tudo o que foi enviado para o álbum (sem contar a cópia da biblioteca antiga)
+  copia: 1200 * MB_, nuvemPct: .8, // a nuvem inteira: acima disso ninguém envia, para sobrar espaço para os outros programas
+  admHora: 15, admDia: 40, tApaDia: 80, desafioMs: 5 * 60e3,
+};
+const MUS_CATS = new Set(['sfx', 'bgm', 'amb', 'mem', 'out']), MUS_ORIG = new Set(['musicas', 'animador', 'shorts', 'editor', 'jester', 'modelador', 'preparativos']);
+const musTxt = (s, n) => String(s ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, n);
+const musNorm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const musHex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+const musSha = async buf => musHex(await crypto.subtle.digest('SHA-256', buf));
+function musTipo(buf) { const u = new Uint8Array(buf, 0, Math.min(16, buf.byteLength)), s = (a, b) => String.fromCharCode(...u.slice(a, b));
+  if (s(0, 4) === 'fLaC') return { ext: 'flac', mime: 'audio/flac' };
+  if (u[0] === 0xff && (u[1] & 0xf6) === 0xf0) return { ext: 'aac', mime: 'audio/aac' };
+  if (u[0] === 0xff && (u[1] & 0xe0) === 0xe0 && ((u[1] >> 1) & 3) === 0) return null; // nem MP3 nem AAC
+  if (u[0] === 0xff && (u[1] & 0xe0) === 0xe0 && (((u[2] >> 4) & 15) === 15 || ((u[2] >> 2) & 3) === 3)) return null; // cabeçalho de MP3 impossível
+  return tipoAudio(buf); }
+async function musPrepara(db) { if (MUS.prep) return; await db.batch([
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_arq (sha TEXT PRIMARY KEY, tipo TEXT NOT NULL, tam INTEGER NOT NULL, n INTEGER NOT NULL, em INTEGER NOT NULL)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_parte (sha TEXT NOT NULL, i INTEGER NOT NULL, v BLOB NOT NULL, PRIMARY KEY (sha, i)) WITHOUT ROWID'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_som (id TEXT PRIMARY KEY, nome TEXT NOT NULL, cat TEXT NOT NULL, pasta TEXT, tipo TEXT NOT NULL, tam INTEGER NOT NULL, sha TEXT NOT NULL, dur REAL, origem TEXT NOT NULL, por TEXT, por_id TEXT, em INTEGER NOT NULL, apagado INTEGER NOT NULL DEFAULT 0, apagado_por TEXT, apagado_id TEXT, apagado_em INTEGER)'),
+  db.prepare('CREATE INDEX IF NOT EXISTS mus_som_ap ON mus_som (apagado, em)'), db.prepare('CREATE INDEX IF NOT EXISTS mus_som_sha ON mus_som (sha, apagado)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_copia (hx TEXT PRIMARY KEY, sha TEXT NOT NULL, tam INTEGER NOT NULL, em INTEGER NOT NULL)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_oculto (rel TEXT PRIMARY KEY, nome TEXT, por TEXT, por_id TEXT, em INTEGER NOT NULL)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_cota (k TEXT PRIMARY KEY, n INTEGER NOT NULL, b INTEGER NOT NULL, ate INTEGER NOT NULL)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_soma (k TEXT PRIMARY KEY, n INTEGER NOT NULL, b INTEGER NOT NULL)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS mus_log (em INTEGER NOT NULL, acao TEXT NOT NULL, alvo TEXT NOT NULL, nome TEXT, por TEXT, por_id TEXT, motivo TEXT)'),
+  db.prepare('CREATE INDEX IF NOT EXISTS mus_log_em ON mus_log (em)'),
+]); MUS.prep = true; }
+// soma atômica de um período: quem chegar junto não passa do limite (o banco resolve um por vez)
+const musCota = (db, k, n, b, ate, agora) => db.prepare('INSERT INTO mus_cota (k, n, b, ate) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(k) DO UPDATE SET n = CASE WHEN ate < ?5 THEN ?2 ELSE n + ?2 END, b = CASE WHEN ate < ?5 THEN ?3 ELSE b + ?3 END, ate = CASE WHEN ate < ?5 THEN ?4 ELSE ate END RETURNING n, b').bind(k, n, b, ate, agora);
+const musDevolve = (db, k, n, b) => db.prepare('UPDATE mus_cota SET n = max(0, n - ?), b = max(0, b - ?) WHERE k = ?').bind(n, b, k);
+const musFimDia = agora => { const d = new Date(agora); d.setUTCHours(24, 0, 0, 0); return d.getTime(); };
+const musSomaSt = (db, k, n, b) => db.prepare('INSERT INTO mus_soma (k, n, b) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET n = n + ?2, b = b + ?3').bind(k, n, b);
+async function musConteudo(db, a) { const pp = []; for (let i = 0; i < a.n; i += 5) { const { results } = await db.prepare('SELECT v FROM mus_parte WHERE sha = ? AND i >= ? AND i < ? ORDER BY i').bind(a.sha, i, i + 5).all(); for (const x of results || []) pp.push(new Uint8Array(x.v)); }
+  const t = new Uint8Array(a.tam); let o = 0; for (const p of pp) { if (o + p.length > a.tam) throw new Error('pedaços maiores que o arquivo'); t.set(p, o); o += p.length; } if (o !== a.tam) throw new Error('faltam pedaços do arquivo'); return t; }
+// grava só o que ainda não existe; devolve quantos bytes novos entraram. O registro em mus_arq vem por último: arquivo pela metade nunca aparece.
+async function musGravaConteudo(db, sha, buf, tipo) { const n = Math.ceil(buf.byteLength / MUS_PED); for (let i = 0; i < n; i += 5) { const st = []; for (let j = i; j < Math.min(n, i + 5); j++) st.push(db.prepare('INSERT OR REPLACE INTO mus_parte (sha, i, v) VALUES (?, ?, ?)').bind(sha, j, buf.slice(j * MUS_PED, (j + 1) * MUS_PED))); await db.batch(st); }
+  const r = await db.prepare('INSERT OR IGNORE INTO mus_arq (sha, tipo, tam, n, em) VALUES (?, ?, ?, ?, ?)').bind(sha, tipo, buf.byteLength, n, Date.now()).run(); return r.meta?.changes ? buf.byteLength : 0; }
+async function musEspaco(env, db) { const { results } = await db.prepare('SELECT k, n, b FROM mus_soma').all(), s = Object.fromEntries((results || []).map(x => [x.k, { n: x.n, b: x.b }])), v = { n: 0, b: 0 }, r = await db.prepare('SELECT 1').run();
+  return { novos: s.novos || v, copia: s.copia || v, lixo: s.lixo || v, ocultos: (s.ocultos || v).n, nuvem: r.meta?.size_after || 0, limite: limiteEquipe(env) }; }
+async function musicas(req, env, login, path, cors) {
+  const nc = { ...cors, 'cache-control': 'no-store' }, ok = (o, s = 200) => json(o, s, nc), erro = (m, s = 400, type = 'musicas') => json({ error: { type, message: m } }, s, nc), db = env.EQUIPE_DB;
+  if (!db) return erro('O banco das Músicas não está ligado neste servidor.', 503);
+  const ia = !!login.ia, rota = path.slice('/musicas'.length) || '/', q = new URL(req.url).searchParams, agora = Date.now();
+  await musPrepara(db);
+  // COPIAR A BIBLIOTECA ANTIGA: só IA com chave ou ADM. A origem é só lida (por quem chama); aqui o conteúdo chega, é conferido e guardado.
+  if (rota.startsWith('/copia')) {
+    if (!ia && !ehAdmin(env, login.email)) return erro('Só um ADM copia a biblioteca.', 403, 'adm');
+    if (rota === '/copia' && req.method === 'POST') { const hx = q.get('hx') || '', sha0 = q.get('sha') || '', tipo0 = /^[a-z]+\/[a-z0-9.+-]+$/.test(q.get('tipo') || '') ? q.get('tipo') : 'application/octet-stream';
+      if (!/^([0-9a-f]{40}|indice)$/.test(hx) || !/^[0-9a-f]{64}$/.test(sha0)) return erro('Chave inválida.');
+      const ja = await db.prepare('SELECT sha FROM mus_copia WHERE hx = ?').bind(hx).first(); if (ja?.sha === sha0) return ok({ ok: true, ja: true });
+      const buf = await req.arrayBuffer(); if (!buf.byteLength || buf.byteLength > 32 * MB_) return erro('Tamanho inválido.', 413);
+      const sha = await musSha(buf); if (sha !== sha0) return erro('O conteúdo chegou diferente do que devia (SHA-256).', 422, 'sha');
+      const so = await db.prepare("SELECT b FROM mus_soma WHERE k = 'copia'").first(); if ((so?.b || 0) + buf.byteLength > MUS_LIM.copia) return erro('A cópia passou do limite combinado.', 507, 'cheio');
+      const novos = await musGravaConteudo(db, sha, buf, tipo0);
+      const r = await db.prepare('INSERT OR REPLACE INTO mus_copia (hx, sha, tam, em) VALUES (?, ?, ?, ?)').bind(hx, sha, buf.byteLength, agora).run();
+      await musSomaSt(db, 'copia', ja ? 0 : 1, novos).run(); return ok({ ok: true, sha, novos, grav: r.meta?.changes || 0 }); }
+    if (rota === '/copia/lista' && req.method === 'GET') { const n = Math.min(3000, Math.max(1, +q.get('n') || 2000)); const { results } = await db.prepare('SELECT hx, sha, tam FROM mus_copia WHERE hx > ? ORDER BY hx LIMIT ?').bind(q.get('depois') || '', n).all(); return ok({ itens: results || [] }); }
+    if (rota === '/copia/conferir' && req.method === 'POST') { const b = await req.json().catch(() => ({})), hxs = Array.isArray(b.hx) ? b.hx.slice(0, 40) : [], out = {}; // relê do banco e recalcula o SHA-256 do que está guardado de verdade
+      for (const hx of hxs) { const c = await db.prepare('SELECT c.sha, a.tipo, a.tam, a.n FROM mus_copia c JOIN mus_arq a ON a.sha = c.sha WHERE c.hx = ?').bind(String(hx)).first(); if (!c) { out[hx] = false; continue; } try { out[hx] = await musSha(await musConteudo(db, c)) === c.sha; } catch { out[hx] = false; } } return ok({ ok: out }); }
+    return erro('Rota desconhecida.', 404);
+  }
+  if (ia) return erro('A chave só serve para copiar.', 403, 'adm');
+  if (rota !== '/bib' && !(await pode(env, login.email, 'musicas'))) return erro('O seu cargo não inclui as Músicas. Peça para um ADM liberar.', 403, 'permissao');
+  // ?como=comum: um ADM testa como conta comum. Só tira poder, nunca dá.
+  const adm = ehAdmin(env, login.email) && q.get('como') !== 'comum', eu = { nome: cbLimpa(login.nome, 80) || (!req.cf ? cbLimpa(decodeURIComponent(req.headers.get('x-porteiro-nome') || ''), 80) : '') || 'Alguém da equipe', id: await permId(login.email) };
+  const SOM = 'id, nome, cat, pasta, tipo, tam, sha, dur, origem, por, por_id, em';
+  if (req.method === 'GET') {
+    if (rota === '/') { const [lista, oc, esp] = await Promise.all([db.prepare(`SELECT ${SOM} FROM mus_som WHERE apagado = 0 ORDER BY em DESC LIMIT 3000`).all(), db.prepare('SELECT rel FROM mus_oculto').all(), musEspaco(env, db)]);
+      const fim = musFimDia(agora), ids = ['p10:' + eu.id, 'pd:' + eu.id, 'td']; const { results: cs } = await db.prepare('SELECT k, n, b, ate FROM mus_cota WHERE k IN (?, ?, ?)').bind(...ids).all(), c = Object.fromEntries((cs || []).filter(x => x.ate >= agora).map(x => [x.k, x]));
+      return ok({ sons: lista.results || [], ocultos: (oc.results || []).map(x => x.rel), adm, espaco: esp, lim: MUS_LIM, cota: { p10: c[ids[0]]?.n || 0, dia: c[ids[1]]?.n || 0, diaB: c[ids[1]]?.b || 0, todos: c[ids[2]]?.n || 0, todosB: c[ids[2]]?.b || 0, fim } }); }
+    if (rota === '/ouvir' || rota === '/bib') { let a;
+      if (rota === '/ouvir') { const sha = q.get('sha') || ''; if (!/^[0-9a-f]{64}$/.test(sha)) return erro('Chave inválida.'); a = await db.prepare('SELECT sha, tipo, tam, n FROM mus_arq WHERE sha = ?').bind(sha).first(); }
+      else { const hx = q.get('hx') || ''; if (!/^([0-9a-f]{40}|indice)$/.test(hx)) return erro('Chave inválida.'); a = await db.prepare('SELECT a.sha, a.tipo, a.tam, a.n FROM mus_copia c JOIN mus_arq a ON a.sha = c.sha WHERE c.hx = ?').bind(hx).first(); }
+      if (!a) return erro('Não tem.', 404, 'nao_tem');
+      return new Response(await musConteudo(db, a), { headers: { ...cors, 'content-type': a.tipo, 'content-length': String(a.tam), 'cache-control': rota === '/bib' && q.get('hx') === 'indice' ? 'no-store' : 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff' } }); }
+    if (rota === '/lixeira') { if (!adm) return erro('Só um ADM vê a lixeira.', 403, 'adm');
+      const [a, b] = await Promise.all([db.prepare(`SELECT ${SOM}, apagado_por, apagado_em FROM mus_som WHERE apagado = 1 ORDER BY apagado_em DESC LIMIT 500`).all(), db.prepare('SELECT * FROM mus_oculto ORDER BY em DESC LIMIT 500').all()]); return ok({ sons: a.results || [], ocultos: b.results || [] }); }
+    if (rota === '/registro') { if (!adm) return erro('Só um ADM vê o registro.', 403, 'adm'); const { results } = await db.prepare('SELECT em, acao, alvo, nome, por, por_id, motivo FROM mus_log ORDER BY em DESC LIMIT 100').all(); return ok({ itens: results || [] }); }
+    return erro('Rota desconhecida.', 404);
+  }
+  if (req.method !== 'POST') return erro('Use POST.', 405);
+  if (rota === '/enviar') {
+    if (!(await pode(env, login.email, 'musicas.enviar'))) return erro('O seu cargo não inclui enviar sons. Peça para um ADM liberar.', 403, 'permissao');
+    const cl = +req.headers.get('content-length') || 0; if (cl > MUS_LIM.arq) return erro(`Arquivo grande demais: o máximo é ${MUS_LIM.arq / MB_} MB.`, 413, 'grande');
+    const fim = musFimDia(agora), p10 = 'p10:' + eu.id, pd = 'pd:' + eu.id, td = 'td', estoura = [];
+    // 1º conta a tentativa, antes de ler o arquivo: uma conta invadida não gasta o servidor mandando sem parar
+    const [r1, r2, r3] = await db.batch([musCota(db, p10, 1, 0, agora + 600e3, agora), musCota(db, pd, 1, 0, fim, agora), musCota(db, td, 1, 0, fim, agora)]);
+    const n1 = r1.results[0].n, n2 = r2.results[0].n, n3 = r3.results[0].n, volta = async (b = 0) => db.batch([musDevolve(db, p10, 1, 0), musDevolve(db, pd, 1, b), musDevolve(db, td, 1, b)]);
+    if (n1 > MUS_LIM.p10N) estoura.push(`no máximo ${MUS_LIM.p10N} envios a cada 10 minutos`); if (n2 > MUS_LIM.pDiaN) estoura.push(`no máximo ${MUS_LIM.pDiaN} envios por dia para cada pessoa`); if (n3 > MUS_LIM.tDiaN) estoura.push(`no máximo ${MUS_LIM.tDiaN} envios por dia para toda a equipe`);
+    if (estoura.length) { await volta(); return erro(`Limite de envios: ${estoura.join(' e ')}. Tente mais tarde.`, 429, 'limite'); }
+    let buf; try { buf = await req.arrayBuffer(); } catch { await volta(); return erro('O envio foi cortado no meio.', 400); }
+    if (!buf.byteLength) { await volta(); return erro('Arquivo vazio.'); } if (buf.byteLength > MUS_LIM.arq) { await volta(); return erro(`Arquivo grande demais: o máximo é ${MUS_LIM.arq / MB_} MB.`, 413, 'grande'); }
+    const tipo = musTipo(buf); if (!tipo) { await volta(); return erro('Esse arquivo não é de som (aceitos: MP3, WAV, OGG, OPUS, FLAC, M4A, AAC e WEBM).', 415, 'tipo'); }
+    const nome = musTxt(q.get('nome'), 120) || 'Som sem nome', cat = MUS_CATS.has(q.get('cat')) ? q.get('cat') : 'sfx', pasta = musTxt(q.get('pasta'), 60) || null, origem = MUS_ORIG.has(q.get('origem')) ? q.get('origem') : 'musicas', dur = Math.max(0, Math.min(86400, +q.get('dur') || 0)) || null, sha = await musSha(buf);
+    const ja = await db.prepare('SELECT id, nome FROM mus_som WHERE sha = ? AND apagado = 0 LIMIT 1').bind(sha).first(); if (ja) { await volta(); return ok({ ok: true, ja: true, id: ja.id, nome: ja.nome }); }
+    const temArq = await db.prepare('SELECT 1 AS s FROM mus_arq WHERE sha = ?').bind(sha).first(), tam = buf.byteLength;
+    if (!temArq) { // só o que vai ocupar espaço de verdade conta nos limites de tamanho
+      const so = await db.prepare("SELECT b FROM mus_soma WHERE k = 'novos'").first(), info = await db.prepare('SELECT 1').run(), nuvem = info.meta?.size_after || 0, lim = limiteEquipe(env);
+      if ((so?.b || 0) + tam > MUS_LIM.album) { await volta(); return erro('O álbum chegou no espaço combinado. Fale com um ADM.', 507, 'cheio'); }
+      if (nuvem && nuvem + tam > lim * MUS_LIM.nuvemPct) { await volta(); return erro('A nuvem da equipe está quase cheia: os envios de sons foram pausados para não atrapalhar os outros programas.', 507, 'cheio'); }
+      const [b1, b2] = await db.batch([musCota(db, pd, 0, tam, fim, agora), musCota(db, td, 0, tam, fim, agora)]);
+      if (b1.results[0].b > MUS_LIM.pDiaB || b2.results[0].b > MUS_LIM.tDiaB) { await volta(tam); return erro(b1.results[0].b > MUS_LIM.pDiaB ? `Limite de ${MUS_LIM.pDiaB / MB_} MB por dia para cada pessoa. Tente amanhã.` : `A equipe chegou no limite de ${MUS_LIM.tDiaB / MB_} MB por dia. Tente amanhã.`, 429, 'limite'); }
+    }
+    const novos = temArq ? 0 : await musGravaConteudo(db, sha, buf, tipo.mime), id = 'm' + agora.toString(36) + musHex(crypto.getRandomValues(new Uint8Array(5)));
+    await db.batch([db.prepare('INSERT INTO mus_som (id, nome, cat, pasta, tipo, tam, sha, dur, origem, por, por_id, em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, nome, cat, pasta, tipo.mime, tam, sha, dur, origem, eu.nome, eu.id, agora), musSomaSt(db, 'novos', 1, novos), db.prepare('INSERT INTO mus_log (em, acao, alvo, nome, por, por_id) VALUES (?, ?, ?, ?, ?, ?)').bind(agora, 'enviou', id, nome, eu.nome, eu.id)]);
+    return ok({ ok: true, som: { id, nome, cat, pasta, tipo: tipo.mime, tam, sha, dur, origem, por: eu.nome, por_id: eu.id, em: agora } });
+  }
+  if (rota === '/apagar' || rota === '/restaurar') {
+    if (!ehAdmin(env, login.email) || !adm) return erro('Só um ADM pode apagar ou restaurar sons.', 403, 'adm');
+    const b = await req.json().catch(() => ({})), id = typeof b.id === 'string' ? b.id : null, rel = typeof b.rel === 'string' ? musTxt(b.rel, 400) : null;
+    if (!id === !rel) return erro('Diga qual som.'); if (rel && !/^(pk|mc):.+/.test(rel)) return erro('Som inválido.');
+    const it = id ? await db.prepare('SELECT id, nome, tam, sha, apagado FROM mus_som WHERE id = ?').bind(id).first() : null; if (id && !it) return erro('Esse som não existe mais.', 404);
+    const nomeAlvo = id ? it.nome : (rel.startsWith('mc:') ? rel.slice(3) : rel.slice(3).split('/').pop().replace(/\.[^.]+$/, '')), alvo = id || rel;
+    if (rota === '/restaurar') {
+      if (id) { if (!it.apagado) return erro('Esse som não está na lixeira.', 409); await db.batch([db.prepare('UPDATE mus_som SET apagado = 0, apagado_por = NULL, apagado_id = NULL, apagado_em = NULL WHERE id = ?').bind(id), musSomaSt(db, 'lixo', -1, -it.tam), db.prepare('INSERT INTO mus_log (em, acao, alvo, nome, por, por_id) VALUES (?, ?, ?, ?, ?, ?)').bind(agora, 'restaurou', id, it.nome, eu.nome, eu.id)]); }
+      else { const r = await db.prepare('DELETE FROM mus_oculto WHERE rel = ?').bind(rel).run(); if (!r.meta?.changes) return erro('Esse som não está na lixeira.', 409); await db.batch([musSomaSt(db, 'ocultos', -1, 0), db.prepare('INSERT INTO mus_log (em, acao, alvo, nome, por, por_id) VALUES (?, ?, ?, ?, ?, ?)').bind(agora, 'restaurou', rel, nomeAlvo, eu.nome, eu.id)]); }
+      return ok({ ok: true }); }
+    if (id ? it.apagado : await db.prepare('SELECT 1 AS s FROM mus_oculto WHERE rel = ?').bind(rel).first()) return erro('Esse som já está na lixeira.', 409);
+    const kd = 'desafio:' + eu.id + ':' + (await musSha(new TextEncoder().encode(alvo))).slice(0, 24);
+    if (b.fase === 1) { const x = 2 + crypto.getRandomValues(new Uint8Array(1))[0] % 18, y = 2 + crypto.getRandomValues(new Uint8Array(1))[0] % 18; await db.prepare('INSERT OR REPLACE INTO mus_cota (k, n, b, ate) VALUES (?, ?, 0, ?)').bind(kd, x + y, agora + MUS_LIM.desafioMs).run(); return ok({ x, y, nome: nomeAlvo, frase: 'APAGAR', vale: MUS_LIM.desafioMs }); }
+    if (b.fase !== 2) return erro('Faltou a confirmação.', 400, 'confirma');
+    const d = await db.prepare('SELECT n, ate FROM mus_cota WHERE k = ?').bind(kd).first(); await db.prepare('DELETE FROM mus_cota WHERE k = ?').bind(kd).run(); // a pergunta só vale uma vez, certa ou errada
+    if (!d || d.ate < agora) return erro('A confirmação expirou. Comece de novo.', 409, 'confirma');
+    const motivo = musTxt(b.motivo, 200);
+    if (musNorm(b.confirma) !== musNorm(nomeAlvo) || !musNorm(nomeAlvo)) return erro('O nome digitado não é o nome do som.', 422, 'confirma');
+    if (b.frase !== 'APAGAR') return erro('Escreva APAGAR, em maiúsculas.', 422, 'confirma'); if (Number(b.resposta) !== d.n) return erro('A conta está errada.', 422, 'confirma'); if (motivo.length < 3) return erro('Diga o motivo.', 422, 'confirma');
+    const fim = musFimDia(agora), [ah, ad, at] = await db.batch([musCota(db, 'ah:' + eu.id, 1, 0, agora + 3600e3, agora), musCota(db, 'ad:' + eu.id, 1, 0, fim, agora), musCota(db, 'tapa', 1, 0, fim, agora)]);
+    if (ah.results[0].n > MUS_LIM.admHora || ad.results[0].n > MUS_LIM.admDia || at.results[0].n > MUS_LIM.tApaDia) { await db.batch([musDevolve(db, 'ah:' + eu.id, 1, 0), musDevolve(db, 'ad:' + eu.id, 1, 0), musDevolve(db, 'tapa', 1, 0)]); return erro(`Limite de segurança: no máximo ${MUS_LIM.admHora} sons apagados por hora e ${MUS_LIM.admDia} por dia para cada ADM.`, 429, 'limite'); }
+    const log = db.prepare('INSERT INTO mus_log (em, acao, alvo, nome, por, por_id, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(agora, 'apagou', alvo, nomeAlvo, eu.nome, eu.id, motivo);
+    if (id) await db.batch([db.prepare('UPDATE mus_som SET apagado = 1, apagado_por = ?, apagado_id = ?, apagado_em = ? WHERE id = ? AND apagado = 0').bind(eu.nome, eu.id, agora, id), musSomaSt(db, 'lixo', 1, it.tam), log]);
+    else await db.batch([db.prepare('INSERT OR REPLACE INTO mus_oculto (rel, nome, por, por_id, em) VALUES (?, ?, ?, ?, ?)').bind(rel, nomeAlvo, eu.nome, eu.id, agora), musSomaSt(db, 'ocultos', 1, 0), log]);
+    return ok({ ok: true, lixeira: true });
+  }
+  return erro('Rota desconhecida.', 404);
+}
 // ===================== LINK DE DUBLAGEM (Preparativos, pedido da dona 06/11/2026) =====================
 // A página pública é a /dublar/ do PORTEIRO (sem login). O porteiro repassa /dublar/api/{ver,enviar,terminar} para cá pela LIGAÇÃO
 // DIRETA (Service Binding TURMA): pedido que vem da internet (tem req.cf) é recusado, então esta rota não fica exposta e não usa CORS.
@@ -1017,7 +1162,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
     // CÉREBRO: as IAs (sem navegador) entram com a chave x-cerebro-chave, que só vale nas rotas /cerebro
-    const ehCerebro = path0 === '/cerebro' || path0.startsWith('/cerebro/'), chaveCb = ehCerebro ? req.headers.get('x-cerebro-chave') : null;
+    const ehCerebro = path0 === '/cerebro' || path0.startsWith('/cerebro/'), ehMusicas = path0 === '/musicas' || path0.startsWith('/musicas/'), chaveCb = ehCerebro || path0.startsWith('/musicas/copia') ? req.headers.get('x-cerebro-chave') : null; // a chave das IAs só vale no Cérebro e em copiar a biblioteca para as Músicas
     if (chaveCb && !(await cbChaveOk(env, chaveCb))) return json({ error: { type: 'chave', message: 'Chave do Cérebro errada.' } }, 401, cors);
     // aberto direto na barra do navegador (sem "origin"): mostra que está funcionando e o uso
     if (!origin && req.method === 'GET' && (path0 === '/' || path0 === '/uso')) return json({ ok: 'Servidor da IA da turma funcionando', login: env.FIREBASE_PROJECT_ID ? 'ligado (' + env.FIREBASE_PROJECT_ID + ')' : 'DESLIGADO — falta FIREBASE_PROJECT_ID', emails: (env.EMAILS_PERMITIDOS || '').split(',').filter(x => x.trim()).length, app: env.APP_KEY ? 'protegido (APP_KEY ok)' : 'falta APP_KEY', chave_ia: env.ANTHROPIC_API_KEY ? 'ok' : 'falta ANTHROPIC_API_KEY' }, 200, cors);
@@ -1027,7 +1172,7 @@ export default {
     // NÍVEIS DE ACESSO pelo porteiro (GET /permissoes de qualquer programa, só com a sessão do porteiro): o porteiro fala por
     // dentro da Cloudflare (Service Binding TURMA) e manda o e-mail da sessão. Pedido da internet SEMPRE tem req.cf; pela ligação
     // direta não tem — então este caminho só vale pela ligação. Mesmo assim o e-mail precisa estar na lista de quem entra.
-    const peloPorteiro = p00 === '/permissoes' && req.method === 'GET' && !req.cf && req.headers.get('x-porteiro-email');
+    const peloPorteiro = ((p00 === '/permissoes' || p00 === '/musicas/bib') && req.method === 'GET' || p00 === '/musicas/enviar' && req.method === 'POST') && !req.cf && req.headers.get('x-porteiro-email'); // /musicas/bib: o porteiro entrega a cópia conferida dos sons antigos
     const login = chaveCb ? { ok: true, ia: true } : peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
     await planoEstado(env);
@@ -1036,6 +1181,7 @@ export default {
       const v = { ciclo: u.ciclo, em: Date.now(), por: login.email }; await env.EQUIPE_DB.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('plano-aceite', ?)").bind(JSON.stringify(v)).run(); PLANO.ac = v; PLANO.at = 0; return json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); }
     if ((planoPausado() || (new URL(req.url).searchParams.get('plano_teste') === '1' && ehAdmin(env, login.email))) && !PLANO_LIVRES.has(path0)) return json({ error: { type: 'plano_pausado', message: 'O Estúdio está pausado: o uso incluído no plano deste mês chegou ao fim. Um ADM precisa confirmar para continuar. O que você fez continua guardado neste computador.' } }, 423, { ...cors, 'x-plano-pausado': '1', 'access-control-expose-headers': 'x-plano-pausado', 'cache-control': 'no-store' });
     if (ehCerebro) return cerebro(req, env, login, path0, cors); // depois da trava do plano: pausado, o Cérebro também responde 423
+    if (ehMusicas) return musicas(req, env, login, path0, cors); // depois da trava do plano
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
     if (R && login.email && (!env._porta || env._ponte)) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // a ponte lê o mesmo banco: poupa também
     if (R && login.email) bg(confereDivide(R)); // DIVIDIR os pedidos com a outra porta quando a principal estiver gastando muito // perto do limite (85%): poupa a principal até as 21h

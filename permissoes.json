@@ -8,6 +8,7 @@
     { "id": "modelador", "nome": "Modelador" },
     { "id": "jester", "nome": "Jester Dreams" },
     { "id": "preparativos", "nome": "Preparativos" },
+    { "id": "musicas", "nome": "Músicas" },
     { "id": "publicacoes", "nome": "Publicações" }
   ],
   "funcoes": [
@@ -36,6 +37,8 @@
     { "id": "preparativos.links", "programa": "preparativos", "nome": "Links para dublar", "desc": "Criar e encerrar links para alguém de fora (sem conta) gravar falas de um roteiro." },
     { "id": "preparativos.transcrever", "programa": "preparativos", "nome": "Transcrever áudio", "desc": "Usar a transcrição (gasta a cota) para achar onde começa cada fala num áudio com várias falas." },
     { "id": "preparativos.ideias", "programa": "preparativos", "nome": "Ideias", "desc": "Criar, mudar e tirar ideias (as mesmas do Animador) e pedir a análise dos canais." },
+
+    { "id": "musicas.enviar", "programa": "musicas", "nome": "Enviar sons", "desc": "Enviar sons e músicas para o álbum das Músicas, dentro dos limites do servidor. Só ADM apaga." },
 
     { "id": "publicacoes.publicar", "programa": "publicacoes", "nome": "Publicar", "desc": "Enviar vídeos para o YouTube pelo Publicações (direto, pelo YouTube Studio ou deixando na fila da equipe) e publicar a fila." },
     { "id": "publicacoes.agendar", "programa": "publicacoes", "nome": "Agendar", "desc": "Escolher dia e hora para o vídeo sair no YouTube." }

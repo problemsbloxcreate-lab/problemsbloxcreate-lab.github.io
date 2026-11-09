@@ -1099,7 +1099,7 @@ const MENU_CONFIG = {
 const URL_CENTRAL = 'https://problemsite.github.io/central/', RE_CENTRAL = /problemsite\.github\.io\/central(\/|$|[?#])/i; // Central de Jogos: site externo da dona, fora do porteiro (sem login do Estúdio)
 const progDaUrl = (u, nome) => { // qual programa é o cartão: pelo endereço (qualquer domínio, até os antigos) ou, sem endereço, pelo nome
   let p = String(u || ''); try { p = new URL(p, location.href).pathname; } catch { }
-  const pe = /\/shorts(\/|$)/.test(p) ? 'sh' : /\/editor(\/|$)/.test(p) ? 'ed' : /\/animador(\/|$)/.test(p) ? (/atelie/.test(String(u)) ? 'at' : 'an') : /\/modelador(\/|$)/.test(p) ? 'md' : /\/preparativos(\/|$)/.test(p) ? 'pr' : /\/cerebro(\/|$)/.test(p) ? 'cb' : RE_CENTRAL.test(String(u || '')) ? 'cj' : null;
+  const pe = /\/shorts(\/|$)/.test(p) ? 'sh' : /\/editor(\/|$)/.test(p) ? 'ed' : /\/animador(\/|$)/.test(p) ? (/atelie/.test(String(u)) ? 'at' : 'an') : /\/musicas(\/|$)/.test(p) ? 'mu' : /\/modelador(\/|$)/.test(p) ? 'md' : /\/preparativos(\/|$)/.test(p) ? 'pr' : /\/cerebro(\/|$)/.test(p) ? 'cb' : RE_CENTRAL.test(String(u || '')) ? 'cj' : null;
   if (pe || u) return pe; const n = String(nome || '').toUpperCase();
   return /SHORT/.test(n) ? 'sh' : /ATELI/.test(n) ? 'at' : /ANIM/.test(n) ? 'an' : /MODEL/.test(n) ? 'md' : /PREPARA/.test(n) ? 'pr' : /EDI/.test(n) ? 'ed' : null; };
 const PROG_IC = { shorts: 'sh', editar: 'ed', animar: 'an', modelar: 'md', atelie: 'at' }; // ícone pronto → ícone do programa (/estudio-icones.js)
@@ -1192,10 +1192,12 @@ const padrao = () => ({ mensagens: JSON.parse(JSON.stringify(MSG_PADRAO)), links
 // PREPARATIVOS (05/11/2026): enquanto a ADM não puser o cartão no menu, ele entra no fim (salvar a ADM › Menu guarda ele junto)
 const comCentral = ls => (ls || []).some(l => RE_CENTRAL.test(String(l.url || ''))) ? ls : [...(ls || []), { nome: 'Central de Jogos', desc: 'Outro site da Problems', url: URL_CENTRAL, icone: 'jogo', fundo: null, escurecer: .45 }];
 const comPrep = ls => (ls || []).some(l => /\/preparativos(\/|$)/.test(String(l.url || ''))) ? ls : [...(ls || []), { nome: 'PREPARATIVOS', desc: 'Roteiros, falas e gravações', url: '/preparativos/', icone: 'link', fundo: null, escurecer: .45 }];
+// MÚSICAS (09/11/2026): enquanto a ADM não puser o cartão no menu, ele entra no fim
+const comMusicas = ls => (ls || []).some(l => /\/musicas(\/|$)/.test(String(l.url || ''))) ? ls : [...(ls || []), { nome: 'MÚSICAS', desc: 'Álbum de sons da equipe', url: '/musicas/', icone: 'link', fundo: null, escurecer: .45 }];
 // CÉREBRO (09/11/2026): sempre o primeiro programa, mesmo sem estar na ADM › Menu
 const comCerebro = ls => { ls = ls || []; const i = ls.findIndex(l => /\/cerebro(\/|$)/.test(String(l.url || ''))), c = i >= 0 ? ls[i] : { nome: 'CÉREBRO', desc: 'Memória da equipe e das IAs', url: '/cerebro/', icone: 'link', fundo: null, escurecer: .45 }; return [c, ...ls.filter((_, j) => j !== i)]; };
 async function carregar() {
-  try { const j = await api('/menu-links'); const d = padrao(); return { links: comCerebro(comCentral(comPrep(j.links || d.links))), fundo: soImagens(j.fundo), mensagens: { ...d.mensagens, ...(j.mensagens || {}) }, seloAdm: j.seloAdm || null, adm: !!j.adm, em: j.em, por: j.por, servidor: true }; }
+  try { const j = await api('/menu-links'); const d = padrao(); return { links: comCerebro(comCentral(comMusicas(comPrep(j.links || d.links)))), fundo: soImagens(j.fundo), mensagens: { ...d.mensagens, ...(j.mensagens || {}) }, seloAdm: j.seloAdm || null, adm: !!j.adm, em: j.em, por: j.por, servidor: true }; }
   catch (e) { return { ...padrao(), adm: false, servidor: false, erro: e }; }
 }
 
@@ -1272,7 +1274,7 @@ function fundoTela(f) {
 /* card de um link (usado no menu e na prévia da ADM) */
 /* NOMES PADRÃO DOS PROGRAMAS (pedido da dona, 05/11/2026): no bloco do menu, o nome sai do ENDEREÇO do programa, com estas letras.
    Programa que não está aqui usa o nome da ADM › Botões. (O nome salvo continua sendo a chave da ordem e dos fixados de cada pessoa.) */
-const NOMES_PADRAO = { cerebro: 'Cérebro', shorts: 'Shorts', editor: 'Editar', animador: 'Animador', preparativos: 'Preparativos', modelador: 'Modelador', publicacoes: 'Publicações' };
+const NOMES_PADRAO = { cerebro: 'Cérebro', shorts: 'Shorts', editor: 'Editar', animador: 'Animador', preparativos: 'Preparativos', musicas: 'Músicas', modelador: 'Modelador', publicacoes: 'Publicações' };
 function nomeMenu(l) { if (l?.parte) return l.nome; try { const u = new URL(l?.url || '', location.href); if (u.origin === location.origin && !u.search) { const k = u.pathname.split('/').filter(Boolean)[0]; if (NOMES_PADRAO[k]) return NOMES_PADRAO[k]; } } catch { } return l?.nome || 'Sem nome'; }
 function cardHtml(l, tag) {
   return `${tag}<span class="bg"></span><span class="ic"></span><span class="txt"><b>${esc(nomeMenu(l))}</b><small>${esc(l.desc || '')}</small></span>`;
@@ -1566,7 +1568,7 @@ function abrirConta() {
 /* ======================= telas ======================= */
 // abrir um programa: a tela escurece com fade e só então troca de página (a tela de carregamento do programa tem o mesmo fundo)
 // A TELA JÁ DIZ O QUE ESTÁ ABRINDO (pedido da dona, 05/11/2026): antes ficava só o escuro, parecendo que o clique não funcionou
-const NOMES_PROG = { cerebro: 'o Cérebro', animador: 'o Animador', shorts: 'os Shorts', editor: 'o Editor', modelador: 'o Modelador', preparativos: 'os Preparativos', publicacoes: 'as Publicações', jester: 'o Jester Dreams', central: 'a Central de Jogos' };
+const NOMES_PROG = { cerebro: 'o Cérebro', animador: 'o Animador', shorts: 'os Shorts', editor: 'o Editor', modelador: 'o Modelador', preparativos: 'os Preparativos', musicas: 'as Músicas', publicacoes: 'as Publicações', jester: 'o Jester Dreams', central: 'a Central de Jogos' };
 function irCom(url, trocar) {
   const s = $('#saida'); let nm = ''; try { const u = new URL(url, location.href), p = u.pathname.split('/')[1]; nm = u.searchParams.get('atelie') ? 'o Ateliê' : NOMES_PROG[p] || ''; } catch { }
   s.innerHTML = '<div class="sd-c" role="status"><div class="sd-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div>' + (nm ? 'Abrindo ' + nm + '…' : 'Abrindo…') + '<small>Buscando a versão mais nova</small></div></div>'; s.classList.add('on');
@@ -1611,7 +1613,7 @@ function comPartes(lista) { const out = [];
     for (const [id, nome, url, f] of SUBPROGS.an) if (permProg(f) && window.EstudioPerm?.pode?.('animador.' + f) !== false) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do Animador', url, prog: id, parte: 'an', id: f, ...(l.partes?.[f]?.etiqueta ? { etiqueta: l.partes[f].etiqueta } : {}) }); }
   // ORDEM PADRÃO (pedido da dona, 05/11/2026): Shorts, Editar, Animador, Preparativos, Publicações, Ateliê, Cenários, Modelador;
   // o que não está aqui vem depois, na ordem da ADM. A ordem que cada pessoa organizou continua valendo por cima disto.
-  const ORDEM = ['cerebro', 'shorts', 'editor', 'animador', 'preparativos', 'publicacoes', 'atelie', 'cenarios', 'modelador'];
+  const ORDEM = ['cerebro', 'shorts', 'editor', 'animador', 'preparativos', 'musicas', 'publicacoes', 'atelie', 'cenarios', 'modelador'];
   const id = l => { if (l.id) return l.id; try { const u = new URL(l.url || '', location.href); return u.origin === location.origin ? u.pathname.split('/').filter(Boolean)[0] || '' : ''; } catch { return ''; } };
   return out.map((l, i) => ({ l, i, p: ORDEM.includes(id(l)) ? ORDEM.indexOf(id(l)) : 100 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 /* EM TESTE (pedido da dona, 05/11/2026): selo discreto no bloco. Vem da ADM › Botões (caixinha "Em teste", campo etiqueta);

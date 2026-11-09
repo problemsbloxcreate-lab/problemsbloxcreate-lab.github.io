@@ -72,7 +72,7 @@ function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch 
    O porteiro pergunta pela ligação direta (TURMA) mandando o e-mail da sessão (x-porteiro-email; o turma-ia só aceita esse
    cabeçalho de pedido SEM req.cf, ou seja, pela ligação). Guarda 60 s por pessoa; e quando NINGUÉM tem nada bloqueado
    ("livre") guarda isso 2 min para todo mundo — sem custo a mais até um ADM configurar. Falhou = deixa passar (nada quebra). */
-const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos', '/publicacoes/': 'publicacoes', '/cerebro/': 'cerebro' };
+const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos', '/publicacoes/': 'publicacoes', '/cerebro/': 'cerebro', '/musicas/': 'musicas' };
 const PERM_MEM = new Map(), PERM_LIVRE = { t: 0 };
 async function permDe(env, email, url, forcar, atalho) { // atalho: vale o "ninguém tem nada bloqueado" guardado (só para barrar páginas)
   email = String(email || '').toLowerCase(); if (!email || !env.SERVIDOR) return null;
@@ -191,7 +191,15 @@ async function comVersoes(env, html, paginaUrl, s) {
 // leva um Last-Modified tirado do próprio conteúdo (sempre o mesmo para a mesma página) e o navegador devolve ele
 function dataDaVersao(hex) { const n = parseInt(hex.slice(0, 8), 16) % (5 * 365 * 86400); return new Date(Date.UTC(2020, 0, 1) + n * 1000).toUTCString(); }
 const naoMudou = (req, et, lm) => (req.headers.get('if-none-match') || '').split(',').map(x => x.trim()).includes(et) || (!!lm && req.headers.get('if-modified-since') === lm);
+/* SONS ANTIGOS NA NUVEM NOVA (09/11/2026): os projetos guardam só a chave do som; altura, corte e momento não mudam. O arquivo sai da cópia conferida por SHA-256
+   e, se faltar ou der erro, da origem de sempre. COPIA_SONS = "nao" volta tudo para a origem. O índice é o contrário: a origem primeiro (sons novos entram sozinhos), a cópia se ela falhar. */
+async function bibCopia(env, email, url, hx) { try { const r = await env.TURMA.fetch(new Request(env.SERVIDOR.replace(/\/+$/, '') + '/musicas/bib?hx=' + hx, { headers: { 'x-porteiro-email': email, origin: url.origin } })); if (!r.ok) return null; const h = new Headers(r.headers); for (const k of [...h.keys()]) if (k.startsWith('access-control-')) h.delete(k); h.delete('set-cookie'); h.set('x-sons', 'copia'); return new Response(r.body, { status: 200, headers: h }); } catch { return null; } }
 async function repassa(req, url, p, env, s) {
+  if (env.COPIA_SONS === 'sim' && !p.semCopia && req.method === 'GET' && p.resto === 'bib/arq' && /sons-problems/.test(p.origem || '') && env.TURMA && s?.e && url.searchParams.get('meta') !== '1') {
+    const ped = url.searchParams.get('p') || '', m = /^a\/([0-9a-f]{40})$/.exec(ped);
+    if (m) { const c = await bibCopia(env, s.e, url, m[1]); if (c) return c; }
+    else if (ped === 'indice.json') { const r = await repassa(req, url, { ...p, semCopia: true }, env, s).catch(() => null); if (r && r.status < 500) return r; const c = await bibCopia(env, s.e, url, 'indice'); if (c) return c; if (r) return r; }
+  }
   if (p.nuvem && /(^|\/)dados\/sons-url\.json$/.test(p.resto)) return json({ url: url.origin + '/nuvem' }); // servidor de sons pelo porteiro
   const alvo = new URL(p.resto + url.search, p.origem.replace(/\/?$/, '/'));
   // GitHub Pages guarda cada arquivo por 10 min no cache dele: um número que muda a cada 30 s faz a atualização chegar logo para todo mundo
@@ -1191,6 +1199,13 @@ export default {
         pessoas.push({ u, eu: em === eu, adm: (await admsDe(env)).has(u), prog: v.prog, nome: p.nome || p.google?.nome || 'Alguém da equipe', foto: p.fotoV ? '/pessoa/foto?u=' + u + '&v=' + p.fotoV : (p.google?.foto || null) }); }
       return json({ pessoas }, 200, { 'cache-control': 'no-store' });
     }
+    if (caminho === '/musicas-envio') { // som novo aberto num programa entra no álbum (Shorts e Editor não têm o login do navegador, só a sessão do porteiro)
+      if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
+      if ((req.headers.get('origin') || '') !== url.origin) return json({ error: { message: 'Pedido de outro site.' } }, 403);
+      const s = await leSessao(env, req); if (!s?.e) return json({ error: { message: 'Entre pelo menu.' } }, 401); if (!env.TURMA) return json({ error: { message: 'Sem ligação com o servidor.' } }, 503);
+      const pf = await lePerfil(env, s.e), hd = { 'x-porteiro-email': s.e, 'x-porteiro-nome': encodeURIComponent(String(contaPublica(s.e, pf).nome || '').slice(0, 40)), origin: url.origin, 'content-type': req.headers.get('content-type') || 'application/octet-stream' }, cl = req.headers.get('content-length'); if (cl) hd['content-length'] = cl;
+      const r = await env.TURMA.fetch(new Request(env.SERVIDOR.replace(/\/+$/, '') + '/musicas/enviar' + url.search, { method: 'POST', headers: hd, body: req.body })), h = new Headers(r.headers); for (const k of [...h.keys()]) if (k.startsWith('access-control-')) h.delete(k); h.delete('set-cookie'); return new Response(r.body, { status: r.status, headers: h });
+    }
     if (caminho === '/presenca') { // os programas avisam "estou aberto em X" a cada minuto (só enquanto a aba está à vista)
       if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405);
       const s = await leSessao(env, req); if (!s) return json({ error: { message: 'Entre pelo menu.' } }, 401);
@@ -1264,7 +1279,7 @@ async function icones(req, env, url) {
   const cor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : null, out = {};
   // os de sempre + os NOVOS que a ADM criou ("x-<nome>": nome obrigatório, caminho do projeto e botão do menu opcionais; até 40)
   const novos = Object.keys(b.icones || {}).filter(id => /^x-[a-z0-9-]{1,30}$/.test(id) && typeof b.icones[id]?.nome === 'string' && b.icones[id].nome.trim()).slice(0, 40);
-  for (const id of ['sh', 'ed', 'an', 'at', 'md', 'cn', 'pr', 'cb', 'cj', ...novos]) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
+  for (const id of ['sh', 'ed', 'an', 'at', 'md', 'cn', 'pr', 'mu', 'cb', 'cj', ...novos]) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
     if (id.startsWith('x-')) { o.nome = x.nome.trim().slice(0, 40); if (typeof x.caminho === 'string' && /^\/[a-z0-9/_-]{1,60}$/i.test(x.caminho)) o.caminho = x.caminho; if (typeof x.botao === 'string' && x.botao.trim()) o.botao = x.botao.trim().slice(0, 40); }
     if (typeof x.let === 'string' && x.let.trim()) o.let = x.let.trim().slice(0, 3);
     for (const k of ['fg', 'bg', 'bc']) if (cor(x[k])) o[k] = cor(x[k]);

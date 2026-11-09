@@ -29,6 +29,8 @@ binding = "EDITOR"
 service = "editor-problems"
 
 [vars]
+# COPIA_SONS: "sim" = os sons antigos saem da cópia conferida (D1 da conta principal), com a origem de reserva; "nao" = só da origem
+COPIA_SONS = "nao"
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.
 # "nuvem": true = o projeto usa o servidor de sons; ele vai por /nuvem/ (com o passe), sem senha da equipe.
@@ -43,6 +45,7 @@ PROJETOS = '''{
   "/publicacoes/": { "origem": "https://problemsbloxcreate-lab.github.io/publicacoes/", "conta": true },
   "/preparativos/": { "origem": "https://problemsbloxcreate-lab.github.io/preparativos/", "conta": true },
   "/cerebro/": { "origem": "https://problemsbloxcreate-lab.github.io/cerebro/", "conta": true },
+  "/musicas/": { "origem": "https://problemsbloxcreate-lab.github.io/musicas/", "conta": true },
   "/editor/":    { "origem": "https://editor-problems.problemsraiz.workers.dev/", "assinar": true, "servico": "EDITOR", "nuvem": true, "conta": true },
   "/nuvem/":     { "origem": "https://sons-problems.problemsbloxcreate.workers.dev/", "assinar": true }
 }'''
