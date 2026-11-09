@@ -3,6 +3,7 @@
 O Cérebro (`/cerebro/`) é a memória compartilhada da equipe e das IAs. Vale mesmo que ninguém tenha citado:
 - **Antes de qualquer tarefa**, leia o Cérebro e use como base: `node ~/.claude/cerebro.mjs comece`, `indice`, `buscar "palavras"`, `ler "Pasta/Arquivo"` e `pedidos`.
 - **Depois**, grave nele o que mudou ou foi aprendido (`salvar` ou `aprender`), dizendo qual IA gravou e quem pediu. Bíblias, skills e referências são atualizadas lá.
+- **Em toda resposta**, cite o Cérebro numa linha no fim: `Cérebro: consultei <Pasta/Arquivo>` e, se gravou algo, `gravei <Pasta/Arquivo>`. Se não achou nada, escreva `Cérebro: nada sobre isso`. Vale para qualquer conta do Claude e qualquer IA, nova ou antiga.
 - Sem o `cerebro.mjs` neste computador: use `cerebro/cerebro.mjs` do repositório do site. A chave fica em `~/.claude/cerebro-chave.txt` ou na variável `CEREBRO_CHAVE`; nunca a mostre nem a coloque em repositório.
 
 
