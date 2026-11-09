@@ -234,3 +234,11 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
 - "Casas" desligadas (Action arquivos: desligar-casas). Mudança noturna removida: ela contava a tabela inteira a cada lote e estourou as leituras. `/robo/estado` só conta com `?contar=1`.
 - Botão da nuvem (`/nuvem-hoje`): uso do MÊS só da principal. A Action "Uso da nuvem" grava `contas.principal.mes` e `pago`.
 - Reserva: arquivos grandes e cópia. Terciária: sons e cópia.
+
+## CÉREBRO (/cerebro/, pedido da dona, 09/11/2026)
+- Memória compartilhada da equipe e das IAs. Tela em `cerebro/` deste repositório (GitHub Pages; porteiro `PROJETOS` "/cerebro/" com `conta`; ícone `cb`; `comCerebro` no index/404 põe sempre em primeiro; quem já tinha ordem própria também vê primeiro). Permissão de programa `cerebro`.
+- Dados em tabelas próprias do D1 `equipe`: `cerebro_no` (estado atual), `cerebro_ver` (uma versão por mudança, nunca apagada), `cerebro_img` (imagens em base64 por hash), `cerebro_ped` (pedidos). Rotas `/cerebro*` do turma-ia, depois da trava do plano. O `/cerebro` não divide com a porta reserva (`NAO_DIV`), que não tem esse código.
+- Ler: quem tem conta e o programa. Gravar: `ehAdmin` ou IA com `x-cerebro-chave` (segredo `CEREBRO_CHAVE` do Worker, vindo do segredo de mesmo nome do GitHub pela Action do turma-ia). Quem não é ADM só usa `POST /cerebro/pedir`. Não existe rota de apagar: "lixeira" só marca.
+- Toda gravação de IA exige `ia`, `pedidoPor` e `motivo`. Mudar arquivo existente exige `base` (a versão lida) ou `acrescentar`. O servidor recusa segredos conhecidos (`CB_SEGREDOS`) e mascara e-mails.
+- IA sem navegador: `node ~/.claude/cerebro.mjs` (cópia de `cerebro/cerebro.mjs`). Chave local em `~/.claude/cerebro-chave.txt`, nunca em repositório. Guia completo dentro do próprio Cérebro: "00 Comece aqui".
+- AVISO AUTOMÁTICO: gancho `SessionStart` em `~/.claude/settings.json` deste computador roda `cerebro.mjs aviso`, que entrega à sessão nova a ordem de ler o Cérebro, a página "Leia primeiro" e os pedidos esperando. Fora deste computador valem o bloco "ANTES DE TUDO" nos CLAUDE.md, o comentário "Para IAs" no menu e o começo do relatório de suporte.
