@@ -221,7 +221,7 @@ window.EstudioPerm ||= (() => {
     else if (xn) marca(Date.parse(r.headers.get('x-nuvem-volta') || ''), xn === 'terciaria' ? 2 : xn === 'reserva' ? 1 : (xn === 'limite' && naReserva() && r.ok ? nivel() : 0));
     // o servidor da nuvem respondeu NORMAL (sem x-nuvem): a marca "só limite" (nível 0, sem reserva em uso) sai na hora —
     // antes ela ficava presa neste navegador até as 21h, mesmo atualizando a página
-    else if (r.ok && le() && !naReserva()) { try { const h = new URL(url, location.href).hostname; if (/^turma-ia\./.test(h)) { localStorage.removeItem(K); selo(); avisaCirculo(); } } catch { } }
+    else if (r.ok && le()) { try { const h = new URL(url, location.href).hostname; if (/^turma-(ia|reserva)./.test(h)) { localStorage.removeItem(K); selo(); avisaCirculo(); } } catch { } }
     if (r.status === 503 || r.status === 429) {
       const tipo = r.headers.get('content-type') || '';
       if (/json/.test(tipo)) { try { const j = await r.clone().json(); if (j?.error?.type === 'limite_cloudflare') { if (j.error.nuvem === 'sons') { const v = Date.parse(j.error.volta) > Date.now() ? Date.parse(j.error.volta) : proxima(); try { localStorage.setItem(KS, String(v)); } catch { } selo(); return new Response(JSON.stringify({ ...j, erro: MSG_SONS(v), error: { ...j.error, message: MSG_SONS(v) } }), { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8' } }); } marca(Date.parse(j.error.volta), false);
