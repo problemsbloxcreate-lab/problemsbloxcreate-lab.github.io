@@ -904,12 +904,6 @@ async function musicas(req, env, login, path, cors) {
     await db.batch([db.prepare('INSERT INTO mus_som (id, nome, cat, pasta, tipo, tam, sha, dur, origem, por, por_id, em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, nome, cat, pasta, tipo.mime, tam, sha, dur, origem, eu.nome, eu.id, agora), musSomaSt(db, 'novos', 1, novos), db.prepare('INSERT INTO mus_log (em, acao, alvo, nome, por, por_id) VALUES (?, ?, ?, ?, ?, ?)').bind(agora, 'enviou', id, nome, eu.nome, eu.id)]);
     return ok({ ok: true, som: { id, nome, cat, pasta, tipo: tipo.mime, tam, sha, dur, origem, por: eu.nome, por_id: eu.id, em: agora } });
   }
-  if (rota === '/purgar-testes') { // TEMPORÁRIA: tira de vez só os sons de teste desta sessão, pelo nome exato e de quem enviou. Sai do código logo depois de usada.
-    if (!adm) return erro('Só um ADM.', 403, 'adm'); const RE = /^TESTE (limite \d+|apagar depois|vindo do Shorts)$/, { results } = await db.prepare("SELECT id, nome, sha, tam, apagado FROM mus_som WHERE por_id = ? AND nome LIKE 'TESTE %'").bind(eu.id).all(), feitos = [];
-    for (const x of (results || []).filter(y => RE.test(y.nome))) { const st = [db.prepare('DELETE FROM mus_som WHERE id = ?').bind(x.id), db.prepare('INSERT INTO mus_log (em, acao, alvo, nome, por, por_id, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(agora, 'tirou o teste', x.id, x.nome, eu.nome, eu.id, 'Som de teste da criação do programa')]; if (x.apagado) st.push(musSomaSt(db, 'lixo', -1, -x.tam)); await db.batch(st);
-      const usa = await db.prepare('SELECT (SELECT count(*) FROM mus_som WHERE sha = ?1) + (SELECT count(*) FROM mus_copia WHERE sha = ?1) AS n').bind(x.sha).first(); let b = 0; if (!usa?.n) { await db.batch([db.prepare('DELETE FROM mus_parte WHERE sha = ?').bind(x.sha), db.prepare('DELETE FROM mus_arq WHERE sha = ?').bind(x.sha)]); b = x.tam; } await musSomaSt(db, 'novos', -1, -b).run(); feitos.push(x.nome); }
-    return ok({ ok: true, tirados: feitos });
-  }
   if (rota === '/apagar' || rota === '/restaurar') {
     if (!ehAdmin(env, login.email) || !adm) return erro('Só um ADM pode apagar ou restaurar sons.', 403, 'adm');
     const b = await req.json().catch(() => ({})), id = typeof b.id === 'string' ? b.id : null, rel = typeof b.rel === 'string' ? musTxt(b.rel, 400) : null;
