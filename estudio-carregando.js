@@ -92,20 +92,20 @@ Quem for resolver: o código e as decisões estão no repositório do site (\`CL
 
 **Sobre o diário abaixo:** cada navegador anota só nele mesmo (nada vai para a nuvem). Repetições seguidas viram uma linha com "×N".`;
   const CONTEXTO = `## ANTES DE TUDO, para a IA que ler este relatório
-Leia o **Cérebro** (\`/cerebro/\`, a memória compartilhada da equipe e das IAs) antes de responder ou mudar qualquer coisa, e grave nele o que aprender. Vale mesmo que ninguém tenha citado. Como usar: \`cerebro/cerebro.mjs\` do repositório do site.
+Leia o **Cérebro** (\`/cerebro/\`, a memória compartilhada da equipe e das IAs) antes de responder ou mudar qualquer coisa, e grave nele o que aprender. Vale mesmo que ninguém tenha citado. Como usar: \`cerebro/cerebro.mjs\` do repositório do site. Para entender este arquivo, leia lá \`00 Comece aqui/Como ler relatórios de suporte\`.
 
 ## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
 O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica num endereço só, **https://estudio.problemsraiz.workers.dev**, e só entra quem tem login do Google liberado.
 
 **Programas** (cada um é uma pasta do endereço):
 - \`/\` menu (blocos dos programas, Meus projetos, Estúdio, Meus atalhos) e \`/adm\` (ADM: botões, fundo, ícones, quem pode entrar, níveis de acesso, nuvem…)
-- \`/animador/\` Animador (com o Ateliê de personagens e os Cenários), \`/shorts/\` Shorts, \`/editor/\` Editar, \`/modelador/\` Modelador (Blockbench), \`/preparativos/\` Preparativos (roteiro e falas), \`/publicacoes/\` Publicações (YouTube)
+- \`/cerebro/\` Cérebro (memória da equipe e das IAs), \`/animador/\` Animador (com o Ateliê de personagens e os Cenários), \`/shorts/\` Shorts, \`/editor/\` Editar, \`/modelador/\` Modelador (Blockbench), \`/preparativos/\` Preparativos (roteiro e falas), \`/publicacoes/\` Publicações (YouTube)
 
 **Como funciona por trás:**
 - **Porteiro** (Cloudflare Worker \`estudio\`, conta "problemsraiz"): faz o login, guarda a sessão, entrega as páginas e assina o "passe" dos programas. Código: \`porteiro/worker.js\` do repositório do site.
 - **turma-ia** (Cloudflare Worker): o servidor de dados da equipe (animações, personagens, preparativos, publicações, menu, níveis de acesso, IA). Código: \`servidor/turma-ia/worker.js\`.
-- **Nuvens**: a PRINCIPAL (conta problemsraiz, D1/KV) → RESERVA (\`reserva-problems\`, 3ª conta) → TERCIÁRIA (\`terciaria-problems\`, 4ª conta). Arquivos grandes ficam no Worker \`arquivos-problems\`; sons no \`sons-problems\`. Quando a principal chega no limite do dia (plano grátis: 100 mil pedidos), as respostas vêm com o cabeçalho \`x-nuvem\` (reserva, terciaria, limite, voltando) e o site avisa. As "nuvens trabalhando juntas": o cabeçalho \`x-divide\` manda parte dos pedidos pelo \`turma-reserva\`.
-- **Porta reserva**: o mesmo site em outra conta (\`estudio-reserva.editorcustomizado.workers.dev\`), usada quando a principal dá o erro 1027 (sem pedidos no dia).
+- **Nuvem**: desde 09/11/2026 (por volta das 15:50) tudo fica na conta PRINCIPAL (problemsraiz, D1), no plano pago, com limites por mês e 5 GB. Aos 95% de qualquer item o site pausa (resposta 423, cabeçalho \`x-plano-pausado\`) até um ADM aceitar a cobrança. As outras contas ficam só para emergência; os sons ainda estão no \`sons-problems\`. Avisos \`x-nuvem\` (reserva, terciaria, limite, voltando) antes dessa data são do plano grátis; depois dela merecem investigação.
+- **Porta reserva**: o mesmo site em outra conta (\`estudio-reserva.editorcustomizado.workers.dev\`), só para emergência (quando a principal não responde).
 - **Login**: Firebase (só o Google). E-mails aparecem mascarados como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link nunca entram (no lugar fica o que era).
 - \`/estudio-conta.js\`: o arquivo comum de todos os programas (botão da conta, Mensagens, espaço na nuvem e no computador, calendário, níveis de acesso). \`/estudio-carregando.js\`: tela de carregamento, versão do site, este diário e o relatório.
 
