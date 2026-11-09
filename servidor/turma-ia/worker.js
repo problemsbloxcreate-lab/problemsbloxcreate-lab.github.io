@@ -318,7 +318,11 @@ async function robo(req, env) {
   const ok = !!env.ROBO && String(req.headers.get('x-senha') || '') === env.ROBO; if (!ok) return js({ erro: 'senha' }, 401);
   if (!db) return js({ erro: 'sem o banco EQUIPE_DB' }, 501);
   d1Est.at = 0; await d1Ligado(env); const A = arquivosDe(env); CASAS.t = d1Est.arq ? arquivosDe(env, 't') : null;
-  if (rota === 'estado') { const a = await db.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first().catch(() => null), n = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq').first().catch(() => null);
+  if (rota === 'estado') { const a = await db.prepare("SELECT v FROM cfg WHERE k = 'ativo'").first().catch(() => null);
+    // ESTADO BARATO (09/11/2026): as contagens abaixo leem a tabela inteira (~42 mil leituras por chamada) e rodavam a cada medição e antes de
+    // cada lote da mudança noturna: estouraram as 5 milhões de leituras do dia. Sem ?contar=1, é só 1 linha (n = 1 se o banco respondeu, 0 se não).
+    if (u.searchParams.get('contar') !== '1') return js({ ativo: a?.v === '1', n: a ? 1 : 0, arquivos: d1Est.arq, casas: !!d1Est.casas, pesos: CASAS.w, semContagem: true });
+    const n = await db.prepare('SELECT count(*) AS n, sum(tam) AS b FROM arq').first().catch(() => null);
     const f = d1Est.arq ? await db.prepare("SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde = 'a'").first().catch(() => null) : null;
     const t = d1Est.arq ? await db.prepare("SELECT count(*) AS n, sum(tam) AS b FROM arq WHERE onde = 't'").first().catch(() => null) : null;
     return js({ ativo: a?.v === '1', n: n?.n || 0, bytes: n?.b || 0, arquivos: d1Est.arq, fora: f?.n || 0, foraBytes: f?.b || 0, casas: !!d1Est.casas, terc: t?.n || 0, tercBytes: t?.b || 0, pesos: CASAS.w }); }
