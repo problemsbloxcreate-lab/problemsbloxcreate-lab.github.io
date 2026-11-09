@@ -870,7 +870,8 @@ const cbSegredo = t => CB_SEGREDOS.find(([re]) => re.test(String(t || '')))?.[1]
 const cbMascara = e => { const [u, d = ''] = e.split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; };
 const cbLimpa = (s, n) => String(s ?? '').replace(CB_EMAIL, m => /^(no-?reply|git)@/i.test(m) ? m : cbMascara(m)).slice(0, n);
 const cbNome = s => cbLimpa(s, 120).replace(/[\/\\\r\n\t]+/g, '-').trim();
-async function cbChaveOk(env, v) { if (!env.CEREBRO_CHAVE || !v) return false; const t = x => new TextEncoder().encode(x); return await sha(t(v)) === await sha(t(env.CEREBRO_CHAVE)); }
+// a chave principal (segredo do Worker) ou a chave de um computador que um ADM autorizou (só o resumo dela fica no banco; a chave nunca sai de lá)
+async function cbChaveOk(env, v) { if (!v) return false; const t = x => new TextEncoder().encode(x), h = await sha(t(v)); if (env.CEREBRO_CHAVE && h === await sha(t(env.CEREBRO_CHAVE))) return true; if (!env.EQUIPE_DB) return false; try { await cbPrepara(env.EQUIPE_DB); return !!(await env.EQUIPE_DB.prepare('SELECT 1 AS ok FROM cerebro_chave WHERE h = ? AND revogada = 0').bind(h).first()); } catch { return false; } }
 const cbNovoId = () => 'c' + Date.now().toString(36) + [...crypto.getRandomValues(new Uint8Array(5))].map(x => x.toString(16).padStart(2, '0')).join('');
 async function cbPrepara(db) { if (CB.prep) return; await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS cerebro_no (id TEXT PRIMARY KEY, pai TEXT, tipo TEXT NOT NULL, nome TEXT NOT NULL, marca TEXT, resumo TEXT, corpo TEXT, url TEXT, img TEXT, ver INTEGER NOT NULL, em INTEGER NOT NULL, por TEXT, ia TEXT, pedido TEXT, motivo TEXT, apagado INTEGER NOT NULL DEFAULT 0)'),
@@ -879,6 +880,7 @@ async function cbPrepara(db) { if (CB.prep) return; await db.batch([
   db.prepare('CREATE INDEX IF NOT EXISTS cerebro_ver_em ON cerebro_ver (em)'),
   db.prepare('CREATE TABLE IF NOT EXISTS cerebro_img (h TEXT PRIMARY KEY, tipo TEXT, b64 TEXT NOT NULL, tam INTEGER, em INTEGER)'),
   db.prepare('CREATE TABLE IF NOT EXISTS cerebro_ped (id TEXT PRIMARY KEY, tipo TEXT, texto TEXT NOT NULL, alvo TEXT, por TEXT, cod TEXT, em INTEGER NOT NULL, estado TEXT NOT NULL, feito_por TEXT, feito_em INTEGER, nota TEXT)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS cerebro_chave (h TEXT PRIMARY KEY, nome TEXT, em INTEGER, por TEXT, revogada INTEGER NOT NULL DEFAULT 0)'),
   db.prepare('CREATE INDEX IF NOT EXISTS cerebro_ped_est ON cerebro_ped (estado, em)'), db.prepare('CREATE INDEX IF NOT EXISTS cerebro_ped_cod ON cerebro_ped (cod, em)'),
 ]); CB.prep = true; }
 // devolve os dois comandos da gravação: a versão primeiro (se outra pessoa gravou no meio, a chave (id, ver) repete e a transação inteira falha)
@@ -907,6 +909,10 @@ async function cerebro(req, env, login, path, cors) {
       return ok({ itens: todos.filter(x => !x.apagado && !escondido(x)), lixeira: adm ? todos.filter(x => x.apagado) : [], adm, ia, pedidosNovos: novos?.n || 0 }); }
     if (rota === '/comece') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT nome FROM cerebro_no WHERE pai IS NULL AND apagado = 0 ORDER BY nome').all(), novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
       return ok({ texto: n?.corpo || '', pastas: (results || []).map(x => x.nome), pedidosNovos: novos?.n || 0 }); }
+    if (rota === '/inicio') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, apagado FROM cerebro_no').all(), t = results || [], m = new Map(t.map(x => [x.id, x])), cam = x => { const o = []; for (let y = x, i = 0; y && i < 20; y = m.get(y.pai), i++) { if (y.apagado) return null; o.unshift(y.nome); } return o.join('/'); }, novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
+      const lin = t.filter(x => x.tipo !== 'pasta').map(x => [cam(x), x]).filter(([c]) => c).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true })).map(([c, x]) => `- ${c}${x.marca ? ' (' + x.marca + ')' : ''}${x.resumo ? ': ' + x.resumo : ''}`);
+      return new Response(`${n?.corpo || ''}\n\n# Índice (${lin.length} arquivos, ${novos?.n || 0} pedido(s) esperando)\n\nPara abrir: GET /cerebro/item?caminho=<Pasta/Arquivo>\n\n${lin.join('\n')}\n`, { headers: { ...nc, 'content-type': 'text/plain; charset=utf-8' } }); }
+    if (rota === '/chaves') { if (ia || !adm) return erro('Só um ADM, pelo site, vê os acessos das IAs.', 403, 'adm'); const { results } = await db.prepare('SELECT h, nome, em, por, revogada FROM cerebro_chave ORDER BY em DESC LIMIT 100').all(); return ok({ itens: results || [] }); }
     if (rota === '/item') { const n = q.get('id') ? await pega(q.get('id')) : await peloCaminho(q.get('caminho')); if (!n || (n.apagado && !adm)) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
       const { results } = await db.prepare('SELECT ver, acao, em, por, ia, pedido, motivo FROM cerebro_ver WHERE id = ? ORDER BY ver DESC LIMIT 60').bind(n.id).all(); return ok({ item: n, versoes: results || [], adm }); }
     if (rota === '/versao') { const v = await db.prepare('SELECT * FROM cerebro_ver WHERE id = ? AND ver = ?').bind(q.get('id') || '', +q.get('ver') || 0).first(); if (!v) return erro('Versão não encontrada.', 404, 'nao_achei'); return ok({ ver: v.ver, acao: v.acao, em: v.em, por: v.por, ia: v.ia, pedido: v.pedido, motivo: v.motivo, ...JSON.parse(v.snap) }); }
@@ -930,6 +936,10 @@ async function cerebro(req, env, login, path, cors) {
     if (!adm) { const c = await db.prepare('SELECT count(*) AS n FROM cerebro_ped WHERE cod = ? AND em > ?').bind(cod, Date.now() - 864e5).first(); if ((c?.n || 0) >= 30) return erro('Muitos pedidos hoje. Tente amanhã.', 429); }
     const id = cbNovoId(); await db.prepare("INSERT INTO cerebro_ped (id, tipo, texto, alvo, por, cod, em, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'novo')").bind(id, tipo, texto, cbLimpa(b.alvo, 300) || null, por, cod, Date.now()).run(); return ok({ ok: true, id }); }
   if (!adm) return erro('Só ADMs e o Claude mudam o Cérebro. Use "Pedir para aprender" que o pedido fica registrado.', 403, 'adm');
+  if (rota === '/chaves') { if (ia) return erro('Uma IA não autoriza outra: quem faz isso é um ADM, pelo site.', 403, 'adm');
+    if (b.acao === 'autorizar') { const h = String(b.codigo || '').trim().toLowerCase().replace(/^c-/, ''), nome = cbLimpa(b.nome, 80).trim(); if (!/^[0-9a-f]{64}$/.test(h)) return erro('Esse código não parece certo. Ele aparece quando a IA roda "cerebro.mjs entrar".'); if (!nome) return erro('Dê um nome para esse acesso.'); await db.prepare('INSERT OR REPLACE INTO cerebro_chave (h, nome, em, por, revogada) VALUES (?, ?, ?, ?, 0)').bind(h, nome, Date.now(), eu).run(); return ok({ ok: true }); }
+    if (b.acao === 'revogar') { const r = await db.prepare('UPDATE cerebro_chave SET revogada = 1 WHERE h = ?').bind(String(b.h || '')).run(); return r.meta?.changes ? ok({ ok: true }) : erro('Acesso não encontrado.', 404, 'nao_achei'); }
+    return erro('Ação desconhecida.'); }
   const a = ia ? { por: cbLimpa(b.ia, 80), ia: cbLimpa(b.ia, 80), pedido: cbLimpa(b.pedidoPor, 80) } : { por: eu, ia: null, pedido: cbLimpa(b.pedidoPor, 80) || eu };
   if (rota === '/pedido') { if (!['feito', 'recusado', 'novo'].includes(b.estado)) return erro('Estado desconhecido.'); const r = await db.prepare('UPDATE cerebro_ped SET estado = ?, feito_por = ?, feito_em = ?, nota = ? WHERE id = ?').bind(b.estado, a.por || 'IA', Date.now(), cbLimpa(b.nota, 600) || null, String(b.id || '')).run(); return r.meta?.changes ? ok({ ok: true }) : erro('Pedido não encontrado.', 404, 'nao_achei'); }
   if (ia && (!a.ia || !a.pedido || !motivo)) return erro('A IA precisa mandar: ia (o nome dela), pedidoPor (quem pediu) e motivo (o que mudou e por quê).', 400, 'registro');
