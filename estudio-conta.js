@@ -1123,7 +1123,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
       cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
-        ${avisoReserva(j) || '<div class="ep-estado"><i></i><div><b>Nuvem principal funcionando</b><small>Tudo o que você salva vai direto para ela.</small></div></div>'}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
+        ${avisoReserva(j) || ''}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
         <div class="ep-hoje"></div>
