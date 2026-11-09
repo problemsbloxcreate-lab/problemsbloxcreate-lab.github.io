@@ -222,3 +222,9 @@ O D1 devolve BLOB como lista de números e montar arquivos grandes estourava os 
 - PORTA RESERVA DO PORTEIRO para parte das pessoas (ideia de 06/11/2026): NÃO feita. O endereço é outro (estudio-reserva…), então a
   pessoa precisaria entrar de novo e veria o endereço mudar; e Mensagens/presença (Durable Objects só na principal) teriam de ser
   repassadas à principal, o que gasta o mesmo pedido lá. Só vale com um domínio próprio na frente das duas contas.
+
+## PLANO PAGO NA PRINCIPAL (09/11/2026)
+- A conta principal da Cloudflare está no plano pago: limites por MÊS. `PRINCIPAL_PAGA` no turma-ia desliga poupar/dividir; a porta reserva é só emergência (o site repete o pedido lá se a principal não responder).
+- "Casas" desligadas (Action arquivos: desligar-casas). Mudança noturna removida: ela contava a tabela inteira a cada lote e estourou as leituras. `/robo/estado` só conta com `?contar=1`.
+- Botão da nuvem (`/nuvem-hoje`): uso do MÊS só da principal. A Action "Uso da nuvem" grava `contas.principal.mes` e `pago`.
+- Reserva: arquivos grandes e cópia. Terciária: sons e cópia.
