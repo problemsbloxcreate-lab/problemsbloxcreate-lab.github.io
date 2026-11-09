@@ -573,7 +573,12 @@ function d1Rest(conta, id, token) {
   return { prepare: sql => st(sql), batch: async sts => (await roda(sts.map(x => x._sql()))).map(x => ({ results: x?.results || [], meta: x?.meta || {} })) };
 }
 const DIVIDE = { p: 0, at: 0 };
+/* PLANO PAGO NA PRINCIPAL (09/11/2026): os limites viraram por mês (10 milhões de pedidos, 25 bilhões de leituras, 50 milhões de gravações).
+   Não existe mais "poupar até as 21h" nem dividir pedidos com a outra porta (ela continua só para emergência: se a principal não responder,
+   o site repete o pedido lá). As outras contas guardam os arquivos grandes, os sons e a cópia de segurança. */
+const PRINCIPAL_PAGA = true;
 async function confereDivide(R) {
+  if (PRINCIPAL_PAGA) { DIVIDE.p = 0; DIVIDE.at = Date.now(); return; }
   if (!R || Date.now() - DIVIDE.at < 120e3) return; DIVIDE.at = Date.now();
   try { const c = await R.contaJa(), o = c?.contas?.principal; CASAS.w = pesosCasas(c); CASAS.at = Date.now(); // pesos das casas dos arquivos (mesma medida)
     if (!o || c.dia !== new Date().toISOString().slice(0, 10)) { DIVIDE.p = 0; return; }
@@ -586,6 +591,7 @@ async function confereDivide(R) {
     DIVIDE.p = Math.max(0, Math.min(1, Math.round(Math.max(rampa, peso) * 20) / 20)); } catch { }
 }
 async function confereCheio(kv, R) {
+  if (PRINCIPAL_PAGA) return;
   if (!R || emLimite() || Date.now() - cheioVisto < 60e3) return; cheioVisto = Date.now();
   const c = await R.contaJa(), o = c?.contas?.principal, L = c?.limites; if (!o?.kv || !L || c.dia !== new Date().toISOString().slice(0, 10)) return;
   // LEITURAS TAMBÉM (pedido da dona, 05/11/2026): antes só as gravações ligavam a proteção; com as leituras em 100% o Estúdio passava a
@@ -882,6 +888,7 @@ export default {
     // reserva e terciária), que trabalham como uma só. Só números (sem e-mails nem nomes de conta); a medida é da Action "Uso da nuvem".
     if (new URL(req.url).pathname === '/nuvem-hoje') {
       const R4 = reservaDe(env, auth0), c = R4 ? await R4.contaJa().catch(() => null) : null, L = c?.limites || {}, hoje = new Date().toISOString().slice(0, 10);
+      const pm = c?.contas?.principal?.mes; if (pm) return json({ em: c.em, mes: true, gravacoes: { v: pm.gravadas, lim: L.pagoGravacoes || 5e7 }, leituras: { v: pm.lidas, lim: L.pagoLeituras || 25e9 }, pedidos: { v: pm.pedidos, lim: L.pagoPedidos || 1e7 } }, 200, { ...cors, 'cache-control': 'no-store' }); // plano pago: só a principal, no mês
       const ps = c && c.dia === hoje ? ['principal', 'nova', 'terc'].map(k => c.contas?.[k]).filter(o => o && !o.erro && o.d1) : [], n = ps.length, soma = f => ps.reduce((t, o) => t + (+f(o) || 0), 0);
       const par = (v, lim) => ({ v, lim: n * lim });
       return json(n ? { em: c.em, gravacoes: par(soma(o => o.d1.write), L.d1Write || 1e5), leituras: par(soma(o => o.d1.read), L.d1Read || 5e6), pedidos: par(soma(o => o.workers), L.workers || 1e5), espaco: par(soma(o => o.d1bytes ?? o.bytes ?? 0), L.d1Bytes || 524288000) } : { em: c?.em || null, semMedida: true },

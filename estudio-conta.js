@@ -1055,7 +1055,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // USO DE HOJE da nuvem (pedido da dona, 05/11/2026): gravações, leituras e pedidos do dia da nuvem da equipe inteira (as contas
   // trabalham como uma só, então mostra só o total). Guardado 5 min neste navegador; um pedido só ao abrir o botão da nuvem.
   async function usoHoje(novo) {
-    const K = 'ep-nuvem-hoje'; let j = null;
+    const K = 'ep-nuvem-mes'; let j = null;
     if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 300e3) j = c.j; } catch { } }
     if (!j) { const tk = await tokenNuvem(); if (!tk) return '';
       const r = await fetch('https://turma-ia.problemsraiz.workers.dev/nuvem-hoje', { cache: 'no-store', headers: { authorization: tk } }); j = await r.json().catch(() => null); if (!r.ok || !j) return '';
@@ -1066,6 +1066,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       return `<div class="hj-l"><div class="hj-t"><span>${nome}</span><b style="color:${cor}">${p < 1 && o.v ? '<1' : Math.round(p)}%</b></div><div class="barra"><i style="width:${p.toFixed(1)}%;background:${cor}"></i></div><small>${f(o.v)} de ${f(o.lim)}</small></div>`; };
     const quando = j.em ? new Date(j.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
     if (!document.getElementById('ep-hoje-css')) { const st = document.createElement('style'); st.id = 'ep-hoje-css'; st.textContent = '.ep-esp .ep-hoje h3{margin:14px 0 8px}.ep-esp .hj-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.ep-esp .hj-t{display:flex;justify-content:space-between;font-size:12.5px}.ep-esp .hj-l small{display:block;font-size:11px;color:#a9adb7;margin-top:3px}@media (max-width:520px){.ep-esp .hj-g{grid-template-columns:1fr}}'; document.head.appendChild(st); }
+    if (j.mes) return `<h3>Uso do mês <small>(medido ${quando ? 'às ' + quando : 'há pouco'})</small></h3><div class="hj-g">${barra('Gravações', j.gravacoes)}${barra('Leituras', j.leituras)}${barra('Pedidos', j.pedidos)}</div>`;
     return `<h3>Uso de hoje <small>(medido ${quando ? 'às ' + quando : 'há pouco'} · zera às ${new Date(new Date().setUTCHours(24, 0, 0, 0)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</small></h3><div class="hj-g">${barra('Gravações', j.gravacoes)}${barra('Leituras', j.leituras)}${barra('Pedidos', j.pedidos)}</div>`;
   }
   async function usoNuvem(novo) {
