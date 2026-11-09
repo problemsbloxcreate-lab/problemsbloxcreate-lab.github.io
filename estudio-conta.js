@@ -1133,7 +1133,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const PROG_ID = { animador: 'an', 'animador antigo': 'an', ateliê: 'at', atelie: 'at', cenários: 'cn', cenarios: 'cn', shorts: 'sh', 'criar shorts': 'sh', editor: 'ed', 'editar vídeos': 'ed', modelador: 'md', preparativos: 'pr', 'central de jogos': 'cj' };
   const corProg = nome => { const n = String(nome || '').toLowerCase(), k = PROG_ID[n] || PROG_ID[n.split(/[ (·]/)[0]]; try { const c = k && window.EstudioIcones?.config?.()?.[k]; if (c?.fg) return c.fg; } catch { } return '#8a9aab'; };
   const pastaIc = nome => { const c = corProg(nome); return `<svg class="ep-pasta" viewBox="0 0 34 28" aria-hidden="true"><path d="M1.5 5a2.5 2.5 0 0 1 2.5-2.5h8.5l3 3.5H30a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 30 26H4a2.5 2.5 0 0 1-2.5-2.5z" fill="${c}"/><path d="M1.5 10.5h31" stroke="rgba(255,255,255,.4)" stroke-width="1.3"/></svg>`; };
-  const legenda = '<div class="ep-leg"><span><i style="background:#3ccf7f"></i>até 60%: tranquilo</span><span><i style="background:#f0b232"></i>60–85%: atenção</span><span><i style="background:#f0584f"></i>mais de 85%: quase cheio</span></div>';
+  const legenda = '<div class="ep-leg"><span><i style="background:#a98bff"></i>até 60%: tranquilo</span><span><i style="background:#f0b232"></i>60–85%: atenção</span><span><i style="background:#f0584f"></i>mais de 85%: quase cheio</span></div>';
   async function painelNuvem() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
