@@ -40,7 +40,23 @@ const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') +
 // ADM (mudar o menu e quem entra): só os e-mails da variável ADMINS; vazia = ninguém
 const ehAdmin = (env, email) => (env.ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean).includes(String(email || '').toLowerCase());
 const baseFixa = env => (env.EMAILS_PERMITIDOS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-async function extrasAcesso(env) { try { const v = await env.EQUIPE?.get('acesso/extras', { type: 'json', cacheTtl: 60 }); return Array.isArray(v) ? v.filter(x => x && typeof x.email === 'string') : []; } catch { return []; } }
+/* QUEM PODE ENTRAR COM O BANCO FORA (09/11/2026): com o D1 no limite, ler a lista falhava e devolvia lista VAZIA: todo mundo fora da lista fixa
+   ficava sem entrar. E havia um ciclo: a reserva confere o login em /confere, que não pode usar a reserva (ela perguntaria de novo a /confere).
+   Agora, se o banco não responder, a lista vem direto da reserva com a senha dos robôs (o que foi salvo na reserva e, sem isso, a cópia de
+   segurança); guardada 60 s na memória. Sem nenhuma resposta, usa a última lista boa. Nunca vira lista vazia por causa de uma falha. */
+let extrasBom = null, extrasEm = 0;
+const soExtras = v => v.filter(x => x && typeof x.email === 'string');
+async function extrasDaReserva(env) {
+  if (!env.ROBO) return null; const base = (env.RESERVA_URL || RESERVA_URL).replace(/\/+$/, '');
+  for (const p of ['/reserva/arq?k=', '/reserva/bk?k=']) { try { const r = await fetch(base + p + encodeURIComponent('acesso/extras'), { headers: { 'x-senha': env.ROBO } }); if (!r.ok) continue; const j = JSON.parse(await r.text()); if (Array.isArray(j)) return soExtras(j); } catch { } }
+  return null;
+}
+async function extrasAcesso(env) {
+  if (extrasBom && emLimite() && Date.now() - extrasEm < 60e3) return extrasBom;
+  try { const v = await env.EQUIPE?.get('acesso/extras', { type: 'json', cacheTtl: 60 }); if (Array.isArray(v)) { extrasBom = soExtras(v); extrasEm = Date.now(); return extrasBom; } if (v == null && !emLimite()) return []; } catch { }
+  const r = await extrasDaReserva(env); if (r) { extrasBom = r; extrasEm = Date.now(); return r; }
+  return extrasBom || [];
+}
 // espaço da equipe (KV grátis da Cloudflare: 1 GB por conta; EQUIPE_LIMITE_MB muda o limite)
 const limiteEquipe = env => (+env.EQUIPE_LIMITE_MB || (env._d1 ? 480 + (d1Est.arq ? ARQUIVOS_MB : 0) : 1024)) * 1048576; // com a nuvem dos arquivos: a principal + os bancos de lá
 let usoEq = null; // conta guardada por 1 min (listar a nuvem toda a cada imagem gasta a cota de listagens do dia)
