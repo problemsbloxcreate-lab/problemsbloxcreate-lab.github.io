@@ -264,6 +264,7 @@ function pesosCasas(c) {
   return { p: livre(c.contas?.principal, false, true), a: livre(c.contas?.nova, true, false), t: livre(c.contas?.terc, true, false) };
 }
 function escolheCasa(k, tam, ant, A) {
+  if (PRINCIPAL_PAGA) return null; // plano pago: tudo novo fica na principal (09/11/2026)
   if (!d1Est.casas || !d1Est.arq) return A && d1Est.arq && tam >= ARQ_MIN ? 'a' : null; // desligado: como antes
   const w = { ...(CASAS.w || { p: 1, a: 1, t: 1 }) }; if (!A) w.a = 0; if (!CASAS.t) w.t = 0;
   if (ant) { const c0 = ant.onde || 'p'; if ((w[c0] || 0) > 0.01) return ant.onde || null; } // já mora numa casa com folga: fica lá
@@ -294,6 +295,25 @@ async function d1Grava(db, k, buf, meta, A) {
   // a casa antiga (outra nuvem) fica sem uso: apaga lá só se o índice ainda aponta para a casa nova (ninguém regravou no meio)
   const velha = ant?.onde && ant.onde !== casa ? lojaDe(ant.onde, A) : null;
   if (velha) { const ag = await db.prepare('SELECT onde, em FROM arq WHERE k = ?').bind(k).first().catch(() => null); if (ag && (ag.onde || null) === (casa || null)) await velha.apaga([k]).catch(() => { }); }
+}
+/* TRAZER PARA A PRINCIPAL (pedido da dona, 09/11/2026: tudo num lugar só). Lê da nuvem onde mora, grava na principal, lê de volta e compara o conteúdo
+   byte a byte (SHA-256); só então o índice passa a apontar para a principal. A cópia na nuvem antiga NÃO é apagada: fica como garantia. */
+const sha = async b => [...new Uint8Array(await crypto.subtle.digest('SHA-256', b))].map(x => x.toString(16).padStart(2, '0')).join('');
+async function moverParaPrincipal(env, de, lim) {
+  const db = env.EQUIPE_DB, A = arquivosDe(env); CASAS.t = arquivosDe(env, 't'); const L = lojaDe(de, A); if (!L) return { erro: 'sem a nuvem ' + de };
+  const { results } = await db.prepare('SELECT k, em, tam FROM arq WHERE onde = ? ORDER BY tam LIMIT ?').bind(de, lim).all(); let movidos = 0, bytes = 0; const falhas = [];
+  for (const x of results || []) { if (bytes > 40 * 1048576) break;
+    try { const buf = await L.le(x.k); if (buf.byteLength !== x.tam) { falhas.push({ k: x.k, motivo: 'tamanho ' + buf.byteLength + '/' + x.tam }); continue; }
+      const h0 = await sha(buf), ins = [db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k)]; let n = 0; for (let i = 0; i < buf.byteLength; i += CH_D1, n++) ins.push(db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(x.k, n, buf.subarray(i, i + CH_D1)));
+      await db.batch(ins);
+      const { results: ps } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(x.k).all(), pp = (ps || []).map(y => new Uint8Array(y.v)), c = new Uint8Array(pp.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of pp) { c.set(p, o); o += p.length; }
+      if (c.byteLength !== x.tam || await sha(c) !== h0) { await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run(); falhas.push({ k: x.k, motivo: 'conferência' }); continue; }
+      const up = await db.prepare('UPDATE arq SET onde = NULL, n = ? WHERE k = ? AND em = ? AND onde = ?').bind(n, x.k, x.em, de).run();
+      if (!up.meta?.changes) { await db.prepare('DELETE FROM parte WHERE k = ? AND EXISTS (SELECT 1 FROM arq WHERE k = ? AND onde IS NOT NULL)').bind(x.k, x.k).run(); falhas.push({ k: x.k, motivo: 'mudou no meio' }); continue; }
+      movidos++; bytes += x.tam;
+    } catch (e) { falhas.push({ k: x.k, motivo: String(e?.message || e).slice(0, 120) }); } }
+  const r = await db.prepare('SELECT count(*) AS n FROM arq WHERE onde = ?').bind(de).first();
+  return { ok: true, movidos, bytes, falhas, resta: r?.n ?? null };
 }
 async function d1Le(db, k, A) {
   const a = await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first(); if (!a) return null;
@@ -886,6 +906,11 @@ export default {
     }
     // USO DE HOJE para QUALQUER pessoa da equipe (botão da nuvem, pedido da dona, 05/11/2026): a SOMA das nuvens da equipe (principal,
     // reserva e terciária), que trabalham como uma só. Só números (sem e-mails nem nomes de conta); a medida é da Action "Uso da nuvem".
+    if (new URL(req.url).pathname === '/adm-mover-principal' && req.method === 'POST') { // só ADM, só na principal (o moverParaPrincipal explica)
+      if (!ehAdmin(env, login.email) || env._porta || !env._d1) return json({ error: { message: 'Só ADM, na principal.' } }, 403, cors);
+      const q = new URL(req.url).searchParams, de = q.get('de'); if (de !== 'a' && de !== 't') return json({ error: { message: 'de = a ou t' } }, 400, cors);
+      return json(await moverParaPrincipal(env, de, Math.min(Math.max(+q.get('n') || 3, 1), 20)), 200, { ...cors, 'cache-control': 'no-store' });
+    }
     if (new URL(req.url).pathname === '/nuvem-hoje') {
       const R4 = reservaDe(env, auth0), c = R4 ? await R4.contaJa().catch(() => null) : null, L = c?.limites || {}, hoje = new Date().toISOString().slice(0, 10);
       const pm = c?.contas?.principal?.mes; if (pm) return json({ em: c.em, mes: true, gravacoes: { v: pm.gravadas, lim: L.pagoGravacoes || 5e7 }, leituras: { v: pm.lidas, lim: L.pagoLeituras || 25e9 }, pedidos: { v: pm.pedidos, lim: L.pagoPedidos || 1e7 } }, 200, { ...cors, 'cache-control': 'no-store' }); // plano pago: só a principal, no mês
