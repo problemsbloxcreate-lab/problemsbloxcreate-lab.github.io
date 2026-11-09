@@ -17,6 +17,7 @@
     at: { nome: 'Ateliê', let: 'At', fg: '#ffb04a', bg: '#2e1804', borda: 1, bc: '#ffb04a', raio: 22 },
     md: { nome: 'Modelador', let: 'Md', fg: '#4fe08f', bg: '#0a2a17', borda: 1, bc: '#4fe08f', raio: 22 },
     pr: { nome: 'Preparativos', let: 'Pr', fg: '#ffd36b', bg: '#2e2304', borda: 1, bc: '#ffd36b', raio: 22 }, // roteiros, falas e gravações (/preparativos/)
+    cj: { nome: 'Central de Jogos', let: 'Cj', fg: '#e879ff', bg: '#2a0a33', borda: 1, bc: '#e879ff', raio: 22 }, // site externo da dona (problemsite.github.io/central/), fora do porteiro
     cn: { nome: 'Cenários', let: 'Cn', fg: '#7fd1ff', bg: '#0a1e33', borda: 1, bc: '#7fd1ff', raio: 22, parte: 'Animador' }, // parte de um programa (botão Cenários do Animador)
   };
   /* ÍCONES NOVOS (ADM › Ícones › "+ Ícone novo", ou um botão novo do menu): id "x-<nome>", com nome e, se quiser, o começo do
