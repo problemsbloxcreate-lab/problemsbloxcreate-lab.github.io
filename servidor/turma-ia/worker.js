@@ -83,7 +83,7 @@ async function confereLogin(req, env) {
     const extra = !lista.includes(email) && (await extrasAcesso(env)).some(x => x.email === email);
     if (!lista.length && !extra) return { ok: false, motivo: 'O servidor está sem a lista EMAILS_PERMITIDOS (ninguém entra até o dono configurar).' };
     if (!lista.includes(email) && !extra) return { ok: false, motivo: `A conta ${pay.email || ''} não tem acesso ao Estúdio Problems.` };
-    return { ok: true, email: pay.email, uid: String(pay.user_id || pay.sub || '') };
+    return { ok: true, email: pay.email, uid: String(pay.user_id || pay.sub || ''), nome: String(pay.name || '').slice(0, 80) };
   } catch { return { ok: false }; }
 }
 
@@ -859,6 +859,114 @@ async function dublar(req, env, p) {
     delete D.links[hs]; await gravaDub(env, id, D); try { await env.EQUIPE.delete('dublar-links/' + hs); } catch { } return sai({ ok: true }); }
   return erro('Pedido desconhecido.', 404);
 }
+/* ---- CÉREBRO (pedido da dona, 09/11/2026): a memória de longo prazo compartilhada da equipe e das IAs ----
+   Pastas e arquivos (texto, imagem, referência) em tabelas próprias do D1 "equipe". Ler: quem tem conta e o programa "cerebro". Gravar: só ADM (ehAdmin)
+   ou IA com a chave x-cerebro-chave (segredo CEREBRO_CHAVE do Worker). Nada se apaga de verdade: cada mudança vira uma versão em cerebro_ver e "apagar" só marca
+   a lixeira. A chave primária (id, ver) impede duas gravações em cima da mesma versão. Segredos são recusados e e-mails viram mascarados antes de gravar. */
+const CB = { prep: false }, CB_MARCAS = new Set(['', 'guia', 'biblia', 'skill', 'memoria', 'regra', 'decisao', 'evitar', 'referencia', 'aprendizado']), CB_TIPOS = new Set(['pasta', 'texto', 'imagem', 'referencia']), CB_MAX = 800 * 1024, CB_IMG_MAX = 1900000;
+const CB_EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.[a-zA-Z]{2,24}\b/g;
+const CB_SEGREDOS = [[/sk-ant-[\w-]{20,}/, 'chave da Anthropic'], [/\bsk-[A-Za-z0-9_-]{32,}/, 'chave de API'], [/AIza[\w-]{30,}/, 'chave do Google'], [/\bgh[pousr]_[A-Za-z0-9]{30,}/, 'token do GitHub'], [/github_pat_\w{20,}/, 'token do GitHub'], [/eyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{5,}/, 'token de login'], [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'chave privada'], [/\bBearer\s+[\w.-]{40,}/, 'token de login'], [/\bAKIA[0-9A-Z]{16}\b/, 'chave da AWS']];
+const cbSegredo = t => CB_SEGREDOS.find(([re]) => re.test(String(t || '')))?.[1] || null;
+const cbMascara = e => { const [u, d = ''] = e.split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; };
+const cbLimpa = (s, n) => String(s ?? '').replace(CB_EMAIL, m => /^(no-?reply|git)@/i.test(m) ? m : cbMascara(m)).slice(0, n);
+const cbNome = s => cbLimpa(s, 120).replace(/[\/\\\r\n\t]+/g, '-').trim();
+async function cbChaveOk(env, v) { if (!env.CEREBRO_CHAVE || !v) return false; const t = x => new TextEncoder().encode(x); return await sha(t(v)) === await sha(t(env.CEREBRO_CHAVE)); }
+const cbNovoId = () => 'c' + Date.now().toString(36) + [...crypto.getRandomValues(new Uint8Array(5))].map(x => x.toString(16).padStart(2, '0')).join('');
+async function cbPrepara(db) { if (CB.prep) return; await db.batch([
+  db.prepare('CREATE TABLE IF NOT EXISTS cerebro_no (id TEXT PRIMARY KEY, pai TEXT, tipo TEXT NOT NULL, nome TEXT NOT NULL, marca TEXT, resumo TEXT, corpo TEXT, url TEXT, img TEXT, ver INTEGER NOT NULL, em INTEGER NOT NULL, por TEXT, ia TEXT, pedido TEXT, motivo TEXT, apagado INTEGER NOT NULL DEFAULT 0)'),
+  db.prepare('CREATE INDEX IF NOT EXISTS cerebro_no_pai ON cerebro_no (pai, nome)'), db.prepare('CREATE INDEX IF NOT EXISTS cerebro_no_marca ON cerebro_no (marca)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS cerebro_ver (id TEXT NOT NULL, ver INTEGER NOT NULL, acao TEXT, nome TEXT, tipo TEXT, marca TEXT, snap TEXT NOT NULL, em INTEGER NOT NULL, por TEXT, ia TEXT, pedido TEXT, motivo TEXT, PRIMARY KEY (id, ver))'),
+  db.prepare('CREATE INDEX IF NOT EXISTS cerebro_ver_em ON cerebro_ver (em)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS cerebro_img (h TEXT PRIMARY KEY, tipo TEXT, b64 TEXT NOT NULL, tam INTEGER, em INTEGER)'),
+  db.prepare('CREATE TABLE IF NOT EXISTS cerebro_ped (id TEXT PRIMARY KEY, tipo TEXT, texto TEXT NOT NULL, alvo TEXT, por TEXT, cod TEXT, em INTEGER NOT NULL, estado TEXT NOT NULL, feito_por TEXT, feito_em INTEGER, nota TEXT)'),
+  db.prepare('CREATE INDEX IF NOT EXISTS cerebro_ped_est ON cerebro_ped (estado, em)'), db.prepare('CREATE INDEX IF NOT EXISTS cerebro_ped_cod ON cerebro_ped (cod, em)'),
+]); CB.prep = true; }
+// devolve os dois comandos da gravação: a versão primeiro (se outra pessoa gravou no meio, a chave (id, ver) repete e a transação inteira falha)
+function cbGrava(db, n, antes, acao, a, motivo) {
+  const ver = (antes?.ver || 0) + 1, em = Date.now(), snap = JSON.stringify({ pai: n.pai ?? null, tipo: n.tipo, nome: n.nome, marca: n.marca || null, resumo: n.resumo || null, corpo: n.corpo ?? null, url: n.url || null, img: n.img || null, apagado: n.apagado ? 1 : 0 });
+  return { ver, em, st: [
+    db.prepare('INSERT INTO cerebro_ver (id, ver, acao, nome, tipo, marca, snap, em, por, ia, pedido, motivo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(n.id, ver, acao, n.nome, n.tipo, n.marca || null, snap, em, a.por, a.ia, a.pedido, motivo),
+    db.prepare('INSERT OR REPLACE INTO cerebro_no (id, pai, tipo, nome, marca, resumo, corpo, url, img, ver, em, por, ia, pedido, motivo, apagado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(n.id, n.pai ?? null, n.tipo, n.nome, n.marca || null, n.resumo || null, n.corpo ?? null, n.url || null, n.img || null, ver, em, a.por, a.ia, a.pedido, motivo, n.apagado ? 1 : 0),
+  ] };
+}
+async function cerebro(req, env, login, path, cors) {
+  const nc = { ...cors, 'cache-control': 'no-store' }, ok = (o, s = 200) => json(o, s, nc), erro = (m, s = 400, type = 'cerebro') => json({ error: { type, message: m } }, s, nc), db = env.EQUIPE_DB;
+  if (!db) return erro('O banco do Cérebro não está ligado neste servidor.', 503);
+  const ia = !!login.ia, adm = ia || ehAdmin(env, login.email), rota = path.slice('/cerebro'.length) || '/', q = new URL(req.url).searchParams;
+  if (!ia && !(await pode(env, login.email, 'cerebro'))) return erro('O seu cargo não inclui o Cérebro. Peça para um ADM liberar.', 403, 'permissao');
+  await cbPrepara(db);
+  const pega = id => db.prepare('SELECT * FROM cerebro_no WHERE id = ?').bind(id).first();
+  const noNome = (pai, nome) => db.prepare('SELECT * FROM cerebro_no WHERE pai IS ? AND nome = ? AND apagado = 0').bind(pai, nome).first();
+  const segs = c => String(c || '').split('/').map(cbNome).filter(Boolean).slice(0, 8);
+  const peloCaminho = async c => { let pai = null, n = null; for (const s of segs(c)) { n = await noNome(pai, s); if (!n) return null; pai = n.id; } return n; };
+  const COLS = 'id, pai, tipo, nome, marca, resumo, url, img, ver, em, por, ia, pedido, apagado, length(corpo) AS tam';
+  if (req.method === 'GET') {
+    if (rota === '/') { const { results } = await db.prepare(`SELECT ${COLS} FROM cerebro_no`).all(), todos = results || [], lix = new Set(todos.filter(x => x.apagado).map(x => x.id)), mapa = new Map(todos.map(x => [x.id, x]));
+      const escondido = x => { for (let p = x.pai, i = 0; p && i < 20; p = mapa.get(p)?.pai, i++) if (lix.has(p)) return true; return false; };
+      const novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
+      return ok({ itens: todos.filter(x => !x.apagado && !escondido(x)), lixeira: adm ? todos.filter(x => x.apagado) : [], adm, ia, pedidosNovos: novos?.n || 0 }); }
+    if (rota === '/comece') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT nome FROM cerebro_no WHERE pai IS NULL AND apagado = 0 ORDER BY nome').all(), novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
+      return ok({ texto: n?.corpo || '', pastas: (results || []).map(x => x.nome), pedidosNovos: novos?.n || 0 }); }
+    if (rota === '/item') { const n = q.get('id') ? await pega(q.get('id')) : await peloCaminho(q.get('caminho')); if (!n || (n.apagado && !adm)) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
+      const { results } = await db.prepare('SELECT ver, acao, em, por, ia, pedido, motivo FROM cerebro_ver WHERE id = ? ORDER BY ver DESC LIMIT 60').bind(n.id).all(); return ok({ item: n, versoes: results || [], adm }); }
+    if (rota === '/versao') { const v = await db.prepare('SELECT * FROM cerebro_ver WHERE id = ? AND ver = ?').bind(q.get('id') || '', +q.get('ver') || 0).first(); if (!v) return erro('Versão não encontrada.', 404, 'nao_achei'); return ok({ ver: v.ver, acao: v.acao, em: v.em, por: v.por, ia: v.ia, pedido: v.pedido, motivo: v.motivo, ...JSON.parse(v.snap) }); }
+    if (rota === '/registro') { const lim = Math.min(+q.get('limite') || 50, 200), antes = +q.get('antes') || 9e15; const { results } = await db.prepare('SELECT id, ver, acao, nome, tipo, marca, em, por, ia, pedido, motivo FROM cerebro_ver WHERE em < ? ORDER BY em DESC LIMIT ?').bind(antes, lim).all(); return ok({ itens: results || [] }); }
+    if (rota === '/marca') { const m = String(q.get('m') || ''); if (!CB_MARCAS.has(m) || !m) return erro('Marca desconhecida.'); const { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, url, img, ver, em, por, ia, pedido, substr(corpo, 1, 6000) AS corpo FROM cerebro_no WHERE marca = ? AND apagado = 0 ORDER BY em DESC LIMIT 200').bind(m).all(); return ok({ itens: results || [] }); }
+    if (rota === '/buscar') { const t = String(q.get('q') || '').trim().slice(0, 80); if (t.length < 2) return ok({ itens: [] }); const l = '%' + t.replace(/[\\%_]/g, '\\$&') + '%'; const { results } = await db.prepare("SELECT id, pai, tipo, nome, marca, resumo, ver, em, corpo FROM cerebro_no WHERE apagado = 0 AND (nome LIKE ?1 ESCAPE '\\' OR resumo LIKE ?1 ESCAPE '\\' OR corpo LIKE ?1 ESCAPE '\\') LIMIT 40").bind(l).all(), low = t.toLowerCase();
+      return ok({ itens: (results || []).map(({ corpo, ...x }) => { const i = String(corpo || '').toLowerCase().indexOf(low); return { ...x, trecho: i >= 0 ? String(corpo).slice(Math.max(0, i - 70), i + 150) : '' }; }) }); }
+    if (rota === '/tudo') { if (!adm) return erro('Só ADM ou IA baixa o Cérebro inteiro.', 403, 'adm'); const { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, corpo, url, img, ver, em, por, ia, pedido FROM cerebro_no WHERE apagado = 0').all(); return ok({ itens: results || [] }); }
+    if (rota === '/img') { const v = await db.prepare('SELECT tipo, b64 FROM cerebro_img WHERE h = ?').bind(q.get('h') || '').first(); if (!v) return erro('Imagem não encontrada.', 404, 'nao_achei'); return ok(v); }
+    if (rota === '/pedidos') { const so = q.get('estado') === 'novo', { results } = await db.prepare(so ? "SELECT * FROM cerebro_ped WHERE estado = 'novo' ORDER BY em DESC LIMIT 100" : 'SELECT * FROM cerebro_ped ORDER BY em DESC LIMIT 100').all(); return ok({ itens: (results || []).map(({ cod, ...x }) => x), adm }); }
+    return erro('Pedido desconhecido.', 404);
+  }
+  if (req.method !== 'POST') return erro('Use GET ou POST.', 405);
+  if (+(req.headers.get('content-length') || 0) > 4 * 1048576) return erro('Grande demais para o Cérebro.', 413);
+  let b; try { b = await req.json(); } catch { return erro('O pedido veio com defeito.'); }
+  const motivo = cbLimpa(b.motivo, 600) || null, secreto = [b.nome, b.corpo, b.resumo, b.url, b.motivo, b.texto, b.acrescentar, b.nota, b.pedidoPor].map(cbSegredo).find(Boolean);
+  if (secreto) return erro(`Não gravei: o texto parece ter ${secreto}. Tire isso e mande de novo; segredo não entra no Cérebro.`, 400, 'segredo');
+  const eu = ia ? null : (cbLimpa(login.nome, 80) || 'Alguém da equipe');
+  if (rota === '/pedir') { const texto = cbLimpa(b.texto, 4000).trim(); if (texto.length < 3) return erro('Escreva o que é para aprender ou mudar.'); const tipo = ['aprender', 'evitar', 'corrigir', 'referencia'].includes(b.tipo) ? b.tipo : 'aprender';
+    const por = ia ? cbLimpa(b.pedidoPor, 80) : eu; if (!por) return erro('Diga quem pediu (pedidoPor).'); const cod = ia ? 'ia' : (await semEmail({ por: login.email })).por;
+    if (!adm) { const c = await db.prepare('SELECT count(*) AS n FROM cerebro_ped WHERE cod = ? AND em > ?').bind(cod, Date.now() - 864e5).first(); if ((c?.n || 0) >= 30) return erro('Muitos pedidos hoje. Tente amanhã.', 429); }
+    const id = cbNovoId(); await db.prepare("INSERT INTO cerebro_ped (id, tipo, texto, alvo, por, cod, em, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'novo')").bind(id, tipo, texto, cbLimpa(b.alvo, 300) || null, por, cod, Date.now()).run(); return ok({ ok: true, id }); }
+  if (!adm) return erro('Só ADMs e o Claude mudam o Cérebro. Use "Pedir para aprender" que o pedido fica registrado.', 403, 'adm');
+  const a = ia ? { por: cbLimpa(b.ia, 80), ia: cbLimpa(b.ia, 80), pedido: cbLimpa(b.pedidoPor, 80) } : { por: eu, ia: null, pedido: cbLimpa(b.pedidoPor, 80) || eu };
+  if (rota === '/pedido') { if (!['feito', 'recusado', 'novo'].includes(b.estado)) return erro('Estado desconhecido.'); const r = await db.prepare('UPDATE cerebro_ped SET estado = ?, feito_por = ?, feito_em = ?, nota = ? WHERE id = ?').bind(b.estado, a.por || 'IA', Date.now(), cbLimpa(b.nota, 600) || null, String(b.id || '')).run(); return r.meta?.changes ? ok({ ok: true }) : erro('Pedido não encontrado.', 404, 'nao_achei'); }
+  if (ia && (!a.ia || !a.pedido || !motivo)) return erro('A IA precisa mandar: ia (o nome dela), pedidoPor (quem pediu) e motivo (o que mudou e por quê).', 400, 'registro');
+  const roda = async (st) => { try { await db.batch(st); return null; } catch (e) { if (/UNIQUE|constraint/i.test(String(e?.message || e))) return erro('Outra pessoa gravou esse arquivo agora mesmo. Abra de novo e refaça.', 409, 'conflito'); throw e; } };
+  if (rota === '/salvar') {
+    let n = b.id ? await pega(String(b.id)) : null, pai, nome = b.nome != null ? cbNome(b.nome) : null; const criar = [], s = b.caminho ? segs(b.caminho) : null;
+    if (b.id && !n) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
+    if (s) { if (!s.length) return erro('Caminho vazio.'); let p = null; for (const seg of s.slice(0, -1)) { let f = await noNome(p, seg); if (f && f.tipo !== 'pasta') return erro(`"${seg}" não é uma pasta.`); if (!f) { f = { id: cbNovoId(), pai: p, tipo: 'pasta', nome: seg }; criar.push(...cbGrava(db, f, null, 'criar', a, motivo).st); } p = f.id; }
+      pai = p; nome = nome || s[s.length - 1]; n = n || await noNome(pai, s[s.length - 1]); }
+    else pai = b.pai !== undefined ? (b.pai || null) : (n ? n.pai : null);
+    if (pai && !criar.length) { const f = await pega(pai); if (!f || f.tipo !== 'pasta' || f.apagado) return erro('Essa pasta não existe.', 404, 'nao_achei'); }
+    if (n && n.apagado) return erro('Esse arquivo está na lixeira. Restaure antes de mudar.', 409, 'lixeira');
+    if (n && pai !== n.pai) for (let p = pai, i = 0; p && i < 20; i++) { if (p === n.id) return erro('Uma pasta não pode ficar dentro dela mesma.'); p = (await pega(p))?.pai; }
+    const tipo = n ? n.tipo : String(b.tipo || 'texto'); if (!CB_TIPOS.has(tipo)) return erro('Tipo desconhecido.'); nome = nome || n?.nome; if (!nome) return erro('Dê um nome.');
+    if (!n || nome !== n.nome || pai !== n.pai) { const irmao = criar.length ? null : await noNome(pai, nome); if (irmao && irmao.id !== n?.id) return erro(`Já existe "${nome}" nessa pasta.`, 409, 'mesmo_nome'); }
+    if (n && !b.forcar && b.acrescentar == null && +b.base !== n.ver) return erro(b.base == null ? `Esse arquivo já existe (versão ${n.ver}). Leia antes e mande base=${n.ver}, para não apagar o que outra pessoa escreveu.` : `Esse arquivo mudou enquanto você mexia (agora está na versão ${n.ver}). Abra de novo para não perder o que a outra pessoa fez.`, 409, 'conflito');
+    let corpo = b.corpo !== undefined ? cbLimpa(b.corpo, CB_MAX + 1) : n?.corpo ?? null; if (b.acrescentar != null) corpo = (corpo ? corpo.replace(/\s+$/, '') + '\n\n' : '') + cbLimpa(b.acrescentar, CB_MAX + 1);
+    if (corpo && new TextEncoder().encode(corpo).length > CB_MAX) return erro('Texto grande demais (máximo 800 KB). Divida em mais de um arquivo.', 413);
+    let url = b.url !== undefined ? String(b.url || '').slice(0, 2000) : n?.url || null; if (url && !/^https?:\/\//i.test(url)) return erro('O link precisa começar com http:// ou https://.');
+    let img = n?.img || null; const st = [...criar];
+    if (b.imagem) { const b64 = String(b.imagem.b64 || ''), it = String(b.imagem.tipo || ''); if (!/^image\/(png|jpeg|webp|gif)$/.test(it) || !/^[A-Za-z0-9+/=]+$/.test(b64)) return erro('Imagem inválida (use PNG, JPEG, WEBP ou GIF).'); if (b64.length > CB_IMG_MAX) return erro('Imagem grande demais (máximo ~1,4 MB).', 413);
+      img = await sha(new TextEncoder().encode(b64)); st.push(db.prepare('INSERT OR IGNORE INTO cerebro_img (h, tipo, b64, tam, em) VALUES (?, ?, ?, ?, ?)').bind(img, it, b64, b64.length, Date.now())); }
+    if (tipo === 'imagem' && !img) return erro('Falta a imagem.'); if (tipo === 'referencia' && !url && !corpo) return erro('A referência precisa de um link ou de um texto.');
+    let marca = b.marca !== undefined ? String(b.marca || '') : n?.marca || ''; if (!CB_MARCAS.has(marca)) return erro('Marca desconhecida.'); if (tipo === 'referencia' && !marca) marca = 'referencia';
+    const resumo = b.resumo !== undefined ? cbLimpa(b.resumo, 300) : n?.resumo || null, novo = { id: n?.id || cbNovoId(), pai, tipo, nome, marca, resumo, corpo, url, img, apagado: 0 };
+    if (n && pai === n.pai && nome === n.nome && (n.marca || '') === marca && (n.resumo || '') === (resumo || '') && (n.corpo ?? null) === corpo && (n.url || null) === (url || null) && (n.img || null) === img) return ok({ ok: true, igual: true, id: n.id, ver: n.ver });
+    const g = cbGrava(db, novo, n, n ? 'editar' : 'criar', a, motivo); const e0 = await roda([...st, ...g.st]); if (e0) return e0; return ok({ ok: true, id: novo.id, ver: g.ver, em: g.em });
+  }
+  if (rota === '/lixeira' || rota === '/restaurar') { const n = await pega(String(b.id || '')); if (!n) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
+    let novo = { ...n }, acao = 'lixeira';
+    if (rota === '/lixeira') { if (n.apagado) return ok({ ok: true, igual: true }); novo.apagado = 1; }
+    else { acao = 'restaurar'; if (b.ver != null) { const v = await db.prepare('SELECT snap FROM cerebro_ver WHERE id = ? AND ver = ?').bind(n.id, +b.ver).first(); if (!v) return erro('Versão não encontrada.', 404, 'nao_achei'); novo = { ...novo, ...JSON.parse(v.snap), id: n.id }; } novo.apagado = 0;
+      if (novo.pai) { const f = await pega(novo.pai); if (!f || f.apagado) return erro('A pasta dele está na lixeira. Restaure a pasta primeiro.', 409, 'lixeira'); }
+      const irmao = await noNome(novo.pai ?? null, novo.nome); if (irmao && irmao.id !== n.id) return erro(`Já existe "${novo.nome}" nessa pasta. Renomeie antes de restaurar.`, 409, 'mesmo_nome'); }
+    const g = cbGrava(db, novo, n, acao, a, motivo || (acao === 'restaurar' ? (b.ver != null ? 'Voltou para a versão ' + b.ver : 'Tirou da lixeira') : 'Mandou para a lixeira')); const e0 = await roda(g.st); if (e0) return e0; return ok({ ok: true, ver: g.ver }); }
+  return erro('Pedido desconhecido.', 404);
+}
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
@@ -898,22 +1006,26 @@ export default {
     const cors = { 'access-control-allow-origin': liberado ? (origin || '*') : 'null', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS', 'access-control-max-age': '86400', vary: 'origin' };
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
+    // CÉREBRO: as IAs (sem navegador) entram com a chave x-cerebro-chave, que só vale nas rotas /cerebro
+    const ehCerebro = path0 === '/cerebro' || path0.startsWith('/cerebro/'), chaveCb = ehCerebro ? req.headers.get('x-cerebro-chave') : null;
+    if (chaveCb && !(await cbChaveOk(env, chaveCb))) return json({ error: { type: 'chave', message: 'Chave do Cérebro errada.' } }, 401, cors);
     // aberto direto na barra do navegador (sem "origin"): mostra que está funcionando e o uso
     if (!origin && req.method === 'GET' && (path0 === '/' || path0 === '/uso')) return json({ ok: 'Servidor da IA da turma funcionando', login: env.FIREBASE_PROJECT_ID ? 'ligado (' + env.FIREBASE_PROJECT_ID + ')' : 'DESLIGADO — falta FIREBASE_PROJECT_ID', emails: (env.EMAILS_PERMITIDOS || '').split(',').filter(x => x.trim()).length, app: env.APP_KEY ? 'protegido (APP_KEY ok)' : 'falta APP_KEY', chave_ia: env.ANTHROPIC_API_KEY ? 'ok' : 'falta ANTHROPIC_API_KEY' }, 200, cors);
-    else if (!liberado) return json({ error: { type: 'origem', message: 'Este site não está liberado no servidor da turma.' } }, 403, cors);
+    else if (!liberado && !chaveCb) return json({ error: { type: 'origem', message: 'Este site não está liberado no servidor da turma.' } }, 403, cors);
     if (!env.ANTHROPIC_API_KEY && !env._porta) return json({ error: { type: 'config', message: 'O servidor está sem a chave (ANTHROPIC_API_KEY).' } }, 500, cors);
 
     // NÍVEIS DE ACESSO pelo porteiro (GET /permissoes de qualquer programa, só com a sessão do porteiro): o porteiro fala por
     // dentro da Cloudflare (Service Binding TURMA) e manda o e-mail da sessão. Pedido da internet SEMPRE tem req.cf; pela ligação
     // direta não tem — então este caminho só vale pela ligação. Mesmo assim o e-mail precisa estar na lista de quem entra.
     const peloPorteiro = p00 === '/permissoes' && req.method === 'GET' && !req.cf && req.headers.get('x-porteiro-email');
-    const login = peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
+    const login = chaveCb ? { ok: true, ia: true } : peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
     await planoEstado(env);
     if (path0 === '/plano' && req.method === 'GET') { const u = PLANO.uso; return json({ pausado: planoPausado(), adm: ehAdmin(env, login.email), ciclo: u?.ciclo || null, fim: u?.fim || null, em: u?.em || null, pct: u ? Math.round(planoPct(u) * 1000) / 10 : null, itens: u ? Object.values(u.itens).filter(x => x.lim && x.v / x.lim >= 0.5).map(x => ({ nome: x.nome, v: x.v, lim: x.lim })) : [] }, 200, { ...cors, 'cache-control': 'no-store' }); }
     if (path0 === '/plano/aceitar' && req.method === 'POST') { if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode liberar.' } }, 403, cors); const q0 = new URL(req.url).searchParams; if (q0.get('teste') === '1') return json({ ok: true, teste: true }, 200, cors); const u = PLANO.uso; if (!u) return json({ error: { message: 'Sem medida do plano.' } }, 409, cors);
       const v = { ciclo: u.ciclo, em: Date.now(), por: login.email }; await env.EQUIPE_DB.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('plano-aceite', ?)").bind(JSON.stringify(v)).run(); PLANO.ac = v; PLANO.at = 0; return json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); }
     if ((planoPausado() || (new URL(req.url).searchParams.get('plano_teste') === '1' && ehAdmin(env, login.email))) && !PLANO_LIVRES.has(path0)) return json({ error: { type: 'plano_pausado', message: 'O Estúdio está pausado: o uso incluído no plano deste mês chegou ao fim. Um ADM precisa confirmar para continuar. O que você fez continua guardado neste computador.' } }, 423, { ...cors, 'x-plano-pausado': '1', 'access-control-expose-headers': 'x-plano-pausado', 'cache-control': 'no-store' });
+    if (ehCerebro) return cerebro(req, env, login, path0, cors); // depois da trava do plano: pausado, o Cérebro também responde 423
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
     if (R && login.email && (!env._porta || env._ponte)) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // a ponte lê o mesmo banco: poupa também
     if (R && login.email) bg(confereDivide(R)); // DIVIDIR os pedidos com a outra porta quando a principal estiver gastando muito // perto do limite (85%): poupa a principal até as 21h

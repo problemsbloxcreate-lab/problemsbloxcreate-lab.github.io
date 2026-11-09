@@ -1,6 +1,7 @@
 {
   "_leia": "Catálogo dos NÍVEIS DE ACESSO (ADM › Níveis de acesso). Cada sessão/programa acrescenta as suas chaves aqui. Programa: { id, nome }. Função: { id: 'programa.funcao', programa, nome, desc } (programa 'geral' = vale para o Estúdio todo). Chave nova já nasce LIBERADA para todos os cargos; o ADM tira depois. No código: EstudioPerm.pode('<id>') / EstudioPerm.programa('<id>') no navegador e pode(env, email, '<id>') no turma-ia.",
   "programas": [
+    { "id": "cerebro", "nome": "Cérebro" },
     { "id": "animador", "nome": "Animador" },
     { "id": "shorts", "nome": "Criar Shorts" },
     { "id": "editor", "nome": "Editar vídeos" },

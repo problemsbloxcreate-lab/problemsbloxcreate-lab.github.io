@@ -181,7 +181,7 @@ window.EstudioPerm ||= (() => {
   const T_PRI = 'turma-ia.problemsraiz.workers.dev', T_RES = 'turma-reserva.editorcustomizado.workers.dev';
   // TODOS os programas e rotas novas usam as 3 juntas (pedido da dona, 05/11/2026): só NÃO divide o que depende de algo que existe
   // apenas na principal (IA e o gasto dela, transcrição, login ao vivo /quem, chave do app, robôs, reserva e o painel do ADM)
-  const NAO_DIV = /^\/(v1|transcrever|uso|tt|yt|quem|app-key|permissoes|nuvem-(uso|resumo|painel)|robo|reserva|confere|dublar)(\/|$)/;
+  const NAO_DIV = /^\/(v1|transcrever|uso|tt|yt|quem|app-key|permissoes|nuvem-(uso|resumo|painel)|robo|reserva|confere|dublar|cerebro)(\/|$)/;
   const ROTAS_DIV = { test: p => p !== '/' && !NAO_DIV.test(p) };
   const sorte = (() => { try { let v = parseFloat(localStorage.getItem('ep-sorte')); if (!(v >= 0 && v < 1)) { v = Math.random(); localStorage.setItem('ep-sorte', String(v)); } return v; } catch { return Math.random(); } })();
   const parteDiv = () => { try { const o = JSON.parse(localStorage.getItem('ep-divide') || 'null'); return o && o.ate > Date.now() ? +o.p || 0 : 0; } catch { return 0; } };
@@ -932,7 +932,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   // "online · PROGRAMA" na tela ADM › Quem pode entrar: avisa a cada 90 s, só com a aba à vista
   const programaAqui = () => { const p = location.pathname;
-    return /^\/adm\/?$/i.test(p) ? 'ADM' : p === '/' ? 'MENU' : [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/preparativos/', 'PREPARATIVOS']].find(([k]) => p.startsWith(k))?.[1] || null; };
+    return /^\/adm\/?$/i.test(p) ? 'ADM' : p === '/' ? 'MENU' : [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/shorts/', 'SHORTS'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/preparativos/', 'PREPARATIVOS'], ['/cerebro/', 'CÉREBRO']].find(([k]) => p.startsWith(k))?.[1] || null; };
   function online() {
     if (online.ligado || !programaAqui()) return; online.ligado = true;
     const aba = Math.random().toString(36).slice(2, 12); // cada aba avisa por si: fechar uma não tira a pessoa do "online" se outra estiver aberta
@@ -1130,7 +1130,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     return `<div class="ep-nv-aviso${t3 ? ' terc' : ''}" role="status">${ICONES.nuvem}<div><b>${t3 ? 'A nuvem principal e a reserva chegaram no limite de hoje: usando a nuvem terciária.' : j.antiga ? 'A nuvem principal chegou no limite de hoje: mostrando a última medida' + (j.em ? ' (de ' + new Date(j.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ')' : '') + '.' : j.nuvem === 'reserva' ? 'Mostrando as informações da nuvem reserva.' : 'A nuvem principal chegou no limite de hoje.'}</b><small>A principal volta às ${hora} (em ${em}). ${t3 || j.nuvem === 'reserva' || j.antiga ? `O que a equipe salvar até lá vai para a ${qual} e volta sozinho para a principal.` : 'O que você fizer continua guardado neste computador.'}</small></div></div>`;
   }
   // COR DE CADA PROGRAMA (a do ícone dele, ADM › Ícones): pastas e barras dos painéis de espaço usam a cor do programa dono
-  const PROG_ID = { animador: 'an', 'animador antigo': 'an', ateliê: 'at', atelie: 'at', cenários: 'cn', cenarios: 'cn', shorts: 'sh', 'criar shorts': 'sh', editor: 'ed', 'editar vídeos': 'ed', modelador: 'md', preparativos: 'pr', 'central de jogos': 'cj' };
+  const PROG_ID = { animador: 'an', 'animador antigo': 'an', ateliê: 'at', atelie: 'at', cenários: 'cn', cenarios: 'cn', shorts: 'sh', 'criar shorts': 'sh', editor: 'ed', 'editar vídeos': 'ed', modelador: 'md', preparativos: 'pr', 'cérebro': 'cb', cerebro: 'cb', 'central de jogos': 'cj' };
   const corProg = nome => { const n = String(nome || '').toLowerCase(), k = PROG_ID[n] || PROG_ID[n.split(/[ (·]/)[0]]; try { const c = k && window.EstudioIcones?.config?.()?.[k]; if (c?.fg) return c.fg; } catch { } return '#8a9aab'; };
   const pastaIc = nome => { const c = corProg(nome); return `<svg class="ep-pasta" viewBox="0 0 34 28" aria-hidden="true"><path d="M1.5 5a2.5 2.5 0 0 1 2.5-2.5h8.5l3 3.5H30a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 30 26H4a2.5 2.5 0 0 1-2.5-2.5z" fill="${c}"/><path d="M1.5 10.5h31" stroke="rgba(255,255,255,.4)" stroke-width="1.3"/></svg>`; };
   const legenda = '<div class="ep-leg"><span><i style="background:#a98bff"></i>até 60%: tranquilo</span><span><i style="background:#f0b232"></i>60–85%: atenção</span><span><i style="background:#f0584f"></i>mais de 85%: quase cheio</span></div>';
@@ -2133,7 +2133,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const bt = ([k, n, ic, bg, extra = '']) => `<button class="di" type="button" data-fixo="${k}" data-dica="${dica(k, n)}" aria-label="${dica(k, n)}"><span class="ic fx" style="background:${bg}">${ic}</span>${k === 'nuvem' ? barra(usoNv) : k === 'pc' ? barra(DOCK_PC) : ''}${extra}</button>`;
     // programas que a pessoa FIXOU no Dock pelo "Organizar" do menu (localStorage 'ep-dock-fixos', só neste navegador)
     let meus = []; try { meus = JSON.parse(localStorage.getItem('ep-dock-fixos') || '[]'); if (!Array.isArray(meus)) meus = []; } catch { }
-    meus = meus.filter(x => { const m = String(x?.url || '').match(/\/(animador|shorts|editor|modelador|jester|preparativos|publicacoes)(\/|$)/); return !m || window.EstudioPerm?.programa(m[1]) !== false; }); // NÍVEIS DE ACESSO: programa que o cargo não vê sai do Dock
+    meus = meus.filter(x => { const m = String(x?.url || '').match(/\/(animador|shorts|editor|modelador|jester|preparativos|publicacoes|cerebro)(\/|$)/); return !m || window.EstudioPerm?.programa(m[1]) !== false; }); // NÍVEIS DE ACESSO: programa que o cargo não vê sai do Dock
     const icMeu = x => { try { if (x.prog && window.EstudioIcones?.svg) return window.EstudioIcones.svg(x.prog); } catch { }
       return x.ic ? `<span class="meu">${x.ic}</span>` : `<span style="display:grid;place-items:center;background:#3a3a3c;font-size:16px">${esc(String(x.nome || '?').slice(0, 2))}</span>`; }; // ícone do cartão: com o quadradinho de fundo do menu
     const meuBt = (x, i) => `<button class="di prog" type="button" data-meu="${i}" data-dica="${esc(x.nome)}" aria-label="${esc(x.nome)} (clique direito: tirar do Dock)"><span class="ic">${icMeu(x)}</span></button>`;

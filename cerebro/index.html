@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CÉREBRO · Estúdio Problems</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">
+<script>
+// o Cérebro mora no endereço único do Estúdio Problems; quem abrir a cópia do GitHub Pages vai para lá
+if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/cerebro/' + location.search);
+</script>
+<!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
+<script src="/estudio-login.js"></script>
+<link rel="stylesheet" href="cerebro.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="./" data-nav="" title="Voltar ao início"><span class="ic-prog" data-estudio-icone="cb" aria-hidden="true"></span><div><b>CÉREBRO</b><small>Estúdio Problems</small></div></a>
+  <nav class="abas" id="abas" aria-label="Seções do Cérebro"></nav>
+  <form id="busca" role="search"><input id="q" type="search" placeholder="Buscar no Cérebro" aria-label="Buscar no Cérebro" autocomplete="off"></form>
+  <span data-estudio-conta></span>
+</header>
+<div id="prog" hidden aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+<main id="tela"></main>
+<footer id="barra" hidden></footer>
+<div id="avisos" aria-live="polite"></div>
+<script src="cerebro.js"></script>
+<script>window.ESTUDIO_CONTA = { token: () => window.EstudioLogin?.token?.() };</script>
+<script src="/estudio-conta.js" defer></script>
+</body>
+</html>

@@ -79,6 +79,12 @@ jobs:
         run: |
           if [ -n "${FIREBASE_CONTA:-}" ]; then printf '%s' "$FIREBASE_CONTA" | $WR secret put FIREBASE_CONTA -c wrangler.toml > ../fc.log 2>&1 && echo "FIREBASE_CONTA posto no turma-ia" || { echo "::error::Não consegui pôr o FIREBASE_CONTA"; tail -5 ../fc.log | sed 's/[A-Za-z0-9+\/=_-]\{40,\}/…/g'; exit 1; }
           else echo "::warning::Sem o segredo FIREBASE_CONTA no GitHub: o ao vivo (Realtime Database) não libera ninguém até ele ser posto."; fi
+      - name: Chave do Cérebro para as IAs (segredo CEREBRO_CHAVE do GitHub → turma-ia)
+        env:
+          CEREBRO_CHAVE: ${{ secrets.CEREBRO_CHAVE }}
+        run: |
+          if [ -n "${CEREBRO_CHAVE:-}" ]; then printf '%s' "$CEREBRO_CHAVE" | $WR secret put CEREBRO_CHAVE -c wrangler.toml > ../cb.log 2>&1 && echo "CEREBRO_CHAVE posta no turma-ia" || { echo "::error::Não consegui pôr a CEREBRO_CHAVE"; exit 1; }
+          else echo "::warning::Sem o segredo CEREBRO_CHAVE no GitHub: as IAs não entram no Cérebro."; fi
       - name: Conferir depois de publicar
         run: |
           sleep 5
@@ -88,3 +94,9 @@ jobs:
           c=$(curl -s -o /dev/null -w '%{http_code}' -H 'origin: https://estudio.problemsraiz.workers.dev' https://turma-ia.problemsraiz.workers.dev/acesso)
           echo "::notice::/acesso sem login respondeu $c (o certo é 401)"
           [ "$c" = "401" ] || { echo "::error::/acesso sem login deveria responder 401."; exit 1; }
+          c=$(curl -s -o /dev/null -w '%{http_code}' -H 'origin: https://estudio.problemsraiz.workers.dev' https://turma-ia.problemsraiz.workers.dev/cerebro)
+          echo "::notice::/cerebro sem login respondeu $c (o certo é 401)"
+          [ "$c" = "401" ] || { echo "::error::/cerebro sem login deveria responder 401."; exit 1; }
+          c=$(curl -s -o /dev/null -w '%{http_code}' -H 'x-cerebro-chave: errada' https://turma-ia.problemsraiz.workers.dev/cerebro)
+          echo "::notice::/cerebro com chave errada respondeu $c (o certo é 401)"
+          [ "$c" = "401" ] || { echo "::error::/cerebro com chave errada deveria responder 401."; exit 1; }

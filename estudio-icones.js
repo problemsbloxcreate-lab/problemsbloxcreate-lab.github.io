@@ -17,6 +17,7 @@
     at: { nome: 'Ateliê', let: 'At', fg: '#ffb04a', bg: '#2e1804', borda: 1, bc: '#ffb04a', raio: 22 },
     md: { nome: 'Modelador', let: 'Md', fg: '#4fe08f', bg: '#0a2a17', borda: 1, bc: '#4fe08f', raio: 22 },
     pr: { nome: 'Preparativos', let: 'Pr', fg: '#ffd36b', bg: '#2e2304', borda: 1, bc: '#ffd36b', raio: 22 }, // roteiros, falas e gravações (/preparativos/)
+    cb: { nome: 'Cérebro', let: 'Cb', fg: '#ff8a7a', bg: '#33100c', borda: 1, bc: '#ff8a7a', raio: 22 }, // memória da equipe e das IAs (/cerebro/)
     cj: { nome: 'Central de Jogos', let: 'Cj', fg: '#e879ff', bg: '#2a0a33', borda: 1, bc: '#e879ff', raio: 22 }, // site externo da dona (problemsite.github.io/central/), fora do porteiro
     cn: { nome: 'Cenários', let: 'Cn', fg: '#7fd1ff', bg: '#0a1e33', borda: 1, bc: '#7fd1ff', raio: 22, parte: 'Animador' }, // parte de um programa (botão Cenários do Animador)
   };
@@ -61,7 +62,7 @@
   }
   const url = id => 'data:image/svg+xml,' + encodeURIComponent(svg(id, 64));
   // programa desta página pelo endereço (o Ateliê troca com usar('at'))
-  const p = location.pathname, porCaminho = p.startsWith('/shorts') ? 'sh' : p.startsWith('/editor') ? 'ed' : p.startsWith('/animador') ? (/[?&]atelie=/.test(location.search) ? 'at' : 'an') : p.startsWith('/modelador') ? 'md' : p.startsWith('/preparativos') ? 'pr' : null;
+  const p = location.pathname, porCaminho = p.startsWith('/shorts') ? 'sh' : p.startsWith('/editor') ? 'ed' : p.startsWith('/animador') ? (/[?&]atelie=/.test(location.search) ? 'at' : 'an') : p.startsWith('/modelador') ? 'md' : p.startsWith('/preparativos') ? 'pr' : p.startsWith('/cerebro') ? 'cb' : null;
   const doCaminho = () => porCaminho || IDS.find(id => cfg[id]?.caminho && p.startsWith(cfg[id].caminho)) || null; // projeto novo: pelo caminho que a ADM ligou
   let atual = doCaminho();
   function favicon() {

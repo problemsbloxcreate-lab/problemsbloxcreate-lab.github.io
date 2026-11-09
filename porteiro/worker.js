@@ -72,7 +72,7 @@ function projetos(env) { try { return JSON.parse(env.PROJETOS || '{}'); } catch 
    O porteiro pergunta pela ligação direta (TURMA) mandando o e-mail da sessão (x-porteiro-email; o turma-ia só aceita esse
    cabeçalho de pedido SEM req.cf, ou seja, pela ligação). Guarda 60 s por pessoa; e quando NINGUÉM tem nada bloqueado
    ("livre") guarda isso 2 min para todo mundo — sem custo a mais até um ADM configurar. Falhou = deixa passar (nada quebra). */
-const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos', '/publicacoes/': 'publicacoes' };
+const PERM_PROG = { '/animador/': 'animador', '/shorts/': 'shorts', '/editor/': 'editor', '/modelador/': 'modelador', '/jester/': 'jester', '/preparativos/': 'preparativos', '/publicacoes/': 'publicacoes', '/cerebro/': 'cerebro' };
 const PERM_MEM = new Map(), PERM_LIVRE = { t: 0 };
 async function permDe(env, email, url, forcar, atalho) { // atalho: vale o "ninguém tem nada bloqueado" guardado (só para barrar páginas)
   email = String(email || '').toLowerCase(); if (!email || !env.SERVIDOR) return null;
@@ -1264,7 +1264,7 @@ async function icones(req, env, url) {
   const cor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : null, out = {};
   // os de sempre + os NOVOS que a ADM criou ("x-<nome>": nome obrigatório, caminho do projeto e botão do menu opcionais; até 40)
   const novos = Object.keys(b.icones || {}).filter(id => /^x-[a-z0-9-]{1,30}$/.test(id) && typeof b.icones[id]?.nome === 'string' && b.icones[id].nome.trim()).slice(0, 40);
-  for (const id of ['sh', 'ed', 'an', 'at', 'md', 'cn', 'pr', 'cj', ...novos]) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
+  for (const id of ['sh', 'ed', 'an', 'at', 'md', 'cn', 'pr', 'cb', 'cj', ...novos]) { const x = b.icones?.[id]; if (!x || typeof x !== 'object') continue; const o = {};
     if (id.startsWith('x-')) { o.nome = x.nome.trim().slice(0, 40); if (typeof x.caminho === 'string' && /^\/[a-z0-9/_-]{1,60}$/i.test(x.caminho)) o.caminho = x.caminho; if (typeof x.botao === 'string' && x.botao.trim()) o.botao = x.botao.trim().slice(0, 40); }
     if (typeof x.let === 'string' && x.let.trim()) o.let = x.let.trim().slice(0, 3);
     for (const k of ['fg', 'bg', 'bc']) if (cor(x[k])) o[k] = cor(x[k]);

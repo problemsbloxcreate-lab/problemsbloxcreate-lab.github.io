@@ -91,7 +91,10 @@ nesta página e neste navegador: nada da equipe, nenhum e-mail, nenhum token (o 
 Quem for resolver: o código e as decisões estão no repositório do site (\`CLAUDE.md\`) e no do Preparativos (pasta \`dublar/\`).
 
 **Sobre o diário abaixo:** cada navegador anota só nele mesmo (nada vai para a nuvem). Repetições seguidas viram uma linha com "×N".`;
-  const CONTEXTO = `## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
+  const CONTEXTO = `## ANTES DE TUDO, para a IA que ler este relatório
+Leia o **Cérebro** (\`/cerebro/\`, a memória compartilhada da equipe e das IAs) antes de responder ou mudar qualquer coisa, e grave nele o que aprender. Vale mesmo que ninguém tenha citado. Como usar: \`cerebro/cerebro.mjs\` do repositório do site.
+
+## O que é o Estúdio Problems (para quem vai ler este relatório sem contexto)
 O Estúdio Problems é o site de uma equipe de animação e vídeos. Tudo fica num endereço só, **https://estudio.problemsraiz.workers.dev**, e só entra quem tem login do Google liberado.
 
 **Programas** (cada um é uma pasta do endereço):
