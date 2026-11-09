@@ -597,6 +597,18 @@ const DIVIDE = { p: 0, at: 0 };
    Não existe mais "poupar até as 21h" nem dividir pedidos com a outra porta (ela continua só para emergência: se a principal não responder,
    o site repete o pedido lá). As outras contas guardam os arquivos grandes, os sons e a cópia de segurança. */
 const PRINCIPAL_PAGA = true;
+/* TRAVA ANTES DE COBRAR (pedido da dona, 09/11/2026): a Action "Vigia do plano pago" guarda em cfg 'plano-uso' o gasto do ciclo. Aos 95% de qualquer item
+   o Estúdio pausa (as rotas de dados respondem 423 e o site mostra a tela de pausa) até um ADM aceitar que o excedente será cobrado; o aceite vale até o fim do
+   ciclo (cfg 'plano-aceite'). Sem medida recente (mais de 24 h) ou com o banco fora, não pausa: a trava nunca derruba o site por falha dela mesma. */
+const PLANO = { at: 0, uso: null, ac: null }, PLANO_TRAVA = 0.95;
+async function planoEstado(env) {
+  if (Date.now() - PLANO.at < (planoPausado() ? 15e3 : 60e3) || !env.EQUIPE_DB) return PLANO; PLANO.at = Date.now();
+  try { const { results } = await env.EQUIPE_DB.prepare("SELECT k, v FROM cfg WHERE k IN ('plano-uso', 'plano-aceite')").all(); const v = Object.fromEntries((results || []).map(x => [x.k, x.v])); PLANO.uso = v['plano-uso'] ? JSON.parse(v['plano-uso']) : null; PLANO.ac = v['plano-aceite'] ? JSON.parse(v['plano-aceite']) : null; } catch { }
+  return PLANO;
+}
+const planoPct = u => Math.max(0, ...Object.values(u?.itens || {}).map(x => x.lim ? x.v / x.lim : 0));
+function planoPausado() { const u = PLANO.uso; return !!u && Date.now() - u.em < 864e5 && planoPct(u) >= PLANO_TRAVA && PLANO.ac?.ciclo !== u.ciclo; }
+const PLANO_LIVRES = new Set(['/plano', '/plano/aceitar', '/quem', '/confere', '/app-key', '/permissoes', '/nuvem-hoje', '/uso']);
 async function confereDivide(R) {
   if (PRINCIPAL_PAGA) { DIVIDE.p = 0; DIVIDE.at = Date.now(); return; }
   if (!R || Date.now() - DIVIDE.at < 120e3) return; DIVIDE.at = Date.now();
@@ -868,6 +880,7 @@ export default {
       const h = new Headers(r.headers); h.set('x-nuvem', flag.reserva ? (Date.now() < tercAte ? 'terciaria' : 'reserva') : 'limite'); h.set('x-nuvem-volta', new Date(fimDoDia()).toISOString()); if (flag.copia) h.set('x-nuvem-copia', '1'); if (flag.parcial) h.set('x-nuvem-parcial', '1'); h.set('access-control-expose-headers', 'x-nuvem, x-nuvem-volta, x-nuvem-copia, x-nuvem-parcial, x-mod');
       r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
+    if (planoPausado()) { try { const h = new Headers(r.headers); h.set('x-plano-pausado', '1'); const ex = h.get('access-control-expose-headers'); h.set('access-control-expose-headers', ex ? ex + ', x-plano-pausado' : 'x-plano-pausado'); r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h }); } catch { } }
     if (DIVIDE.at) { try { const h = new Headers(r.headers); h.set('x-divide', String(DIVIDE.p)); const ex = h.get('access-control-expose-headers'); h.set('access-control-expose-headers', ex ? ex + ', x-divide' : 'x-divide, x-mod'); r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: h }); } catch { } }
     return r;
   },
@@ -893,6 +906,11 @@ export default {
     const peloPorteiro = p00 === '/permissoes' && req.method === 'GET' && !req.cf && req.headers.get('x-porteiro-email');
     const login = peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
+    await planoEstado(env);
+    if (path0 === '/plano' && req.method === 'GET') { const u = PLANO.uso; return json({ pausado: planoPausado(), adm: ehAdmin(env, login.email), ciclo: u?.ciclo || null, fim: u?.fim || null, em: u?.em || null, pct: u ? Math.round(planoPct(u) * 1000) / 10 : null, itens: u ? Object.values(u.itens).filter(x => x.lim && x.v / x.lim >= 0.5).map(x => ({ nome: x.nome, v: x.v, lim: x.lim })) : [] }, 200, { ...cors, 'cache-control': 'no-store' }); }
+    if (path0 === '/plano/aceitar' && req.method === 'POST') { if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode liberar.' } }, 403, cors); const q0 = new URL(req.url).searchParams; if (q0.get('teste') === '1') return json({ ok: true, teste: true }, 200, cors); const u = PLANO.uso; if (!u) return json({ error: { message: 'Sem medida do plano.' } }, 409, cors);
+      const v = { ciclo: u.ciclo, em: Date.now(), por: login.email }; await env.EQUIPE_DB.prepare("INSERT OR REPLACE INTO cfg (k, v) VALUES ('plano-aceite', ?)").bind(JSON.stringify(v)).run(); PLANO.ac = v; PLANO.at = 0; return json({ ok: true }, 200, { ...cors, 'cache-control': 'no-store' }); }
+    if ((planoPausado() || (new URL(req.url).searchParams.get('plano_teste') === '1' && ehAdmin(env, login.email))) && !PLANO_LIVRES.has(path0)) return json({ error: { type: 'plano_pausado', message: 'O Estúdio está pausado: o uso incluído no plano deste mês chegou ao fim. Um ADM precisa confirmar para continuar. O que você fez continua guardado neste computador.' } }, 423, { ...cors, 'x-plano-pausado': '1', 'access-control-expose-headers': 'x-plano-pausado', 'cache-control': 'no-store' });
     if (R && login.email && !env._porta) bg(migra(env._base, R).catch(() => { })); // depois do limite: devolve aos poucos o que ficou na reserva
     if (R && login.email && (!env._porta || env._ponte)) bg(confereCheio(env.EQUIPE, R).catch(() => { })); // a ponte lê o mesmo banco: poupa também
     if (R && login.email) bg(confereDivide(R)); // DIVIDIR os pedidos com a outra porta quando a principal estiver gastando muito // perto do limite (85%): poupa a principal até as 21h
@@ -913,6 +931,7 @@ export default {
     }
     if (new URL(req.url).pathname === '/nuvem-hoje') {
       const R4 = reservaDe(env, auth0), c = R4 ? await R4.contaJa().catch(() => null) : null, L = c?.limites || {}, hoje = new Date().toISOString().slice(0, 10);
+      const pu = PLANO.uso?.itens; if (pu && Date.now() - PLANO.uso.em < 864e5) return json({ em: PLANO.uso.em, mes: true, gravacoes: { v: pu.gravacoes.v, lim: pu.gravacoes.lim }, leituras: { v: pu.leituras.v, lim: pu.leituras.lim }, pedidos: { v: pu.pedidos.v, lim: pu.pedidos.lim } }, 200, { ...cors, 'cache-control': 'no-store' }); // medida do Vigia do plano
       const pm = c?.contas?.principal?.mes; if (pm) return json({ em: c.em, mes: true, gravacoes: { v: pm.gravadas, lim: L.pagoGravacoes || 5e7 }, leituras: { v: pm.lidas, lim: L.pagoLeituras || 25e9 }, pedidos: { v: pm.pedidos, lim: L.pagoPedidos || 1e7 } }, 200, { ...cors, 'cache-control': 'no-store' }); // plano pago: só a principal, no mês
       const ps = c && c.dia === hoje ? ['principal', 'nova', 'terc'].map(k => c.contas?.[k]).filter(o => o && !o.erro && o.d1) : [], n = ps.length, soma = f => ps.reduce((t, o) => t + (+f(o) || 0), 0);
       const par = (v, lim) => ({ v, lim: n * lim });

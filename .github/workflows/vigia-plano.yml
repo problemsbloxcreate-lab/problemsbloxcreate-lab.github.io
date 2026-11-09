@@ -1,0 +1,24 @@
+name: Vigia do plano pago
+# Mede o gasto da conta principal no ciclo de cobrança e guarda no banco. Aos 95% de qualquer item o Estúdio pausa até um ADM aceitar o excedente.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: vigia-plano
+  cancel-in-progress: true
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node .github/scripts/vigia-plano.mjs

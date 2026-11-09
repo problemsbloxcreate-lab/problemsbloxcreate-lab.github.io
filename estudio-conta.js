@@ -188,6 +188,29 @@ window.EstudioPerm ||= (() => {
   const guardaDiv = p => { if (!(p >= 0 && p <= 1)) return; try { const fim = new Date(); fim.setUTCHours(24, 0, 0, 0); localStorage.setItem('ep-divide', JSON.stringify({ p, ate: Math.min(Date.now() + 15 * 60e3, fim.getTime()) })); } catch { } };
   const paraReserva = u => { try { const x = new URL(u, location.href); if (x.hostname !== T_PRI || !ROTAS_DIV.test(x.pathname)) return null; x.hostname = T_RES; x.searchParams.set('_pr', '1'); return x.href; } catch { return null; } };
   const comUrl = (input, novo) => typeof input === 'string' || input instanceof URL ? novo : new Request(novo, input);
+  /* PAUSA ANTES DE COBRAR (pedido da dona, 09/11/2026): o servidor avisa (x-plano-pausado) quando o uso incluído no plano acabou. A tela cobre tudo: para quem é ADM aparece
+     o aviso de cobrança e o botão de liberar; para os outros, que um ADM precisa confirmar. window.EstudioPausa.mostrar(dados) desenha sem perguntar ao servidor (teste). */
+  const fmtN = n => Number(n || 0).toLocaleString('pt-BR');
+  let pausaAberta = false;
+  const tokPausa = async () => { try { if (window.EstudioPausa?.token) return await window.EstudioPausa.token(); if (window.EstudioLogin?.token) return await window.EstudioLogin.token(); } catch { } return null; };
+  function desenhaPausa(j, teste) {
+    if (document.getElementById('ep-pausa')) document.getElementById('ep-pausa').remove();
+    const el = document.createElement('div'); el.id = 'ep-pausa'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-modal', 'true');
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(8,14,26,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:16px;font:14px/1.5 "Segoe UI",system-ui,sans-serif;color:#fff';
+    const lin = (j.itens || []).map(x => '<div style="display:flex;justify-content:space-between;gap:16px;font-size:13px;padding:3px 0"><span></span><b style="font-variant-numeric:tabular-nums"></b></div>').join('');
+    el.innerHTML = '<div style="width:min(480px,100%);background:rgba(14,32,58,.96);padding:26px;box-shadow:0 18px 60px rgba(0,0,0,.5)"><h2 style="margin:0 0 8px;font-size:20px;font-weight:600">Estúdio pausado</h2><p data-t style="margin:0 0 12px;color:#c9d3e2"></p><div data-l>' + lin + '</div><p data-e style="color:#ffb4b4;font-size:13px;margin:8px 0 0;min-height:18px"></p><div data-b style="margin-top:14px;display:flex;justify-content:flex-end"></div></div>';
+    const fim = j.fim ? j.fim.split('-').reverse().join('/') : 'o próximo ciclo';
+    el.querySelector('[data-t]').textContent = j.adm ? 'O uso incluído no plano da Cloudflare deste ciclo acabou. Se continuar, o que passar disso será cobrado no cartão da conta, até ' + fim + '. Depois que um ADM confirmar, o Estúdio volta para todos.' : 'O uso incluído no plano deste mês acabou. Um ADM precisa confirmar para o Estúdio continuar. O que você fez continua guardado neste computador.';
+    [...el.querySelectorAll('[data-l] > div')].forEach((d, i) => { const x = j.itens[i]; d.children[0].textContent = x.nome; d.children[1].textContent = fmtN(x.v) + ' de ' + fmtN(x.lim); });
+    if (j.adm) { const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Entendo que será cobrado — liberar'; b.style.cssText = 'height:38px;padding:0 16px;background:#fff;color:#0e203a;border:0;font:600 14px "Segoe UI",system-ui,sans-serif;cursor:pointer'; b.onclick = async () => { b.disabled = true; b.textContent = 'Liberando…'; try { const tk = await tokPausa(); const r = await f0('https://' + T_PRI + '/plano/aceitar' + (teste ? '?teste=1' : ''), { method: 'POST', headers: { authorization: tk } }); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error?.message || 'Não consegui liberar.'); if (teste) { el.remove(); pausaAberta = false; return; } el.querySelector('[data-t]').textContent = 'Liberado. Recarregando…'; setTimeout(() => location.reload(), 16000); } catch (e) { el.querySelector('[data-e]').textContent = e.message; b.disabled = false; b.textContent = 'Entendo que será cobrado — liberar'; } }; el.querySelector('[data-b]').append(b); }
+    (document.body || document.documentElement).append(el);
+  }
+  async function telaPausa() {
+    if (pausaAberta) return; pausaAberta = true;
+    try { const tk = await tokPausa(); const r = await f0('https://' + T_PRI + '/plano', { headers: tk ? { authorization: tk } : {}, cache: 'no-store' }); const j = await r.json(); if (j.pausado) return desenhaPausa(j); pausaAberta = false; } catch { desenhaPausa({ adm: false, itens: [] }); }
+  }
+  window.EstudioPausa = { mostrar: (j, teste) => desenhaPausa(j, teste) };
+  setTimeout(async () => { try { const tk = await tokPausa(); if (tk) window.fetch('https://' + T_PRI + '/plano', { headers: { authorization: tk }, cache: 'no-store' }).catch(() => { }); } catch { } }, 2500); // abriu a página: confere se está pausado
   window.fetch = async function (input, init) {
     const url = typeof input === 'string' ? input : input?.url || String(input);
     if (!nosso(url)) return f0(input, init);
@@ -213,6 +236,7 @@ window.EstudioPerm ||= (() => {
     }
     if (r.status === 429 && repete && vai === input) { try { const r2 = await f0(alt, init); if (r2.status !== 429) { r = r2; guardaDiv(1); } } catch { } }
     { const xd = r.headers.get('x-divide'); if (xd != null && xd !== '') guardaDiv(+xd); }
+    if (r.headers.get('x-plano-pausado') === '1') telaPausa();
     try { window.EstudioDiario?.pedido(url, r); } catch { } // diário local: status e rota (sem dados) + x-nuvem
     if (r.status === 429) confere1027(r);
     const xn = r.headers.get('x-nuvem'); // o servidor usou a nuvem reserva (ou está no limite)
@@ -1052,6 +1076,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const ta = typeof TurmaAuth !== 'undefined' ? TurmaAuth : window.TurmaAuth; // eslint-disable-line no-undef
     if (ta?.token) { const t = await ta.token(); return t ? (/^Bearer /.test(t) ? t : 'Bearer ' + t) : null; }
   } catch { } return null; };
+  if (window.EstudioPausa) window.EstudioPausa.token = tokenNuvem;
   // USO DE HOJE da nuvem (pedido da dona, 05/11/2026): gravações, leituras e pedidos do dia da nuvem da equipe inteira (as contas
   // trabalham como uma só, então mostra só o total). Guardado 5 min neste navegador; um pedido só ao abrir o botão da nuvem.
   async function usoHoje(novo) {
