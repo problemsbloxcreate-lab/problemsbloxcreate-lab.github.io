@@ -1066,7 +1066,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     return Math.max(m, j?.nuvem === 'terciaria' ? 2 : (j?.nuvem === 'reserva' || j?.antiga) ? 1 : 0); };
   const usandoReserva = j => nivelNuvem(j) > 0;
   function anelNuvem(pct, reserva) {
-    const n = reserva === true ? 1 : +reserva || 0, c = pct > 85 ? '#f0584f' : pct > 60 ? '#f0b232' : '#3ccf7f' /* a cor diz quanto já foi usado; reserva/terciária vão escritas no painel e na dica */, r = 13, L = 2 * Math.PI * r;
+    const n = reserva === true ? 1 : +reserva || 0, c = pct > 85 ? '#f0584f' : pct > 60 ? '#f0b232' : '#a98bff' /* normal = roxo/lilás; amarelo e vermelho só quando está enchendo. Reserva/terciária vão escritas no painel e na dica */, r = 13, L = 2 * Math.PI * r;
     return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct > 0 ? 3 : 0, Math.min(100, pct)) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><path d="M11.6 19.4h8.6a2.9 2.9 0 0 0 .3-5.78 3.9 3.9 0 0 0-7.6.73 2.6 2.6 0 0 0-1.3 5.05z" fill="${c}"/></svg>`;
   }
   const tokenNuvem = async () => { try {
