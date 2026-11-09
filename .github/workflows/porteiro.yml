@@ -100,6 +100,12 @@ jobs:
           # par de chaves do passe assinado (Shorts, Editor): a privada fica só no Worker; a pública sai em /chave-publica
           if $WR secret list -c wrangler.toml 2>/dev/null | grep -q '"ASSINATURA"'; then echo "ASSINATURA já existe."
           else node -e "(async()=>{const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);process.stdout.write(JSON.stringify({priv:await crypto.subtle.exportKey('jwk',k.privateKey),pub:await crypto.subtle.exportKey('jwk',k.publicKey)}))})()" | $WR secret put ASSINATURA -c wrangler.toml > ../assinatura.log 2>&1 || { cat ../assinatura.log; echo "::error::Não consegui criar a ASSINATURA."; exit 1; }; echo "ASSINATURA criada."; fi
+      - name: Publicar de novo depois dos segredos
+        if: steps.seg.outputs.ok == '1'
+        working-directory: porteiro
+        shell: bash
+        # Em 09/11/2026 o "secret put" logo depois do deploy republicou o código anterior: a última publicação precisa ser a do código
+        run: sleep 5 && $WR deploy -c wrangler.toml 2>&1 | tail -4
       - name: Conferir que os projetos estão FECHADOS sem login
         if: steps.seg.outputs.ok == '1'
         shell: bash

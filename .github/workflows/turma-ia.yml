@@ -85,6 +85,9 @@ jobs:
         run: |
           if [ -n "${CEREBRO_CHAVE:-}" ]; then printf '%s' "$CEREBRO_CHAVE" | $WR secret put CEREBRO_CHAVE -c wrangler.toml > ../cb.log 2>&1 && echo "CEREBRO_CHAVE posta no turma-ia" || { echo "::error::Não consegui pôr a CEREBRO_CHAVE"; exit 1; }
           else echo "::warning::Sem o segredo CEREBRO_CHAVE no GitHub: as IAs não entram no Cérebro."; fi
+      - name: Publicar de novo depois dos segredos
+        # Em 09/11/2026 o "secret put" logo depois do deploy republicou o código anterior: a última publicação precisa ser a do código
+        run: sleep 5 && $WR deploy 2>&1 | tail -4
       - name: Conferir depois de publicar
         run: |
           sleep 5
