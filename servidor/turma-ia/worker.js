@@ -305,21 +305,24 @@ async function moverParaPrincipal(env, de, lim) {
   for (const x of results || []) { if (bytes > 40 * 1048576) break;
     try { const buf = await L.le(x.k); if (buf.byteLength !== x.tam) { falhas.push({ k: x.k, motivo: 'tamanho ' + buf.byteLength + '/' + x.tam }); continue; }
       const h0 = await sha(buf), ins = [db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k)]; let n = 0; for (let i = 0; i < buf.byteLength; i += CH_D1, n++) ins.push(db.prepare('INSERT INTO parte (k, i, v) VALUES (?, ?, ?)').bind(x.k, n, buf.subarray(i, i + CH_D1)));
-      await db.batch(ins);
-      const { results: ps } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(x.k).all(), pp = (ps || []).map(y => new Uint8Array(y.v)), c = new Uint8Array(pp.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of pp) { c.set(p, o); o += p.length; }
+      for (let i = 0; i < ins.length; i += 5) await db.batch(ins.slice(i, i + 5));
+      const c = await d1Partes(db, x.k, n);
       if (c.byteLength !== x.tam || await sha(c) !== h0) { await db.prepare('DELETE FROM parte WHERE k = ?').bind(x.k).run(); falhas.push({ k: x.k, motivo: 'conferência' }); continue; }
       const up = await db.prepare('UPDATE arq SET onde = NULL, n = ? WHERE k = ? AND em = ? AND onde = ?').bind(n, x.k, x.em, de).run();
       if (!up.meta?.changes) { await db.prepare('DELETE FROM parte WHERE k = ? AND EXISTS (SELECT 1 FROM arq WHERE k = ? AND onde IS NOT NULL)').bind(x.k, x.k).run(); falhas.push({ k: x.k, motivo: 'mudou no meio' }); continue; }
       movidos++; bytes += x.tam;
-    } catch (e) { falhas.push({ k: x.k, motivo: String(e?.message || e).slice(0, 120) }); } }
+    } catch (e) { await db.prepare('DELETE FROM parte WHERE k = ? AND EXISTS (SELECT 1 FROM arq WHERE k = ? AND onde IS NOT NULL)').bind(x.k, x.k).run().catch(() => { }); falhas.push({ k: x.k, motivo: String(e?.message || e).slice(0, 120) }); } }
   const r = await db.prepare('SELECT count(*) AS n FROM arq WHERE onde = ?').bind(de).first();
   return { ok: true, movidos, bytes, falhas, resta: r?.n ?? null };
 }
+// lê os pedaços aos poucos: o banco não devolve mais de 32 MB de uma vez, e arquivo grande passa disso
+async function d1Partes(db, k, n) { const pp = []; for (let i = 0; i < n; i += 5) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? AND i >= ? AND i < ? ORDER BY i').bind(k, i, i + 5).all(); for (const x of results || []) pp.push(new Uint8Array(x.v)); }
+  const c = new Uint8Array(pp.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of pp) { c.set(p, o); o += p.length; } return c; }
 async function d1Le(db, k, A) {
   const a = await db.prepare('SELECT * FROM arq WHERE k = ?').bind(k).first(); if (!a) return null;
   let corpo = new Uint8Array(0);
   if (a.onde === 'a' || a.onde === 't') { const L = lojaDe(a.onde, A); if (!L) throw new Error('sem a nuvem dos arquivos (' + a.onde + ')'); corpo = await L.le(k); }
-  else if (a.n) { const { results } = await db.prepare('SELECT v FROM parte WHERE k = ? ORDER BY i').bind(k).all(); const ps = (results || []).map(x => new Uint8Array(x.v)); corpo = new Uint8Array(ps.reduce((t, p) => t + p.length, 0)); let o = 0; for (const p of ps) { corpo.set(p, o); o += p.length; } }
+  else if (a.n) corpo = await d1Partes(db, k, a.n);
   let meta = null; try { meta = JSON.parse(a.meta || 'null'); } catch { } return { buf: corpo, meta: meta && Object.keys(meta).length ? meta : null, onde: a.onde || 'p' };
 }
 function kvD1(db, A) {
