@@ -757,7 +757,21 @@ window.EstudioPerm ||= (() => {
 @keyframes epMesProx{from{opacity:0;transform:translateX(18px)}}@keyframes epMesAnt{from{opacity:0;transform:translateX(-18px)}}@keyframes epSome2{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ep-cal .g.mes-prox,.ep-cal .g.mes-ant,.ep-cal .cab b.mes-nome{animation:none}}
 @keyframes epSaiDir{to{transform:translateX(100%)}}@keyframes epSome{to{opacity:0}}@keyframes epEncolhe{to{transform:scale(.97)}}
-@media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}`;
+@media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}
+/* PAINEL DA NUVEM MAIS ARRUMADO (pedido da dona, 10/11/2026): mais largo e com respiro, Atualizar e Fechar como botões de ícone do Metro, uso do mês em lista, nomes inteiros */
+.ep-esp.nuvem .cx{width:min(520px,100%)!important;padding:26px 28px 24px!important}
+.ep-esp .nv-cab{display:flex;align-items:flex-start;gap:16px;margin:0 0 22px}.ep-esp .nv-cab>div:first-child{flex:1;min-width:0}.ep-esp .nv-cab h2{margin:0 0 4px!important}
+.ep-esp .nv-acoes{display:flex;gap:4px;flex:none;margin-top:2px}
+.ep-esp .nv-acoes .ic{display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;padding:2px 0;background:none!important;border:0!important;color:#fff;cursor:pointer;font:400 11.5px 'Segoe UI',system-ui,sans-serif!important}
+.ep-esp .nv-acoes .ic svg{width:36px;height:36px;padding:8px;box-sizing:border-box;border:2px solid rgba(255,255,255,.8);transition:background .15s}
+.ep-esp .nv-acoes .ic:hover svg{background:rgba(255,255,255,.16)}.ep-esp .nv-acoes .ic:active svg{background:rgba(255,255,255,.3)}
+.ep-esp .nv-acoes .ic.girando svg{animation:epGira 1s linear infinite}@keyframes epGira{to{transform:rotate(360deg)}}
+.ep-esp.nuvem .topo{gap:22px!important;margin-bottom:4px}.ep-esp.nuvem .topo small{display:block;margin-top:4px}.ep-esp.nuvem .topo .nota{margin-top:8px!important}
+.ep-esp .hj-g{grid-template-columns:1fr!important;gap:14px!important}.ep-esp .hj-t{font-size:13.5px!important}.ep-esp .hj-l small{font-size:11.5px!important}
+.ep-esp.nuvem .ep-leg{margin:18px 0 8px!important}.ep-esp.nuvem h3{margin:26px 0 10px!important}
+.ep-esp details.sec>summary,.ep-esp details.sec>summary *{text-transform:none!important;letter-spacing:0!important}
+.ep-esp details.grp>summary b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3;flex:1}.ep-esp details.grp>summary .tam{flex:none}
+.ep-esp.nuvem .pe{margin-top:24px!important;gap:10px!important}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
   // (conversa da IA do Animador, pedidos do Modelador, texto do roteiro dos Shorts)
@@ -1180,8 +1194,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       atualizaNuvem();
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
-      cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt" data-atu2 title="Medir de novo o espaço e o uso do mês">Atualizar</button><button class="bt x" data-x>Fechar</button></h2>
-        <p class="nota" style="margin:-4px 0 6px">Medido às ${new Date(j.em || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+      cx.innerHTML = `<div class="nv-cab"><div><h2>Espaço na nuvem</h2><small>Medido às ${new Date(j.em || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small></div>
+          <div class="nv-acoes"><button type="button" class="ic" data-atu2 title="Medir de novo o espaço e o uso do mês">${ICONES.atualizar}<span>Atualizar</span></button><button type="button" class="ic" data-x title="Fechar">${ICONES.fechar}<span>Fechar</span></button></div></div>
         ${avisoReserva(j) || ''}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
@@ -1195,7 +1209,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
             ${it.ref && !it.protegido ? `<button class="bt ${j.adm ? 'vermelho' : 'so-adm'}" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem (clique para saber mais)'}">${j.adm ? ICONES.lixo || '' : ICONES.sair}Apagar</button>` : ''}</div>`).join('')}
           ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
         <div class="pe"><span class="nota">${j.adm ? 'Para ouvir, ver e baixar tudo, abra o menu › ADM › Nuvem.' : 'O que está só neste computador fica no círculo do espaço no navegador.'}</span><span class="sp"></span>${j.adm ? '<a class="bt" href="/adm">Abrir ADM › Nuvem</a>' : ''}<button class="bt" data-atu>Medir de novo</button></div>`;
-      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true); cx.querySelector('[data-atu2]').onclick = () => { cx.querySelector('[data-atu2]').textContent = 'Medindo…'; pinta(true); };
+      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true); cx.querySelector('[data-atu2]').onclick = () => { const b = cx.querySelector('[data-atu2]'); b.classList.add('girando'); b.querySelector('span').textContent = 'Medindo…'; pinta(true); };
       usoHoje(novo).then(h => { const el = cx.querySelector('.ep-hoje'); if (el && h) el.innerHTML = h; }).catch(() => { });
       cx.querySelectorAll('[data-ap]').forEach(b => b.onclick = async () => {
         const it = its[+b.dataset.ap];
