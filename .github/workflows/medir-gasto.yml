@@ -1,0 +1,25 @@
+name: Medir o gasto da principal (só leitura)
+# Só à mão. Não muda nada na nuvem: lê pedidos, banco, KV e o Analytics Engine `porteiro_pedidos` da conta principal.
+# O resultado sai cifrado com a chave pública da entrada `chave` (o log deste repositório é público).
+on:
+  workflow_dispatch:
+    inputs:
+      chave:
+        description: 'Chave pública (PEM em base64) para cifrar o resultado'
+        required: true
+permissions:
+  contents: read
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CHAVE: ${{ inputs.chave }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node .github/scripts/medir-gasto.mjs
