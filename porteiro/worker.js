@@ -340,7 +340,7 @@ async function nuvemUso(req, env, url) {
   const quem = async email => { if (!email) return {}; email = String(email).toLowerCase(); if (/^u[0-9a-f]{16}$/.test(email)) email = (await emailDoCodigo(env, email)) || email; // o turma-ia já manda o código no lugar do e-mail
     if (!perfis.has(email)) { const p = await lePerfil(env, email);
     perfis.set(email, { porNome: p.nome || p.google?.nome || (email.includes('@') ? mascara(email) : 'Alguém da equipe'), porFoto: p.fotoV ? '/pessoa/foto?u=' + (await codigoU(email)) + '&v=' + p.fotoV : (p.google?.foto || null) }); } return perfis.get(email); }; // /pessoa/foto: qualquer pessoa da equipe vê (a /acesso/foto é só do ADM)
-  const PROJ = { personagens: 'Animador', cenarios: 'Animador', menu: 'Menu do Estúdio', fotos: 'Menu do Estúdio', acesso: 'Menu do Estúdio', conhecimento: 'Shorts', equipe: 'Geral', outros: 'Geral' };
+  const PROJ = { personagens: 'Animador', cenarios: 'Animador', menu: 'Menu do Estúdio', fotos: 'Menu do Estúdio', acesso: 'Menu do Estúdio', conhecimento: 'Shorts', equipe: 'Geral', outros: 'Geral', musicas: 'Músicas', banco: 'Geral' };
   const G = {}, grupo = (id, nome) => G[id] || (G[id] = { id, nome, projeto: PROJ[id] || 'Geral', bytes: 0, n: 0, itens: [] });
   const NOMES = { cenarios: 'Cenários', menu: 'Fundos e links do menu', equipe: 'Arquivos da equipe', conhecimento: 'Conhecimento dos Shorts', acesso: 'Lista de quem entra' };
   const pers = {};
@@ -364,6 +364,9 @@ async function nuvemUso(req, env, url) {
       g.itens.push({ nome: (await quem(email)).porNome, bytes: tam, tipo: x.metadata?.tipo || 'image', ...(v ? { ref: 'f:' + await codigoU(email) + ':' + v } : {}), ...(await quem(email)) });
     } cur = l.list_complete ? null : l.cursor; } while (cur); } catch (e) { console.log('fotos:', String(e?.message || e).slice(0, 120)); } // sem listas hoje: o resto aparece igual
   }
+  /* 10/11/2026: sons do Músicas (fora da lista de arquivos) e o resto do banco (Cérebro, mensagens, índices): assim o total é o espaço de verdade */
+  if (+j.musicas?.bytes) { const g = grupo('musicas', 'Sons do Músicas'); g.bytes += +j.musicas.bytes; g.n++; g.itens.push({ nome: `${j.musicas.n || 0} sons (biblioteca e envios da equipe)`, bytes: +j.musicas.bytes, tipo: 'audio', protegido: 'Apague pelo programa Músicas' }); }
+  { const soma = Object.values(G).filter(g => g.id !== 'fotos').reduce((t, g) => t + g.bytes, 0); if (+j.banco > soma) { const g = grupo('banco', 'Outras partes do banco'); g.bytes += j.banco - soma; g.n++; g.itens.push({ nome: 'Cérebro, mensagens, histórico e índices do banco', bytes: j.banco - soma, tipo: '', protegido: 'Não dá para apagar daqui' }); } }
   const grupos = Object.values(G).filter(g => g.n).map(g => ({ ...g, itens: g.itens.sort((a, b) => b.bytes - a.bytes) })).sort((a, b) => b.bytes - a.bytes);
   const P = {}; for (const g of grupos) (P[g.projeto] || (P[g.projeto] = { nome: g.projeto, bytes: 0, grupos: [] })).grupos.push(g), P[g.projeto].bytes += g.bytes;
   const out = { limite: j.limite || 1073741824, total: grupos.reduce((t, g) => t + g.bytes, 0), grupos, projetos: Object.values(P).sort((a, b) => b.bytes - a.bytes), em: Date.now(),

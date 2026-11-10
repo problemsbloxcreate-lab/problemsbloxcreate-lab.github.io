@@ -1230,6 +1230,11 @@ export default {
           if (out.reserva.ativo) for (const it of (await R2.indice(true)).values()) { const q = it.metadata?._ant ? out.terc : out.reserva; // _ant = está na terciária
             if (it.metadata?._del) q.apagadas++; else { q.n++; q.bytes += +it.metadata?.tam || 0; } }
           if (out.terc.n || out.terc.apagadas) out.terc.emUso = true; } catch { out.reserva.erro = true; } }
+      /* 10/11/2026: a Action antiga "Uso da nuvem" (repositório privado) parou pelo bloqueio de cobrança do GitHub. A principal passa a usar a medida
+         do Vigia do plano (repositório público, de 30 em 30 min); as reservas ficam sem medida de hoje até aquela Action voltar. */
+      { const pu = PLANO.uso, hoje = new Date().toISOString().slice(0, 10); if (pu?.itens && Date.now() - pu.em < 864e5) { const c0 = out.conta || {}, I = pu.itens;
+        out.conta = { ...c0, dia: hoje, em: pu.em, vigia: true, limites: { ...(c0.limites || {}), pagoGravacoes: I.gravacoes.lim, pagoLeituras: I.leituras.lim, pagoPedidos: I.pedidos.lim, pagoBytes: I.espaco.lim },
+          contas: { ...(c0.dia === hoje ? c0.contas || {} : {}), principal: { mes: { gravadas: I.gravacoes.v, lidas: I.leituras.v, pedidos: I.pedidos.v }, d1bytes: I.espaco.v } } }; } }
       return json(out, 200, { ...cors, 'cache-control': 'no-store' });
     }
     // NÍVEIS DE ACESSO: GET /permissoes = as permissões de quem está logado { adm, livre, programas, funcoes, sem, cargos };
@@ -1778,7 +1783,9 @@ export default {
       const itens = []; let cur; do { const r = await env.EQUIPE.list({ cursor: cur }); for (const x of r.keys) itens.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur);
       // chaves pequenas sem tamanho guardado (listas, configurações): mede de verdade
       for (const it of itens) if (!(+it.tam)) { try { const v = await env.EQUIPE.get(it.k, { type: 'arrayBuffer' }); it.tam = v ? v.byteLength : 0; it.medido = true; } catch { } }
-      return json({ itens, limite: limiteEquipe(env) }, 200, { ...cors, 'cache-control': 'no-store' });
+      /* 10/11/2026: os sons do Músicas (tabelas mus_*) e o resto do banco não estão na lista de arquivos: vão à parte, para a medida bater com o espaço de verdade */
+      let mus = null; try { if (env.EQUIPE_DB) { const e = await musEspaco(env, env.EQUIPE_DB); mus = { bytes: (e.novos.b || 0) + (e.copia.b || 0) + (e.lixo.b || 0), n: (e.novos.n || 0) + (e.copia.n || 0), banco: e.nuvem || 0 }; } } catch { }
+      return json({ itens, limite: limiteEquipe(env), musicas: mus ? { bytes: mus.bytes, n: mus.n } : null, banco: mus?.banco || null }, 200, { ...cors, 'cache-control': 'no-store' });
     }
     // MENU do Estúdio Problems (KV EQUIPE): links + fundos ("menu/links") e mídias dos fundos ("menu/midia/...").
     // Ler: conta liberada. Mudar (tela ADM): conta liberada E, se a variável ADMINS existir, só os e-mails dela.

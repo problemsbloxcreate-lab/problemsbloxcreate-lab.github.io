@@ -1124,14 +1124,17 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (j.mes) return `<h3>Uso do mês <small>(medido ${quando ? 'às ' + quando : 'há pouco'})</small></h3><div class="hj-g">${barra('Gravações', j.gravacoes)}${barra('Leituras', j.leituras)}${barra('Pedidos', j.pedidos)}</div>`;
     return `<h3>Uso de hoje <small>(medido ${quando ? 'às ' + quando : 'há pouco'} · zera às ${new Date(new Date().setUTCHours(24, 0, 0, 0)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</small></h3><div class="hj-g">${barra('Gravações', j.gravacoes)}${barra('Leituras', j.leituras)}${barra('Pedidos', j.pedidos)}</div>`;
   }
-  async function usoNuvem(novo) {
+  const NV_MEM = { t: 0, j: null }; // a medida completa (com a lista de cada arquivo) fica só na memória desta aba
+  const resumoNuvem = j => ({ limite: j.limite, total: j.total, em: j.em, nuvem: j.nuvem || null, volta: j.volta || null, antiga: !!j.antiga, adm: !!j.adm, resumo: true });
+  async function usoNuvem(novo, completo) {
     const K = 'ep-nuvem-uso'; // guardado 15 min (economia, 03/11/2026; antes 5) e o MESMO para todas as abas — 'Medir de novo' mede na hora (cada medida lista a nuvem inteira; o porteiro também guarda)
-    if (!novo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 900e3) return c.j; } catch { } }
+    if (!novo && NV_MEM.j && Date.now() - NV_MEM.t < 900e3) return completo ? NV_MEM.j : resumoNuvem(NV_MEM.j);
+    if (!novo && !completo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 900e3) return c.j; } catch { } }
     const tk = await tokenNuvem(); if (!tk) throw new Error('Entre pelo menu para ver a nuvem.');
     const r = await fetch('/nuvem-uso' + (novo ? '?novo=1' : ''), { credentials: 'same-origin', cache: 'no-store', headers: { authorization: tk } }), j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error?.message || 'A nuvem não respondeu.');
-    try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j })); } catch { }
-    return j;
+    NV_MEM.t = Date.now(); NV_MEM.j = j; try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j: resumoNuvem(j) })); } catch { }
+    return completo ? j : resumoNuvem(j);
   }
   async function atualizaNuvem(novo) {
     const bs = document.querySelectorAll('.ep-conta-nuvem'); if (!bs.length) return;
@@ -1173,11 +1176,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
     const cx = d.querySelector('.cx');
     const pinta = async novo => {
-      let j; try { j = await usoNuvem(novo); } catch (e) { cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2><p class="nota">${esc(e.message)}</p>`; cx.querySelector('[data-x]').onclick = fechar; return; }
+      let j; try { j = await usoNuvem(novo, true); } catch (e) { cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2><p class="nota">${esc(e.message)}</p>`; cx.querySelector('[data-x]').onclick = fechar; return; }
       atualizaNuvem();
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
-      cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2>
+      cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt" data-atu2 title="Medir de novo o espaço e o uso do mês">Atualizar</button><button class="bt x" data-x>Fechar</button></h2>
+        <p class="nota" style="margin:-4px 0 6px">Medido às ${new Date(j.em || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
         ${avisoReserva(j) || ''}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
@@ -1191,7 +1195,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
             ${it.ref && !it.protegido ? `<button class="bt ${j.adm ? 'vermelho' : 'so-adm'}" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem (clique para saber mais)'}">${j.adm ? ICONES.lixo || '' : ICONES.sair}Apagar</button>` : ''}</div>`).join('')}
           ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
         <div class="pe"><span class="nota">${j.adm ? 'Para ouvir, ver e baixar tudo, abra o menu › ADM › Nuvem.' : 'O que está só neste computador fica no círculo do espaço no navegador.'}</span><span class="sp"></span>${j.adm ? '<a class="bt" href="/adm">Abrir ADM › Nuvem</a>' : ''}<button class="bt" data-atu>Medir de novo</button></div>`;
-      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true);
+      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true); cx.querySelector('[data-atu2]').onclick = () => { cx.querySelector('[data-atu2]').textContent = 'Medindo…'; pinta(true); };
       usoHoje(novo).then(h => { const el = cx.querySelector('.ep-hoje'); if (el && h) el.innerHTML = h; }).catch(() => { });
       cx.querySelectorAll('[data-ap]').forEach(b => b.onclick = async () => {
         const it = its[+b.dataset.ap];
