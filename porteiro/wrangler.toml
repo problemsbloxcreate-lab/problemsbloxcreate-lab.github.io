@@ -30,7 +30,7 @@ service = "editor-problems"
 
 [vars]
 # COPIA_SONS: "sim" = os sons antigos saem da cópia conferida (D1 da conta principal), com a origem de reserva; "nao" = só da origem
-COPIA_SONS = "nao"
+COPIA_SONS = "sim"
 SERVIDOR = "https://turma-ia.problemsraiz.workers.dev"
 # caminho no endereço único → de onde vem o projeto. Para pôr outro projeto atrás do login, acrescente aqui.
 # "nuvem": true = o projeto usa o servidor de sons; ele vai por /nuvem/ (com o passe), sem senha da equipe.
