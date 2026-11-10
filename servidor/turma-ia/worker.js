@@ -1394,7 +1394,7 @@ export default {
     //   e os CANAIS da equipe (nome + ID UC…, cadastrados por ADM; o canal de quem publica direto entra sozinho).
     //   GET → { itens, canais, mod } (por = código u…, nunca e-mail; meu = é seu)
     //   POST { item, substitui? } → grava/atualiza 1 item (o seu, ou ADM; os outros com publicacoes.publicar só MOVEM: formato, canal, data,
-    //   situação); substitui = id do PEDIDO que virou vídeo (qualquer um da equipe). formato = 'short' | 'longo' (abas do Publicações)
+    //   situação, confirmar que saiu); confirmadoEm = alguém confirmou que o vídeo está no ar (sem ligação com o YouTube). substitui = id do PEDIDO que virou vídeo (qualquer um da equipe). formato = 'short' | 'longo' (abas do Publicações)
     //   POST { canais } → troca a lista de canais (só ADM) · DELETE ?id= → tira da lista (o seu, ou ADM; não apaga no YouTube)
     if (p0 === '/publicacoes') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
@@ -1420,14 +1420,14 @@ export default {
         if (i.modo === 'agendado' && !concl && !(await pode(env, login.email, 'publicacoes.agendar'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode agendar vídeos. Peça para um ADM liberar.' } }, 403, cors);
         const limpo = { id: i.id, titulo: txt(i.titulo, 100), canal: { id: txt(i.canal?.id, 40), nome: txt(i.canal?.nome, 100), foto: /^https:\/\//.test(i.canal?.foto || '') ? txt(i.canal.foto, 300) : '' },
           modo: ['naoListado', 'agora', 'agendado'].includes(i.modo) ? i.modo : 'naoListado', privacidade: ['public', 'unlisted', 'private'].includes(i.privacidade) ? i.privacidade : 'unlisted',
-          publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm), via: i.via === 'studio' ? 'studio' : 'api',
+          publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm), confirmadoEm: num(i.confirmadoEm), via: i.via === 'studio' ? 'studio' : 'api',
           formato: i.formato === 'short' || i.formato === 'longo' ? i.formato : null, // aba Shorts (vídeo em pé) ou Vídeos longos (10/11/2026)
           ...(concl ? { concluido: true, thumb: /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(i.thumb || '') && i.thumb.length < 24000 ? i.thumb : '', abrir: /^\/[A-Za-z0-9/_?=&.%-]{0,200}$/.test(i.abrir || '') ? i.abrir : '', arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}),
           ...(pedido ? { pedido: true, descricao: txt(i.descricao, 5000), criancas: typeof i.criancas === 'boolean' ? i.criancas : null, arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}) };
         const k = v.itens.findIndex(x => x.id === limpo.id), antes = k >= 0 ? JSON.stringify(v.itens[k]) : null;
         // ORGANIZAR (10/11/2026): quem não é o dono (nem ADM) mas pode publicar só MOVE o item: formato, canal, data e situação
         if (k >= 0 && !dono(v.itens[k]) && !(await pode(env, login.email, 'publicacoes.publicar'))) return json({ error: { type: 'permissao', message: 'Só quem pode publicar organiza os vídeos dos outros.' } }, 403, cors);
-        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade }) }; }
+        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade, confirmadoEm: limpo.confirmadoEm }) }; }
         else { v.itens.unshift({ ...limpo, por: eu }); if (v.itens.length > 3000) v.itens.length = 3000; }
         let mudou = !(antes && antes === JSON.stringify(v.itens[k >= 0 ? k : 0]));
         if (b.substitui && b.substitui !== limpo.id) { const n = v.itens.length; v.itens = v.itens.filter(x => !(x.id === b.substitui && (x.pedido || x.concluido))); if (v.itens.length !== n) mudou = true; } // o pedido virou vídeo
