@@ -1393,7 +1393,8 @@ export default {
     //   os CONCLUÍDOS (concluido: true — projeto marcado como concluído num programa, ainda não publicado; thumb pequena em data:image/jpeg)
     //   e os CANAIS da equipe (nome + ID UC…, cadastrados por ADM; o canal de quem publica direto entra sozinho).
     //   GET → { itens, canais, mod } (por = código u…, nunca e-mail; meu = é seu)
-    //   POST { item, substitui? } → grava/atualiza 1 item (o seu, ou ADM); substitui = id do PEDIDO que virou vídeo (qualquer um da equipe)
+    //   POST { item, substitui? } → grava/atualiza 1 item (o seu, ou ADM; os outros com publicacoes.publicar só MOVEM: formato, canal, data,
+    //   situação); substitui = id do PEDIDO que virou vídeo (qualquer um da equipe). formato = 'short' | 'longo' (abas do Publicações)
     //   POST { canais } → troca a lista de canais (só ADM) · DELETE ?id= → tira da lista (o seu, ou ADM; não apaga no YouTube)
     if (p0 === '/publicacoes') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
@@ -1420,10 +1421,13 @@ export default {
         const limpo = { id: i.id, titulo: txt(i.titulo, 100), canal: { id: txt(i.canal?.id, 40), nome: txt(i.canal?.nome, 100), foto: /^https:\/\//.test(i.canal?.foto || '') ? txt(i.canal.foto, 300) : '' },
           modo: ['naoListado', 'agora', 'agendado'].includes(i.modo) ? i.modo : 'naoListado', privacidade: ['public', 'unlisted', 'private'].includes(i.privacidade) ? i.privacidade : 'unlisted',
           publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm), via: i.via === 'studio' ? 'studio' : 'api',
+          formato: i.formato === 'short' || i.formato === 'longo' ? i.formato : null, // aba Shorts (vídeo em pé) ou Vídeos longos (10/11/2026)
           ...(concl ? { concluido: true, thumb: /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(i.thumb || '') && i.thumb.length < 24000 ? i.thumb : '', abrir: /^\/[A-Za-z0-9/_?=&.%-]{0,200}$/.test(i.abrir || '') ? i.abrir : '', arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}),
           ...(pedido ? { pedido: true, descricao: txt(i.descricao, 5000), criancas: typeof i.criancas === 'boolean' ? i.criancas : null, arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}) };
         const k = v.itens.findIndex(x => x.id === limpo.id), antes = k >= 0 ? JSON.stringify(v.itens[k]) : null;
-        if (k >= 0) { if (!dono(v.itens[k])) return json({ error: { type: 'adm', message: 'Só quem publicou (ou um ADM) muda este item.' } }, 403, cors); v.itens[k] = { ...limpo, por: v.itens[k].por, enviadoEm: v.itens[k].enviadoEm }; }
+        // ORGANIZAR (10/11/2026): quem não é o dono (nem ADM) mas pode publicar só MOVE o item: formato, canal, data e situação
+        if (k >= 0 && !dono(v.itens[k]) && !(await pode(env, login.email, 'publicacoes.publicar'))) return json({ error: { type: 'permissao', message: 'Só quem pode publicar organiza os vídeos dos outros.' } }, 403, cors);
+        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade }) }; }
         else { v.itens.unshift({ ...limpo, por: eu }); if (v.itens.length > 3000) v.itens.length = 3000; }
         let mudou = !(antes && antes === JSON.stringify(v.itens[k >= 0 ? k : 0]));
         if (b.substitui && b.substitui !== limpo.id) { const n = v.itens.length; v.itens = v.itens.filter(x => !(x.id === b.substitui && (x.pedido || x.concluido))); if (v.itens.length !== n) mudou = true; } // o pedido virou vídeo
@@ -1508,7 +1512,7 @@ export default {
     // Roteiros em partes → falas por personagem → áudio de cada fala, destino (animador|shorts|editor) e legendas. Contrato do
     // formato no CLAUDE.md do site e no README do repo "preparativos". Chaves: preparativos/<id>/prep.json, preparativos/<id>/aud/<fala>-<t>.webm,
     // preparativos/cores.json (cor da legenda por nome de personagem em minúsculas, para a equipe toda).
-    //   GET    /preparativos                       → { itens: [{ id, nome, destino, status, mod, por, em, n, g, partes }] } (só a lista, sem abrir os arquivos)
+    //   GET    /preparativos                       → { itens: [{ id, nome, destino, canal (nome), status, mod, por, em, n, g, partes }] } (só a lista, sem abrir os arquivos)
     //   GET    /preparativos/arquivo?k=…           → o arquivo (prep.json leva x-mod)
     //   POST   /preparativos/arquivo?k=…/prep.json&base=<mod>[&forcar=1] → salva o preparativo inteiro (409 conflito se a nuvem tem outro mod)
     //   POST   /preparativos/arquivo?k=…/aud/<fala>-<t>.webm → áudio de uma fala (até 8 MB)
@@ -1525,13 +1529,15 @@ export default {
       const q = new URL(req.url).searchParams, k = q.get('k') || '', ID = /^[A-Za-z0-9_-]{2,40}$/;
       const KPR = /^preparativos\/(cores\.json|personagens\.json|pastas\.json|pers\/[a-z0-9-]{1,60}\.webp|[A-Za-z0-9_-]{2,40}\/(prep\.json|(aud|dub)\/[A-Za-z0-9_-]{1,80}\.(webm|ogg|m4a|mp3|wav)))$/, KPRD = /^preparativos\/[A-Za-z0-9_-]{2,40}\/$/;
       const DEST = ['animador', 'shorts', 'editor'], STAT = ['rascunho', 'gravando', 'pronto'];
+      // CANAL do YouTube em que o vídeo vai sair (10/11/2026): { id: 'UC…', nome } ou null; o Publicações usa o mesmo
+      const limpaCanal = c => c && typeof c === 'object' && /^UC[A-Za-z0-9_-]{22}$/.test(String(c.id || '')) ? { id: c.id, nome: String(c.nome || c.id).replace(/[<>]/g, '').slice(0, 100) } : null;
       const kP = id => `preparativos/${id}/prep.json`;
       const leP = async id => { const o = await env.EQUIPE.getWithMetadata(kP(id), { type: 'arrayBuffer' }); if (!o?.value) return null; let P = null; try { P = JSON.parse(new TextDecoder().decode(o.value)); } catch { } return P && typeof P === 'object' ? { P, m: o.metadata || {} } : null; };
       // QUEM criou / editou (P.autor, P.edicoes: código u…, nome, foto pequena) vai resumido na lista, sem foto e sem e-mail
       const quemDe = P => { const q = x => x && /^u[0-9a-f]{16}$/.test(String(x.id || '')) ? { i: x.id, n: String(x.nome || '').replace(/[<>]/g, '').slice(0, 40), t: +x.em || 0 } : null;
         const a = q(P.autor), e = (Array.isArray(P.edicoes) ? P.edicoes : []).map(q).filter(Boolean).slice(-4); return a || e.length ? { a, e } : null; };
       const gravaP = async (P, m0) => { const mod = Date.now(); P.mod = mod; const t = JSON.stringify(P), fs = (P.partes || []).flatMap(p => p.falas || []);
-        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), uso: [...new Set((Array.isArray(P.usadoPor) ? P.usadoPor : []).map(u => u.programa).filter(x => DEST.includes(x)))], quem: quemDe(P), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, canal: P.canal?.nome || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), uso: [...new Set((Array.isArray(P.usadoPor) ? P.usadoPor : []).map(u => u.programa).filter(x => DEST.includes(x)))], quem: quemDe(P), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return mod; };
       // ESTILO DA LEGENDA (o Animador, o Shorts e o Editor leem): números em fração do quadro; quadro = tamanho do vídeo em px
       const num = (v, a, z, d) => { v = +v; return Number.isFinite(v) ? Math.min(z, Math.max(a, v)) : d; }, corOk = (c, d) => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? String(c).toLowerCase() : d;
@@ -1570,7 +1576,7 @@ export default {
       const coresDe = async p => { const c = await leCores(); for (const [k, e] of Object.entries(p || {})) if (e.cor) c[k] = e.cor; return c; };
       const juntaCores = async novas => coresDe(await juntaPers(Object.fromEntries(Object.entries(novas || {}).map(([k, c]) => [k, { cor: c }]))));
       if (p0 === '/preparativos') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
-        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [], uso: Array.isArray(d.uso) ? d.uso : [], quem: d.quem || null })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
+        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, canal: d.canal || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [], uso: Array.isArray(d.uso) ? d.uso : [], quem: d.quem || null })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
         return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (p0 === '/preparativos/acao') {
         if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
@@ -1641,6 +1647,7 @@ export default {
           for (const v of velhos.slice(0, 20)) { try { await env.EQUIPE.delete(v); } catch { } }
         } else if (a === 'marca') {
           if ('destino' in b) P.destino = DEST.includes(b.destino) ? b.destino : null;
+          if ('canal' in b) P.canal = limpaCanal(b.canal);
           if ('status' in b) P.status = STAT.includes(b.status) ? b.status : 'rascunho';
           extra.mod = await gravaP(P, o.m);
         } else if (a === 'legenda') {
@@ -1691,6 +1698,7 @@ export default {
         const pp = await podeP('pronto');
         P.destino = pp ? (DEST.includes(P.destino) ? P.destino : null) : (o?.P.destino || null);
         P.status = pp ? (STAT.includes(P.status) ? P.status : 'rascunho') : (o?.P.status || 'rascunho');
+        P.canal = pp ? limpaCanal(P.canal) : (o?.P.canal || null);
         P.usadoPor = Array.isArray(o?.P.usadoPor) ? o.P.usadoPor : []; P.v = 1;
         if (!pr && o) { P.roteiro = o.P.roteiro; P.partes = o.P.partes; P.nome = o.P.nome; } // quem só organiza não muda o texto (só as legendas)
         if (P.legenda) P.legenda = { ativa: P.legenda.ativa !== false, mostrarNome: P.legenda.mostrarNome === true, cores: limpaCores(P.legenda.cores), estilo: limpaEstilo(P.legenda.estilo), quadro: limpaQuadro(P.legenda.quadro) };
