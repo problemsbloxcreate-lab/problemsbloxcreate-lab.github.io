@@ -25,7 +25,15 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '1.0 - Flower Field' };
+window.EstudioVersao ||= { nome: '1.3 - Flower Field', em: '10/11/2026',
+  /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
+  novidades: [
+    ['Programas novos', ['Cérebro: a memória da equipe e das IAs, com uma página para cada programa.', 'Músicas: o álbum de sons da equipe, com envio, lixeira e espaço usado.']],
+    ['Nuvem', ['Plano pago de 5 GB, com tudo num lugar só e uma pausa de aviso antes de qualquer cobrança.', 'Os sons antigos agora ficam na nuvem principal, conferidos um por um, sem mudar nenhum projeto.', 'Sons grandes (mais de 10 MB) já podem ser enviados.', 'O espaço na nuvem voltou a aparecer, conta os sons e ganhou o botão Atualizar.']],
+    ['Animador e Ateliê', ['A tela só abre com imagens e sons prontos.', 'Exportação no estilo Metro, com qualidade (bitrate) e legendas .srt para o YouTube.', 'Volume geral da animação, com mudo, na prévia e no vídeo.', 'Botão Pu: manda a animação para o Publicações.', 'Ateliê novo: tema Metro, movimento suave e a pergunta "Ateliê geral ou só este projeto". Os personagens antigos ficam guardados na pasta LEGACY.']],
+    ['Preparativos e Publicações', ['Preparativos: apagar roteiro pelo botão direito, arrastar para pastas, menu mais simples e cabeçalho do roteiro arrumado.', 'Publicações: canais da equipe, faixa Hoje, abas e filtros, e a janela Postar refeita.']],
+    ['Menu', ['Perfil em blocos Metro, selo ADM de volta e a nuvem roxa.']]
+  ] };
 window.ESTUDIO_VERSAO ||= window.EstudioVersao.nome; // nome antigo (compatibilidade)
 window.EstudioDiario ||= (() => {
   const K = 'ep-diario', MAX = 700, MAXCH = 400000, DIAS_ERRO = 7;
@@ -171,7 +179,7 @@ ${pub && !so ? '- (não entra: relatório gerado numa tela sem login liberado)' 
    de limite. Elementos com  data-ep-suporte  (ex.: página 403 do porteiro) ganham o botão sozinhos; ="publico" = tela sem login.
    O botão e o selo só geram o arquivo: não abrem nada atrás nem mudam o acesso. Tudo com textContent (nada vira HTML). */
 window.EstudioSuporte ||= (() => {
-  const DICA = 'Gera um relatório para enviar aos ADMs', postos = new Set(); let css = false, selo = null;
+  const DICA = 'Gera um relatório para enviar aos ADMs', DICA_SELO = 'Novidades desta versão (e o relatório de suporte)', postos = new Set(); let css = false, selo = null;
   const estilo = () => { if (css) return; css = true; const st = document.createElement('style');
     st.textContent = `.ep-sup-bt{display:flex;align-items:center;justify-content:center;margin:12px auto 0;height:34px;padding:0 16px;border:1px solid rgba(255,255,255,.22);border-radius:0;background:rgba(255,255,255,.08);color:#f1f2f4;font:500 13px/1 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-sup-bt:hover{background:rgba(255,255,255,.16)}
 .ep-sup-selo{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:2147483647;height:22px;margin:0;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);border-radius:0;background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:.5px;white-space:nowrap;cursor:pointer}.ep-sup-selo:hover{background:rgba(14,32,58,.6)}
@@ -183,7 +191,22 @@ window.EstudioSuporte ||= (() => {
 .ep-sup-pg button{height:32px;padding:0 14px;border:1px solid rgba(255,255,255,.16);border-radius:0;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font:inherit;font-size:13px}.ep-sup-pg button:hover{background:rgba(255,255,255,.16)}
 .ep-sup-pg button.sim{background:#0a7aff;border-color:#0a7aff;font-weight:600}.ep-sup-pg button.sim:hover{background:#2a8cff}
 .ep-sup-pg button.x{position:absolute;top:8px;right:8px;width:30px;height:30px;padding:0;border:0;background:none;color:rgba(255,255,255,.8);font-size:14px}.ep-sup-pg button.x:hover{background:rgba(255,255,255,.14)}
-.ep-sup-pg button:focus-visible,.ep-sup-bt:focus-visible,.ep-sup-selo:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}`;
+.ep-sup-pg button:focus-visible,.ep-sup-bt:focus-visible,.ep-sup-selo:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
+.ep-nov{position:fixed;inset:0;z-index:2147483646;display:flex;justify-content:flex-end;background:rgba(5,20,45,.35);font:14px/1.45 'Segoe UI',system-ui,sans-serif;color:#fff}
+.ep-nov .cx{width:min(520px,100%);height:100%;overflow:auto;box-sizing:border-box;padding:26px 28px 24px;background:rgba(14,32,58,.94);-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);animation:epNovEntra .45s cubic-bezier(.1,.9,.2,1) both;display:flex;flex-direction:column}
+.ep-nov.sai{animation:epNovSome .2s ease both}.ep-nov.sai .cx{animation:epNovSai .2s cubic-bezier(.4,0,1,1) both}
+@keyframes epNovEntra{from{transform:translateX(60px);opacity:0}}@keyframes epNovSai{to{transform:translateX(100%)}}@keyframes epNovSome{to{opacity:0}}
+.ep-nov .cab{display:flex;align-items:flex-start;gap:16px;margin:0 0 20px}.ep-nov .cab>div{flex:1;min-width:0}
+.ep-nov h2{margin:0 0 4px;font:300 30px/1.15 'Segoe UI Light','Segoe UI',system-ui,sans-serif}.ep-nov .cab small{color:rgba(255,255,255,.65);font-size:12.5px}
+.ep-nov .fx{display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;padding:2px 0;margin:0;background:none;border:0;color:#fff;cursor:pointer;font:400 11.5px 'Segoe UI',system-ui,sans-serif}
+.ep-nov .fx i{display:grid;place-items:center;width:36px;height:36px;box-sizing:border-box;border:2px solid rgba(255,255,255,.8);font-style:normal;font-size:15px}.ep-nov .fx:hover i{background:rgba(255,255,255,.16)}
+.ep-nov h3{margin:22px 0 8px;font:400 12px/1.3 'Segoe UI',system-ui,sans-serif;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px}.ep-nov h3:first-of-type{margin-top:4px}
+.ep-nov ul{list-style:none;margin:0;padding:0}.ep-nov li{position:relative;padding:9px 4px 9px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:13.5px}
+.ep-nov li::before{content:'';position:absolute;left:4px;top:16px;width:6px;height:6px;background:#a98bff}
+.ep-nov .pe{margin-top:auto;padding-top:22px;border-top:1px solid rgba(255,255,255,.14)}.ep-nov .pe p{margin:12px 0;color:rgba(255,255,255,.65);font-size:12.5px}
+.ep-nov .pe button{height:34px;padding:0 14px;border:2px solid rgba(255,255,255,.8);background:none;color:#fff;font:600 13px 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-nov .pe button:hover{background:rgba(255,255,255,.16)}
+.ep-nov button:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.ep-nov .cx,.ep-nov.sai,.ep-nov.sai .cx{animation:none}}`;
     (document.head || document.documentElement).appendChild(st); };
   const IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>';
   // o MESMO aviso de antes (menu da conta e selo do menu); fica no <html> para aparecer até por cima das telas de carregamento/erro
@@ -198,8 +221,20 @@ window.EstudioSuporte ||= (() => {
     addEventListener('keydown', tecla, true); d.querySelectorAll('[data-n]').forEach(x => x.onclick = () => sai(false)); d.querySelector('[data-s]').onclick = () => sai(true); d.onclick = e => { if (e.target === d) sai(false); };
     document.documentElement.appendChild(d); try { d.querySelector('[data-s]').focus(); } catch { } });
   async function gerar(o = {}) { if (S.aberto) return; S.aberto = true; try { if (await janela()) await window.EstudioDiario?.baixar({ publico: !!o.publico }); } finally { S.aberto = false; } }
-  function poeSelo(o) { if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.nome || ''; selo.title = DICA;
-    selo.onclick = () => gerar(o); document.documentElement.appendChild(selo); }
+  /* NOVIDADES (10/11/2026): o selo abre um painel lateral igual ao da nuvem, com a lista da versão e o botão do relatório de suporte */
+  function novidades(o) { if (document.querySelector('.ep-nov')) return; estilo();
+    const V = window.EstudioVersao || {}, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const d = document.createElement('div'); d.className = 'ep-nov'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Novidades');
+    d.innerHTML = `<div class="cx"><div class="cab"><div><h2>Novidades</h2><small>Versão ${esc(V.nome || '')}${V.em ? ' · ' + esc(V.em) : ''}</small></div><button type="button" class="fx" data-x title="Fechar (Esc)"><i>✕</i>Fechar</button></div>
+      ${(V.novidades || []).map(([t, L]) => `<h3>${esc(t)}</h3><ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') || '<p>Nada novo anotado nesta versão.</p>'}
+      <div class="pe"><p>Algo deu errado? Gere o relatório de suporte e mande só para quem vai resolver.</p><button type="button" data-r>Gerar relatório de suporte</button></div></div>`;
+    const tecla = e => { if (e.key === 'Escape' && !document.querySelector('.ep-sup-pg')) { e.stopPropagation(); fecha(); } };
+    const fecha = () => { removeEventListener('keydown', tecla, true); d.classList.add('sai'); setTimeout(() => d.remove(), 200); };
+    addEventListener('keydown', tecla, true); d.onclick = e => { if (e.target === d) fecha(); }; d.querySelector('[data-x]').onclick = fecha;
+    d.querySelector('[data-r]').onclick = () => { fecha(); gerar(o); };
+    document.documentElement.appendChild(d); try { d.querySelector('[data-x]').focus(); } catch { } }
+  function poeSelo(o) { if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.nome || ''; selo.title = DICA_SELO;
+    selo.onclick = () => novidades(o); document.documentElement.appendChild(selo); }
   function poe(c, o = {}) { if (!c) return; estilo();
     if (!c.querySelector('.ep-sup-bt')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ep-sup-bt'; b.textContent = 'Gerar relatório de suporte'; b.title = DICA;
       b.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; c.appendChild(b); postos.add(b); }
@@ -207,7 +242,7 @@ window.EstudioSuporte ||= (() => {
   function tira() { postos.forEach(b => b.remove()); postos.clear(); selo?.remove(); selo = null; }
   const auto = () => document.querySelectorAll('[data-ep-suporte]').forEach(c => poe(c, { publico: c.getAttribute('data-ep-suporte') === 'publico' }));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else auto();
-  const S = { gerar, poe, tira, aberto: false, DICA }; return S;
+  const S = { gerar, novidades, poe, tira, aberto: false, DICA }; return S;
 })();
 
 /* ---------- motor do progresso (porcentagem + o que está carregando) ----------
