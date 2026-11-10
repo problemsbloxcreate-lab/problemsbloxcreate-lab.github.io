@@ -1274,7 +1274,7 @@ function fundoTela(f) {
 /* card de um link (usado no menu e na prévia da ADM) */
 /* NOMES PADRÃO DOS PROGRAMAS (pedido da dona, 05/11/2026): no bloco do menu, o nome sai do ENDEREÇO do programa, com estas letras.
    Programa que não está aqui usa o nome da ADM › Botões. (O nome salvo continua sendo a chave da ordem e dos fixados de cada pessoa.) */
-const NOMES_PADRAO = { cerebro: 'Cérebro', shorts: 'Shorts', editor: 'Editar', animador: 'Animador', preparativos: 'Preparativos', musicas: 'Músicas', modelador: 'Modelador', publicacoes: 'Publicações' };
+const NOMES_PADRAO = { cerebro: 'Cérebro', shorts: 'Shorts', editor: 'Editor', animador: 'Animador', preparativos: 'Preparativos', musicas: 'Músicas', modelador: 'Modelador', publicacoes: 'Publicações' };
 function nomeMenu(l) { if (l?.parte) return l.nome; try { const u = new URL(l?.url || '', location.href); if (u.origin === location.origin && !u.search) { const k = u.pathname.split('/').filter(Boolean)[0]; if (NOMES_PADRAO[k]) return NOMES_PADRAO[k]; } } catch { } return l?.nome || 'Sem nome'; }
 function cardHtml(l, tag) {
   return `${tag}<span class="bg"></span><span class="ic"></span><span class="txt"><b>${esc(nomeMenu(l))}</b><small>${esc(l.desc || '')}</small></span>`;
@@ -2064,7 +2064,7 @@ const recentes = {
   filtro() { try { return localStorage.getItem('ep-meus-filtro') || 'todos'; } catch { return 'todos'; } },
   prog() { try { return localStorage.getItem('ep-meus-prog') || ''; } catch { return ''; } },
   // FILTRO POR PROGRAMA (botão com o ícone do filtro + o ícone do programa escolhido; a lista mostra os ícones dos programas)
-  PROGS: [['', 'Todos os programas'], ['an', 'Animador'], ['at', 'Ateliê'], ['ed', 'Editar'], ['pr', 'Preparativos'], ['pu', 'Publicações']],
+  PROGS: [['', 'Todos os programas'], ['an', 'Animador'], ['at', 'Ateliê'], ['ed', 'Editor'], ['pr', 'Preparativos'], ['pu', 'Publicações']],
   // ícone do programa: An/At/Ed são fixos; Preparativos e Publicações são ícones novos da ADM › Ícones (acha pelo caminho ou pelo nome)
   icId(k) { const fixo = { an: 'an', at: 'at', ed: 'ed' }; if (fixo[k]) return fixo[k]; const cam = { pr: '/preparativos', pu: '/publicacoes' }[k], re = { pr: /prepara/i, pu: /publica/i }[k];
     try { const c = window.EstudioIcones?.config?.() || {}; const id = Object.keys(c).find(i => String(c[i]?.caminho || '').startsWith(cam) || re?.test(c[i]?.nome || '') || re?.test(c[i]?.botao || '')); if (id) return id; } catch { } return k; },
