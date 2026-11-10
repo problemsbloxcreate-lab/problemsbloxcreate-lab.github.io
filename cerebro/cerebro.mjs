@@ -10,6 +10,7 @@
    node cerebro.mjs buscar "<palavras>"
    node cerebro.mjs salvar "<Pasta/Arquivo>" --arquivo x.md --base 3 --marca regra --ia "Claude Opus 5.5" --pedido "Fulana" --motivo "..."
    node cerebro.mjs aprender evitar|aprendizado|referencia|regra "<assunto>" --texto "..." [--url https://...] --ia "..." --pedido "..." --motivo "..."
+   node cerebro.mjs renomear "<Pasta/Arquivo>" "<nome novo>" --ia "..." --pedido "..." --motivo "..."   muda só o nome (o conteúdo e o histórico ficam)
    node cerebro.mjs feito <id do pedido> --nota "..."
 */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'; import { homedir } from 'node:os'; import { join } from 'node:path'; import { randomBytes, createHash } from 'node:crypto';
@@ -36,6 +37,7 @@ try {
   else if (cmd === 'pedidos') for (const x of (await pede('/pedidos?estado=novo')).itens) console.log(`- ${x.id} (${x.tipo}) de ${x.por}${x.alvo ? ', sobre ' + x.alvo : ''}: ${x.texto}`);
   else if (cmd === 'salvar') mostra(await pede('/salvar', { caminho: pos[0], tipo: op.tipo || 'texto', corpo: op.arquivo ? readFileSync(op.arquivo, 'utf8') : op.texto, ...(op.acrescentar ? { acrescentar: op.acrescentar } : {}), ...(op.base ? { base: +op.base } : {}), ...(op.marca ? { marca: op.marca } : {}), ...(op.resumo ? { resumo: op.resumo } : {}), ...(op.url ? { url: op.url } : {}), ...reg() }));
   else if (cmd === 'aprender') { const t = pos[0]; if (!PASTAS[t]) throw new Error('Use: evitar, aprendizado, referencia ou regra.'); mostra(await pede('/salvar', { caminho: `${PASTAS[t]}/${hoje()} ${pos[1]}`, tipo: t === 'referencia' ? 'referencia' : 'texto', marca: t, corpo: op.arquivo ? readFileSync(op.arquivo, 'utf8') : op.texto, ...(op.url ? { url: op.url } : {}), ...reg() })); }
+  else if (cmd === 'renomear') { if (!pos[0] || !pos[1]) throw new Error('Use: renomear "<Pasta/Arquivo>" "<nome novo>" --ia ... --pedido ... --motivo ...'); const { item: x } = await pede('/item?caminho=' + encodeURIComponent(pos[0])); mostra(await pede('/salvar', { id: x.id, nome: pos[1], base: x.ver, ...reg() })); }
   else if (cmd === 'feito') mostra(await pede('/pedido', { id: pos[0], estado: op.estado || 'feito', nota: op.nota, ...reg() }));
   else console.log(readFileSync(new URL(import.meta.url), 'utf8').split('*/')[0]);
 } catch (e) { console.error(e.message); process.exit(1); }
