@@ -1401,7 +1401,7 @@ export default {
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
       const KP = 'publicacoes/lista.json', eu = String(login.email).toLowerCase(), adm = ehAdmin(env, login.email);
       const leP = async () => { try { const v = JSON.parse((await env.EQUIPE.get(KP)) || 'null'); return v && Array.isArray(v.itens) ? { canais: [], ...v } : { itens: [], canais: [], mod: 0 }; } catch { return { itens: [], canais: [], mod: 0 }; } };
-      const saida = async v => json({ itens: await Promise.all(v.itens.map(async x => ({ ...(await semEmail(x)), meu: String(x.por || '').toLowerCase() === eu }))), canais: v.canais || [], mod: v.mod || 0, adm }, 200, { ...cors, 'cache-control': 'no-store' });
+      const saida = async v => json({ itens: await Promise.all(v.itens.map(async x => { const y = await semEmail(x); if (typeof x.editadoPor === 'string' && x.editadoPor.includes('@')) y.editadoPor = (await semEmail({ por: x.editadoPor })).por; return { ...y, meu: String(x.por || '').toLowerCase() === eu }; })), canais: v.canais || [], mod: v.mod || 0, adm }, 200, { ...cors, 'cache-control': 'no-store' });
       const dono = x => adm || String(x?.por || '').toLowerCase() === eu;
       const grava = async v => { v.mod = Date.now(); const t = JSON.stringify(v); await env.EQUIPE.put(KP, t, { metadata: { tipo: 'application/json', tam: t.length, mod: v.mod, em: new Date().toISOString() } }); };
       const txt = (x, n) => String(x ?? '').slice(0, n), num = x => Number.isFinite(+x) && +x > 0 ? +x : null, ehCanal = x => /^UC[A-Za-z0-9_-]{22}$/.test(String(x || ''));
@@ -1427,9 +1427,10 @@ export default {
         const k = v.itens.findIndex(x => x.id === limpo.id), antes = k >= 0 ? JSON.stringify(v.itens[k]) : null;
         // ORGANIZAR (10/11/2026): quem não é o dono (nem ADM) mas pode publicar só MOVE o item: formato, canal, data e situação
         if (k >= 0 && !dono(v.itens[k]) && !(await pode(env, login.email, 'publicacoes.publicar'))) return json({ error: { type: 'permissao', message: 'Só quem pode publicar organiza os vídeos dos outros.' } }, 403, cors);
-        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade, confirmadoEm: limpo.confirmadoEm }) }; }
+        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm, ...(x0.editadoPor ? { editadoPor: x0.editadoPor, editadoEm: x0.editadoEm } : {}) } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade, confirmadoEm: limpo.confirmadoEm }) }; }
         else { v.itens.unshift({ ...limpo, por: eu }); if (v.itens.length > 3000) v.itens.length = 3000; }
         let mudou = !(antes && antes === JSON.stringify(v.itens[k >= 0 ? k : 0]));
+        if (mudou && k >= 0) { v.itens[k].editadoPor = eu; v.itens[k].editadoEm = Date.now(); } // QUEM MEXEU por último (10/11/2026; sai como código u…, nunca e-mail)
         if (b.substitui && b.substitui !== limpo.id) { const n = v.itens.length; v.itens = v.itens.filter(x => !(x.id === b.substitui && (x.pedido || x.concluido))); if (v.itens.length !== n) mudou = true; } // o pedido virou vídeo
         if (!pedido && !concl && limpo.via === 'api' && ehCanal(limpo.canal.id) && !v.canais.some(c => c.id === limpo.canal.id) && v.canais.length < 30) { v.canais.push({ id: limpo.canal.id, nome: limpo.canal.nome || limpo.canal.id }); mudou = true; } // canal novo de quem publica direto
         if (mudou) await grava(v);
