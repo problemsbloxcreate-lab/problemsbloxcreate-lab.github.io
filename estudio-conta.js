@@ -770,7 +770,7 @@ window.EstudioPerm ||= (() => {
 .ep-esp .hj-g{grid-template-columns:1fr!important;gap:14px!important}.ep-esp .hj-t{font-size:13.5px!important}.ep-esp .hj-l small{font-size:11.5px!important}
 .ep-esp.nuvem .ep-leg{margin:18px 0 8px!important}.ep-esp.nuvem h3{margin:26px 0 10px!important}
 .ep-esp details.sec>summary,.ep-esp details.sec>summary *{text-transform:none!important;letter-spacing:0!important}
-.ep-esp details.grp>summary b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3;flex:1}.ep-esp details.grp>summary .tam{flex:none}
+.ep-esp details.grp>summary b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3;flex:1}.ep-esp details.grp>summary .tam{flex:none}.ep-esp details.grp>summary .sp{display:none}
 .ep-esp.nuvem .pe{margin-top:24px!important;gap:10px!important}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
