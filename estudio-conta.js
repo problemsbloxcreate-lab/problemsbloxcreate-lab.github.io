@@ -733,7 +733,8 @@ window.EstudioPerm ||= (() => {
 .ep-conta-aviso{background:rgba(14,32,58,.95)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 14px 40px rgba(0,20,50,.45)!important}
 .ep-selo,.ep-chave{border-radius:0!important;background:#1d6fd6!important}
 /* tudo com cantos retos nas janelas (menos ícones de programa, pontinhos de online e anéis de carregamento) */
-:is(.ep-esp,.ep-msgs,.ep-cal,.ep-pg,.ep-conta-pop,.ep-notif,.ep-admj,.ep-conta-aviso) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.epm-on):not(.ep-carr):not(.ep-carr *):not(.ep-estado>i){border-radius:0!important}
+/* (11/11/2026) Conta, Espaço, Nuvem, confirmações, notificação e aviso saíram daqui: agora são CELESTE (bloco no fim) */
+:is(.ep-msgs,.ep-cal,.ep-admj) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.epm-on):not(.ep-carr):not(.ep-carr *):not(.ep-estado>i){border-radius:0!important}
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
 .ep-esp.ep-saindo{animation:epSome .2s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
@@ -771,7 +772,149 @@ window.EstudioPerm ||= (() => {
 .ep-esp.nuvem .ep-leg{margin:18px 0 8px!important}.ep-esp.nuvem h3{margin:26px 0 10px!important}
 .ep-esp details.sec>summary,.ep-esp details.sec>summary *{text-transform:none!important;letter-spacing:0!important}
 .ep-esp details.grp>summary b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3;flex:1}.ep-esp details.grp>summary .tam{flex:none}.ep-esp details.grp>summary .sp{display:none}
-.ep-esp.nuvem .pe{margin-top:24px!important;gap:10px!important}`;
+.ep-esp.nuvem .pe{margin-top:24px!important;gap:10px!important}
+/* ===================== CELESTE (2.0, aprovado pela dona em 11/11/2026): canto do cabeçalho + Sua conta + Espaço + Nuvem + confirmações + avisos =====================
+   Vale em TODOS os programas e no menu. Sistema: skill design-problems › sistema-celeste.md e modelo-cabecalho.md.
+   Tokens próprios (--ce-*) para não brigar com as variáveis de cada programa; claro quando o <html> tem data-tema="claro" (sol/lua, localStorage ep-tema).
+   Prefixo :root:root body = ganha das camadas antigas daqui de cima (que usam !important). As Mensagens vão sair do Estúdio: o item fica escondido. */
+.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-pg,.ep-conta-aviso,.ep-notif{
+  --ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --ce-fundo:#151517;--ce-fundo-2:#1e1e21;--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-elevado:#242428;
+  --ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.40);
+  --ce-linha:rgba(255,255,255,.09);--ce-linha-forte:rgba(255,255,255,.16);
+  --ce-acento:#5cc4ff;--ce-acento-texto:#04223a;--ce-acento-suave:rgba(92,196,255,.16);
+  --ce-sucesso:#30d158;--ce-aviso:#ff9f0a;--ce-perigo:#ff453a;--ce-novo:#bf5af2;
+  --ce-veu:rgba(0,0,0,.45);--ce-sombra-2:0 0 0 .5px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.45);--ce-sombra-3:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)}
+html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-pg,.ep-conta-aviso,.ep-notif){
+  --ce-fundo:#f5f5f7;--ce-fundo-2:#ffffff;--ce-fundo-3:#ececf0;--ce-fundo-4:#e1e1e6;--ce-elevado:#ffffff;
+  --ce-texto:#1d1d1f;--ce-texto-2:rgba(60,60,67,.72);--ce-texto-3:rgba(60,60,67,.46);
+  --ce-linha:rgba(0,0,0,.08);--ce-linha-forte:rgba(0,0,0,.14);
+  --ce-acento:#0a74c9;--ce-acento-texto:#ffffff;--ce-acento-suave:rgba(10,116,201,.12);
+  --ce-sucesso:#248a3d;--ce-aviso:#c26a00;--ce-perigo:#d70015;--ce-novo:#8944ab;
+  --ce-veu:rgba(0,0,0,.25);--ce-sombra-2:0 0 0 .5px rgba(0,0,0,.12),0 10px 30px rgba(0,0,0,.14);--ce-sombra-3:0 0 0 .5px rgba(0,0,0,.12),0 24px 70px rgba(0,0,0,.22)}
+/* --- canto do cabeçalho: nuvem, espaço e menu = botões de 30 px; foto redonda de 30 px --- */
+:root:root body .ep-conta{gap:4px!important;font-family:var(--ce-fonte)!important}
+:root:root body .ep-conta :is(.ep-conta-nuvem,.ep-conta-espaco,.ep-conta-menu){width:32px!important;height:32px!important;padding:0!important;border:0!important;border-radius:8px!important;background:transparent!important;color:var(--ce-texto-2)!important;display:grid!important;place-items:center!important;box-shadow:none!important}
+:root:root body .ep-conta :is(.ep-conta-nuvem,.ep-conta-espaco,.ep-conta-menu):hover{background:var(--ce-fundo-3)!important;color:var(--ce-texto)!important}
+:root:root body .ep-conta :is(.ep-conta-nuvem,.ep-conta-espaco,.ep-conta-menu) svg{max-width:26px;max-height:26px}
+:root:root body .ep-conta .ep-conta-btn{width:30px!important;height:30px!important;border-radius:50%!important;margin-left:4px;font:600 12px var(--ce-fonte)!important;background:linear-gradient(135deg,#5cc4ff,#7c6cff)!important}
+:root:root body #top .ep-conta .ep-conta-btn,:root:root body #top .ep-conta .ep-conta-btn img{width:30px!important;height:30px!important;border-radius:50%!important}
+:root:root body .ep-conta .ep-conta-btn:hover{filter:brightness(1.08);outline:none}
+:root:root body .ep-conta :is(button,a):focus-visible{outline:2px solid var(--ce-acento)!important;outline-offset:2px}
+/* bolinhas de aviso na foto: menores e na cor do sistema (versão nova = roxo, denúncia = vermelho); a de Mensagens não aparece */
+:root:root body .ep-conta-fw::before{inset:-2px!important;box-shadow:none!important}
+:root:root body .ep-conta.ep-novo .ep-conta-fw::before{background:var(--ce-novo)!important}
+:root:root body .ep-conta.ep-msg:not(.ep-novo):not(.ep-mencao) .ep-conta-fw::before,:root:root body .ep-conta-fw>i.m{display:none!important}
+:root:root body .ep-conta.ep-novo.ep-msg .ep-conta-fw::before{background:var(--ce-novo)!important}
+:root:root body .ep-conta-fw>i{border-color:var(--ce-fundo)!important;animation:none!important}
+:root:root body .ep-conta-fw>i.v{background:var(--ce-novo)!important}
+/* --- véu atrás dos painéis --- */
+:root:root body .ep-conta-fundo{background:var(--ce-veu)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+:root:root body :is(.ep-esp,.ep-pg){background:var(--ce-veu)!important}
+/* --- SUA CONTA: painel da direita com lista agrupada --- */
+:root:root body .ep-conta-pop{display:block!important;width:min(400px,100%)!important;padding:0 0 24px!important;background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:0!important;border-left:1px solid var(--ce-linha)!important;border-radius:0!important;
+  box-shadow:var(--ce-sombra-3)!important;-webkit-backdrop-filter:none;backdrop-filter:none;font:400 14px/1.4 var(--ce-fonte)!important;animation:epEntraDir .35s cubic-bezier(.1,.9,.2,1) both}
+:root:root body .ep-conta-pop[hidden]{display:none!important}
+:root:root body .ep-conta-pop,:root:root body .ep-conta-pop *{box-sizing:border-box!important}
+:root:root body .ep-conta-pop{overflow-x:hidden!important}
+:root:root body .ep-conta-pop .ep-pop-x{margin-left:auto!important}
+:root:root body .ep-conta-pop .ep-pop-tit{display:flex;align-items:center;gap:10px;height:52px;margin:0 0 8px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--ce-linha);font:600 17px var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-conta-pop .ep-pop-tit>svg{display:none}
+:root:root body .ep-conta-pop .ep-pop-x{height:28px;padding:0 10px!important;border:0!important;border-radius:6px!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important}
+:root:root body .ep-conta-pop .ep-pop-x:hover{background:var(--ce-fundo-4)!important}
+:root:root body .ep-conta-pop .ep-conta-head{display:flex!important;align-items:center;gap:14px;margin:8px 16px 16px!important;padding:16px!important;border:0!important;border-radius:12px!important;background:var(--ce-fundo-2)!important}
+:root:root body .ep-conta-pop .ep-conta-head .av{width:52px!important;height:52px!important;border-radius:50%!important;background:linear-gradient(135deg,#5cc4ff,#7c6cff)!important}
+:root:root body .ep-conta-pop .ep-conta-head .av img{border-radius:50%!important}
+:root:root body .ep-conta-pop .ep-conta-head b{font:600 17px/1.25 var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-conta-pop .ep-conta-head small{color:var(--ce-texto-3)!important;font-size:12px!important}
+:root:root body .ep-conta-pop .ep-selo-adm{height:20px;padding:0 6px;margin-left:6px;border:0!important;border-radius:6px!important;background:var(--ce-acento-suave)!important;color:var(--ce-acento)!important;font:600 11px var(--ce-fonte)!important;vertical-align:2px}
+/* itens = linhas de uma lista agrupada (como os Ajustes) */
+:root:root body .ep-conta-pop .it{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;width:calc(100% - 32px)!important;min-height:44px!important;margin:0 16px!important;padding:0 14px!important;
+  background:var(--ce-fundo-2)!important;color:var(--ce-texto)!important;border:0!important;border-radius:0!important;box-shadow:none!important;outline:0!important;font:400 14px/1.3 var(--ce-fonte)!important;transform:none!important;text-align:left;position:relative}
+:root:root body .ep-conta-pop .it+.it{box-shadow:inset 0 1px 0 var(--ce-linha)!important}
+:root:root body .ep-conta-pop .ep-conta-head+.it,:root:root body .ep-conta-pop .sep+.it{border-radius:12px 12px 0 0!important}
+:root:root body .ep-conta-pop .it:has(+.sep),:root:root body .ep-conta-pop .it:last-child{border-radius:0 0 12px 12px!important}
+:root:root body .ep-conta-pop .ep-conta-head+.it:has(+.sep),:root:root body .ep-conta-pop .sep+.it:last-child,:root:root body .ep-conta-pop .sep+.it:has(+.sep){border-radius:12px!important}
+:root:root body .ep-conta-pop .it:hover,:root:root body .ep-conta-pop .it:focus-visible{background:var(--ce-fundo-3)!important}
+:root:root body .ep-conta-pop .it:active{background:var(--ce-fundo-4)!important}
+:root:root body .ep-conta-pop .it svg{width:18px!important;height:18px!important;color:var(--ce-texto-2)!important}
+:root:root body .ep-conta-pop .it>span{display:block;min-width:0}
+:root:root body .ep-conta-pop .it small{display:block;font-size:12px!important;font-weight:400!important;color:var(--ce-texto-3)!important;margin-top:1px}
+:root:root body .ep-conta-pop .it .cont{position:static!important;margin-left:auto!important;min-width:20px;height:20px;border-radius:10px!important;background:var(--ce-perigo)!important;color:#fff!important;font:600 11px var(--ce-fonte)!important}
+:root:root body .ep-conta-pop .it.novo small{color:var(--ce-novo)!important}
+:root:root body .ep-conta-pop .it.novo svg{color:var(--ce-novo)!important}
+:root:root body .ep-conta-pop .it.novo::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--ce-novo);margin-left:auto;flex:none}
+:root:root body .ep-conta-pop .it.denun small{color:var(--ce-perigo)!important}
+:root:root body .ep-conta-pop .it.sair,:root:root body .ep-conta-pop .it.sair svg{color:var(--ce-perigo)!important}
+:root:root body .ep-conta-pop .it.sair:hover{background:color-mix(in srgb,var(--ce-perigo) 12%,var(--ce-fundo-2))!important}
+:root:root body .ep-conta-pop .it[data-a=msgs]{display:none!important}
+:root:root body .ep-conta-pop .sep{display:block!important;height:16px!important;margin:0!important;background:none!important}
+/* --- ESPAÇO NO NAVEGADOR e ESPAÇO NA NUVEM (painel da direita) --- */
+:root:root body .ep-esp{font:400 14px/1.45 var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-esp .cx{width:min(460px,100%)!important;padding:0 24px 24px!important;background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:0!important;border-left:1px solid var(--ce-linha)!important;border-radius:0!important;
+  box-shadow:var(--ce-sombra-3)!important;-webkit-backdrop-filter:none;backdrop-filter:none;animation:epEntraDir .35s cubic-bezier(.1,.9,.2,1) both}
+:root:root body .ep-esp.nuvem .cx{width:min(500px,100%)!important;padding:0 24px 24px!important}
+:root:root body .ep-esp .cx *{border-radius:0}
+:root:root body .ep-esp h2{display:flex;align-items:center;gap:10px;height:52px;margin:0 -12px 16px -24px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--ce-linha);font:600 17px var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-esp h2>svg{display:none}
+:root:root body .ep-esp .nv-cab{margin:0 0 16px!important}:root:root body .ep-esp .nv-cab h2{margin:0 -12px 8px -24px!important}
+:root:root body .ep-esp h3{font:600 13px var(--ce-fonte)!important;color:var(--ce-texto-2)!important;text-transform:none!important;letter-spacing:0!important;margin:24px 0 8px!important}
+:root:root body .ep-esp h3 small{color:var(--ce-texto-3)!important}
+:root:root body .ep-esp .topo{display:flex;align-items:center;gap:16px;padding:16px;border-radius:12px!important;background:var(--ce-fundo-2)!important}
+:root:root body .ep-esp .topo b{font:700 22px/1.2 var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-esp .topo small,:root:root body .ep-esp .nota{color:var(--ce-texto-3)!important;font-size:12px!important}
+:root:root body .ep-esp .ep-leg{color:var(--ce-texto-3)!important;font-size:12px!important;margin:12px 0 4px!important}
+:root:root body .ep-esp .ep-leg i{border-radius:50%!important;width:8px;height:8px}
+/* grupos (Por programa, pastas): cartões com cantos de 12 px */
+:root:root body .ep-esp details,:root:root body .ep-esp details.grp{margin:0 0 8px!important;border:0!important;border-radius:12px!important;background:var(--ce-fundo-2)!important;overflow:hidden}
+:root:root body .ep-esp details.grp:last-of-type{border-bottom:0!important}
+:root:root body .ep-esp details>summary,:root:root body .ep-esp details.grp>summary{min-height:44px;padding:0 14px!important;background:none!important;gap:10px}
+:root:root body .ep-esp details>summary:hover{background:var(--ce-fundo-3)!important}
+:root:root body .ep-esp details>summary b{font:500 14px var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-esp details>summary .tam,:root:root body .ep-esp .tam{color:var(--ce-texto-3)!important;font-size:12px!important}
+:root:root body .ep-esp details>summary .seta{color:var(--ce-texto-3)!important}
+:root:root body .ep-esp details.grp .cnt{border-radius:10px!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto-2)!important}
+:root:root body .ep-esp .grp-l{padding:0 0 4px!important}
+:root:root body .ep-esp .linha,:root:root body .ep-esp details .linha,:root:root body .ep-esp .grp-l .linha{margin:0!important;padding:10px 14px!important;background:none!important;border:0!important;border-top:1px solid var(--ce-linha)!important;border-radius:0!important}
+:root:root body .ep-esp>.cx>.linha{background:var(--ce-fundo-2)!important}
+:root:root body .ep-esp .linha.aqui{background:var(--ce-acento-suave)!important}
+:root:root body .ep-esp .linha .n b{font:500 13px var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-esp .barra{height:4px!important;border-radius:2px!important;background:var(--ce-fundo-4)!important}
+:root:root body .ep-esp .barra i{border-radius:2px!important}
+:root:root body .ep-esp img.th{border-radius:6px!important}
+:root:root body .ep-esp .vazio{padding:20px!important;border:1px dashed var(--ce-linha-forte)!important;border-radius:12px!important;background:none!important;color:var(--ce-texto-3)!important}
+:root:root body .ep-esp .ep-estado{border-radius:12px!important;background:var(--ce-fundo-2)!important}
+:root:root body .ep-esp .ep-estado small{color:var(--ce-texto-3)!important}
+/* botões dos painéis e das confirmações */
+:root:root body :is(.ep-esp .bt,.ep-pg button){display:inline-flex;align-items:center;gap:6px;height:32px!important;padding:0 12px!important;border:0!important;border-radius:8px!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important;box-shadow:none!important}
+:root:root body :is(.ep-esp .bt,.ep-pg button):hover{background:var(--ce-fundo-4)!important}
+:root:root body :is(.ep-esp .bt.pri,.ep-pg button.sim.azul){background:var(--ce-acento)!important;color:var(--ce-acento-texto)!important;font-weight:600!important}
+:root:root body :is(.ep-esp .bt.perigo,.ep-pg button.sim){background:var(--ce-perigo)!important;color:#fff!important;font-weight:600!important}
+:root:root body .ep-esp .bt.vermelho{background:transparent!important;color:var(--ce-perigo)!important}
+:root:root body .ep-esp .bt.so-adm{background:transparent!important;color:var(--ce-texto-3)!important}
+:root:root body .ep-esp h2 .bt.x{margin-left:auto;height:28px!important;padding:0 10px!important;border-radius:6px!important}
+:root:root body .ep-esp .nv-acoes .ic{width:auto!important;flex-direction:row!important;gap:6px!important;height:28px;padding:0 10px!important;border-radius:6px!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important}
+:root:root body .ep-esp .nv-acoes .ic:hover{background:var(--ce-fundo-4)!important}
+:root:root body .ep-esp .nv-acoes .ic svg{width:16px!important;height:16px!important;padding:0!important;border:0!important;background:none!important}
+:root:root body :is(.ep-esp,.ep-pg) :is(button,a):focus-visible{outline:2px solid var(--ce-acento)!important;outline-offset:2px}
+/* --- CONFIRMAÇÕES (.ep-pg): janela central --- */
+:root:root body .ep-pg{font:400 14px/1.45 var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-pg .cx{width:min(420px,100%)!important;padding:24px!important;background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:0!important;border-radius:14px!important;box-shadow:var(--ce-sombra-3)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+:root:root body .ep-pg .cx *{border-radius:0}
+:root:root body .ep-pg .ic{border-radius:12px!important}
+:root:root body .ep-pg .t{font:600 17px var(--ce-fonte)!important}
+:root:root body .ep-pg .x{color:var(--ce-texto-2)!important}
+:root:root body .ep-pg .quem{border:0!important;border-radius:12px!important;background:var(--ce-fundo-2)!important}
+:root:root body .ep-pg .quem .av{border-radius:50%!important}
+:root:root body .ep-pg button{border-radius:8px!important}
+:root:root body .ep-pg .pg-x{border-radius:6px!important;background:transparent!important;color:var(--ce-texto-2)!important}
+/* --- AVISO curto (embaixo, no centro) e NOTIFICAÇÃO (em cima, à direita) --- */
+:root:root body .ep-conta-aviso{background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:1px solid var(--ce-linha)!important;border-radius:10px!important;box-shadow:var(--ce-sombra-2)!important;font:400 14px/1.4 var(--ce-fonte)!important}
+:root:root body .ep-notif{top:64px!important;background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:1px solid var(--ce-linha);border-radius:14px!important;box-shadow:var(--ce-sombra-3)!important;font-family:var(--ce-fonte)!important}
+:root:root body .ep-notif .tx small,:root:root body .ep-notif .tx span{color:var(--ce-texto-3)!important}
+:root:root body .ep-notif .x{border-radius:50%!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto-2)!important}
+:root:root body .ep-notif .di{border-radius:9px!important}
+@media (prefers-reduced-motion:reduce){:root:root body :is(.ep-conta-pop,.ep-esp .cx){animation:none!important}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
   // (conversa da IA do Animador, pedidos do Modelador, texto do roteiro dos Shorts)
