@@ -2361,7 +2361,18 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function conferenciaGuarda() {
     conferenciaGuarda.t = Date.now();
     const local = window.EstudioVersao; if (!local?.nome) return;
-    let srv = null; try { srv = await versaoDoServidor(); } catch { } if (!srv?.nome || srv.nome === local.nome) return; // sem internet ou igual: nada a fazer
+    let srv = null; try { srv = await versaoDoServidor(); } catch { }
+    // A VERSÃO MUDOU E ESTA PÁGINA JÁ ESTÁ NELA (pedido da dona, 11/11/2026: "não apareceu a notificação no Cérebro"): a maioria dos programas
+    // abre sempre na versão mais nova, então nunca tinha o que avisar. Agora todo mundo vê a notificação UMA vez por versão, em qualquer
+    // programa ("já está nesta versão" + Ver novidades). 'ep-versao-vista' = a última versão que a pessoa já viu avisada neste computador.
+    const VK = 'ep-versao-vista'; let vista = null; try { vista = localStorage.getItem(VK); } catch { }
+    if (!srv?.nome || srv.nome === local.nome) {
+      if (vista === local.nome) return;
+      try { localStorage.setItem(VK, local.nome); } catch { }
+      const itensL = (Array.isArray(local.novidades) ? local.novidades : []).flatMap(x => Array.isArray(x?.[1]) ? x[1] : []).slice(0, 4).map(String);
+      const nA = { id: 'v:' + local.nome, prog: '*', titulo: 'Estúdio Problems ' + local.nome, itens: itensL, em: Date.now(), feito: Date.now(), aplicada: true, versao: local.nome };
+      guardaNotif(nA); mostraNotifVersao(nA); return;
+    }
     const itens = (Array.isArray(srv.novidades) ? srv.novidades : []).flatMap(x => Array.isArray(x?.[1]) ? x[1] : []).slice(0, 4).map(String);
     const id = 'v:' + srv.nome;
     const n = { id, prog: '*', titulo: 'Estúdio Problems ' + srv.nome, itens, importante: !!srv.importante, em: Date.now(), nova: true, versao: srv.nome };
@@ -2372,7 +2383,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (!fechou) mostraNotifVersao(n);
   }
   // Atualizar = apaga as cópias guardadas de TODOS os programas (a versão é uma só) e recarrega esta página
-  async function atualizaTudoGuardado(recarregar = true) {
+  async function atualizaTudoGuardado(recarregar = true, versao) {
+    if (versao) { try { localStorage.setItem('ep-versao-vista', versao); } catch { } }
     try { for (const k of await caches.keys()) if (k.startsWith('ep-p:')) await caches.delete(k); } catch { }
     try { const L = notifs().map(x => x.nova ? { ...x, nova: false, feito: Date.now() } : x); localStorage.setItem(NOTIFS_K, JSON.stringify(L)); } catch { }
     if (recarregar) location.reload();
@@ -2382,12 +2394,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     document.querySelector('.ep-notif-v')?.remove();
     const d = document.createElement('div'); d.className = 'ep-notif-v'; d.setAttribute('role', 'status');
     const ic = '<span class="nv-ep">' + (ICONES.estudio || ICONES.atualizar) + '</span>';
-    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(n.titulo) + ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>') + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
+    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(n.titulo) + (n.aplicada ? '</b><small>Você já está nesta versão. Veja o que mudou.</small>' : ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>')) + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
       + (n.itens.length ? '<ul>' + n.itens.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>' : '')
-      + '<div class="nv-b"><button type="button" class="nv-f">Fechar</button><button type="button" class="nv-a">Atualizar</button></div>';
+      + '<div class="nv-b"><button type="button" class="nv-f">Fechar</button><button type="button" class="nv-a">' + (n.aplicada ? 'Ver novidades' : 'Atualizar') + '</button></div>';
     const fecha = () => { try { (n.importante ? sessionStorage : localStorage).setItem('ep-notif-fechada:' + n.id, '1'); } catch { } d.classList.add('sai'); setTimeout(() => d.remove(), 250); };
     d.querySelector('.nv-x').onclick = fecha; d.querySelector('.nv-f').onclick = fecha;
-    d.querySelector('.nv-a').onclick = () => { d.querySelector('.nv-a').textContent = 'Atualizando…'; atualizaTudoGuardado(); };
+    d.querySelector('.nv-a').onclick = () => { if (n.aplicada) { fecha(); try { window.EstudioSuporte?.novidades?.({}); } catch { } return; } d.querySelector('.nv-a').textContent = 'Atualizando…'; atualizaTudoGuardado(true, n.versao); };
     document.body.appendChild(d);
   }
   // em QUALQUER página (menu e programas), um pouco depois de abrir e quando a aba volta a aparecer (no máximo a cada 15 min)
