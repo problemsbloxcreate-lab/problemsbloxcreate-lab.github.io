@@ -31,9 +31,9 @@ window.EstudioVersao ||= { nome: '1.4 - Flower Field', em: '11/11/2026',
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
-    ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Menu redesenhado em uma coluna, com o mesmo cabeçalho dos programas e uma grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Uma tela só, com a foto da montanha, do clique no menu até o programa aberto.']],
+    ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Uso da nuvem e do computador no cabeçalho de todos os programas.', 'Menu redesenhado em uma coluna, com o mesmo cabeçalho dos programas e uma grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Uma tela só, com a foto da montanha, do clique no menu até o programa aberto.']],
     ['Cérebro', ['A Montanha: o Cérebro virou um mapa de pontos em forma de montanha. A rodinha do mouse dá zoom e clicar num ponto explica o que é.', 'Busca que acha o trecho certo dentro das páginas.', 'Adicionar ao Cérebro: gera o pedido pronto para a CelestIA e guarda em Pedidos.', 'Telas do Cérebro no visual novo, sem os blocos coloridos.']],
-    ['Atualizações', ['Aviso de versão nova em qualquer página, com Atualizar e Fechar. Atualizar é opcional.', 'Preparativos e Publicações ficam guardados no computador e abrem na hora.']],
+    ['Atualizações', ['Aviso de versão nova em qualquer página, com Atualizar e Fechar. Atualizar é opcional.', 'Histórico de notificações em Sua conta, com a chave Atualizar sozinho (vem desligada).', 'Preparativos e Publicações ficam guardados no computador e abrem na hora.']],
     ['Animador e Ateliê', ['Juntas com trava: cotovelo e joelho só dobram para o lado certo.', 'Andar sem travar e acessórios com atraso suave.']],
     ['Saiu', ['As Mensagens saíram do menu.']]
   ] };
