@@ -1,0 +1,79 @@
+/* ===================== estudio-visual.css — visual CELESTE (2.0) do Estúdio Problems, comum a todos os programas =====================
+   Aprovado pela dona em 11/11/2026. Sistema completo: skill design-problems › references/sistema-celeste.md e modelo-cabecalho.md
+   (no Cérebro: Skills/design-problems/referencias - sistema-celeste e - modelo-cabecalho).
+
+   Como um programa liga o Celeste:
+     <html lang="pt-BR" class="cel">
+     <head>
+       <script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
+       <link rel="preload" href="/estudio-inter.woff2" as="font" type="font/woff2" crossorigin>
+       <link rel="stylesheet" href="/estudio-visual.css">   (DEPOIS do CSS do programa, se o programa tiver camadas antigas)
+   Cabeçalho = <header class="top"> com a.logo (ícone + NOME + "Estúdio Problems"), nav.abas, .esp e <span data-estudio-conta>.
+   O botão sol/lua é posto sozinho pelo /estudio-conta.js antes do canto da conta (se a página não tiver um [data-tema-bt]).
+   Regras da dona: nada de pegada Metro; cabeçalho igual em todos; sem botões desnecessários nem textos inúteis. */
+
+@font-face{font-family:"Inter";src:url("/estudio-inter.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+
+/* ---------- tokens ---------- */
+html.cel{
+  --fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --t-legenda:12px;--t-pequeno:13px;--t-corpo:14px;--t-destaque:16px;--t-titulo:20px;--t-tela:28px;
+  --raio-p:6px;--raio-controle:8px;--raio-cartao:12px;--raio-janela:14px;
+  --e1:4px;--e2:8px;--e3:12px;--e4:16px;--e5:24px;--e6:32px;--e7:48px;
+  --rapido:.15s;--medio:.25s;--painel:.35s;--curva-entra:cubic-bezier(.1,.9,.2,1);--curva-sai:cubic-bezier(.4,0,1,1);
+  --alt-cabecalho:52px;--alt-controle:32px;--alt-controle-p:26px;
+}
+html.cel,html.cel[data-tema="escuro"]{color-scheme:dark;
+  --fundo:#151517;--fundo-2:#1e1e21;--fundo-3:#28282c;--fundo-4:#333338;--elevado:#242428;
+  --texto:#f5f5f7;--texto-2:rgba(235,235,245,.64);--texto-3:rgba(235,235,245,.40);--texto-4:rgba(235,235,245,.22);
+  --linha:rgba(255,255,255,.09);--linha-forte:rgba(255,255,255,.16);
+  --acento:#5cc4ff;--acento-texto:#04223a;--acento-link:#6dcbff;--acento-suave:rgba(92,196,255,.16);
+  --sucesso:#30d158;--aviso:#ff9f0a;--perigo:#ff453a;--gravando:#ff453a;--neutro:#8e8e93;
+  --vidro:rgba(21,21,23,.78);--veu:rgba(0,0,0,.45);
+  --sombra-1:0 1px 2px rgba(0,0,0,.35);--sombra-2:0 0 0 .5px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.45);--sombra-3:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)}
+html.cel[data-tema="claro"]{color-scheme:light;
+  --fundo:#f5f5f7;--fundo-2:#ffffff;--fundo-3:#ececf0;--fundo-4:#e1e1e6;--elevado:#ffffff;
+  --texto:#1d1d1f;--texto-2:rgba(60,60,67,.72);--texto-3:rgba(60,60,67,.46);--texto-4:rgba(60,60,67,.24);
+  --linha:rgba(0,0,0,.08);--linha-forte:rgba(0,0,0,.14);
+  --acento:#0a74c9;--acento-texto:#ffffff;--acento-link:#0a6fbf;--acento-suave:rgba(10,116,201,.12);
+  --sucesso:#248a3d;--aviso:#c26a00;--perigo:#d70015;--gravando:#d70015;--neutro:#6e6e73;
+  --vidro:rgba(245,245,247,.8);--veu:rgba(0,0,0,.25);
+  --sombra-1:0 1px 2px rgba(0,0,0,.08);--sombra-2:0 0 0 .5px rgba(0,0,0,.12),0 10px 30px rgba(0,0,0,.14);--sombra-3:0 0 0 .5px rgba(0,0,0,.12),0 24px 70px rgba(0,0,0,.22)}
+@media (prefers-reduced-transparency:reduce){html.cel{--vidro:var(--fundo)}}
+@media (prefers-reduced-motion:reduce){html.cel *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- CABEÇALHO (igual em todos os programas) ---------- */
+html.cel .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:var(--e4);height:var(--alt-cabecalho);margin:0;padding:0 var(--e4);box-sizing:border-box;
+  background:var(--vidro);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);border-bottom:1px solid var(--linha);color:var(--texto);font-family:var(--fonte)}
+html.cel .top .esp{flex:1}
+html.cel .top .logo{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;padding:4px 6px 4px 4px;border:0;background:none;border-radius:var(--raio-controle);cursor:pointer;flex:none}
+html.cel .top .logo:hover{background:var(--fundo-3)}
+html.cel .top .logo .ic-prog{width:28px;height:28px;display:block;flex:none}
+html.cel .top .logo b{display:block;font:700 13px/1.1 var(--fonte);letter-spacing:.06em;text-transform:uppercase}
+html.cel .top .logo small{display:block;font:400 11px/1.2 var(--fonte);color:var(--texto-3);margin-top:2px}
+html.cel .top .abas{display:flex;background:var(--fundo-3);border:0;border-radius:var(--raio-controle);padding:2px;gap:2px}
+html.cel .top .abas button,html.cel .top .abas a{height:28px;padding:0 var(--e3);border:0;border-radius:6px;background:transparent;color:var(--texto-2);font:500 var(--t-pequeno) var(--fonte);display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:none;box-shadow:none;transition:background var(--rapido),color var(--rapido)}
+html.cel .top .abas :is(button,a):hover{color:var(--texto)}
+html.cel .top .abas :is(button,a):is(.on,[aria-selected="true"],[aria-current="page"]){background:var(--fundo-4);color:var(--texto);box-shadow:var(--sombra-1)}
+html.cel[data-tema="claro"] .top .abas :is(button,a):is(.on,[aria-selected="true"],[aria-current="page"]){background:#fff}
+html.cel .top .abas svg{width:14px;height:14px;color:inherit}
+html.cel .top input[type=search]{height:var(--alt-controle);width:220px;padding:0 var(--e3);border:1px solid transparent;border-radius:var(--raio-controle);background:var(--fundo-3);color:var(--texto);font:400 var(--t-corpo) var(--fonte)}
+html.cel .top input[type=search]::placeholder{color:var(--texto-3)}
+html.cel .top input[type=search]:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-suave)}
+html.cel .tema-bt{width:var(--alt-controle);height:var(--alt-controle);display:grid;place-items:center;border:0;border-radius:var(--raio-controle);background:transparent;color:var(--texto-2);cursor:pointer;flex:none;padding:0}
+html.cel .tema-bt:hover{background:var(--fundo-3);color:var(--texto)}
+html.cel .tema-bt svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+html.cel :focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+
+/* ---------- PEÇAS BÁSICAS (classes .c-*: para telas novas; os programas antigos mapeiam as deles) ---------- */
+html.cel .c-bt{display:inline-flex;align-items:center;gap:var(--e2);height:var(--alt-controle);padding:0 var(--e3);border:0;border-radius:var(--raio-controle);background:var(--fundo-3);color:var(--texto);font:500 var(--t-corpo) var(--fonte);cursor:pointer;white-space:nowrap;transition:background var(--rapido),transform var(--rapido),filter var(--rapido)}
+html.cel .c-bt:hover{background:var(--fundo-4)}
+html.cel .c-bt:active{transform:scale(.97)}
+html.cel .c-bt.pri{background:var(--acento);color:var(--acento-texto);font-weight:600}
+html.cel .c-bt.pri:hover{filter:brightness(1.08)}
+html.cel .c-bt.ic{width:var(--alt-controle);padding:0;justify-content:center;background:transparent;color:var(--texto-2)}
+html.cel .c-bt.ic:hover{background:var(--fundo-3);color:var(--texto)}
+html.cel .c-bt.perigo{background:transparent;color:var(--perigo)}
+html.cel .c-bt svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+html.cel .c-barra-tela{display:flex;align-items:center;gap:var(--e3);flex-wrap:wrap;margin:0 0 var(--e5)}
+html.cel .c-barra-tela h1,html.cel .c-barra-tela h2{margin:0 auto 0 0;font:700 var(--t-tela)/1.15 var(--fonte);letter-spacing:-.01em;color:var(--texto)}

@@ -1073,10 +1073,23 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
 
   let P = null;
+  /* CELESTE (11/11/2026): nas páginas com <html class="cel">, o botão sol/lua (claro ↔ escuro) entra sozinho antes do canto da conta.
+     A escolha fica em localStorage "ep-tema" e vale para o Estúdio todo (as outras abas mudam junto). Página que já tem [data-tema-bt] cuida do dela. */
+  function poeTema(alvo) {
+    const H = document.documentElement; if (!H.classList.contains('cel') || document.querySelector('[data-tema-bt]')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tema-bt'; b.dataset.temaBt = '';
+    const SOL = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+    const LUA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+    const pinta = () => { const e = H.dataset.tema !== 'claro'; b.innerHTML = e ? SOL : LUA; b.title = e ? 'Usar o tema claro' : 'Usar o tema escuro'; b.setAttribute('aria-label', b.title); };
+    b.onclick = () => { H.dataset.tema = H.dataset.tema === 'claro' ? 'escuro' : 'claro'; try { localStorage.setItem('ep-tema', H.dataset.tema); } catch { } pinta(); };
+    addEventListener('storage', e => { if (e.key === 'ep-tema') { H.dataset.tema = e.newValue === 'claro' ? 'claro' : 'escuro'; pinta(); } });
+    if (!H.dataset.tema) { try { H.dataset.tema = localStorage.getItem('ep-tema') === 'claro' ? 'claro' : 'escuro'; } catch { H.dataset.tema = 'escuro'; } }
+    pinta(); alvo.insertAdjacentElement('beforebegin', b);
+  }
   function poe(alvo) {
     if (!P || !alvo || alvo.dataset?.epMontado) return;
     const box = caixa(P);
-    if (alvo.matches?.('[data-estudio-conta]')) { alvo.dataset.epMontado = '1'; alvo.replaceChildren(box); alvo.style.display = 'contents'; }
+    if (alvo.matches?.('[data-estudio-conta]')) { alvo.dataset.epMontado = '1'; alvo.replaceChildren(box); alvo.style.display = 'contents'; poeTema(alvo); }
     else if (alvo.matches?.('[data-tema-aqui]')) { alvo.dataset.epMontado = '1'; alvo.insertAdjacentElement('afterend', box); }
     else { box.classList.add('solto'); document.body.appendChild(box); }
   }
