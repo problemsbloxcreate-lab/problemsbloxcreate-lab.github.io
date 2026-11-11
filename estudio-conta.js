@@ -1023,7 +1023,7 @@ html[data-tema="claro"] .ep-notif-v{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-te
 .ep-notif-v .nv-tx em{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:6px;background:rgba(255,159,10,.16);color:#ff9f0a;font:600 11px var(--ce-fonte);font-style:normal}
 .ep-notif-v .nv-x{width:28px;height:28px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ce-texto-2);cursor:pointer}.ep-notif-v .nv-x:hover{background:var(--ce-fundo-3)}.ep-notif-v .nv-x svg{width:14px;height:14px}
 .ep-notif-v ul{margin:12px 0 0;padding-left:18px;color:var(--ce-texto-2);font-size:13px}
-.ep-notif-v .nv-b{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.ep-notif-v .nv-b{display:flex!important;justify-content:flex-end;gap:8px;margin-top:16px;width:auto!important;height:auto!important;border-radius:0!important;background:none!important;color:inherit!important}
 .ep-notif-v .nv-b button{height:32px;padding:0 12px;border:0;border-radius:8px;font:500 13px var(--ce-fonte);cursor:pointer;background:var(--ce-fundo-3);color:var(--ce-texto)}
 .ep-notif-v .nv-b button:hover{background:var(--ce-fundo-4)}
 .ep-notif-v .nv-b .nv-a{background:var(--ce-acento);color:var(--ce-acento-texto);font-weight:600}.ep-notif-v .nv-b .nv-a:hover{background:var(--ce-acento);filter:brightness(1.08)}
