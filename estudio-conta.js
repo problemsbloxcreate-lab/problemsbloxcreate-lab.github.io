@@ -936,6 +936,26 @@ html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-
 :root:root body :is(.ep-conta-pop,.ep-esp .cx){animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
 @keyframes epCelEntra{from{opacity:0;transform:translateX(24px)}}
 :root:root body .ep-esp details[open] .grp-l,:root:root body .ep-esp details[open]>.linha{animation:none!important}
+/* --- ATUALIZANDO (Celeste, pedido da dona 11/11/2026): o mesmo desenho da tela única (montanha, ícone, título, barra, uma frase) --- */
+:root:root body #ep-atualizando{--pt-tx:#f5f5f7;--pt-tx2:rgba(235,235,245,.64);--pt-tx3:rgba(235,235,245,.4);--pt-ac:#5cc4ff;--pt-trilho:rgba(255,255,255,.14);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%230f182c' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%2316223c' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%231d2b4a' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 44% 22%,#fff,transparent),radial-gradient(1px 1px at 61% 12%,#fff,transparent),radial-gradient(1.3px 1.3px at 77% 26%,#fff,transparent),radial-gradient(1px 1px at 89% 9%,#fff,transparent),radial-gradient(1px 1px at 6% 34%,#fff,transparent),radial-gradient(1.2px 1.2px at 53% 36%,#fff,transparent),
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(92,196,255,.16),transparent 60%),linear-gradient(180deg,#0b1020,#16203a 70%)!important;
+  color:var(--pt-tx)!important;font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;transition:opacity .25s ease!important}
+html[data-tema="claro"] body #ep-atualizando{--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60,67,.72);--pt-tx3:rgba(60,60,67,.46);--pt-ac:#0a74c9;--pt-trilho:rgba(0,0,0,.1);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%23c9def3' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%23a9cbed' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%238fb8e0' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(255,255,255,.6),transparent 60%),linear-gradient(180deg,#bfe3ff,#eef7ff 70%)!important}
+:root:root body #ep-atualizando{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;cursor:progress}
+:root:root body #ep-atualizando .ep-at-c{gap:14px;transform:translateY(-10vh)}
+:root:root body #ep-atualizando .ep-at-sp{display:none!important}
+:root:root body #ep-atualizando .ep-at-ic{width:72px;height:72px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(160deg,#5cc4ff,#3a7bd5);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+:root:root body #ep-atualizando .ep-at-ic svg{width:40px;height:40px}
+:root:root body #ep-atualizando .ep-at-t{margin:6px 0 0!important;font:600 20px/1.2 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;letter-spacing:-.01em!important;color:var(--pt-tx)}
+:root:root body #ep-atualizando .ep-at-br{width:240px!important;height:4px!important;border-radius:2px!important;background:var(--pt-trilho)!important;margin:0!important}
+:root:root body #ep-atualizando .ep-at-br>i{background:var(--pt-ac)!important;border-radius:2px!important}
+:root:root body #ep-atualizando .ep-at-pc{flex-direction:column;align-items:center;gap:2px;color:var(--pt-tx2)!important;font:400 13px "Inter","Segoe UI",system-ui,sans-serif!important}
+:root:root body #ep-atualizando .ep-at-pc b{color:var(--pt-tx3)!important;font-weight:500!important;font-size:12px}
+:root:root body #ep-atualizando .ep-at-pc span{color:var(--pt-tx2)!important}
 /* --- NOTIFICAÇÃO DE VERSÃO NOVA (em cima, à direita): Atualizar / Fechar; atualizar é opcional --- */
 .ep-notif-v{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.4);--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-texto:#04223a;
   position:fixed;z-index:2147483004;top:64px;right:16px;width:min(360px,calc(100vw - 32px));box-sizing:border-box;padding:16px;background:var(--ce-elevado);color:var(--ce-texto);border:1px solid var(--ce-linha);border-radius:14px;
@@ -1255,7 +1275,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function atualizarTudo(extras = []) {
     // tela no meio do site (igual à de carregamento): bloqueia cliques e teclas enquanto baixa, com a barra, a % e quantos arquivos faltam
     const aviso = document.createElement('div'); aviso.id = 'ep-atualizando'; aviso.setAttribute('role', 'status'); aviso.setAttribute('aria-live', 'polite');
-    aviso.innerHTML = '<div class="ep-at-c"><div class="ep-at-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div class="ep-at-t">Atualizando</div><div class="ep-at-br"><i></i></div><div class="ep-at-pc"><b>0%</b><span>procurando os arquivos…</span></div></div>';
+    aviso.innerHTML = '<div class="ep-at-c"><div class="ep-at-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div class="ep-at-ic" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M32 8 52 19.5v25L32 56 12 44.5v-25Z"/><path d="M12 19.5 32 31l20-11.5M32 31v25"/></svg></div><div class="ep-at-t">Atualizando o Estúdio</div><div class="ep-at-br"><i></i></div><div class="ep-at-pc"><b>0%</b><span>procurando os arquivos…</span></div></div>';
     const est = document.createElement('style'); est.textContent = '#ep-atualizando{position:fixed;inset:0;z-index:2147483647;background:rgba(8,9,12,.5);-webkit-backdrop-filter:blur(16px) saturate(.9);backdrop-filter:blur(16px) saturate(.9);display:flex;align-items:center;justify-content:center;font:14px/1.5 \'Segoe UI\',system-ui,sans-serif;color:#f1f2f4;cursor:progress;-webkit-user-select:none;user-select:none;animation:epAtEntra .25s ease both}'
       + '#ep-atualizando .ep-at-c{display:grid;justify-items:center}#ep-atualizando .ep-at-sp{position:relative;width:46px;height:46px}#ep-atualizando .ep-at-sp i{position:absolute;inset:0;opacity:0;animation:epAtGira 4.4s infinite}#ep-atualizando .ep-at-sp i::after{content:\'\';position:absolute;top:0;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff}'
       + [0, 1, 2, 3, 4].map(n => `#ep-atualizando .ep-at-sp i:nth-child(${n + 1}){animation-delay:${(n * .22).toFixed(2)}s}`).join('')

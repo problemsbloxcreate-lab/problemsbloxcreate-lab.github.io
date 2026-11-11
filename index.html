@@ -807,8 +807,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 
 /* ===== tudo com cantos retos (pedido da dona): menos os ícones dos programas ===== */
 /* CELESTE: no menu com html.cel (cabeçalho e menu) os cantos voltam; ADM, janelas e login continuam retos até a vez deles */
-:is(#adm,.modal,.toast) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
-html:not(.cel) :is(#top,#menu,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+:is(#adm) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+html:not(.cel) :is(#top,#menu,#saida,.login,.modal,.toast) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
 /* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
 #adm #ic-salvar,#adm #niv-salvar{display:none!important}
 
@@ -921,12 +921,12 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
    - Cabeçalho igual ao dos programas (ESTÚDIO PROBLEMS); relógio e data grandes saem (ficam no Calendário).
    - Programas: ícone grande com o nome embaixo, em grade, sem bloco atrás. Só a saudação curta. Mensagens sai.
    As camadas antigas usam #menu/#top e !important: por isso o prefixo html.cel body e o !important aqui. */
-html.cel{--vidro-cartao:rgba(36,36,40,.52);--vidro-cartao-2:rgba(52,52,58,.62);--veu-fundo:rgba(10,10,12,.5)}
-html.cel[data-tema="claro"]{--vidro-cartao:rgba(255,255,255,.55);--vidro-cartao-2:rgba(255,255,255,.75);--veu-fundo:rgba(245,245,247,.45)}
+html.cel{--vidro-cartao:rgba(30,30,34,.55);--vidro-cartao-2:rgba(46,46,52,.66);--veu-fundo:linear-gradient(180deg,rgba(10,12,18,.35),rgba(10,12,18,.6) 55%,rgba(10,12,18,.75))}
+html.cel[data-tema="claro"]{--vidro-cartao:rgba(255,255,255,.6);--vidro-cartao-2:rgba(255,255,255,.8);--veu-fundo:linear-gradient(180deg,rgba(245,245,247,.2),rgba(245,245,247,.55) 55%,rgba(245,245,247,.7))}
 html.cel body{font-family:var(--fonte)!important;color:var(--texto);-webkit-font-smoothing:antialiased}
 /* fundo: foto desfocada + véu */
 html.cel body #pagebg{background:var(--fundo)!important}
-html.cel body #pagebg img{filter:blur(36px) saturate(1.15)!important;transform:scale(1.12)!important}
+html.cel body #pagebg img{filter:blur(4px) saturate(1.1)!important;transform:scale(1.04)!important}
 html.cel body #pagebg::after{background:var(--veu-fundo)!important}
 /* ---------- cabeçalho ---------- */
 html.cel body #top{height:var(--alt-cabecalho)!important;min-height:0!important;padding:0 var(--e4)!important;flex-wrap:nowrap!important;gap:var(--e3)!important;
@@ -1040,6 +1040,41 @@ html.cel body .login .lcard .msg .spin{width:240px!important;height:4px!importan
 html.cel body .login .lcard .msg .spin i{background:var(--pt-ac)!important;border-radius:2px!important}
 html.cel body .login .lcard .ep-pc2 [data-ep-arq]{display:none!important}
 html.cel body .login .lcard .link{color:var(--pt-tx3)!important;font:500 12px var(--fonte)!important}
+/* ===== MENU: revisão de coesão (11/11/2026, pedido da dona) ===== */
+/* títulos das seções alinhados com os botões ao lado (antes "Organizar" ficava mais baixo) */
+html.cel body #menu .progs-cab{display:flex!important;align-items:center!important;gap:var(--e3)!important;margin:0 0 var(--e3)!important;min-height:28px}
+html.cel body #menu .progs-cab h2{margin:0!important;line-height:28px!important}
+html.cel body #menu .mn-grupo>h2{line-height:28px!important}
+/* programas: o selo ("Em teste", "Externo") fica em cima, sem cobrir o ícone; o ícone de "parte de" (An no Ateliê) fica no canto, com contorno */
+html.cel body #menu .card{height:128px!important}
+html.cel body #menu .card .ic,html.cel body #menu .grid[data-densidade] .card .ic{top:46%!important}
+html.cel body #menu .card .tag,html.cel body #menu .card .tag-adm{top:2px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;height:16px;line-height:16px!important;padding:0 6px!important;white-space:nowrap;z-index:2}
+html.cel body #menu .card .tag-adm~.tag.teste,html.cel body #menu .card .tag.teste:has(~.tag-adm){top:2px!important}
+html.cel body #menu .card .parte{position:absolute!important;left:calc(50% + 18px)!important;top:calc(46% + 14px)!important;right:auto!important;bottom:auto!important;transform:none!important;width:22px!important;height:22px!important;border-radius:6px!important;overflow:hidden;box-shadow:0 0 0 2px rgba(0,0,0,.45)!important;z-index:2}
+html.cel body #menu .card .parte>*,html.cel body #menu .card .parte svg{width:22px!important;height:22px!important;display:block}
+html.cel body #menu .card .fixar{top:4px!important;left:4px!important;width:26px!important;height:26px!important;border:0!important;background:var(--vidro-cartao-2)!important;color:var(--texto)!important;z-index:3}
+/* meus projetos: cartões ocupam a largura toda; a barra de rolagem fica colada neles */
+html.cel body #menu #rec{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important;grid-auto-rows:auto!important;max-height:min(520px,60vh)!important;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--fundo-4) transparent}
+html.cel body #menu #rec>*{grid-column:auto!important;width:auto!important;min-height:112px}
+html.cel body #menu #rec>:only-child:not(a){grid-column:1/-1!important}
+html.cel body #menu #rec .pg{border-radius:6px!important;overflow:hidden}
+/* selo ADM do cabeçalho: pílula igual às outras etiquetas */
+html.cel body #top .badge{border:0!important;height:20px;line-height:20px!important;padding:0 8px!important}
+/* JANELAS do menu (Novo atalho e as outras): janela Celeste no centro */
+html.cel body .modal{background:var(--veu)!important;-webkit-backdrop-filter:blur(4px)!important;backdrop-filter:blur(4px)!important}
+html.cel body .modal .mc{background:var(--elevado)!important;color:var(--texto)!important;border:0!important;border-radius:var(--raio-janela)!important;box-shadow:var(--sombra-3)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:var(--e5)!important;font-family:var(--fonte)!important}
+html.cel body .modal .mc h3{font:600 var(--t-titulo)/1.2 var(--fonte)!important;color:var(--texto)!important;margin:0 0 var(--e3)!important}
+html.cel body .modal .mc .hint,html.cel body .modal .mc label{color:var(--texto-2)!important;font:500 var(--t-pequeno) var(--fonte)!important;text-transform:none!important;letter-spacing:0!important}
+html.cel body .modal .mc p.hint{color:var(--texto-3)!important;font-weight:400!important}
+html.cel body .modal .mc :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea){background:var(--fundo-3)!important;color:var(--texto)!important;border:1px solid transparent!important;border-radius:var(--raio-controle)!important;min-height:36px;padding:0 var(--e3)!important;font:400 var(--t-corpo) var(--fonte)!important;box-shadow:none!important;outline:none}
+html.cel body .modal .mc :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea):focus{border-color:var(--acento)!important;box-shadow:0 0 0 3px var(--acento-suave)!important}
+html.cel body .modal .mc .at-cor{width:32px!important;height:32px!important;border-radius:var(--raio-controle)!important;border-width:2px!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+html.cel body .modal .mc .btn,html.cel body .modal .mc button.btn{height:var(--alt-controle)!important;padding:0 var(--e3)!important;border:0!important;border-radius:var(--raio-controle)!important;background:var(--fundo-3)!important;color:var(--texto)!important;font:500 var(--t-corpo) var(--fonte)!important;box-shadow:none!important}
+html.cel body .modal .mc .btn:hover{background:var(--fundo-4)!important}
+html.cel body .modal .mc .btn.primary{background:var(--acento)!important;color:var(--acento-texto)!important;font-weight:600!important}
+html.cel body .modal .mc .btn.danger,html.cel body .modal .mc .btn.perigo{background:var(--perigo)!important;color:#fff!important}
+/* aviso curto do menu: embaixo, no centro, igual aos programas */
+html.cel body .toast{background:var(--elevado)!important;color:var(--texto)!important;border:1px solid var(--linha)!important;border-radius:10px!important;box-shadow:var(--sombra-2)!important;font:400 var(--t-corpo) var(--fonte)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 @media (prefers-reduced-transparency:reduce){html.cel body #menu :is(.et,.blocos>*){-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--fundo-2)!important}}
 </style>
 </head>
@@ -1314,10 +1349,12 @@ const MSG_PADRAO = { boasVindas: 'Bem-vindo(a) de volta à equipe do Problems! E
   'Errou? Ctrl+Z e bora de novo. 💪', 'Ideia boa é ideia anotada.', 'A equipe Problems faz acontecer! 🚀', 'Bloco por bloco, a gente constrói tudo. ⛏️'] };
 /* FOTOS DO ESTÚDIO (05/11/2026): fundo padrão do menu, no lugar do vídeo. Licença do Unsplash (uso livre): Linh Pham e Csaba (unsplash.com).
    A ADM › Fundo escolhe a primeira (padrão), aleatória ou slideshow; vídeo não entra mais no fundo nem nos cartões. */
-const FOTOS_ESTUDIO = [{ tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
+const FOTO_MONTANHA = { tipo: 'imagem', src: '/fundo-montanha.jpg', x: 50, y: 40, zoom: 1, blur: 0, nome: 'Montanha (Celeste)', credito: 'Rohit Tandon · Unsplash' }; // 2.0 Celeste (11/11/2026): Ama Dablam, Nepal; licença do Unsplash (uso livre)
+const FOTOS_ESTUDIO = [FOTO_MONTANHA, { tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
   { tipo: 'imagem', src: '/fundo-margarida-2.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Margarida sozinha', credito: 'Csaba · Unsplash' }];
 const fundoPadrao = () => ({ modo: 'um', intervalo: 30, escurecer: .08, itens: JSON.parse(JSON.stringify(FOTOS_ESTUDIO)) });
 function soImagens(f) { const itens = (f?.itens || []).filter(m => m?.src && m.tipo !== 'video'); return itens.length ? { ...f, itens, modo: f.modo === 'nenhum' ? 'um' : f.modo } : { ...fundoPadrao(), ...(f?.modo && f.modo !== 'nenhum' ? { modo: f.modo } : {}), ...(f?.intervalo ? { intervalo: f.intervalo } : {}) }; } // sem imagem salva: as fotos do Estúdio, no modo escolhido (slideshow continua slideshow)
+{ const soImagensAntes = soImagens; soImagens = f => { const r = soImagensAntes(f); if (document.documentElement.classList.contains('cel') && r?.itens?.[0]?.src === '/fundo-margarida.jpg') r.itens = [JSON.parse(JSON.stringify(FOTO_MONTANHA)), ...r.itens.filter(x => x.src !== FOTO_MONTANHA.src)]; return r; }; } // CELESTE: fundo padrão = montanha
 const padrao = () => ({ mensagens: JSON.parse(JSON.stringify(MSG_PADRAO)), links: MENU_CONFIG.projetos.map(p => ({ nome: p.nome, desc: p.desc || '', url: p.url || null, icone: p.icone || p.id, fundo: null, escurecer: .45 })), fundo: fundoPadrao() });
 // PREPARATIVOS (05/11/2026): enquanto a ADM não puser o cartão no menu, ele entra no fim (salvar a ADM › Menu guarda ele junto)
 const comCentral = ls => (ls || []).some(l => RE_CENTRAL.test(String(l.url || ''))) ? ls : [...(ls || []), { nome: 'Central de Jogos', desc: 'Outro site da Problems', url: URL_CENTRAL, icone: 'jogo', fundo: null, escurecer: .45 }];

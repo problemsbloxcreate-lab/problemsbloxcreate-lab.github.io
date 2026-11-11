@@ -8,7 +8,7 @@ name: Publicar o porteiro (Cloudflare)
 on:
   push:
     branches: [main]
-    paths: ["porteiro/**", "index.html", "404.html", "permissoes.json", "estudio-login.js", "estudio-conta.js", "estudio-carregando.js", "estudio-icones.js", "estudio-edicao.js", "estudio-youtube.js", "favicon.svg", "favicon.ico", "icone-180.png", "fundo-margarida.jpg", "fundo-margarida-2.jpg", "estudio-visual.css", "estudio-inter.woff2", "estudio-sw.js", ".github/workflows/porteiro.yml"]
+    paths: ["porteiro/**", "index.html", "404.html", "permissoes.json", "estudio-login.js", "estudio-conta.js", "estudio-carregando.js", "estudio-icones.js", "estudio-edicao.js", "estudio-youtube.js", "favicon.svg", "favicon.ico", "icone-180.png", "fundo-margarida.jpg", "fundo-margarida-2.jpg", "estudio-visual.css", "estudio-inter.woff2", "estudio-sw.js", "fundo-montanha.jpg", ".github/workflows/porteiro.yml"]
   workflow_dispatch: {}
 
 permissions:
@@ -42,7 +42,7 @@ jobs:
           node -e "new Function(require('fs').readFileSync('estudio-youtube.js','utf8'))"
           node -e "const E=require('./estudio-edicao.js');if(!E.legendas.gera({texto:'teste de legenda',d:1}).blocos.length)process.exit(1);console.log('edicao ok')"
           cmp index.html 404.html || { echo "::error::index.html e 404.html precisam ser iguais (o 404.html é cópia do menu)."; exit 1; }
-          mkdir -p dist && cp index.html 404.html permissoes.json estudio-login.js estudio-conta.js estudio-carregando.js estudio-icones.js estudio-edicao.js estudio-youtube.js favicon.svg favicon.ico icone-180.png fundo-margarida.jpg fundo-margarida-2.jpg estudio-visual.css estudio-inter.woff2 estudio-sw.js dist/
+          mkdir -p dist && cp index.html 404.html permissoes.json estudio-login.js estudio-conta.js estudio-carregando.js estudio-icones.js estudio-edicao.js estudio-youtube.js favicon.svg favicon.ico icone-180.png fundo-margarida.jpg fundo-margarida-2.jpg estudio-visual.css estudio-inter.woff2 estudio-sw.js fundo-montanha.jpg dist/
           ls -la dist
       - name: Conferir os segredos
         id: seg
