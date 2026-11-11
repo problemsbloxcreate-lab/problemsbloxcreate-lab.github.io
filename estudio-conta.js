@@ -945,6 +945,7 @@ html[data-tema="claro"] .ep-notif-v{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-te
 @keyframes epNvEntra{from{opacity:0;transform:translateX(calc(100% + 24px))}}
 .ep-notif-v .nv-t{display:flex;gap:12px;align-items:flex-start}
 .ep-notif-v .nv-ic{width:36px;height:36px;border-radius:9px;overflow:hidden;flex:none}.ep-notif-v .nv-ic svg{width:36px;height:36px;display:block}
+.ep-notif-v .nv-ep{width:36px;height:36px;display:grid;place-items:center;background:linear-gradient(160deg,#5cc4ff,#3a7bd5);color:#fff}.ep-notif-v .nv-ep svg{width:20px!important;height:20px!important;fill:none;stroke:currentColor;stroke-width:1.9}
 .ep-notif-v .nv-tx{flex:1;min-width:0}.ep-notif-v .nv-tx b{display:block;font-weight:600}.ep-notif-v .nv-tx small{display:block;color:var(--ce-texto-3);font-size:12px;margin-top:2px}
 .ep-notif-v .nv-tx em{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:6px;background:rgba(255,159,10,.16);color:#ff9f0a;font:600 11px var(--ce-fonte);font-style:normal}
 .ep-notif-v .nv-x{width:28px;height:28px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ce-texto-2);cursor:pointer}.ep-notif-v .nv-x:hover{background:var(--ce-fundo-3)}.ep-notif-v .nv-x svg{width:14px;height:14px}
@@ -2315,47 +2316,51 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       const urls = [location.pathname, ...performance.getEntriesByType('resource').map(x => x.name)]; sw.postMessage({ guardar: guardaDono, urls }); } catch { } }, 1500), { once: true });
   }
   function avisoCurto(t) { const d = document.createElement('div'); d.className = 'ep-conta-aviso'; d.setAttribute('role', 'status'); d.textContent = t; document.body.appendChild(d); setTimeout(() => { d.style.transition = 'opacity .3s'; d.style.opacity = '0'; setTimeout(() => d.remove(), 350); }, 5000); }
-  async function versoesAgora() {
-    const l = [guardaDono, ...GUARDA_ARQS];
-    const res = await fetch('/versoes?u=' + encodeURIComponent(l.join('|')), { credentials: 'same-origin', cache: 'no-store', epFundo: 1 });
-    const j = res.ok ? await res.json().catch(() => null) : null; if (!j?.v) return null;
-    const o = {}; for (const k of l) o[k] = j.v[k] || null; return o;
+  /* VERSÃO GERAL (pedido da dona, 11/11/2026): o Estúdio tem UMA versão só para todos (window.EstudioVersao.nome, no /estudio-carregando.js,
+     ex.: "2.0.1 - Celeste"), não uma por programa. A notificação aparece em QUALQUER página (menu e todos os programas) quando a versão do
+     servidor é diferente da que esta página está usando. Atualizar é OPCIONAL: só o botão Atualizar (ou a chave "Atualizar sozinho") troca.
+     Versão importante = EstudioVersao.importante: true (a notificação volta a cada abertura até atualizar). */
+  async function versaoDoServidor() {
+    // ?epv= faz o guardião deixar passar (vai sempre à internet) e o navegador não usa a cópia guardada
+    const r = await fetch('/estudio-carregando.js?epv=' + Date.now(), { cache: 'no-store', credentials: 'same-origin', epFundo: 1 }); if (!r.ok) return null;
+    const t = await r.text(), i = t.indexOf('window.EstudioVersao ||='), j = t.indexOf('window.ESTUDIO_VERSAO', i); if (i < 0 || j < 0) return null;
+    try { const fake = {}; new Function('window', t.slice(i, j))(fake); return fake.EstudioVersao || null; } catch { return null; }
   }
   async function conferenciaGuarda() {
-    if (!guardaAtiva()) return;
-    const K = 'ep-guardado:' + guardaDono; let antes = null; try { antes = JSON.parse(localStorage.getItem(K) || 'null'); } catch { }
-    let agora = null; try { agora = await versoesAgora(); } catch { } if (!agora) return; // sem internet: segue com o que está guardado
-    if (!antes) { try { localStorage.setItem(K, JSON.stringify(agora)); } catch { } return; } // primeira vez: o que acabou de ser guardado é esta versão
-    const mudou = Object.keys(agora).some(k => agora[k] && antes[k] && agora[k] !== antes[k]); if (!mudou) return;
-    let info = {}; try { const rv = await fetch(guardaDono + 'versao.json', { cache: 'no-store', credentials: 'same-origin', epFundo: 1 }); if (rv.ok) info = await rv.json(); } catch { }
-    const id = 'v:' + guardaDono + ':' + (agora[guardaDono] || '') + ':' + (agora['/estudio-conta.js'] || '');
-    const n = { id, prog: guardaDono, titulo: (GUARDA_PROGS[guardaDono] || 'Programa') + (info.nome ? ' ' + info.nome : '') + ': versão nova', itens: Array.isArray(info.novidades) ? info.novidades.slice(0, 5).map(String) : [], importante: !!info.importante, em: Date.now(), nova: true };
-    guardaNotif(n); document.querySelectorAll('.ep-conta').forEach(b => b.classList.add('ep-novo'));
-    if (sozinho()) { await atualizaPrograma(guardaDono, false); return; } // chave ligada: a próxima abertura já vem com a versão nova
+    conferenciaGuarda.t = Date.now();
+    const local = window.EstudioVersao; if (!local?.nome) return;
+    let srv = null; try { srv = await versaoDoServidor(); } catch { } if (!srv?.nome || srv.nome === local.nome) return; // sem internet ou igual: nada a fazer
+    const itens = (Array.isArray(srv.novidades) ? srv.novidades : []).flatMap(x => Array.isArray(x?.[1]) ? x[1] : []).slice(0, 4).map(String);
+    const id = 'v:' + srv.nome;
+    const n = { id, prog: '*', titulo: 'Estúdio Problems ' + srv.nome, itens, importante: !!srv.importante, em: Date.now(), nova: true, versao: srv.nome };
+    if (!notifs().some(x => x.id === id && x.feito)) guardaNotif(n);
+    document.querySelectorAll('.ep-conta').forEach(b => b.classList.add('ep-novo'));
+    if (sozinho()) { await atualizaTudoGuardado(false); return; } // chave ligada: a próxima abertura já vem com a versão nova
     let fechou = false; try { fechou = sessionStorage.getItem('ep-notif-fechada:' + id) === '1' || (!n.importante && localStorage.getItem('ep-notif-fechada:' + id) === '1'); } catch { }
     if (!fechou) mostraNotifVersao(n);
   }
-  async function atualizaPrograma(dono, recarregar = true) {
-    try { const c = navigator.serviceWorker?.controller; if (c) c.postMessage({ apagar: dono }); } catch { }
-    try { await caches.delete('ep-p:' + dono); } catch { }
-    try { localStorage.removeItem('ep-guardado:' + dono); } catch { }
-    try { const L = notifs().map(x => x.prog === dono && x.nova ? { ...x, nova: false, feito: Date.now() } : x); localStorage.setItem(NOTIFS_K, JSON.stringify(L)); } catch { }
-    if (recarregar) { if (location.pathname.startsWith(dono)) location.reload(); else location.href = dono; }
+  // Atualizar = apaga as cópias guardadas de TODOS os programas (a versão é uma só) e recarrega esta página
+  async function atualizaTudoGuardado(recarregar = true) {
+    try { for (const k of await caches.keys()) if (k.startsWith('ep-p:')) await caches.delete(k); } catch { }
+    try { const L = notifs().map(x => x.nova ? { ...x, nova: false, feito: Date.now() } : x); localStorage.setItem(NOTIFS_K, JSON.stringify(L)); } catch { }
+    if (recarregar) location.reload();
   }
+  const atualizaPrograma = () => atualizaTudoGuardado();
   function mostraNotifVersao(n) {
     document.querySelector('.ep-notif-v')?.remove();
     const d = document.createElement('div'); d.className = 'ep-notif-v'; d.setAttribute('role', 'status');
-    const ic = (() => { try { const k = { '/preparativos/': 'pr', '/publicacoes/': 'x-publicacoes' }[n.prog]; return k && window.EstudioIcones?.svg ? window.EstudioIcones.svg(k, 36) : ''; } catch { return ''; } })();
-    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(n.titulo) + '</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você continua na versão que tem até atualizar.</small>') + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
+    const ic = '<span class="nv-ep">' + (ICONES.estudio || ICONES.atualizar) + '</span>';
+    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(n.titulo) + ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>') + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
       + (n.itens.length ? '<ul>' + n.itens.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>' : '')
       + '<div class="nv-b"><button type="button" class="nv-f">Fechar</button><button type="button" class="nv-a">Atualizar</button></div>';
     const fecha = () => { try { (n.importante ? sessionStorage : localStorage).setItem('ep-notif-fechada:' + n.id, '1'); } catch { } d.classList.add('sai'); setTimeout(() => d.remove(), 250); };
     d.querySelector('.nv-x').onclick = fecha; d.querySelector('.nv-f').onclick = fecha;
-    d.querySelector('.nv-a').onclick = () => { d.querySelector('.nv-a').textContent = 'Atualizando…'; atualizaPrograma(n.prog); };
+    d.querySelector('.nv-a').onclick = () => { d.querySelector('.nv-a').textContent = 'Atualizando…'; atualizaTudoGuardado(); };
     document.body.appendChild(d);
   }
-  if (guardaDono) addEventListener('load', () => setTimeout(() => conferenciaGuarda().catch(() => { }), 2500), { once: true });
-  if (guardaDono) document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - (conferenciaGuarda.t || 0) > 15 * 60e3) { conferenciaGuarda.t = Date.now(); conferenciaGuarda().catch(() => { }); } });
+  // em QUALQUER página (menu e programas), um pouco depois de abrir e quando a aba volta a aparecer (no máximo a cada 15 min)
+  if (window.top === window) addEventListener('load', () => setTimeout(() => conferenciaGuarda().catch(() => { }), 3000), { once: true });
+  if (window.top === window) document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - (conferenciaGuarda.t || 0) > 15 * 60e3) conferenciaGuarda().catch(() => { }); });
   // seção NOTIFICAÇÕES do painel Sua conta
   function htmlNotifs() {
     const L = notifs();
@@ -2365,7 +2370,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   function ligaNotifs(pop) {
     pop.querySelector('.nf-limpa')?.addEventListener('click', () => { try { localStorage.setItem(NOTIFS_K, '[]'); } catch { } const el = pop.querySelector('.ep-nf'); if (el) el.outerHTML = htmlNotifs(); ligaNotifs(pop); });
-    pop.querySelectorAll('[data-nf-at]').forEach(b => b.onclick = () => { b.textContent = 'Atualizando…'; atualizaPrograma(b.dataset.nfAt); });
+    pop.querySelectorAll('[data-nf-at]').forEach(b => b.onclick = () => { b.textContent = 'Atualizando…'; atualizaTudoGuardado(); });
     const ch = pop.querySelector('.nf-chave'); if (ch) ch.onchange = () => { try { localStorage.setItem(SOZINHO_K, ch.checked ? '1' : '0'); } catch { } };
   }
   async function confereVersao(primeira) {
@@ -2387,7 +2392,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         let v = null; try { const r = await fetch('/versoes?u=' + encodeURIComponent(l2.join('|')), { credentials: 'same-origin', cache: 'no-store', epFundo: 1 }); const j = r.ok ? await r.json().catch(() => null) : null; v = j?.v || null; } catch { }
         if (v) { for (const u of l2) { const a = v[u]; if (!a) continue; const k = 'v:' + u;
             if (!VERSAO.base.has(k)) { VERSAO.base.set(k, a); continue; } if (VERSAO.base.get(k) === a) continue;
-            if (telaDeCarregamento() && (await recarregaJa())) return; marcaNova(u); return; }
+            /* Celeste: atualizar é opcional, não recarrega sozinho */ marcaNova(u); return; }
           return; }
       }
       // a página acabou de vir do porteiro (ou ele disse "não mudou") ao abrir: ela já é a mais nova, não precisa pedir de novo (06/11/2026)
@@ -2406,7 +2411,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         // mudou: confere mais uma vez (página que muda sozinha a cada pedido não conta)
         let de_novo; try { de_novo = await digital(u, 'no-cache'); } catch { }
         if (de_novo !== agora) { VERSAO.instavel.add(u); continue; }
-        if (telaDeCarregamento() && (await recarregaJa())) return;
+        /* Celeste: atualizar é opcional, não recarrega sozinho */
         marcaNova(u);
       }
     } finally { VERSAO.rodando = false; }

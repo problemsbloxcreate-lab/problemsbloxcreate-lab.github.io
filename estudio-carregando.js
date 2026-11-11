@@ -27,6 +27,9 @@
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
 window.EstudioVersao ||= { nome: '1.3 - Flower Field', em: '10/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
+  /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
+     a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
+     consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
     ['Programas novos', ['Cérebro: a memória da equipe e das IAs, com uma página para cada programa.', 'Músicas: o álbum de sons da equipe, com envio, lixeira e espaço usado.']],
     ['Nuvem', ['Plano pago de 5 GB, com tudo num lugar só e uma pausa de aviso antes de qualquer cobrança.', 'Os sons antigos agora ficam na nuvem principal, conferidos um por um, sem mudar nenhum projeto.', 'Sons grandes (mais de 10 MB) já podem ser enviados.', 'O espaço na nuvem voltou a aparecer, conta os sons e ganhou o botão Atualizar.']],

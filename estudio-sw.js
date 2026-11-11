@@ -43,6 +43,7 @@ let ultimaRenova = 0;
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET' || !PILOTO.length) return;
   let u; try { u = new URL(r.url); } catch { return; }
+  if (u.searchParams.has('epv')) return; // ?epv= = conferência da versão do Estúdio: sempre da internet
   if (u.origin !== location.origin || NUNCA.test(u.pathname) || /\.json$/i.test(u.pathname)) return;
   if (r.mode === 'navigate') {
     const dono = donoDe(u.pathname); if (!dono || !(u.pathname.endsWith('/') || /\.html?$/i.test(u.pathname))) return;
