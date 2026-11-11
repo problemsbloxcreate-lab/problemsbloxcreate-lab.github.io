@@ -1062,6 +1062,41 @@ html.cel body .login>*{position:relative;z-index:1}
 html.cel:not([data-tema="claro"]) body .login :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){html.cel body .login::before{animation:none}}
+/* ===== REGRA ÚNICA DE JANELAS (11/11/2026, pedido da dona: "por que umas abrem na lateral e outras não?") =====
+   - PAINEL na lateral direita, de cima a baixo: tudo que é ajuste, formulário ou lista (Clima, Novo atalho, Minha conta, Perfil e fundo…), igual ao Sua conta.
+   - CAIXA no centro: só perguntas curtas (sim/não, apagar, sair), as .mc.pergunta. */
+html.cel body .modal:not(:has(.pergunta)){display:flex!important;justify-content:flex-end!important;align-items:stretch!important;padding:0!important}
+html.cel body .modal:not(:has(.pergunta)) .mc{width:min(440px,100%)!important;max-width:100%!important;height:100%!important;max-height:none!important;margin:0!important;border-radius:0!important;border-left:1px solid var(--linha)!important;overflow:auto;display:flex;flex-direction:column;animation:mcPainel .3s cubic-bezier(.1,.9,.2,1) both!important}
+html.cel body .modal:not(:has(.pergunta)) .mc>h3:first-child{margin:-24px -24px 16px!important;padding:0 24px;height:52px;display:flex;align-items:center;border-bottom:1px solid var(--linha);font:600 17px var(--fonte)!important}
+html.cel body .modal:has(.pergunta) .mc{animation:mcAlerta .2s ease both}
+@keyframes mcPainel{from{transform:translateX(32px);opacity:0}}
+@keyframes mcAlerta{from{transform:scale(.96);opacity:0}}
+@media (prefers-reduced-motion:reduce){html.cel body .modal .mc{animation:none!important}}
+/* painel com cabeçalho próprio (.mc-painel): título + X, corpo que rola, rodapé com a ação principal */
+html.cel body .modal .mc.mc-painel{padding:0!important}
+html.cel body .mc-painel .mp-cab{display:flex;align-items:center;gap:8px;height:52px;flex:none;padding:0 12px 0 24px;border-bottom:1px solid var(--linha)}
+html.cel body .mc-painel .mp-cab h3{flex:1;margin:0!important;font:600 17px var(--fonte)!important}
+html.cel body .mc-painel .mp-x{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--texto-2);cursor:pointer}
+html.cel body .mc-painel .mp-x:hover{background:var(--fundo-3);color:var(--texto)}
+html.cel body .mc-painel .mp-corpo{flex:1;overflow:auto;padding:8px 20px 20px}
+html.cel body .mc-painel .mp-tit{margin:18px 4px 8px;font:600 13px var(--fonte);color:var(--texto-2)}
+html.cel body .mc-painel .mp-grupo{display:block!important;background:var(--fundo-2);border-radius:var(--raio-cartao);overflow:hidden}
+html[data-tema="claro"].cel body .mc-painel .mp-grupo{background:#f5f5f7}
+html.cel body .mc-painel .mp-lin{display:flex!important;align-items:center;gap:12px;min-height:46px;padding:0 14px;border-top:1px solid var(--linha);font:400 15px var(--fonte);color:var(--texto);cursor:pointer}
+html.cel body .mc-painel .mp-lin:first-child{border-top:0}
+html.cel body .mc-painel .mp-lin>span{flex:1}
+html.cel body .mc-painel .mp-lin:hover{background:var(--fundo-3)}
+html.cel body .mc-painel .mp-chave{-webkit-appearance:none;appearance:none;width:42px;height:26px;margin:0;border-radius:999px!important;background:var(--fundo-4);position:relative;cursor:pointer;transition:background .25s;flex:none}
+html.cel body .mc-painel .mp-chave::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .25s cubic-bezier(.1,.9,.2,1)}
+html.cel body .mc-painel .mp-chave:checked{background:var(--sucesso)}
+html.cel body .mc-painel .mp-chave:checked::after{transform:translateX(16px)}
+html.cel body .mc-painel .mp-busca{display:flex;align-items:center;gap:8px;height:40px;padding:0 6px 0 12px;background:var(--fundo-3);border:1px solid transparent;border-radius:var(--raio-controle);color:var(--texto-3)}
+html.cel body .mc-painel .mp-busca:focus-within{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-suave)}
+html.cel body .mc-painel .mp-busca input{flex:1;min-width:0;height:100%!important;min-height:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--texto)!important;font:400 15px var(--fonte)!important}
+html.cel body .mc-painel .mp-res{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;color:var(--texto-3);font-size:13px}
+html.cel body .mc-painel .mp-res .btn{margin:0!important;border-radius:999px!important}
+html.cel body .mc-painel .mp-pe{flex:none;display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;border-top:1px solid var(--linha)}
+html.cel body .mc-painel .mp-pe .btn{height:36px!important;padding:0 18px!important}
 /* ===== MINHA CONTA / PERFIL E FUNDO (Celeste, 11/11/2026) ===== */
 html.cel body .conta .ct-topo b{font:600 20px/1.2 var(--fonte)!important;color:var(--texto)!important}
 html.cel body .conta .ct-topo small{color:var(--texto-3)!important}
@@ -2170,12 +2205,13 @@ const clima = {
     const sel = new Set(this.cidades().map(x => x.n)), extras = this.cidades().filter(x => !this.PADRAO.some(p => p.n === x.n));
     const d = document.createElement('div'); d.className = 'modal';
     const pinta = () => { const todas = [...this.PADRAO, ...extras];
-      d.innerHTML = `<div class="mc" role="dialog" aria-label="Clima" style="padding:22px;width:min(460px,100%)"><h3 style="margin:0 0 4px;font:300 24px var(--mn-leve)">Clima</h3>
-        <p class="hint" style="margin:0 0 14px">Escolha as cidades do bloco. Fica só neste computador; o tempo vem do Open-Meteo, sem usar a nuvem do Estúdio.</p>
-        <div class="cl-lista">${todas.map(x => `<label class="cl-op"><input type="checkbox" value="${esc(x.n)}" ${sel.has(x.n) ? 'checked' : ''}> ${esc(x.n)}</label>`).join('')}</div>
-        <div style="display:flex;gap:8px;margin-top:14px"><input type="text" id="cl-q" placeholder="Outra cidade (ex.: Recife)" style="flex:1;height:34px;padding:0 10px;border:0;background:#fff;color:#10233a"><button class="btn" id="cl-busca" type="button">Buscar</button></div>
-        <div id="cl-res" class="hint" style="margin-top:8px"></div>
-        <div style="display:flex;gap:8px;margin-top:18px"><span style="flex:1"></span><button class="btn" data-x type="button">Cancelar</button><button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
+      d.innerHTML = `<div class="mc mc-painel" role="dialog" aria-label="Clima"><div class="mp-cab"><h3>Clima</h3><button class="mp-x" data-x type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <div class="mp-corpo"><div class="mp-tit">Cidades no bloco do tempo</div>
+        <div class="cl-lista mp-grupo">${todas.map(x => `<label class="cl-op mp-lin"><span>${esc(x.n)}</span><input type="checkbox" role="switch" class="mp-chave" value="${esc(x.n)}" ${sel.has(x.n) ? 'checked' : ''}></label>`).join('')}</div>
+        <div class="mp-tit">Outra cidade</div>
+        <label class="mp-busca"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="text" id="cl-q" placeholder="Ex.: Recife" autocomplete="off"><button class="btn sm" id="cl-busca" type="button">Buscar</button></label>
+        <div id="cl-res" class="mp-res"></div></div>
+        <div class="mp-pe"><button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
       $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
       $$('.cl-op input', d).forEach(i => i.onchange = () => { i.checked ? sel.add(i.value) : sel.delete(i.value); });
       const buscar = async () => { const q = $('#cl-q', d).value.trim(); if (!q) return; $('#cl-res', d).textContent = 'Procurando…';
