@@ -5,14 +5,6 @@ html.cel{--rocha-1:#4a5570;--rocha-2:#323c55;--rocha-3:#222a3e;--neve:#e9f1fb;--
 html.cel[data-tema="claro"]{--rocha-1:#8293ab;--rocha-2:#64748d;--rocha-3:#4c5a70;--neve:#ffffff;--neve-sombra:#d6e2ef;--serra-1:#b4c9de;--serra-2:#9bb3cc;--estrela:rgba(255,255,255,0);
   --ceu-1:#9fc9ef;--ceu-2:#c9e2f7;--ceu-3:#eef5fb}
 
-/* o cabeçalho antigo do Cérebro vira o Celeste (o resto vem do /estudio-visual.css) */
-html.cel #q{width:240px;height:var(--alt-controle);padding:0 var(--e3);border:1px solid transparent;border-radius:var(--raio-controle);background:var(--fundo-3);color:var(--texto);font:400 var(--t-pequeno) var(--fonte)}
-html.cel #q::placeholder{color:var(--texto-3)}
-html.cel #q:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-suave)}
-html.cel #busca{margin-left:0;position:relative}
-html.cel #prog{top:var(--alt-cabecalho)}
-html.cel .abas em{border-radius:6px;margin-left:6px}
-
 /* só na Montanha: some a tela antiga e a página não rola (quem rola é a montanha) */
 body.mt-on{overflow:hidden;background:linear-gradient(to bottom,var(--ceu-1),var(--ceu-2) 45%,var(--ceu-3))}
 body.mt-on #tela,body.mt-on #barra{display:none}
@@ -20,7 +12,8 @@ body.mt-on #tela,body.mt-on #barra{display:none}
 body.mt-on #montanha{display:block}
 .mt-tela{position:fixed;left:0;top:var(--alt-cabecalho);z-index:1;pointer-events:none;transition:opacity .3s,transform .45s var(--curva-entra)}
 .mt-tela.sai{opacity:0;transform:translateY(24px) scale(.985)}
-.mt-cena{position:fixed;inset:var(--alt-cabecalho) 0 0 0;z-index:2;overflow-y:auto;overflow-x:hidden}
+.mt-cena{position:fixed;inset:var(--alt-cabecalho) 0 0 0;z-index:2;overflow:hidden;touch-action:none;cursor:grab;user-select:none}
+.mt-cena.arrastando{cursor:grabbing!important}
 .mt-cena:focus-visible{outline:none}
 .mt-carrega{position:fixed;inset:var(--alt-cabecalho) 0 0 0;z-index:3;display:grid;place-items:center;color:var(--texto-3);font:500 13px var(--fonte);pointer-events:none}
 
