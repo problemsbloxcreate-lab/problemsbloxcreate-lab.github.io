@@ -1126,7 +1126,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const box = document.createElement('div'); box.className = 'ep-conta' + (MSG.denuncias ? ' ep-denuncia' : '') + (VERSAO.nova ? ' ep-novo' : '') + (MSG.mencoes ? ' ep-mencao' : MSG.nao ? ' ep-msg' : '');
     // redesign (03/11/2026): só a casinha, na mesma pílula, em todos os programas (o nome fica para leitores de tela e na dica)
     const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Programas e Início" aria-label="Programas e Início" aria-haspopup="true">${ICONES.grade || ICONES.inicio}</a>`;
-    const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
+    const nuvemBt = CFG.nuvem !== false ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
     box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i><i class="a" title="Citaram você com @">@</i><i class="d" title="Tem denúncia para os ADMs verem">!</i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
     const btn = box.querySelector('.ep-conta-btn'), pop = box.querySelector('.ep-conta-pop');
@@ -1429,7 +1429,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const K = 'ep-nuvem-uso'; // guardado 15 min (economia, 03/11/2026; antes 5) e o MESMO para todas as abas — 'Medir de novo' mede na hora (cada medida lista a nuvem inteira; o porteiro também guarda)
     if (!novo && NV_MEM.j && Date.now() - NV_MEM.t < 900e3) return completo ? NV_MEM.j : resumoNuvem(NV_MEM.j);
     if (!novo && !completo) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c && Date.now() - c.t < 900e3) return c.j; } catch { } }
-    const tk = await tokenNuvem(); if (!tk) throw new Error('Entre pelo menu para ver a nuvem.');
+    const tk = await tokenNuvem();
+    if (!tk) { try { const c = JSON.parse(localStorage.getItem(K) || 'null'); if (c?.j) return { ...c.j, guardada: true, medidaEm: c.t }; } catch { } throw new Error('Abra o menu uma vez para medir a nuvem.'); }
     const r = await fetch('/nuvem-uso' + (novo ? '?novo=1' : ''), { credentials: 'same-origin', cache: 'no-store', headers: { authorization: tk } }), j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error?.message || 'A nuvem não respondeu.');
     NV_MEM.t = Date.now(); NV_MEM.j = j; try { localStorage.setItem(K, JSON.stringify({ t: Date.now(), j: resumoNuvem(j) })); } catch { }
@@ -1491,7 +1492,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <div class="ep-hoje">${esqueletoHoje()}</div>
         ${legenda}
         <details class="grp sec"><summary><span class="seta">${ICONES.seta || '›'}</span><b>Por programa</b><span class="sp"></span><span class="tam">${P.length} ${P.length === 1 ? 'programa' : 'programas'}</span></summary><div class="grp-l">
-        ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}">${pastaIc(pr.nome)}<div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%;background:${corProg(pr.nome)}"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || '<div class="vazio">A nuvem está vazia.</div>'}</div></details>
+        ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}">${pastaIc(pr.nome)}<div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%;background:${corProg(pr.nome)}"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || (j.guardada ? '<div class="vazio">Para ver o que ocupa, abra este painel pelo menu.</div>' : '<div class="vazio">A nuvem está vazia.</div>')}</div></details>
         <h3>Pastas <small>(a cor é a do programa dono)</small></h3>
         ${P.flatMap(pr => pr.grupos).sort((a, b) => b.bytes - a.bytes).map(g => `<details class="grp"><summary><span class="seta">${ICONES.seta || '›'}</span>${pastaIc(g.projeto)}<b>${esc(g.nome)}</b><span class="sp"></span><span class="tam">${g.n} · ${fmt(g.bytes)}</span></summary>
           ${g.itens.slice(0, 200).map(it => `<div class="linha"><div class="n"><b>${esc(it.nome)}</b><small>${[it.info, it.em ? dataTxt(Date.parse(it.em) || it.em) : ''].filter(Boolean).map(esc).join(' · ')}</small></div>${quemHtml(it)}<span class="tam">${fmt(it.bytes)}</span>
