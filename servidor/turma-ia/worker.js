@@ -1125,10 +1125,11 @@ async function cerebro(req, env, login, path, cors) {
       return ok({ itens: (results || []).map(({ corpo, ...x }) => { const i = String(corpo || '').toLowerCase().indexOf(low); return { ...x, trecho: i >= 0 ? String(corpo).slice(Math.max(0, i - 70), i + 150) : '' }; }) }); }
     if (rota === '/tudo') { if (!adm) return erro('Só ADM ou IA baixa o Cérebro inteiro.', 403, 'adm'); const { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, corpo, url, img, ver, em, por, ia, pedido FROM cerebro_no WHERE apagado = 0').all(); return ok({ itens: results || [] }); }
     // 2.0 Celeste: a "camada leve" que o computador guarda (memórias rápidas, índice com resumos, assuntos, etiquetas e ligações) e o número da última mudança
-    if (rota === '/leve') { const [s, no, ca, as, et, li] = await db.batch([db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca'), db.prepare(`SELECT ${CB_LEVE} FROM cerebro_no`),
+    if (rota === '/leve') { const [s, no, ca, as, et, li, pn] = await db.batch([db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca'), db.prepare(`SELECT ${CB_LEVE} FROM cerebro_no`),
         db.prepare('SELECT id, ordem, texto, aponta, ver, em FROM cerebro_cartao WHERE apagado = 0 ORDER BY ordem, em'), db.prepare('SELECT id, pai, nome, resumo, ver, em FROM cerebro_assunto WHERE apagado = 0'),
-        db.prepare('SELECT no, assunto FROM cerebro_etiqueta'), db.prepare('SELECT de, para, nota FROM cerebro_liga')]);
-      return ok({ seq: s.results?.[0]?.s || 0, itens: cbSemFrio(no.results || []), cartoes: ca.results || [], assuntos: as.results || [], etiquetas: et.results || [], ligas: li.results || [], busca: !!CB.fts }); }
+        db.prepare('SELECT no, assunto FROM cerebro_etiqueta'), db.prepare('SELECT de, para, nota FROM cerebro_liga'), db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'")]);
+      // adm e pedidosNovos: a Montanha do site mostra as abas certas sem precisar baixar a lista inteira (/)
+      return ok({ seq: s.results?.[0]?.s || 0, itens: cbSemFrio(no.results || []), cartoes: ca.results || [], assuntos: as.results || [], etiquetas: et.results || [], ligas: li.results || [], busca: !!CB.fts, adm, pedidosNovos: pn.results?.[0]?.n || 0 }); }
     // só o que mudou depois de "desde" (uma consulta de uma linha quando nada mudou). refazer = mudou demais, baixe /leve de novo.
     if (rota === '/mudou') { const desde = Math.max(0, +q.get('desde') || 0), s = (await db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca').first())?.s || 0;
       if (s <= desde) return ok({ seq: s, nada: true });

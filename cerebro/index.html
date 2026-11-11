@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="cel">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
 <title>CÉREBRO · Estúdio Problems</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">
 <script>
@@ -11,12 +12,17 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 </script>
 <!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
 <script src="/estudio-login.js"></script>
+<link rel="preload" href="/estudio-inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="cerebro.css">
+<!-- 2.0 Celeste: visual comum (cabeçalho, tokens) e a Montanha, depois do CSS antigo -->
+<link rel="stylesheet" href="/estudio-visual.css">
+<link rel="stylesheet" href="montanha.css">
 </head>
 <body>
 <header class="top">
-  <a class="logo" href="./" data-nav="" title="Voltar ao início"><span class="ic-prog" data-estudio-icone="cb" aria-hidden="true"></span><div><b>CÉREBRO</b><small>Estúdio Problems</small></div></a>
+  <a class="logo" href="./" data-nav="" title="Voltar à Montanha"><span class="ic-prog" data-estudio-icone="cb" aria-hidden="true"></span><div><b>CÉREBRO</b><small>Estúdio Problems</small></div></a>
   <nav class="abas" id="abas" aria-label="Seções do Cérebro"></nav>
+  <div class="esp"></div>
   <form id="busca" role="search"><input id="q" type="search" placeholder="Buscar no Cérebro" aria-label="Buscar no Cérebro" autocomplete="off"></form>
   <span data-estudio-conta></span>
 </header>
@@ -24,6 +30,7 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 <main id="tela"></main>
 <footer id="barra" hidden></footer>
 <div id="avisos" aria-live="polite"></div>
+<script src="montanha.js"></script>
 <script src="cerebro.js"></script>
 <script>window.ESTUDIO_CONTA = { token: () => window.EstudioLogin?.token?.() };</script>
 <script src="/estudio-conta.js" defer></script>
