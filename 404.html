@@ -1107,6 +1107,14 @@ html.cel body .modal .mc-painel button.at-cor.on{box-shadow:0 0 0 2px var(--elev
 html.cel body .mc.conta.mc-painel .ct-topo{padding-top:20px}
 html.cel body .mc.conta.mc-painel .ct-corpo{flex:1}
 html.cel body .mc.conta.mc-painel .ct-pe{margin-top:auto;position:sticky;bottom:0;background:inherit;padding:16px 20px}
+html.cel body .conta .ct-cores{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px;padding:12px 14px;background:var(--fundo-2);border-radius:var(--raio-cartao)}
+html.cel body .conta .ct-cor{width:26px;height:26px;padding:0;border:0!important;border-radius:50%!important;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important;transition:transform var(--rapido)}
+html.cel body .conta .ct-cor:hover{transform:scale(1.1)}
+html.cel body .conta .ct-cor.on{box-shadow:0 0 0 2px var(--fundo-2),0 0 0 4px var(--acento)!important}
+html.cel body .conta .ct-tom{flex:1 1 100%;display:block;margin-top:2px}
+html.cel body .conta .ct-tom input{-webkit-appearance:none;appearance:none;width:100%;height:10px;margin:0;border-radius:5px;background:linear-gradient(90deg,#4a1f1f,#4a3a14,#2f4a14,#144a2c,#144a46,#14304a,#1f1f4a,#3a1f4a,#4a1f3a,#4a1f1f);cursor:pointer}
+html.cel body .conta .ct-tom input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+html.cel body .conta .ct-tom input::-moz-range-thumb{width:20px;height:20px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 /* ===== MINHA CONTA / PERFIL E FUNDO (Celeste, 11/11/2026) ===== */
 html.cel body .conta .ct-topo b{font:600 20px/1.2 var(--fonte)!important;color:var(--texto)!important}
 html.cel body .conta .ct-topo small{color:var(--texto-3)!important}
@@ -1812,6 +1820,12 @@ function cortarFoto(arq) {
     desenha(); cv.focus();
   });
 }
+/* cores do fundo "Uma cor só" (Celeste): escuras, para o texto branco do menu continuar legível */
+const CORES_FUNDO = ['#151517', '#1f2a44', '#16324f', '#123d3a', '#1d3a22', '#2d1f47', '#47203a', '#4a2e12'];
+function hslHex(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return '#' + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); }
+function tomDe(hex) { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 215; const n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255, M = Math.max(r, g, b), x = M - Math.min(r, g, b);
+  if (!x) return 215; const h = M === r ? ((g - b) / x) % 6 : M === g ? (b - r) / x + 2 : (r - g) / x + 4; return Math.round((h * 60 + 360) % 360); }
 function abrirConta() {
   if (!CONTA) return;
   const d = document.createElement('div'); d.className = 'modal';
@@ -1830,9 +1844,10 @@ function abrirConta() {
         ${window.ESTUDIO_EMBED ? '' : `<div class="ct-tit">Fundo do menu</div>
         <div class="ct-g"><div class="fundos">
           <label class="fundo-op"><input type="radio" name="fundo" value="padrao" ${rasc.fundo !== 'cor' && rasc.fundo !== 'local' ? 'checked' : ''}><span class="tela" style="background:#5ea9e6 url(${esc((DADOS?.fundo?.itens || [])[0]?.src || '/fundo-margarida.jpg')}) center/cover"></span>Padrão do Estúdio</label>
-          <label class="fundo-op"><input type="radio" name="fundo" value="cor" ${rasc.fundo === 'cor' ? 'checked' : ''}><span class="tela" style="background:${esc(rasc.cor || '#1b2a4a')}">${icF('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/>')}</span>Uma cor só<small><input type="color" data-k="cor" value="${esc(rasc.cor)}" aria-label="Cor do fundo"></small></label>
+          <label class="fundo-op"><input type="radio" name="fundo" value="cor" ${rasc.fundo === 'cor' ? 'checked' : ''}><span class="tela" style="background:${esc(rasc.cor || '#1b2a4a')}">${icF('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/>')}</span>Uma cor só</label>
           <label class="fundo-op"><input type="radio" name="fundo" value="local" ${rasc.fundo === 'local' ? 'checked' : ''}><span class="tela" style="background:${rasc.local ? 'linear-gradient(135deg,#ff9f0a,#ff375f)' : 'rgba(255,255,255,.06)'}">${icF('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/>')}</span>Imagem minha</label>
         </div>
+        ${rasc.fundo === 'cor' ? `<div class="ct-cores" role="radiogroup" aria-label="Cor do fundo">${CORES_FUNDO.map(c => `<button type="button" class="ct-cor${c === rasc.cor ? ' on' : ''}" data-cf="${c}" style="background:${c}" aria-label="Cor ${c}"></button>`).join('')}<label class="ct-tom" title="Outro tom"><input type="range" min="0" max="359" step="1" value="${tomDe(rasc.cor)}" data-k="tom" aria-label="Outro tom"></label></div>` : ''}
         ${rasc.fundo === 'local' ? `<div class="ct-l"><span>${rasc.local ? `${esc(rasc.local.nome || 'arquivo')} <small class="hint">${(rasc.local.blob.size / 1048576).toFixed(1)} MB</small>` : 'Nenhum arquivo escolhido'}</span><button class="btn sm" data-a="local">${rasc.local ? 'Trocar arquivo' : 'Escolher arquivo'}</button></div>
           ${rasc.local ? `<div class="ct-l"><span>Blur</span><span class="rng"><input type="range" min="0" max="30" step="1" value="${rasc.blur}" data-k="lblur"><output>${rasc.blur} px</output></span></div>
           <div class="ct-l"><span>Escurecer</span><span class="rng"><input type="range" min="0" max=".9" step=".01" value="${rasc.escurecer}" data-k="lesc"><output>${Math.round(rasc.escurecer * 100)}%</output></span></div>` : ''}` : ''}</div>`}
@@ -1860,7 +1875,9 @@ function abrirConta() {
     const lb = $('[data-k=lblur]', d); if (lb) lb.oninput = e => { rasc.blur = +e.target.value; e.target.nextElementSibling.textContent = e.target.value + ' px'; };
     const le = $('[data-k=lesc]', d); if (le) le.oninput = e => { rasc.escurecer = +e.target.value; e.target.nextElementSibling.textContent = Math.round(e.target.value * 100) + '%'; };
     $$('input[name=fundo]', d).forEach(r => r.onchange = () => { rasc.fundo = r.value; pinta(); }); // redesenha: "Imagem ou vídeo meu" mostra o arquivo, o blur e o escurecer
-    if ($('[data-k=cor]', d)) $('[data-k=cor]', d).oninput = e => { rasc.cor = e.target.value; rasc.fundo = 'cor'; $('input[value=cor]', d).checked = true; const t = e.target.closest('.fundo-op')?.querySelector('.tela'); if (t) t.style.background = rasc.cor; };
+    const poeCor = c => { rasc.cor = c; const t = $('input[value=cor]', d)?.closest('.fundo-op')?.querySelector('.tela'); if (t) t.style.background = c; $$('.ct-cor', d).forEach(x => x.classList.toggle('on', x.dataset.cf === c)); };
+    $$('.ct-cor', d).forEach(b => b.onclick = () => poeCor(b.dataset.cf));
+    const tom = $('[data-k=tom]', d); if (tom) tom.oninput = e => poeCor(hslHex(+e.target.value, 42, 22));
     $('[data-ok]', d).onclick = async () => {
       m('Salvando…');
       try {
@@ -2262,7 +2279,7 @@ const atalhos = {
       <div class="mp-pe">${k >= 0 ? '<button class="btn danger" data-rm type="button" style="margin-right:auto">Remover</button>' : ''}<button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
     document.body.appendChild(d); setTimeout(() => $('#at-n', d).focus(), 50);
     $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
-    $$('.at-cor', d).forEach(b => b.onclick = () => { a.cor = b.dataset.cor; $('.at-cor', d).forEach(x => x.classList.toggle('on', x === b)); });
+    $$('.at-cor', d).forEach(b => b.onclick = () => { a.cor = b.dataset.cor; $$('.at-cor', d).forEach(x => x.classList.toggle('on', x === b)); });
     $('[data-rm]', d)?.addEventListener('click', () => { L.splice(k, 1); this.grava(L); d.remove(); toast('Atalho removido.'); });
     $('[data-ok]', d).onclick = () => { const nome = $('#at-n', d).value.trim(); let url = $('#at-u', d).value.trim();
       if (!nome) return toast('Dê um nome ao atalho.'); if (/^[\w-]+(\.[\w-]+)+/.test(url) && !/^https?:\/\//i.test(url)) url = 'https://' + url;
