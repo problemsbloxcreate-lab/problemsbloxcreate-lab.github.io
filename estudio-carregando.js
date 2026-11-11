@@ -342,6 +342,9 @@ window.EstudioSuporte ||= (() => {
   if (window.EstudioCarregando || window.EstudioLogin || window.top !== window) return; // já tem tela, ou está dentro de um quadro
   const NOME_PROG = ((p => [['/animador/', 'ANIMADOR'], ['/editor/', 'EDITOR'], ['/modelador/blockbench', 'BLOCKBENCH'], ['/modelador/', 'MODELADOR'], ['/shorts/', 'SHORTS']].find(([k]) => p.startsWith(k))?.[1] || 'ESTÚDIO PROBLEMS')(location.pathname));
   const root = document.documentElement, inicio = performance.now();
+  // CELESTE: título da tela única em linguagem simples ("Abrindo o Animador"), igual na saída do menu
+  const TITULO = (p => { const L = [['/animador/', 'o Animador'], ['/editor/', 'o Editor'], ['/modelador/blockbench', 'o Blockbench'], ['/modelador/', 'o Modelador'], ['/shorts/', 'os Shorts'], ['/publicacoes/', 'as Publicações'], ['/preparativos/', 'o Preparativos'], ['/cerebro/', 'o Cérebro'], ['/musicas/', 'as Músicas'], ['/jester/', 'o Jester Dreams']].find(([k]) => p.startsWith(k)); return L ? 'Abrindo ' + L[1] : 'Abrindo o Estúdio'; })(location.pathname);
+
   // logo da tela de carregamento = o ícone do próprio programa (o mesmo da aba e do cabeçalho); sem programa, o do menu
   const LOGO_PROG = { ANIMADOR: '/animador/icones/simbolo.svg', EDITOR: '/editor/icone.svg', MODELADOR: '/modelador/icone.svg', SHORTS: '/shorts/icone-shorts-180.png', BLOCKBENCH: '/modelador/icone.svg' }[NOME_PROG] || '';
   const LOGO_EP = window.EstudioIcones?.atual?.() ? window.EstudioIcones.url(window.EstudioIcones.atual()) : ''; // ícone novo do programa (Sh, Ed, An, Md; ADM › Ícones)
@@ -370,12 +373,39 @@ window.EstudioSuporte ||= (() => {
 #estudio-porta:not(.ep-erro) .ep-m{display:none}#estudio-porta.ep-erro .ep-br,#estudio-porta.ep-erro .ep-pc{display:none}#estudio-porta.ep-erro .ep-m{color:#ff8a9a}#estudio-porta.ep-erro .ep-m a{display:inline-block;color:#f1f2f4;text-decoration:none}
 /* o ícone do PROGRAMA respira de leve (não fica 100% parado); o do Estúdio fica parado */
 #estudio-porta .ep-lg.ep-prog .ep-img{animation:epRespira 2.6s ease-in-out infinite}@keyframes epRespira{50%{transform:scale(1.045)}}@media (prefers-reduced-motion:reduce){#estudio-porta .ep-lg.ep-prog .ep-img{animation:none}}
-#estudio-porta a.ep-bt{padding:10px 20px;border-radius:999px;background:rgba(255,255,255,.1);color:#f1f2f4;border:1px solid rgba(255,255,255,.16);font-weight:500;font-size:13.5px;margin-top:18px}#estudio-porta a.ep-bt:hover{filter:none;background:rgba(255,255,255,.16)}#estudio-porta .tl-out{color:#9aa0ab;text-decoration:none}#estudio-porta .ep-m{margin-top:18px}`;
+#estudio-porta a.ep-bt{padding:10px 20px;border-radius:999px;background:rgba(255,255,255,.1);color:#f1f2f4;border:1px solid rgba(255,255,255,.16);font-weight:500;font-size:13.5px;margin-top:18px}#estudio-porta a.ep-bt:hover{filter:none;background:rgba(255,255,255,.16)}#estudio-porta .tl-out{color:#9aa0ab;text-decoration:none}#estudio-porta .ep-m{margin-top:18px}
+/* ===== CELESTE (2.0, aprovado pela dona em 11/11/2026): A MESMA TELA do clique no menu até o programa aberto (saída do menu = login = carregamento).
+   Fundo: a montanha desenhada por nós (só o formato; noite com estrelas no escuro, dia no claro). Ícone do programa, "Abrindo o X", barra fina e UMA frase simples (sem nome de arquivo). ===== */
+#estudio-porta{--pt-tx:#f5f5f7;--pt-tx2:rgba(235,235,245,.64);--pt-tx3:rgba(235,235,245,.4);--pt-ac:#5cc4ff;--pt-trilho:rgba(255,255,255,.14);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%230f182c' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%2316223c' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%231d2b4a' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 44% 22%,#fff,transparent),radial-gradient(1px 1px at 61% 12%,#fff,transparent),radial-gradient(1.3px 1.3px at 77% 26%,#fff,transparent),radial-gradient(1px 1px at 89% 9%,#fff,transparent),radial-gradient(1px 1px at 6% 34%,#fff,transparent),radial-gradient(1.2px 1.2px at 53% 36%,#fff,transparent),
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(92,196,255,.16),transparent 60%),linear-gradient(180deg,#0b1020,#16203a 70%)!important;
+  color:var(--pt-tx)!important;font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;transition:opacity .25s ease!important}
+html[data-tema="claro"] #estudio-porta{--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60,67,.72);--pt-tx3:rgba(60,60,67,.46);--pt-ac:#0a74c9;--pt-trilho:rgba(0,0,0,.1);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%23c9def3' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%23a9cbed' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%238fb8e0' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(255,255,255,.6),transparent 60%),linear-gradient(180deg,#bfe3ff,#eef7ff 70%)!important}
+#estudio-porta .ep-c{gap:14px!important;transform:translateY(-10vh);animation:none!important}
+#estudio-porta .ep-lg,#estudio-porta .ep-lg.ep-prog,#estudio-porta.ep-erro .ep-lg{width:72px!important;height:72px!important;border-radius:18px!important;overflow:hidden;margin:0!important;box-shadow:0 10px 30px rgba(0,0,0,.25)!important;background:linear-gradient(160deg,#5cc4ff,#3a7bd5)!important;display:grid!important;place-items:center}
+#estudio-porta .ep-lg.ep-prog{background:none!important}
+#estudio-porta .ep-lg .ep-img,#estudio-porta .ep-lg.ep-prog .ep-img{width:72px!important;height:72px!important;animation:none!important}
+#estudio-porta .ep-lg .ep-cam{width:44px!important;height:44px!important}
+#estudio-porta .ep-nm{display:block!important;margin:6px 0 0!important;font-weight:600!important;font-size:20px!important;line-height:1.2!important;letter-spacing:-.01em!important;text-transform:none!important;color:var(--pt-tx)!important}
+#estudio-porta .ep-sb,#estudio-porta [data-ep-arq]{display:none!important}
+#estudio-porta .ep-br{width:240px!important;height:4px!important;border-radius:2px!important;background:var(--pt-trilho)!important;margin:0!important}
+#estudio-porta .ep-br::after{display:none!important}
+#estudio-porta .ep-br>i{background:var(--pt-ac)!important;border-radius:2px!important}
+#estudio-porta .ep-pc{margin:-4px 0 0!important;font-weight:500!important;font-size:12px!important;color:var(--pt-tx3)!important}
+#estudio-porta .ep-pc b{color:var(--pt-tx3)!important;font-weight:500!important;min-width:0!important}
+#estudio-porta .ep-m,#estudio-porta:not(.ep-erro) .ep-m{display:block!important;margin:0!important;color:var(--pt-tx2)!important;font-size:13px!important}
+#estudio-porta.ep-erro .ep-m{color:var(--pt-tx)!important}
+#estudio-porta a.ep-bt{border:0!important;border-radius:10px!important;background:var(--pt-ac)!important;color:#04223a!important;font-weight:600!important;padding:10px 20px!important}
+html[data-tema="claro"] #estudio-porta a.ep-bt{color:#fff!important}
+#estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}`;
   (document.head || root).appendChild(st);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = document.createElement('div');
   el.id = 'estudio-porta'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
-  el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(NOME_PROG)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m>Abrindo…</div></div>`;
+  el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(TITULO)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m>Carregando</div></div>`;
   // entra já, antes do <body> existir; quando o <body> chega, a tela passa para dentro dele (fica por cima de tudo)
   root.appendChild(el);
   const paraBody = () => { if (document.body && el.parentNode !== document.body) document.body.appendChild(el); };

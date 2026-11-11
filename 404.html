@@ -807,8 +807,8 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 
 /* ===== tudo com cantos retos (pedido da dona): menos os ícones dos programas ===== */
 /* CELESTE: no menu com html.cel (cabeçalho e menu) os cantos voltam; ADM, janelas e login continuam retos até a vez deles */
-:is(#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
-html:not(.cel) :is(#top,#menu) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+:is(#adm,.modal,.toast) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+html:not(.cel) :is(#top,#menu,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
 /* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
 #adm #ic-salvar,#adm #niv-salvar{display:none!important}
 
@@ -1002,6 +1002,44 @@ html.cel body #menu .blocos{grid-template-columns:repeat(auto-fill,var(--mn-u))!
 html.cel body #menu .blocos .et.w{grid-column:span 2!important}
 html.cel body #menu .grid-caixa{max-width:none!important;width:auto!important}
 html.cel body #top .brand small,html.cel body #top #top-sub{display:block!important;font:400 11px/1.2 var(--fonte)!important;color:var(--texto-3)!important;margin-top:2px;letter-spacing:0!important;text-transform:none!important}
+/* ===== CELESTE: A MESMA TELA do clique no menu até o programa aberto (saída do menu = login = carregamento do programa) ===== */
+html.cel body #saida{--pt-tx:#f5f5f7;--pt-tx2:rgba(235,235,245,.64);--pt-tx3:rgba(235,235,245,.4);--pt-ac:#5cc4ff;--pt-trilho:rgba(255,255,255,.14);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%230f182c' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%2316223c' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%231d2b4a' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 44% 22%,#fff,transparent),radial-gradient(1px 1px at 61% 12%,#fff,transparent),radial-gradient(1.3px 1.3px at 77% 26%,#fff,transparent),radial-gradient(1px 1px at 89% 9%,#fff,transparent),radial-gradient(1px 1px at 6% 34%,#fff,transparent),radial-gradient(1.2px 1.2px at 53% 36%,#fff,transparent),
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(92,196,255,.16),transparent 60%),linear-gradient(180deg,#0b1020,#16203a 70%)!important;
+  color:var(--pt-tx)!important;font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;transition:opacity .25s ease!important}
+html[data-tema="claro"] html.cel body #saida{--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60,67,.72);--pt-tx3:rgba(60,60,67,.46);--pt-ac:#0a74c9;--pt-trilho:rgba(0,0,0,.1);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%23c9def3' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%23a9cbed' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%238fb8e0' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(255,255,255,.6),transparent 60%),linear-gradient(180deg,#bfe3ff,#eef7ff 70%)!important}
+html.cel body .login{--pt-tx:#f5f5f7;--pt-tx2:rgba(235,235,245,.64);--pt-tx3:rgba(235,235,245,.4);--pt-ac:#5cc4ff;--pt-trilho:rgba(255,255,255,.14);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%230f182c' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%2316223c' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%231d2b4a' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 44% 22%,#fff,transparent),radial-gradient(1px 1px at 61% 12%,#fff,transparent),radial-gradient(1.3px 1.3px at 77% 26%,#fff,transparent),radial-gradient(1px 1px at 89% 9%,#fff,transparent),radial-gradient(1px 1px at 6% 34%,#fff,transparent),radial-gradient(1.2px 1.2px at 53% 36%,#fff,transparent),
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(92,196,255,.16),transparent 60%),linear-gradient(180deg,#0b1020,#16203a 70%)!important;
+  color:var(--pt-tx)!important;font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;transition:opacity .25s ease!important}
+html[data-tema="claro"] html.cel body .login{--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60,67,.72);--pt-tx3:rgba(60,60,67,.46);--pt-ac:#0a74c9;--pt-trilho:rgba(0,0,0,.1);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 560' preserveAspectRatio='none'%3E%3Cpath fill='%23c9def3' d='M0 330 L170 230 L300 300 L470 170 L610 260 L760 150 L930 270 L1080 190 L1250 280 L1440 210 V560 H0Z'/%3E%3Cpath fill='%23a9cbed' d='M0 400 L210 300 L360 360 L560 220 L720 120 L880 250 L1010 200 L1180 320 L1320 270 L1440 330 V560 H0Z'/%3E%3Cpath fill='%238fb8e0' d='M0 470 L180 400 L340 440 L520 360 L700 430 L860 370 L1040 440 L1220 390 L1440 450 V560 H0Z'/%3E%3C/svg%3E") left bottom/100% 40% no-repeat,
+  radial-gradient(60vmax 60vmax at 50% 30%,rgba(255,255,255,.6),transparent 60%),linear-gradient(180deg,#bfe3ff,#eef7ff 70%)!important}
+
+html.cel body #saida{transition:opacity .2s ease-out!important}
+html.cel body #saida .ep-c,html.cel body .login .lcard{display:grid!important;justify-items:center;gap:14px!important;text-align:center;transform:translateY(-10vh);opacity:1!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;width:min(380px,100%)!important}
+html.cel body #saida .ep-lg,html.cel body .login .lcard .logo{width:72px!important;height:72px!important;border-radius:18px!important;overflow:hidden;display:grid!important;place-items:center;margin:0!important;box-shadow:0 10px 30px rgba(0,0,0,.25)!important;background:linear-gradient(160deg,#5cc4ff,#3a7bd5)!important}
+html.cel body #saida .ep-lg.ep-prog{background:none!important}
+html.cel body #saida .ep-lg svg,html.cel body #saida .ep-lg img{width:72px;height:72px;display:block}
+html.cel body .login .lcard .logo svg{width:44px!important;height:44px!important}
+html.cel body #saida .ep-nm,html.cel body .login .lcard h1{margin:6px 0 0!important;font:600 20px/1.2 var(--fonte)!important;letter-spacing:-.01em!important;color:var(--pt-tx)!important;text-shadow:none!important;text-transform:none!important}
+html.cel body #saida .ep-br{width:240px;height:4px;border-radius:2px;background:var(--pt-trilho);overflow:hidden}
+html.cel body #saida .ep-br>i{display:block;height:100%;width:0;border-radius:2px;background:var(--pt-ac);transition:width .5s cubic-bezier(.1,.9,.2,1)}
+html.cel body #saida.on .ep-br>i{width:30%}
+html.cel body #saida .ep-m,html.cel body .login .lcard p{margin:0!important;color:var(--pt-tx2)!important;font:400 13px/1.45 var(--fonte)!important}
+html.cel body .login .lcard .gbtn{height:40px!important;padding:0 20px!important;border:0!important;border-radius:10px!important;background:var(--pt-ac)!important;color:#04223a!important;font:600 14px var(--fonte)!important;box-shadow:none!important;gap:8px}
+html[data-tema="claro"].cel body .login .lcard .gbtn{color:#fff!important}
+html.cel body .login .lcard .gbtn svg{display:none}
+html.cel body .login .lcard .msg,html.cel body .login .lcard .msg *{color:var(--pt-tx2)!important;font:400 13px var(--fonte)!important}
+html.cel body .login.boot .lcard h1{display:block!important}
+html.cel body .login .lcard .msg .spin{width:240px!important;height:4px!important;border-radius:2px!important;background:var(--pt-trilho)!important;border:0!important;animation:none!important;display:block!important;margin:0 auto 8px!important;overflow:hidden}
+html.cel body .login .lcard .msg .spin i{background:var(--pt-ac)!important;border-radius:2px!important}
+html.cel body .login .lcard .ep-pc2 [data-ep-arq]{display:none!important}
+html.cel body .login .lcard .link{color:var(--pt-tx3)!important;font:500 12px var(--fonte)!important}
 @media (prefers-reduced-transparency:reduce){html.cel body #menu :is(.et,.blocos>*){-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--fundo-2)!important}}
 </style>
 </head>
@@ -1660,10 +1698,13 @@ function abrirConta() {
 /* ======================= telas ======================= */
 // abrir um programa: a tela escurece com fade e só então troca de página (a tela de carregamento do programa tem o mesmo fundo)
 // A TELA JÁ DIZ O QUE ESTÁ ABRINDO (pedido da dona, 05/11/2026): antes ficava só o escuro, parecendo que o clique não funcionou
-const NOMES_PROG = { cerebro: 'o Cérebro', animador: 'o Animador', shorts: 'os Shorts', editor: 'o Editor', modelador: 'o Modelador', preparativos: 'os Preparativos', musicas: 'as Músicas', publicacoes: 'as Publicações', jester: 'o Jester Dreams', central: 'a Central de Jogos' };
+const NOMES_PROG = { cerebro: 'o Cérebro', animador: 'o Animador', shorts: 'os Shorts', editor: 'o Editor', modelador: 'o Modelador', preparativos: 'o Preparativos', musicas: 'as Músicas', publicacoes: 'as Publicações', jester: 'o Jester Dreams', central: 'a Central de Jogos' };
 function irCom(url, trocar) {
   const s = $('#saida'); let nm = ''; try { const u = new URL(url, location.href), p = u.pathname.split('/')[1]; nm = u.searchParams.get('atelie') ? 'o Ateliê' : NOMES_PROG[p] || ''; } catch { }
-  s.innerHTML = '<div class="sd-c" role="status"><div class="sd-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div>' + (nm ? 'Abrindo ' + nm + '…' : 'Abrindo…') + '<small>Buscando a versão mais nova</small></div></div>'; s.classList.add('on');
+  const IC = { animador: 'an', shorts: 'sh', editor: 'ed', modelador: 'md', preparativos: 'pr', cerebro: 'cb', musicas: 'mu', publicacoes: 'x-publicacoes' }; let ic = ''; try { const p = new URL(url, location.href).pathname.split('/')[1], k = IC[p]; if (k && window.EstudioIcones?.svg) ic = window.EstudioIcones.svg(k, 72); } catch { }
+  if (document.documentElement.classList.contains('cel')) s.innerHTML = '<div class="ep-c" role="status"><div class="ep-lg' + (ic ? ' ep-prog' : '') + '" aria-hidden="true">' + ic + '</div><div class="ep-nm">' + (nm ? 'Abrindo ' + nm : 'Abrindo') + '</div><div class="ep-br"><i></i></div><div class="ep-m">Carregando</div></div>';
+  else s.innerHTML = '<div class="sd-c" role="status"><div class="sd-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div>' + (nm ? 'Abrindo ' + nm + '…' : 'Abrindo…') + '<small>Buscando a versão mais nova</small></div></div>';
+  requestAnimationFrame(() => s.classList.add('on'));
   setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
 }
 // abrir um programa: na mesma aba, com o fade de sempre (o Dock só tem atalhos; não guarda as abas abertas)
