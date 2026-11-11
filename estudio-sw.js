@@ -10,15 +10,19 @@
    aqui e em GUARDA_PROGS no /estudio-conta.js. Para DESLIGAR tudo: esvazie PILOTO (o guardião passa a não fazer nada) e publique.
    Cada programa tem a sua caixa: 'ep-p:/preparativos/'. Mudou ESTE arquivo? Troque VERSAO_SW. */
 'use strict';
-const VERSAO_SW = 1;
+const VERSAO_SW = 2;
 const PILOTO = ['/preparativos/', '/publicacoes/'];
 const ESTATICO = /\.(js|mjs|css|woff2?|ttf|svg|png|jpe?g|webp|gif|ico|wasm|mp3|ogg|wav)$/i;
-const NUNCA = /^\/(quem|sessao|sair|conta|pessoa|online|versoes|icones|permissoes|nuvem|mensagens|dublar\/api|cerebro-api)(\/|$)/;
+// O LOGIN É O GUARDA (pedido da dona, 11/11/2026): o /estudio-login.js nunca é guardado — vem sempre da internet, então qualquer
+// correção de segurança no login vale na hora, mesmo para quem não clicou em Atualizar. A conferência de acesso continua no servidor.
+const NUNCA = /^\/(quem|sessao|sair|conta|pessoa|online|versoes|icones|permissoes|nuvem|mensagens|dublar\/api|cerebro-api|estudio-login\.js)(\/|$)/;
 const donoDe = p => PILOTO.find(x => p.startsWith(x)) || null;
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil((async () => {
   // caixas de programas que saíram do piloto: apaga (a cópia guardada não fica esquecida no computador)
+  // o login não fica guardado: tira cópias que versões antigas do guardião tinham guardado
+  for (const k of await caches.keys()) if (k.startsWith('ep-p:')) { const c = await caches.open(k); for (const q of await c.keys()) if (new URL(q.url).pathname === '/estudio-login.js') await c.delete(q); }
   for (const k of await caches.keys()) if (k.startsWith('ep-p:') && !PILOTO.includes(k.slice(5))) await caches.delete(k);
   await self.clients.claim();
 })()));
