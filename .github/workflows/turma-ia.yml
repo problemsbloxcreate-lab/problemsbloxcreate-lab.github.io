@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: turma-ia
+  group: turma-ia-2  # 11/11/2026: o grupo "turma-ia" ficou preso por uma publicação fantasma do GitHub
   cancel-in-progress: false
 
 jobs:
