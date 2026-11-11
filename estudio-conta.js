@@ -956,6 +956,17 @@ html[data-tema="claro"] body #ep-atualizando{--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60
 :root:root body #ep-atualizando .ep-at-pc{flex-direction:column;align-items:center;gap:2px;color:var(--pt-tx2)!important;font:400 13px "Inter","Segoe UI",system-ui,sans-serif!important}
 :root:root body #ep-atualizando .ep-at-pc b{color:var(--pt-tx3)!important;font-weight:500!important;font-size:12px}
 :root:root body #ep-atualizando .ep-at-pc span{color:var(--pt-tx2)!important}
+/* CELESTE (11/11/2026, pedido da dona): fundo = a FOTO da montanha (a mesma do menu), chegando perto bem devagar, com um brilho azul atrás do ícone */
+:root:root body #ep-atualizando{background:#0b1020!important;overflow:hidden}
+:root:root body #ep-atualizando::before{content:"";position:absolute;inset:-6%;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(8,12,22,.2),rgba(8,12,22,.5) 55%,rgba(8,12,22,.82)),url(/fundo-montanha.jpg) center 40%/cover no-repeat;animation:epFotoKB 26s ease-in-out infinite alternate;will-change:transform}
+:root:root body #ep-atualizando::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(40% 32% at 50% 40%,rgba(92,196,255,.22),transparent 70%)}
+html[data-tema="claro"] :root:root body #ep-atualizando{background:#dbe7f3!important}
+html[data-tema="claro"] :root:root body #ep-atualizando::before{background:linear-gradient(180deg,rgba(240,244,250,.15),rgba(240,244,250,.5) 55%,rgba(240,244,250,.78)),url(/fundo-montanha.jpg) center 40%/cover no-repeat}
+html[data-tema="claro"] :root:root body #ep-atualizando::after{background:radial-gradient(40% 32% at 50% 40%,rgba(255,255,255,.55),transparent 70%)}
+:root:root body #ep-atualizando>*{position:relative;z-index:1}
+html:not([data-tema="claro"]) body #ep-atualizando :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
+@keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
+@media (prefers-reduced-motion:reduce){:root:root body #ep-atualizando::before{animation:none}}
 /* --- NOTIFICAÇÃO DE VERSÃO NOVA (em cima, à direita): Atualizar / Fechar; atualizar é opcional --- */
 .ep-notif-v{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.4);--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-texto:#04223a;
   position:fixed;z-index:2147483004;top:64px;right:16px;width:min(360px,calc(100vw - 32px));box-sizing:border-box;padding:16px;background:var(--ce-elevado);color:var(--ce-texto);border:1px solid var(--ce-linha);border-radius:14px;

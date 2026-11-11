@@ -403,6 +403,17 @@ html[data-tema="claro"] #estudio-porta{--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60,67,.7
 #estudio-porta.ep-erro .ep-m{color:var(--pt-tx)!important}
 #estudio-porta a.ep-bt{border:0!important;border-radius:10px!important;background:var(--pt-ac)!important;color:#04223a!important;font-weight:600!important;padding:10px 20px!important}
 html[data-tema="claro"] #estudio-porta a.ep-bt{color:#fff!important}
+/* CELESTE (11/11/2026, pedido da dona): fundo = a FOTO da montanha (a mesma do menu), chegando perto bem devagar, com um brilho azul atrás do ícone */
+#estudio-porta{background:#0b1020!important;overflow:hidden}
+#estudio-porta::before{content:"";position:absolute;inset:-6%;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(8,12,22,.2),rgba(8,12,22,.5) 55%,rgba(8,12,22,.82)),url(/fundo-montanha.jpg) center 40%/cover no-repeat;animation:epFotoKB 26s ease-in-out infinite alternate;will-change:transform}
+#estudio-porta::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(40% 32% at 50% 40%,rgba(92,196,255,.22),transparent 70%)}
+html[data-tema="claro"] #estudio-porta{background:#dbe7f3!important}
+html[data-tema="claro"] #estudio-porta::before{background:linear-gradient(180deg,rgba(240,244,250,.15),rgba(240,244,250,.5) 55%,rgba(240,244,250,.78)),url(/fundo-montanha.jpg) center 40%/cover no-repeat}
+html[data-tema="claro"] #estudio-porta::after{background:radial-gradient(40% 32% at 50% 40%,rgba(255,255,255,.55),transparent 70%)}
+#estudio-porta>*{position:relative;z-index:1}
+html:not([data-tema="claro"]) #estudio-porta :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
+@keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
+@media (prefers-reduced-motion:reduce){#estudio-porta::before{animation:none}}
 #estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}`;
   (document.head || root).appendChild(st);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

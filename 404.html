@@ -1040,6 +1040,28 @@ html.cel body .login .lcard .msg .spin{width:240px!important;height:4px!importan
 html.cel body .login .lcard .msg .spin i{background:var(--pt-ac)!important;border-radius:2px!important}
 html.cel body .login .lcard .ep-pc2 [data-ep-arq]{display:none!important}
 html.cel body .login .lcard .link{color:var(--pt-tx3)!important;font:500 12px var(--fonte)!important}
+/* CELESTE (11/11/2026, pedido da dona): fundo = a FOTO da montanha (a mesma do menu), chegando perto bem devagar, com um brilho azul atrás do ícone */
+html.cel body #saida{background:#0b1020!important;overflow:hidden}
+html.cel body #saida::before{content:"";position:absolute;inset:-6%;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(8,12,22,.2),rgba(8,12,22,.5) 55%,rgba(8,12,22,.82)),url(/fundo-montanha.jpg) center 40%/cover no-repeat;animation:epFotoKB 26s ease-in-out infinite alternate;will-change:transform}
+html.cel body #saida::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(40% 32% at 50% 40%,rgba(92,196,255,.22),transparent 70%)}
+html[data-tema="claro"] html.cel body #saida{background:#dbe7f3!important}
+html[data-tema="claro"] html.cel body #saida::before{background:linear-gradient(180deg,rgba(240,244,250,.15),rgba(240,244,250,.5) 55%,rgba(240,244,250,.78)),url(/fundo-montanha.jpg) center 40%/cover no-repeat}
+html[data-tema="claro"] html.cel body #saida::after{background:radial-gradient(40% 32% at 50% 40%,rgba(255,255,255,.55),transparent 70%)}
+html.cel body #saida>*{position:relative;z-index:1}
+html.cel:not([data-tema="claro"]) body #saida :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
+@keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
+@media (prefers-reduced-motion:reduce){html.cel body #saida::before{animation:none}}
+/* CELESTE (11/11/2026, pedido da dona): fundo = a FOTO da montanha (a mesma do menu), chegando perto bem devagar, com um brilho azul atrás do ícone */
+html.cel body .login{background:#0b1020!important;overflow:hidden}
+html.cel body .login::before{content:"";position:absolute;inset:-6%;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(8,12,22,.2),rgba(8,12,22,.5) 55%,rgba(8,12,22,.82)),url(/fundo-montanha.jpg) center 40%/cover no-repeat;animation:epFotoKB 26s ease-in-out infinite alternate;will-change:transform}
+html.cel body .login::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(40% 32% at 50% 40%,rgba(92,196,255,.22),transparent 70%)}
+html[data-tema="claro"] html.cel body .login{background:#dbe7f3!important}
+html[data-tema="claro"] html.cel body .login::before{background:linear-gradient(180deg,rgba(240,244,250,.15),rgba(240,244,250,.5) 55%,rgba(240,244,250,.78)),url(/fundo-montanha.jpg) center 40%/cover no-repeat}
+html[data-tema="claro"] html.cel body .login::after{background:radial-gradient(40% 32% at 50% 40%,rgba(255,255,255,.55),transparent 70%)}
+html.cel body .login>*{position:relative;z-index:1}
+html.cel:not([data-tema="claro"]) body .login :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
+@keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
+@media (prefers-reduced-motion:reduce){html.cel body .login::before{animation:none}}
 /* ===== MENU: revisão de coesão (11/11/2026, pedido da dona) ===== */
 /* títulos das seções alinhados com os botões ao lado (antes "Organizar" ficava mais baixo) */
 html.cel body #menu .progs-cab{display:flex!important;align-items:center!important;gap:var(--e3)!important;margin:0 0 var(--e3)!important;min-height:28px}
