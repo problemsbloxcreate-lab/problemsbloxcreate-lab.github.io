@@ -807,7 +807,7 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 
 /* ===== tudo com cantos retos (pedido da dona): menos os ícones dos programas ===== */
 /* CELESTE: no menu com html.cel (cabeçalho e menu) os cantos voltam; ADM, janelas e login continuam retos até a vez deles */
-:is(#adm) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+html:not(.cel) :is(#adm) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
 html:not(.cel) :is(#top,#menu,#saida,.login,.modal,.toast) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
 /* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
 #adm #ic-salvar,#adm #niv-salvar{display:none!important}
@@ -1062,6 +1062,82 @@ html.cel body .login>*{position:relative;z-index:1}
 html.cel:not([data-tema="claro"]) body .login :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){html.cel body .login::before{animation:none}}
+/* ===== MINHA CONTA / PERFIL E FUNDO (Celeste, 11/11/2026) ===== */
+html.cel body .conta .ct-topo b{font:600 20px/1.2 var(--fonte)!important;color:var(--texto)!important}
+html.cel body .conta .ct-topo small{color:var(--texto-3)!important}
+html.cel body .conta .ct-av .av{border-radius:50%!important;background:linear-gradient(135deg,#5cc4ff,#7c6cff)!important}
+html.cel body .conta .ct-lapis{border-radius:50%!important;border:2px solid var(--elevado)!important;background:var(--acento)!important;color:var(--acento-texto)!important}
+html.cel body .conta .ct-g{background:var(--fundo-2)!important;border:0!important;border-radius:var(--raio-cartao)!important;overflow:hidden}
+html[data-tema="claro"].cel body .conta .ct-g{background:#f5f5f7!important}
+html.cel body .conta .ct-l{min-height:44px}
+html.cel body .conta .ct-l+.ct-l{border-top:1px solid var(--linha)!important}
+html.cel body .conta .ct-l>span:first-child{color:var(--texto)}
+html.cel body .conta .ct-l input[type=text]{height:32px!important;background:var(--fundo-3)!important;color:var(--texto)!important;border:1px solid transparent!important;border-radius:var(--raio-controle)!important}
+html.cel body .conta .ct-l input[type=text]:focus{border-color:var(--acento)!important;box-shadow:0 0 0 3px var(--acento-suave)!important}
+html.cel body .conta .ct-tit{font:600 13px var(--fonte)!important;text-transform:none!important;letter-spacing:0!important;color:var(--texto-2)!important;margin:14px 4px 6px!important}
+html.cel body .conta .ct-pe{border-top:1px solid var(--linha)!important}
+html.cel body .conta .fundo-op{border-radius:var(--raio-controle)!important}
+html.cel body .conta .fundo-op .tela{border-radius:var(--raio-controle)!important;overflow:hidden}
+html.cel body .conta .fundo-op input:checked+.tela,html.cel body .conta .fundo-op:has(input:checked) .tela{box-shadow:0 0 0 2px var(--acento)!important}
+html.cel body .conta input[type=checkbox],html.cel body .conta input[type=radio],html.cel body #adm input[type=checkbox],html.cel body #adm input[type=radio]{accent-color:var(--acento)}
+/* ===== ADM (Celeste, 11/11/2026): janela com abas à esquerda, como os Ajustes; nada do azul Metro ===== */
+html.cel body #adm{color:var(--texto)}
+html.cel body #adm .adm{background:var(--elevado)!important;color:var(--texto)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:1px solid var(--linha)!important;border-radius:var(--raio-janela)!important;box-shadow:var(--sombra-3)!important;overflow:hidden;font-family:var(--fonte)!important}
+html.cel body #adm .adm-abas{background:var(--fundo-2)!important;border-right:1px solid var(--linha)!important}
+html[data-tema="claro"].cel body #adm .adm-abas{background:#f5f5f7!important}
+html.cel body #adm .adm-abas .adm-cab b{font:700 20px/1.2 var(--fonte)!important;color:var(--texto)!important}
+html.cel body #adm .adm-abas h3{font:600 12px var(--fonte)!important;text-transform:none!important;letter-spacing:0!important;color:var(--texto-3)!important;margin:16px 10px 6px!important}
+html.cel body #adm .adm-abas button{border-radius:var(--raio-controle)!important;padding:7px 10px!important;color:var(--texto)!important;background:transparent!important}
+html.cel body #adm .adm-abas button:hover{background:var(--fundo-3)!important}
+html.cel body #adm .adm-abas button[aria-selected=true]{background:var(--acento)!important;color:var(--acento-texto)!important}
+html.cel body #adm .adm-abas button[aria-selected=true] small{color:inherit!important;opacity:.75}
+html.cel body #adm .adm-abas button small{color:var(--texto-3)!important}
+html.cel body #adm .adm-abas button svg{border-radius:7px!important}
+html.cel body #adm .adm-abas .adm-x{border-radius:50%!important;color:var(--texto-2)!important}
+html.cel body #adm .adm-abas .adm-x:hover{background:var(--fundo-3)!important;color:var(--texto)!important}
+html.cel body #adm .adm-busca{background:var(--fundo-3)!important;border:0!important;border-radius:var(--raio-controle)!important;color:var(--texto)!important}
+html.cel body #adm .adm-pag h2{font:700 20px/1.25 var(--fonte)!important;color:var(--texto)!important;margin:22px 0 10px!important}
+html.cel body #adm .adm-desc,html.cel body #adm .hint{color:var(--texto-2)!important;font-family:var(--fonte)!important}
+html.cel body #adm .btn{height:32px;padding:0 12px!important;border:0!important;border-radius:var(--raio-controle)!important;background:var(--fundo-3)!important;color:var(--texto)!important;font:500 13px var(--fonte)!important;box-shadow:none!important}
+html.cel body #adm .btn:hover{background:var(--fundo-4)!important}
+html.cel body #adm .btn.sm{height:28px;padding:0 10px!important;border-radius:6px!important}
+html.cel body #adm .btn.primary{background:var(--acento)!important;color:var(--acento-texto)!important;font-weight:600!important}
+html.cel body #adm .btn.danger{background:transparent!important;color:var(--perigo)!important}
+html.cel body #adm .btn.danger:hover{background:color-mix(in srgb,var(--perigo) 12%,transparent)!important}
+html.cel body #adm input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),html.cel body #adm select,html.cel body #adm textarea{background:var(--fundo-3)!important;color:var(--texto)!important;border:1px solid transparent!important;border-radius:var(--raio-controle)!important;font:400 14px var(--fonte)!important;box-shadow:none!important}
+html.cel body #adm :is(input,select,textarea):focus{border-color:var(--acento)!important;box-shadow:0 0 0 3px var(--acento-suave)!important}
+html.cel body #adm :is(.lrow,.bgit,.box,details,.frame,.empty){background:var(--fundo-2)!important;border:1px solid var(--linha)!important;border-radius:var(--raio-cartao)!important;color:var(--texto)}
+html[data-tema="claro"].cel body #adm :is(.lrow,.bgit,.box,details,.frame,.empty){background:#f5f5f7!important}
+html.cel body #adm .lrow .card{border-radius:var(--raio-cartao)!important;background:var(--fundo-3)!important}
+html.cel body #adm .lrow .card b{color:var(--texto)!important}
+html.cel body #adm .lrow .card .tag,html.cel body #adm .lrow .card .tag-adm{border-radius:var(--raio-p)!important;background:var(--fundo-4)!important;color:var(--texto-2)!important}
+html.cel body #adm :is(.na-cargo,.na-seg,.na-seg button){border-radius:var(--raio-controle)!important}
+html.cel body #adm .na-seg{background:var(--fundo-3)!important;padding:2px;border:0!important}
+html.cel body #adm .na-seg button{border:0!important;background:transparent!important;color:var(--texto-2)!important}
+html.cel body #adm .na-seg button[aria-pressed=true],html.cel body #adm .na-seg button.on{background:var(--fundo-4)!important;color:var(--texto)!important}
+html.cel body #adm .savebar{background:var(--elevado)!important;border:1px solid var(--linha)!important;border-radius:12px!important;box-shadow:var(--sombra-2)!important;color:var(--texto)!important}
+/* ===== PASTAS de programas (11/11/2026, pedido da dona: "pasta vazia ficou estranha") ===== */
+/* na grade: um quadrado de vidro do tamanho dos ícones, com os programas pequenos dentro; vazia = desenho de pasta */
+html.cel body #menu .card.pasta-b{background:transparent!important;box-shadow:none!important}
+html.cel body #menu .card.pasta-b:hover{background:var(--vidro-cartao)!important}
+html.cel body #menu .card.pasta-b.alvo{background:var(--acento-suave)!important;box-shadow:inset 0 0 0 2px var(--acento)!important}
+html.cel body #menu .pasta-mini{top:46%!important;width:64px;height:64px;padding:7px;box-sizing:border-box;border-radius:16px!important;background:var(--vidro-cartao-2)!important;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 0 0 1px var(--linha-forte);grid-template-columns:repeat(2,23px)!important;grid-auto-rows:23px!important;gap:4px!important;align-content:start}
+html.cel body #menu .pasta-mini .mi,html.cel body #menu .pasta-mini .mi .ic,html.cel body #menu .pasta-mini .mi .ic>span,html.cel body #menu .pasta-mini .mi .ic svg,html.cel body #menu .pasta-mini .mi .ic img{width:23px!important;height:23px!important}
+html.cel body #menu .pasta-mini .mi .ic{border-radius:6px!important;overflow:hidden}
+html.cel body #menu .pasta-mini .vazia{grid-column:1/-1;grid-row:1/3;font-size:0!important;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f5f5f7' stroke-width='1.6' stroke-linejoin='round' stroke-opacity='.75'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E") center/30px no-repeat}
+html.cel[data-tema="claro"] body #menu .pasta-mini .vazia{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='1.6' stroke-linejoin='round' stroke-opacity='.75'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E")}
+/* aberta: janela Celeste */
+html.cel body #menu .pasta-pop{background:var(--elevado)!important;color:var(--texto)!important;border:1px solid var(--linha)!important;border-radius:var(--raio-janela)!important;box-shadow:var(--sombra-3)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:var(--e4)!important}
+html.cel body #menu .pasta-pop .pp-cab b{font:600 17px var(--fonte)!important;color:var(--texto)!important}
+html.cel body #menu .pasta-pop .pp-nome{height:32px!important;background:var(--fundo-3)!important;color:var(--texto)!important;border:1px solid transparent!important;border-radius:var(--raio-controle)!important;font:500 14px var(--fonte)!important;outline:none}
+html.cel body #menu .pasta-pop .pp-nome:focus{border-color:var(--acento)!important;box-shadow:0 0 0 3px var(--acento-suave)}
+html.cel body #menu .pasta-pop .pp-apaga{color:var(--perigo)!important}
+html.cel body #menu .pasta-pop .pp-x{width:32px!important;height:32px!important;border-radius:50%!important;color:var(--texto-2)!important}
+html.cel body #menu .pasta-pop .pp-x:hover{background:var(--fundo-3)!important}
+html.cel body #menu .pasta-pop .pp-vazia{color:var(--texto-3)!important;font:400 13px/1.4 var(--fonte)!important;padding:20px 16px;border:1px dashed var(--linha-forte);border-radius:var(--raio-cartao)!important;text-align:center;max-width:none!important}
+html.cel body #menu .pasta-pop .pp-tira{border-radius:6px!important;background:var(--fundo-4)!important;color:var(--texto)!important}
+html.cel body #menu .pasta-pop .card:hover{background:var(--fundo-3)!important}
+html.cel body #menu .pasta-pop .card b{color:var(--texto)!important}
 /* ===== MENU: revisão de coesão (11/11/2026, pedido da dona) ===== */
 /* títulos das seções alinhados com os botões ao lado (antes "Organizar" ficava mais baixo) */
 html.cel body #menu .progs-cab{display:flex!important;align-items:center!important;gap:var(--e3)!important;margin:0 0 var(--e3)!important;min-height:28px}

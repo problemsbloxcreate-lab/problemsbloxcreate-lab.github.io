@@ -209,7 +209,39 @@ window.EstudioSuporte ||= (() => {
 .ep-nov .pe{margin-top:auto;padding-top:22px;border-top:1px solid rgba(255,255,255,.14)}.ep-nov .pe p{margin:12px 0;color:rgba(255,255,255,.65);font-size:12.5px}
 .ep-nov .pe button{height:34px;padding:0 14px;border:2px solid rgba(255,255,255,.8);background:none;color:#fff;font:600 13px 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-nov .pe button:hover{background:rgba(255,255,255,.16)}
 .ep-nov button:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.ep-nov .cx,.ep-nov.sai,.ep-nov.sai .cx{animation:none}}`;
+@media (prefers-reduced-motion:reduce){.ep-nov .cx,.ep-nov.sai,.ep-nov.sai .cx{animation:none}}
+/* ===== CELESTE (11/11/2026, pedido da dona: nada do visual antigo): Novidades = painel da direita, relatório = janela central, selo e botões no padrão ===== */
+.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt{--sp-f:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--sp-el:#242428;--sp-f2:#1e1e21;--sp-f3:#28282c;--sp-f4:#333338;--sp-tx:#f5f5f7;--sp-tx2:rgba(235,235,245,.64);--sp-tx3:rgba(235,235,245,.4);--sp-ln:rgba(255,255,255,.09);--sp-ac:#5cc4ff;--sp-act:#04223a;--sp-vidro:rgba(21,21,23,.78)}
+html[data-tema="claro"] :is(.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt){--sp-el:#fff;--sp-f2:#fff;--sp-f3:#ececf0;--sp-f4:#e1e1e6;--sp-tx:#1d1d1f;--sp-tx2:rgba(60,60,67,.72);--sp-tx3:rgba(60,60,67,.46);--sp-ln:rgba(0,0,0,.08);--sp-ac:#0a74c9;--sp-act:#fff;--sp-vidro:rgba(245,245,247,.8)}
+:root:root .ep-nov{background:rgba(0,0,0,.45)!important;color:var(--sp-tx)!important;font:400 14px/1.5 var(--sp-f)!important}
+:root:root .ep-nov .cx{width:min(460px,100%)!important;padding:0 24px 24px!important;background:var(--sp-el)!important;border-left:1px solid var(--sp-ln);border-radius:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)!important;animation:epCelNov .25s cubic-bezier(.1,.9,.2,1) both!important}
+@keyframes epCelNov{from{opacity:0;transform:translateX(24px)}}
+:root:root .ep-nov .cab{align-items:center!important;height:52px;margin:0 -24px 16px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--sp-ln)}
+:root:root .ep-nov h2{font:600 17px/1.2 var(--sp-f)!important;margin:0!important;color:var(--sp-tx)}
+:root:root .ep-nov .cab small{color:var(--sp-tx3)!important;font-size:12px!important}
+:root:root .ep-nov .fx{width:32px!important;height:32px!important;padding:0!important;border-radius:50%!important;font-size:0!important;color:var(--sp-tx2)!important;display:grid!important;place-items:center}
+:root:root .ep-nov .fx i{width:auto!important;height:auto!important;border:0!important;font-size:15px!important;background:none!important}
+:root:root .ep-nov .fx:hover{background:var(--sp-f3)!important}
+:root:root .ep-nov h3{font:600 13px/1.3 var(--sp-f)!important;color:var(--sp-tx2)!important;text-transform:none!important;letter-spacing:0!important;margin:20px 0 8px!important}
+:root:root .ep-nov ul{margin:0;padding:12px 14px 12px 30px;background:var(--sp-f2);border-radius:12px;color:var(--sp-tx);font-size:14px}
+html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
+:root:root .ep-nov li{margin:4px 0}
+:root:root .ep-nov .pe{margin-top:24px;padding-top:16px;border-top:1px solid var(--sp-ln);color:var(--sp-tx3)}
+:root:root .ep-nov .pe p{color:var(--sp-tx3)!important;font-size:13px!important}
+:root:root .ep-nov .pe button,:root:root .ep-sup-bt{height:32px!important;padding:0 12px!important;border:0!important;border-radius:8px!important;background:var(--sp-f3)!important;color:var(--sp-tx)!important;font:500 13px var(--sp-f)!important;cursor:pointer}
+:root:root .ep-nov .pe button:hover,:root:root .ep-sup-bt:hover{background:var(--sp-f4)!important}
+:root:root .ep-sup-pg{background:rgba(0,0,0,.45)!important;color:var(--sp-tx)!important;font:400 14px/1.45 var(--sp-f)!important}
+:root:root .ep-sup-pg .cx{background:var(--sp-el)!important;border:0!important;border-radius:14px!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)!important;padding:24px!important;color:var(--sp-tx)!important}
+:root:root .ep-sup-pg .ic{border-radius:12px!important;background:rgba(92,196,255,.16)!important;color:var(--sp-ac)!important}
+:root:root .ep-sup-pg .t{font:600 17px var(--sp-f)!important}
+:root:root .ep-sup-pg .tx{color:var(--sp-tx2)!important}
+:root:root .ep-sup-pg button{border:0!important;border-radius:8px!important;background:var(--sp-f3)!important;color:var(--sp-tx)!important;font:500 13px var(--sp-f)!important}
+:root:root .ep-sup-pg button:hover{background:var(--sp-f4)!important}
+:root:root .ep-sup-pg button.sim{background:var(--sp-ac)!important;color:var(--sp-act)!important;font-weight:600!important}
+:root:root .ep-sup-pg button.x{border-radius:50%!important;background:transparent!important;color:var(--sp-tx2)!important}
+:root:root .ep-sup-selo{border:1px solid var(--sp-ln)!important;border-radius:6px!important;background:var(--sp-vidro)!important;color:var(--sp-tx2)!important;font:500 11px var(--sp-f)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+:root:root .ep-sup-selo:hover{color:var(--sp-tx)!important}
+`;
     (document.head || document.documentElement).appendChild(st); };
   const IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>';
   // o MESMO aviso de antes (menu da conta e selo do menu); fica no <html> para aparecer até por cima das telas de carregamento/erro

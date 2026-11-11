@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="cel">
 <head>
 <meta charset="utf-8">
+<script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MÚSICAS · Estúdio Problems</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">
@@ -12,12 +13,16 @@ if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('
 <!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
 <script src="/estudio-login.js"></script>
 <link rel="stylesheet" href="musicas.css">
+<link rel="preload" href="/estudio-inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estudio-visual.css">
 </head>
 <body>
 <header class="top">
   <a class="logo" href="./" data-vai="inicio" title="Voltar ao início"><span class="ic-prog" data-estudio-icone="mu" aria-hidden="true"></span><div><b>MÚSICAS</b><small>Estúdio Problems</small></div></a>
   <nav class="abas" id="abas" aria-label="Seções das Músicas"></nav>
+  <div class="esp"></div>
   <form id="busca" role="search"><input id="q" type="search" placeholder="Buscar som ou música" aria-label="Buscar som ou música" autocomplete="off"></form>
+  <button class="bt pri" data-enviar type="button">Enviar sons</button>
   <span data-estudio-conta></span>
 </header>
 <main id="tela"></main>

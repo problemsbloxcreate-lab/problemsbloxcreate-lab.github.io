@@ -735,7 +735,7 @@ window.EstudioPerm ||= (() => {
 .ep-selo,.ep-chave{border-radius:0!important;background:#1d6fd6!important}
 /* tudo com cantos retos nas janelas (menos ícones de programa, pontinhos de online e anéis de carregamento) */
 /* (11/11/2026) Conta, Espaço, Nuvem, confirmações, notificação e aviso saíram daqui: agora são CELESTE (bloco no fim) */
-:is(.ep-msgs,.ep-cal,.ep-admj) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.epm-on):not(.ep-carr):not(.ep-carr *):not(.ep-estado>i){border-radius:0!important}
+:is(.ep-msgs) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.epm-on):not(.ep-carr):not(.ep-carr *):not(.ep-estado>i){border-radius:0!important}
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
 .ep-esp.ep-saindo{animation:epSome .2s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
@@ -778,7 +778,7 @@ window.EstudioPerm ||= (() => {
    Vale em TODOS os programas e no menu. Sistema: skill design-problems › sistema-celeste.md e modelo-cabecalho.md.
    Tokens próprios (--ce-*) para não brigar com as variáveis de cada programa; claro quando o <html> tem data-tema="claro" (sol/lua, localStorage ep-tema).
    Prefixo :root:root body = ganha das camadas antigas daqui de cima (que usam !important). As Mensagens vão sair do Estúdio: o item fica escondido. */
-.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-pg,.ep-conta-aviso,.ep-notif{
+.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-pg,.ep-conta-aviso,.ep-notif,.ep-cal,.ep-admj{
   --ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
   --ce-fundo:#151517;--ce-fundo-2:#1e1e21;--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-elevado:#242428;
   --ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.40);
@@ -786,7 +786,7 @@ window.EstudioPerm ||= (() => {
   --ce-acento:#5cc4ff;--ce-acento-texto:#04223a;--ce-acento-suave:rgba(92,196,255,.16);
   --ce-sucesso:#30d158;--ce-aviso:#ff9f0a;--ce-perigo:#ff453a;--ce-novo:#bf5af2;
   --ce-veu:rgba(0,0,0,.45);--ce-sombra-2:0 0 0 .5px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.45);--ce-sombra-3:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)}
-html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-pg,.ep-conta-aviso,.ep-notif){
+html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-pg,.ep-conta-aviso,.ep-notif,.ep-cal,.ep-admj){
   --ce-fundo:#f5f5f7;--ce-fundo-2:#ffffff;--ce-fundo-3:#ececf0;--ce-fundo-4:#e1e1e6;--ce-elevado:#ffffff;
   --ce-texto:#1d1d1f;--ce-texto-2:rgba(60,60,67,.72);--ce-texto-3:rgba(60,60,67,.46);
   --ce-linha:rgba(0,0,0,.08);--ce-linha-forte:rgba(0,0,0,.14);
@@ -967,6 +967,48 @@ html[data-tema="claro"] :root:root body #ep-atualizando::after{background:radial
 html:not([data-tema="claro"]) body #ep-atualizando :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){:root:root body #ep-atualizando::before{animation:none}}
+/* --- CALENDÁRIO (Celeste, 11/11/2026): painel da direita como os outros; sem a grade azul do Metro nem a "luz" do Windows 10 --- */
+:root:root body .ep-cal{background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:0!important;border-left:1px solid var(--ce-linha)!important;border-radius:0!important;box-shadow:var(--ce-sombra-3)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:400 14px/1.4 var(--ce-fonte)!important}
+:root:root body .ep-cal *{border-radius:0}
+:root:root body .ep-cal .m{border-bottom:1px solid var(--ce-linha)!important;padding:0 20px 16px!important}
+:root:root body .ep-cal .cab{height:52px;margin:0 -20px 12px!important;padding:0 12px 0 20px;border-bottom:1px solid var(--ce-linha)}
+:root:root body .ep-cal .cab b,:root:root body .ep-cal .cab b.mes-nome{font:600 17px var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-cal .bt{height:28px!important;min-width:28px;padding:0 10px!important;border:0!important;border-radius:6px!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important;box-shadow:none!important}
+:root:root body .ep-cal .bt:hover{background:var(--ce-fundo-4)!important}
+:root:root body .ep-cal .bt.pri{background:var(--ce-acento)!important;color:var(--ce-acento-texto)!important;font-weight:600!important}
+:root:root body .ep-cal .bt.perigo{background:transparent!important;color:var(--ce-perigo)!important}
+:root:root body .ep-cal .g{gap:4px!important;padding:0!important}
+:root:root body .ep-cal .g::before{display:none!important}
+:root:root body .ep-cal .g .sem{background:none!important;color:var(--ce-texto-3)!important;font:600 11px var(--ce-fonte)!important;padding:4px 0!important}
+:root:root body .ep-cal .g button{background:transparent!important;border-radius:50%!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important;box-shadow:none!important}
+:root:root body .ep-cal .g button:hover{background:var(--ce-fundo-3)!important;box-shadow:none!important}
+:root:root body .ep-cal .g button.fora{color:var(--ce-texto-3)!important}
+:root:root body .ep-cal .g button.hoje:not(.sel){color:var(--ce-perigo)!important;font-weight:700!important;box-shadow:none!important}
+:root:root body .ep-cal .g button.sel{background:var(--ce-acento)!important;color:var(--ce-acento-texto)!important;font-weight:700!important}
+:root:root body .ep-cal .g .pts i{border-radius:50%!important}
+:root:root body .ep-cal .leg{color:var(--ce-texto-3)!important;font-size:12px!important}
+:root:root body .ep-cal .leg i{border-radius:50%!important}
+:root:root body .ep-cal .d{padding:0!important}
+:root:root body .ep-cal .dc{padding:16px 20px 8px!important}
+:root:root body .ep-cal .dc b{font:600 15px var(--ce-fonte)!important;color:var(--ce-texto)!important;text-transform:none!important}
+:root:root body .ep-cal .dc b::first-letter{text-transform:uppercase}
+:root:root body .ep-cal .l{padding:0 20px 12px!important}
+:root:root body .ep-cal .ev{background:var(--ce-fundo-2)!important;border-radius:10px!important;border-left-width:3px!important}
+:root:root body .ep-cal .vz{color:var(--ce-texto-3)!important}
+:root:root body .ep-cal form{border-top:1px solid var(--ce-linha)!important;padding:16px 20px 20px!important;gap:10px!important}
+:root:root body .ep-cal input[type=text],:root:root body .ep-cal input[type=time]{height:34px!important;background:var(--ce-fundo-3)!important;border:1px solid transparent!important;border-radius:8px!important;color:var(--ce-texto)!important;font:400 14px var(--ce-fonte)!important;box-shadow:none!important;padding:0 10px!important}
+:root:root body .ep-cal input:focus{border-color:var(--ce-acento)!important;box-shadow:0 0 0 3px var(--ce-acento-suave)!important}
+:root:root body .ep-cal input[type=checkbox]{accent-color:var(--ce-acento)}
+:root:root body .ep-cal label{color:var(--ce-texto-2)!important;font-size:13px!important}
+:root:root body .ep-cal .seg{background:var(--ce-fundo-3)!important;border-radius:8px!important;padding:2px!important}
+:root:root body .ep-cal .seg button{height:28px!important;border-radius:6px!important;background:transparent!important;color:var(--ce-texto-2)!important;font:500 13px var(--ce-fonte)!important}
+:root:root body .ep-cal .seg button.on{background:var(--ce-fundo-4)!important;color:var(--ce-texto)!important}
+:root:root body .ep-cal{animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
+/* --- JANELA DA ADM por cima dos programas: fundo da montanha (não mais as margaridas azuis) --- */
+:root:root body .ep-admj .cx::before{background:#0b1020 url(/fundo-montanha.jpg) center 40%/cover!important;filter:blur(16px)!important}
+:root:root body .ep-admj .cx::after{background:rgba(10,12,18,.55)!important}
+:root:root body .ep-admj .cx{border-radius:14px!important;overflow:hidden}
+:root:root body .ep-admj .car{background:#0b1020 url(/fundo-montanha.jpg) center 40%/cover!important}
 /* --- NOTIFICAÇÃO DE VERSÃO NOVA (em cima, à direita): Atualizar / Fechar; atualizar é opcional --- */
 .ep-notif-v{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.4);--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-texto:#04223a;
   position:fixed;z-index:2147483004;top:64px;right:16px;width:min(360px,calc(100vw - 32px));box-sizing:border-box;padding:16px;background:var(--ce-elevado);color:var(--ce-texto);border:1px solid var(--ce-linha);border-radius:14px;
