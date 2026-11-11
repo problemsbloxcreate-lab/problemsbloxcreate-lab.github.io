@@ -914,7 +914,28 @@ html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-
 :root:root body .ep-notif .tx small,:root:root body .ep-notif .tx span{color:var(--ce-texto-3)!important}
 :root:root body .ep-notif .x{border-radius:50%!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto-2)!important}
 :root:root body .ep-notif .di{border-radius:9px!important}
-@media (prefers-reduced-motion:reduce){:root:root body :is(.ep-conta-pop,.ep-esp .cx){animation:none!important}}`;
+/* --- cabeçalho dos painéis de espaço (11/11/2026, pedido da dona): linha de ponta a ponta; "Atualizar" = texto azul; "Fechar" = só o X --- */
+:root:root body .ep-esp .nv-cab{display:flex!important;align-items:center!important;gap:8px!important;height:52px;margin:0 -24px 16px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--ce-linha)}
+:root:root body .ep-esp .nv-cab>div:first-child{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px}
+:root:root body .ep-esp .nv-cab h2{height:auto!important;margin:0!important;padding:0!important;border:0!important;white-space:nowrap}
+:root:root body .ep-esp .nv-cab small{color:var(--ce-texto-3);font-size:12px;white-space:nowrap}
+:root:root body .ep-esp .nv-acoes{display:flex;align-items:center;gap:4px;margin:0!important}
+:root:root body .ep-esp .ep-link{height:28px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--ce-acento);font:500 13px var(--ce-fonte);cursor:pointer}
+:root:root body .ep-esp .ep-link:hover{background:var(--ce-acento-suave)}:root:root body .ep-esp .ep-link:disabled{color:var(--ce-texto-3);background:transparent;cursor:default}
+:root:root body .ep-esp .ep-x{width:32px;height:32px;display:grid;place-items:center;padding:0;border:0;border-radius:50%!important;background:transparent;color:var(--ce-texto-2);cursor:pointer}
+:root:root body .ep-esp .ep-x:hover{background:var(--ce-fundo-3);color:var(--ce-texto)}:root:root body .ep-esp .ep-x svg{width:16px;height:16px}
+/* --- carregando: esqueleto (as formas do que vem, com brilho leve) em vez de aparecer tudo de repente --- */
+:root:root body .ep-esq{display:block;height:12px;border-radius:6px!important;background:linear-gradient(90deg,var(--ce-fundo-3) 0,var(--ce-fundo-4) 50%,var(--ce-fundo-3) 100%);background-size:200% 100%;animation:epEsq 1.4s linear infinite}
+:root:root body .ep-esq.bola{width:74px;height:74px;border-radius:50%!important;flex:none}
+:root:root body .ep-esq.barra{height:4px;margin-top:8px}
+:root:root body .ep-esq.linha{height:44px;border-radius:12px!important;margin-bottom:8px}
+:root:root body .ep-esq-l{margin:16px 0}:root:root body .ep-esq-i{margin:0 0 16px}
+@keyframes epEsq{to{background-position:-200% 0}}
+/* menos efeito de "pular": o painel entra curto e suave, e o conteúdo não anima */
+:root:root body :is(.ep-conta-pop,.ep-esp .cx){animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
+@keyframes epCelEntra{from{opacity:0;transform:translateX(24px)}}
+:root:root body .ep-esp details[open] .grp-l,:root:root body .ep-esp details[open]>.linha{animation:none!important}
+@media (prefers-reduced-motion:reduce){:root:root body :is(.ep-conta-pop,.ep-esp .cx,.ep-esq){animation:none!important}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
   // (conversa da IA do Animador, pedidos do Modelador, texto do roteiro dos Shorts)
@@ -1337,25 +1358,29 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const corProg = nome => { const n = String(nome || '').toLowerCase(), k = PROG_ID[n] || PROG_ID[n.split(/[ (·]/)[0]]; try { const c = k && window.EstudioIcones?.config?.()?.[k]; if (c?.fg) return c.fg; } catch { } return '#8a9aab'; };
   const pastaIc = nome => { const c = corProg(nome); return `<svg class="ep-pasta" viewBox="0 0 34 28" aria-hidden="true"><path d="M1.5 5a2.5 2.5 0 0 1 2.5-2.5h8.5l3 3.5H30a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 30 26H4a2.5 2.5 0 0 1-2.5-2.5z" fill="${c}"/><path d="M1.5 10.5h31" stroke="rgba(255,255,255,.4)" stroke-width="1.3"/></svg>`; };
   const legenda = '<div class="ep-leg"><span><i style="background:#a98bff"></i>até 60%: tranquilo</span><span><i style="background:#f0b232"></i>60–85%: atenção</span><span><i style="background:#f0584f"></i>mais de 85%: quase cheio</span></div>';
+  // ESQUELETO (Celeste, pedido da dona 11/11/2026): enquanto mede, mostra as formas do que vai aparecer, com um brilho leve
+  const esqueletoHoje = () => '<div class="ep-esq-l">' + [0, 1, 2].map(() => '<div class="ep-esq-i"><i class="ep-esq" style="width:38%"></i><i class="ep-esq barra"></i></div>').join('') + '</div>';
+  const esqueletoNuvem = () => '<div class="topo"><i class="ep-esq bola"></i><div style="flex:1"><i class="ep-esq" style="width:60%;height:20px"></i><i class="ep-esq" style="width:85%;margin-top:10px"></i></div></div>'
+    + '<div class="ep-hoje">' + esqueletoHoje() + '</div><div class="ep-esq-l">' + [0, 1].map(() => '<i class="ep-esq linha"></i>').join('') + '</div>';
   async function painelNuvem() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
-    const d = document.createElement('div'); d.className = 'ep-esp nuvem'; d.innerHTML = '<div class="cx" role="dialog" aria-label="Espaço na nuvem"><h2>Espaço na nuvem</h2><p class="nota">Medindo a nuvem da equipe…</p></div>';
+    const d = document.createElement('div'); d.className = 'ep-esp nuvem'; d.innerHTML = '<div class="cx" role="dialog" aria-label="Espaço na nuvem" aria-busy="true"><div class="nv-cab"><div><h2>Espaço na nuvem</h2></div><div class="nv-acoes"><button type="button" class="ep-x" data-x title="Fechar" aria-label="Fechar">' + ICONES.fechar + '</button></div></div>' + esqueletoNuvem() + '</div>'; d.querySelector('[data-x]').onclick = () => d.remove();
     document.body.appendChild(d);
     const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); }, esc1 = e => { if (e.key === 'Escape' && !document.querySelector('.ep-pg')) fechar(); };
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
     const cx = d.querySelector('.cx');
     const pinta = async novo => {
-      let j; try { j = await usoNuvem(novo, true); } catch (e) { cx.innerHTML = `<h2>${ICONES.nuvem} Espaço na nuvem <button class="bt x" data-x>Fechar</button></h2><p class="nota">${esc(e.message)}</p>`; cx.querySelector('[data-x]').onclick = fechar; return; }
-      atualizaNuvem();
+      let j; try { j = await usoNuvem(novo, true); } catch (e) { cx.innerHTML = `<div class="nv-cab"><div><h2>Espaço na nuvem</h2></div><div class="nv-acoes"><button type="button" class="ep-x" data-x title="Fechar" aria-label="Fechar">${ICONES.fechar}</button></div></div><p class="nota">${esc(e.message)}</p>`; cx.querySelector('[data-x]').onclick = fechar; return; }
+      atualizaNuvem(); cx.removeAttribute('aria-busy');
       const pct = j.total / j.limite * 100, P = j.projetos || [], maior = Math.max(1, ...P.map(x => x.bytes)), atual = aqui() === 'Menu' ? 'Menu do Estúdio' : aqui(), its = [];
       const quemHtml = it => it.porNome ? `<span class="quem"><i>${it.porFoto ? `<img src="${esc(it.porFoto)}" alt="" referrerpolicy="no-referrer">` : esc(String(it.porNome)[0].toUpperCase())}</i>${esc(it.porNome)}</span>` : '';
       cx.innerHTML = `<div class="nv-cab"><div><h2>Espaço na nuvem</h2><small>Medido às ${new Date(j.em || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small></div>
-          <div class="nv-acoes"><button type="button" class="ic" data-atu2 title="Medir de novo o espaço e o uso do mês">${ICONES.atualizar}<span>Atualizar</span></button><button type="button" class="ic" data-x title="Fechar">${ICONES.fechar}<span>Fechar</span></button></div></div>
+          <div class="nv-acoes"><button type="button" class="ep-link" data-atu2 title="Medir de novo o espaço e o uso do mês"><span>Atualizar</span></button><button type="button" class="ep-x" data-x title="Fechar" aria-label="Fechar">${ICONES.fechar}</button></div></div>
         ${avisoReserva(j) || ''}<div class="topo"><span style="flex:none">${anelNuvem(pct, nivelNuvem(j)).replace('width="26" height="26"', 'width="74" height="74"')}</span>
           <div><b>${fmt(j.total)} usados</b><small>de ${fmt(j.limite)} da nuvem da equipe · ${fmt(Math.max(0, j.limite - j.total))} livres</small>
           <div class="nota" style="margin-top:4px">É o mesmo espaço para toda a equipe e todos os programas. ${j.adm ? 'Você é ADM: pode apagar daqui.' : 'Apagar da nuvem: só um ADM.'}</div></div></div>
-        <div class="ep-hoje"></div>
+        <div class="ep-hoje">${esqueletoHoje()}</div>
         ${legenda}
         <details class="grp sec"><summary><span class="seta">${ICONES.seta || '›'}</span><b>Por programa</b><span class="sp"></span><span class="tam">${P.length} ${P.length === 1 ? 'programa' : 'programas'}</span></summary><div class="grp-l">
         ${P.map(pr => `<div class="linha ${pr.nome === atual ? 'aqui' : ''}">${pastaIc(pr.nome)}<div class="n"><b>${esc(pr.nome)}${pr.nome === atual ? ' · aberto agora' : ''}</b><div class="barra"><i style="width:${(pr.bytes / maior * 100).toFixed(1)}%;background:${corProg(pr.nome)}"></i></div></div><span class="tam">${fmt(pr.bytes)}</span></div>`).join('') || '<div class="vazio">A nuvem está vazia.</div>'}</div></details>
@@ -1365,7 +1390,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
             ${it.ref && !it.protegido ? `<button class="bt ${j.adm ? 'vermelho' : 'so-adm'}" data-ap="${its.push(it) - 1}" title="${j.adm ? 'Apagar da nuvem' : 'Só um ADM pode apagar da nuvem (clique para saber mais)'}">${j.adm ? ICONES.lixo || '' : ICONES.sair}Apagar</button>` : ''}</div>`).join('')}
           ${g.itens.length > 200 ? `<div class="nota" style="margin:0 10px 8px">… e mais ${g.itens.length - 200}</div>` : ''}</details>`).join('')}
         <div class="pe"><span class="nota">${j.adm ? 'Para ouvir, ver e baixar tudo, abra o menu › ADM › Nuvem.' : 'O que está só neste computador fica no círculo do espaço no navegador.'}</span><span class="sp"></span>${j.adm ? '<a class="bt" href="/adm">Abrir ADM › Nuvem</a>' : ''}<button class="bt" data-atu>Medir de novo</button></div>`;
-      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true); cx.querySelector('[data-atu2]').onclick = () => { const b = cx.querySelector('[data-atu2]'); b.classList.add('girando'); b.querySelector('span').textContent = 'Medindo…'; pinta(true); };
+      cx.querySelector('[data-x]').onclick = fechar; cx.querySelector('[data-atu]').onclick = () => pinta(true); cx.querySelector('[data-atu2]').onclick = () => { const b = cx.querySelector('[data-atu2]'); b.querySelector('span').textContent = 'Medindo…'; b.disabled = true; cx.setAttribute('aria-busy', 'true'); pinta(true); };
       usoHoje(novo).then(h => { const el = cx.querySelector('.ep-hoje'); if (el && h) el.innerHTML = h; }).catch(() => { });
       cx.querySelectorAll('[data-ap]').forEach(b => b.onclick = async () => {
         const it = its[+b.dataset.ap];
@@ -1391,7 +1416,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   async function painelEspaco() {
     if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
     document.querySelector('.ep-esp')?.remove();
-    const d = document.createElement('div'); d.className = 'ep-esp'; d.innerHTML = '<div class="cx" role="dialog" aria-label="Espaço no navegador"><h2>Espaço no navegador</h2><p class="nota">Medindo o que cada programa guarda…</p></div>';
+    const d = document.createElement('div'); d.className = 'ep-esp'; d.innerHTML = '<div class="cx" role="dialog" aria-label="Espaço no navegador" aria-busy="true"><div class="nv-cab"><div><h2>Espaço no navegador</h2></div><div class="nv-acoes"><button type="button" class="ep-x" data-x title="Fechar" aria-label="Fechar">' + ICONES.fechar + '</button></div></div><div class="topo"><i class="ep-esq bola"></i><div style="flex:1"><i class="ep-esq" style="width:60%;height:20px"></i><i class="ep-esq" style="width:85%;margin-top:10px"></i></div></div><div class="ep-esq-l"><i class="ep-esq linha"></i><i class="ep-esq linha"></i></div></div>'; d.querySelector('[data-x]').onclick = () => d.remove();
     document.body.appendChild(d);
     const fechar = () => { d.remove(); document.removeEventListener('keydown', esc1); }, esc1 = e => { if (e.key === 'Escape' && !d.querySelector('.epm-sugere')) fechar(); };
     d.onclick = e => { if (e.target === d) fechar(); }; document.addEventListener('keydown', esc1);
@@ -1406,7 +1431,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const prov = PROV.find(x => x.programa === atual) || generico(atual, nomes);
     let itens = []; if (prov) { try { itens = (await prov.listar()) || []; } catch (er) { console.error(er); } }
     const cx = d.querySelector('.cx');
-    cx.innerHTML = `<h2>${ICONES.pacote} Espaço no navegador <button class="bt x" data-x>Fechar</button></h2>
+    cx.innerHTML = `<div class="nv-cab"><div><h2>Espaço no navegador</h2></div><div class="nv-acoes"><button type="button" class="ep-x" data-x title="Fechar" aria-label="Fechar">${ICONES.fechar}</button></div></div>
       <div class="topo"><span style="flex:none">${anel(pct).replace('width="26" height="26"', 'width="74" height="74"')}</span>
         <div><b>${fmt(e.usage)} usados</b><small>${e.quota ? `de ${fmt(e.quota)} que o navegador libera · ${fmt(Math.max(0, e.quota - e.usage))} livres` : 'O navegador não informou o limite.'}</small>
         <div class="nota" style="margin-top:4px">É o mesmo espaço para todos os programas do Estúdio Problems neste computador.</div></div></div>
