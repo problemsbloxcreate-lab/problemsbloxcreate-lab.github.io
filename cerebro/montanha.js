@@ -103,10 +103,12 @@ function anda() { if (anima) return; const passo = () => { const k = calmo() ? 1
     if (Math.abs(ALVO.s - V.s) > ALVO.s * 1e-3 || Math.abs(ALVO.x - V.x) > .3 || Math.abs(ALVO.y - V.y) > .3) anima = requestAnimationFrame(passo); else { V.s = ALVO.s; V.x = ALVO.x; V.y = ALVO.y; anima = 0; quadro(); } };
   anima = requestAnimationFrame(passo); }
 // a montanha nunca sai toda da tela
-function prende() { const w = cena.clientWidth, h = cena.clientHeight, b = caixa(), s = ALVO.s, m = 140;
-  const x0 = ALVO.x + b.x0 * s, x1 = ALVO.x + b.x1 * s, yTopo = ALVO.y - b.y1 * s, yBase = ALVO.y - b.y0 * s;
-  if (x1 < m) ALVO.x += m - x1; if (x0 > w - m) ALVO.x -= x0 - (w - m); if (yBase < m) ALVO.y += m - yBase; if (yTopo > h - m) ALVO.y -= yTopo - (h - m); }
-function zoomEm(px, py, fator) { const s = Math.min(V.fit * 16, Math.max(V.fit * .85, ALVO.s * fator)), wx = (px - ALVO.x) / ALVO.s, wy = (ALVO.y - py) / ALVO.s;
+// a vista não sai da montanha: com zoom, anda só dentro dela; sem zoom (ou se ela couber), fica centralizada
+function prende() { const w = cena.clientWidth, h = cena.clientHeight, topo = 64, b = caixa(), s = ALVO.s, bw = (b.x1 - b.x0) * s, bh = (b.y1 - b.y0) * s;
+  if (bw <= w) ALVO.x = w / 2 - (b.x0 + b.x1) / 2 * s; else ALVO.x = Math.min(-b.x0 * s, Math.max(w - b.x1 * s, ALVO.x));
+  if (bh <= h - topo) ALVO.y = topo + (h - topo) / 2 + (b.y0 + b.y1) / 2 * s; else ALVO.y = Math.min(topo + b.y1 * s, Math.max(h + b.y0 * s, ALVO.y)); }
+function zoomEm(px, py, fator) { if (fator < 1 && ALVO.s * fator <= V.fit * 1.02) return enquadra(true); // zoom todo para fora: a montanha volta inteira ao centro
+  const s = Math.min(V.fit * 16, Math.max(V.fit, ALVO.s * fator)), wx = (px - ALVO.x) / ALVO.s, wy = (ALVO.y - py) / ALVO.s;
   ALVO.s = s; ALVO.x = px - wx * s; ALVO.y = py + wy * s; prende(); anda(); }
 // leva a vista até um ponto (busca, Enter)
 function voa(o) { if (!o) return; const w = cena.clientWidth, h = cena.clientHeight; ALVO.s = Math.max(ALVO.s, V.fit * 3.5); ALVO.x = w / 2 - o.x * ALVO.s; ALVO.y = (h + 64) / 2 + o.y * ALVO.s; prende(); anda(); }
@@ -119,7 +121,7 @@ function desenha(id, animar) {
   const lin = M.cume - Math.min(320, M.Hm * .16), nv = new Path2D(); nv.moveTo(M.cx - larg, -(M.cume + 300)); nv.lineTo(M.cx + larg, -(M.cume + 300)); for (let i = 0, n = 34; i <= n; i++) nv.lineTo(M.cx + larg - 2 * larg * i / n, -(lin - (i % 2 ? 14 + r() * 30 : r() * 12))); nv.closePath(); NEVE = nv;
   ESTRELAS = Array.from({ length: 260 }, () => [r(), r(), .4 + r() * 1.1, .25 + r() * .75]);
   // serras ao fundo, atrás da montanha, um pouco mais largas que ela
-  SERRAS = [[.55, 11, 's1'], [.36, 17, 's2']].map(([alt, n, c]) => ({ c, pts: Array.from({ length: n + 1 }, (_, i) => [M.cx - larg + 2 * larg * i / n, M.base - 60 + M.Hm * alt * (.25 + r() * .7)]) }));
+  SERRAS = [[.55, 11, 's1', 1.7], [.36, 17, 's2', 1.25]].map(([alt, n, c, per]) => { const P = M.baseHalf * 2 * per, ys = Array.from({ length: n }, () => M.base - 60 + M.Hm * alt * (.25 + r() * .7)); ys.push(ys[0]); return { c, P, pts: ys.map((y, i) => [i / n, y]) }; });
   const nomes = ['Acampamento', 'Trilhas', 'Encosta', 'Picos', 'Mais fundo']; MARCAS = [];
   for (let n = 0; n <= Math.min(4, Math.floor(M.maxN)); n++) { const ns = G.nos.filter(o => Math.floor(o.nivel) === n && o.t !== 'pagina'); if (ns.length) MARCAS.push({ nome: nomes[n], y: Math.min(...ns.map(o => o.y)) }); }
   trilha(); if (animar && !calmo()) { cv.classList.add('sai'); setTimeout(() => { enquadra(false); requestAnimationFrame(() => cv.classList.remove('sai')); }, 200); } else enquadra(false);
@@ -135,7 +137,10 @@ function quadro() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = C.estrela; for (const [fx, fy, rr, o] of ESTRELAS) { ctx.globalAlpha = o; ctx.fillRect(((fx * w * 1.3 + V.x * .04) % (w * 1.3) + w * 1.3) % (w * 1.3) - w * .15, fy * h * .9, rr, rr); } ctx.globalAlpha = 1;
   ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * V.x, dpr * V.y);
-  for (const sr of SERRAS) { ctx.fillStyle = C[sr.c]; ctx.beginPath(); ctx.moveTo(sr.pts[0][0], -(M.base - 400)); for (const [x, y] of sr.pts) ctx.lineTo(x, -y); ctx.lineTo(sr.pts.at(-1)[0], -(M.base - 400)); ctx.fill(); }
+  const vx0 = (-V.x) / s - 50, vx1 = (w - V.x) / s + 50, vBaixo = (V.y - h) / s - 50, chao = M.base - 160;
+  for (const sr of SERRAS) { ctx.fillStyle = C[sr.c]; ctx.beginPath(); const k0 = Math.floor((vx0 - M.cx) / sr.P) - 1, k1 = Math.ceil((vx1 - M.cx) / sr.P) + 1; ctx.moveTo(M.cx + k0 * sr.P, -Math.min(chao, vBaixo));
+    for (let k = k0; k < k1; k++) for (const [fx, y] of sr.pts) ctx.lineTo(M.cx + (k + fx) * sr.P, -y); ctx.lineTo(M.cx + k1 * sr.P, -Math.min(chao, vBaixo)); ctx.fill(); }
+  ctx.fillStyle = C.r3; ctx.fillRect(vx0, -chao, vx1 - vx0, chao - vBaixo + 10);
   const g = ctx.createLinearGradient(0, -M.cume, 0, -M.base + 40); g.addColorStop(0, C.r1); g.addColorStop(.55, C.r2); g.addColorStop(1, C.r3); ctx.fillStyle = g; ctx.fill(CAMINHO);
   const lado = ctx.createLinearGradient(M.cx - M.baseHalf, 0, M.cx + M.baseHalf, 0); lado.addColorStop(0, 'rgba(255,255,255,.06)'); lado.addColorStop(.5, 'rgba(0,0,0,0)'); lado.addColorStop(1, 'rgba(0,0,0,.25)'); ctx.fillStyle = lado; ctx.fill(CAMINHO);
   ctx.save(); ctx.clip(CAMINHO); const gn = ctx.createLinearGradient(M.cx - 300, -M.cume, M.cx + 300, -M.cume + 400); gn.addColorStop(0, C.neve); gn.addColorStop(1, C.neveS); ctx.globalAlpha = C.escuro ? .9 : 1; ctx.fillStyle = gn; ctx.fill(NEVE); ctx.restore(); ctx.globalAlpha = 1;
