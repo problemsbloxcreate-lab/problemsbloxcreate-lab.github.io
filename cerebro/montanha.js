@@ -96,7 +96,8 @@ const V = { s: 1, x: 0, y: 0, fit: 1 }, ALVO = { s: 1, x: 0, y: 0 }; let anima =
 const cor = n => getComputedStyle(H).getPropertyValue(n).trim();
 const pegaCores = () => { C = { acento: cor('--acento'), texto: cor('--texto'), texto2: cor('--texto-2'), texto3: cor('--texto-3'), r1: cor('--rocha-1'), r2: cor('--rocha-2'), r3: cor('--rocha-3'), neve: cor('--neve'), neveS: cor('--neve-sombra'), s1: cor('--serra-1'), s2: cor('--serra-2'), estrela: cor('--estrela'), escuro: H.dataset.tema !== 'claro', fonte: cor('--fonte') || 'system-ui' }; };
 const caixa = () => ({ x0: M.cx - M.baseHalf - 140, x1: M.cx + M.baseHalf + 140, y0: M.base - 110, y1: M.cume + 70 });
-function enquadra(suave) { const w = cena.clientWidth, h = cena.clientHeight, b = caixa(), topo = 64, s = Math.min((w - 90) / (b.x1 - b.x0), (h - topo - 24) / (b.y1 - b.y0));
+let semTamanho = false;
+function enquadra(suave) { const w = cena.clientWidth, h = cena.clientHeight; if (w < 120 || h < 120) { semTamanho = true; return; } semTamanho = false; const b = caixa(), topo = 64, s = Math.min((w - 90) / (b.x1 - b.x0), (h - topo - 24) / (b.y1 - b.y0));
   V.fit = s; ALVO.s = s; ALVO.x = w / 2 - (b.x0 + b.x1) / 2 * s; ALVO.y = topo + (h - topo) / 2 + (b.y0 + b.y1) / 2 * s; if (!suave || calmo()) { V.s = ALVO.s; V.x = ALVO.x; V.y = ALVO.y; } anda(); }
 function anda() { if (anima) return; const passo = () => { const k = calmo() ? 1 : .24; V.s += (ALVO.s - V.s) * k; V.x += (ALVO.x - V.x) * k; V.y += (ALVO.y - V.y) * k; quadro();
     if (Math.abs(ALVO.s - V.s) > ALVO.s * 1e-3 || Math.abs(ALVO.x - V.x) > .3 || Math.abs(ALVO.y - V.y) > .3) anima = requestAnimationFrame(passo); else { V.s = ALVO.s; V.x = ALVO.x; V.y = ALVO.y; anima = 0; quadro(); } };
@@ -129,6 +130,7 @@ const raioTela = o => Math.max(o.t === 'pagina' ? 1.6 : 3, o.r * Math.pow(V.s, .
 let pedidoQuadro = 0; const pinta = () => { if (!pedidoQuadro && !anima) pedidoQuadro = requestAnimationFrame(() => { pedidoQuadro = 0; quadro(); }); };
 function quadro() {
   if (!G || !document.body.classList.contains('mt-on')) return; const dpr = devicePixelRatio || 1, w = cena.clientWidth, h = cena.clientHeight, s = V.s, F = C.fonte;
+  if (semTamanho || w < 120 || h < 120 || !(s > 0)) return; // ainda sem tamanho: nada de desenhar invertido
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = C.estrela; for (const [fx, fy, rr, o] of ESTRELAS) { ctx.globalAlpha = o; ctx.fillRect(((fx * w * 1.3 + V.x * .04) % (w * 1.3) + w * 1.3) % (w * 1.3) - w * .15, fy * h * .9, rr, rr); } ctx.globalAlpha = 1;
@@ -161,7 +163,8 @@ function quadro() {
     else if (o.t === 'raiz' || ((o.t === 'assunto') && (rt >= 7 || perto > 2.2))) escreve(o.a.nome, o, o.t === 'raiz' ? 15 : rt >= 10 ? 13 : 12);
     else if (o.t === 'pagina' && perto > 4.5) escreve(o.p.nome, o, 11, 500, C.texto2); }
   ctx.textAlign = 'left'; ctx.font = `600 11px ${F}`; ctx.fillStyle = C.texto3; ctx.globalAlpha = 1;
-  for (const m of MARCAS) { const x = V.x + (M.cx - M.hw((m.y - M.base) / M.Hm) - 40) * s - 120, y = V.y - m.y * s + 4; if (y > 70 && y < h - 6) ctx.fillText(m.nome.toUpperCase(), Math.max(14, x), y); }
+  let ultimoY = 1e9; // nomes dos andares só quando há espaço entre eles (montanha pequena = sem amontoar)
+  for (const m of MARCAS) { const x = V.x + (M.cx - M.hw((m.y - M.base) / M.Hm) - 40) * s - 120, y = V.y - m.y * s + 4; if (y > 70 && y < h - 6 && ultimoY - y >= 22) { ctx.fillText(m.nome.toUpperCase(), Math.max(14, x), y); ultimoY = y; } }
   raiz.querySelector('[data-mt-tudo]').hidden = !(s > V.fit * 1.12 || Math.abs(V.x - ALVO.x) > 1e9);
 }
 
@@ -262,7 +265,10 @@ raiz.querySelector('[data-mt-add]').onclick = () => { let tipo = 'aprendizado'; 
 
 // ---------- ligar e desligar (o cerebro.js chama ao trocar de tela) ----------
 new MutationObserver(() => { pegaCores(); pinta(); }).observe(H, { attributes: true, attributeFilter: ['data-tema'] });
-let rt; addEventListener('resize', () => { if (!document.body.classList.contains('mt-on') || !G) return; clearTimeout(rt); rt = setTimeout(() => enquadra(false), 120); });
+let rt, tamAntes = '';
+new ResizeObserver(() => { const t = cena.clientWidth + 'x' + cena.clientHeight; if (t === tamAntes || !document.body.classList.contains('mt-on') || !G) return; const eraZero = semTamanho; tamAntes = t;
+  clearTimeout(rt); if (eraZero) enquadra(false); else rt = setTimeout(() => enquadra(false), 120); }).observe(cena);
+addEventListener('resize', () => { if (!document.body.classList.contains('mt-on') || !G) return; clearTimeout(rt); rt = setTimeout(() => enquadra(false), 120); });
 raiz.querySelector('[data-mt-tudo]').onclick = () => enquadra(true);
 let aberta = null;
 window.Montanha = {
@@ -274,7 +280,7 @@ window.Montanha = {
       // confere com a nuvem: se mudou algo, redesenha (o computador nunca fica desatualizado)
       aberta = atualiza().then(mudou => { carrega.hidden = true; if (mudou || !G) { monta(); desenha(daUrl(), false); } }).catch(e => { carrega.hidden = true; if (!G) throw e; aviso('Não consegui conferir se o Cérebro mudou: ' + e.message, true); });
       return L ? undefined : aberta; }
-    const m = daUrl(); if ((m || null) !== atual) desenha(m, true); else pinta();
+    const m = daUrl(); if ((m || null) !== atual) desenha(m, true); else enquadra(false);
     atualiza().then(mudou => { if (mudou) { monta(); desenha(atual, false); } }).catch(() => { }); },
   fecha() { document.body.classList.remove('mt-on'); fecha(); fechaAchados(); dica.hidden = true; BUSCA = new Set(); },
 };
