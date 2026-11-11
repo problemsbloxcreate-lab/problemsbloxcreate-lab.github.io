@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="cel">
 <head>
 <!-- Para IAs: antes de qualquer tarefa neste projeto, leia o Cérebro (memória compartilhada da equipe): rotas /cerebro do Worker turma-ia, comandos em cerebro/cerebro.mjs do repositório do site. Depois grave nele o que aprendeu. -->
 <meta charset="utf-8">
@@ -806,7 +806,9 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 @media (max-width:720px){#menu .mp-filtro button{padding:0 7px;font-size:11px}}
 
 /* ===== tudo com cantos retos (pedido da dona): menos os ícones dos programas ===== */
-:is(#top,#menu,#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+/* CELESTE: no menu com html.cel (cabeçalho e menu) os cantos voltam; ADM, janelas e login continuam retos até a vez deles */
+:is(#adm,.modal,.toast,#saida,.login) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
+html:not(.cel) :is(#top,#menu) :not(svg):not(svg *):not([data-estudio-icone]):not([data-estudio-icone] *):not(.ep-conta-fw > i):not(.ico):not(.parte):not(.anel11):not(.anel11 *):not(.spin):not(.spin *):not(.dot):not(.epm-on):not(.pt-vivo):not(input[type=checkbox]){border-radius:0!important}
 /* o "Salvar" de dentro de Ícones e Níveis de acesso fica escondido: quem salva é a barra de baixo */
 #adm #ic-salvar,#adm #niv-salvar{display:none!important}
 
@@ -904,14 +906,93 @@ html.adm-saindo #adm{animation:mnSome .22s ease both}html.adm-saindo #adm .adm{a
 if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev' + location.pathname + location.search + location.hash);
 </script>
 <script>
-// aplica o mesmo tema/cor salvos no Estúdio (localStorage 'ep-tema'), se houver
-(() => { try { const c = JSON.parse(localStorage.getItem('ep-tema') || '{}'); if (c.tema) document.documentElement.dataset.tema = c.tema;
-  if (/^#[0-9a-f]{6}$/i.test(c.cor || '')) { const n = parseInt(c.cor.slice(1), 16), s = document.documentElement.style;
-    s.setProperty('--ac', c.cor); s.setProperty('--ac-rgb', [n >> 16, n >> 8 & 255, n & 255].join(',')); } } catch { } })();
+// CELESTE (2.0, 11/11/2026): tema escuro ou claro do Estúdio todo (localStorage 'ep-tema' = 'escuro' | 'claro'; o sol/lua troca)
+(() => { let t = 'escuro'; try { t = localStorage.getItem('ep-tema') === 'claro' ? 'claro' : 'escuro'; } catch { } document.documentElement.dataset.tema = t; })();
 </script>
 <script>window.ESTUDIO_CONTA = { semMenu: true, autoMontar: false, conta: () => abrirConta(), sair: () => signOut(), extras: () => [],
   nuvem: true, token: () => fb?.currentUser ? token() : null }; // círculo roxo da nuvem da equipe também no menu</script>
 <script src="/estudio-conta.js"></script>
+<link rel="preload" href="/estudio-inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estudio-visual.css">
+<style>
+/* ===================== MENU CELESTE (2.0, decisões da dona em 11/11/2026) =====================
+   Liga com class="cel" no <html> (tirar a classe = volta o Metro de antes). Vale só para o MENU (#top e #menu); ADM e login ficam para depois.
+   - Fundo: a foto do "Perfil e fundo" DESFOCADA, com véu; os blocos são cartões de vidro.
+   - Cabeçalho igual ao dos programas (ESTÚDIO PROBLEMS); relógio e data grandes saem (ficam no Calendário).
+   - Programas: ícone grande com o nome embaixo, em grade, sem bloco atrás. Só a saudação curta. Mensagens sai.
+   As camadas antigas usam #menu/#top e !important: por isso o prefixo html.cel body e o !important aqui. */
+html.cel{--vidro-cartao:rgba(36,36,40,.52);--vidro-cartao-2:rgba(52,52,58,.62);--veu-fundo:rgba(10,10,12,.5)}
+html.cel[data-tema="claro"]{--vidro-cartao:rgba(255,255,255,.55);--vidro-cartao-2:rgba(255,255,255,.75);--veu-fundo:rgba(245,245,247,.45)}
+html.cel body{font-family:var(--fonte)!important;color:var(--texto);-webkit-font-smoothing:antialiased}
+/* fundo: foto desfocada + véu */
+html.cel body #pagebg{background:var(--fundo)!important}
+html.cel body #pagebg img{filter:blur(36px) saturate(1.15)!important;transform:scale(1.12)!important}
+html.cel body #pagebg::after{background:var(--veu-fundo)!important}
+/* ---------- cabeçalho ---------- */
+html.cel body #top{height:var(--alt-cabecalho)!important;min-height:0!important;padding:0 var(--e4)!important;flex-wrap:nowrap!important;gap:var(--e3)!important;
+  background:var(--vidro)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5)!important;backdrop-filter:blur(20px) saturate(1.5)!important;border-bottom:1px solid var(--linha)!important;color:var(--texto)}
+html.cel body #top .brand{gap:10px!important}
+html.cel body #top .brand .logo{width:28px!important;height:28px!important}
+html.cel body #top .brand b,html.cel body #top .brand #top-nome{font:700 13px/1.1 var(--fonte)!important;letter-spacing:.06em!important;text-transform:uppercase;text-shadow:none!important;color:var(--texto)}
+html.cel body #top .top-centro,html.cel body #top [data-estudio-relogio]{display:none!important}
+html.cel body #top .mn-lupa{width:var(--alt-controle);height:var(--alt-controle);display:grid;place-items:center;border:0;border-radius:var(--raio-controle)!important;background:transparent;color:var(--texto-2);margin-left:auto}
+html.cel body #top .mn-lupa:hover{background:var(--fundo-3);color:var(--texto)}
+html.cel body #top .mn-lupa[hidden]+.top-centro+#btn-ver,html.cel body #top .sp{flex:1}
+html.cel body #top .ep-conta-nuvem,html.cel body #top .ep-conta-espaco{display:grid!important}
+html.cel body #top .badge{border-radius:var(--raio-p)!important;background:var(--acento-suave)!important;color:var(--acento)!important;font:600 11px var(--fonte)!important}
+/* ---------- saudação ---------- */
+html.cel body #menu{color:var(--texto)}
+html.cel body #menu .mn-cab{justify-content:flex-start!important;text-align:left!important;margin:var(--e6) 0 var(--e5)!important}
+html.cel body #menu .mn-cab>div{align-items:flex-start!important}
+html.cel body #menu #hello{font:700 var(--t-tela)/1.15 var(--fonte)!important;letter-spacing:-.01em!important;text-shadow:none!important;color:var(--texto)!important;margin:0}
+html.cel body #menu #boasvindas,html.cel body #menu #frase{display:none!important}
+html.cel body #menu .mn-busca{border-radius:var(--raio-controle)!important;background:var(--vidro-cartao)!important;border:1px solid var(--linha)!important;color:var(--texto)}
+html.cel body #menu .mn-busca input{color:var(--texto)!important;font:400 var(--t-corpo) var(--fonte)!important}
+html.cel body #menu .mn-busca small{color:var(--texto-3)}
+/* ---------- títulos dos grupos ---------- */
+html.cel body #menu .mn-grupo h2{font:600 var(--t-destaque)/1.2 var(--fonte)!important;color:var(--texto)!important;text-shadow:none!important;margin:0 0 var(--e3)!important}
+html.cel body #menu .progs-cab{gap:var(--e2);align-items:center}
+html.cel body #menu :is(.btn-org,.rec-atu,.mp-prog-bt){height:28px;padding:0 10px;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--acento-link)!important;font:500 var(--t-pequeno) var(--fonte)!important;box-shadow:none!important}
+html.cel body #menu :is(.rec-atu,.mp-prog-bt){color:var(--texto-2)!important;padding:0 6px}
+html.cel body #menu :is(.btn-org,.rec-atu,.mp-prog-bt):hover{background:var(--fundo-3)!important}
+html.cel body #menu .mp-filtro{display:inline-flex;gap:2px;padding:2px;border-radius:var(--raio-controle)!important;background:var(--vidro-cartao)!important;border:0!important}
+html.cel body #menu .mp-filtro button{border:0!important;border-radius:6px!important;background:transparent!important;color:var(--texto-2)!important}
+html.cel body #menu .mp-filtro button[aria-pressed="true"]{background:var(--fundo-4)!important;color:var(--texto)!important}
+/* ---------- PROGRAMAS: ícone grande + nome, sem bloco atrás ---------- */
+html.cel body #menu .grid,html.cel body #menu .grid[data-densidade]{--mn-u:104px;grid-auto-rows:auto!important;gap:var(--e2)!important}
+html.cel body #menu .card{height:112px!important;background:transparent!important;border-radius:var(--raio-cartao)!important;box-shadow:none!important;color:var(--texto)!important;transition:background var(--rapido)!important}
+html.cel body #menu .card:hover,html.cel body #menu .card:focus-visible{background:var(--vidro-cartao)!important;box-shadow:none!important}
+html.cel body #menu .card .ic,html.cel body #menu .grid[data-densidade] .card .ic{top:40%!important;width:64px!important;height:64px!important;filter:drop-shadow(0 6px 14px rgba(0,0,0,.28))}
+html.cel body #menu .card .ic>span,html.cel body #menu .card .ic svg,html.cel body #menu .card .ic img{width:64px!important;height:64px!important}
+html.cel body #menu .card b,html.cel body #menu .grid[data-densidade] .card b{font:500 var(--t-pequeno)/1.2 var(--fonte)!important;color:var(--texto)!important;text-shadow:none!important}
+html.cel body #menu .card .txt{bottom:6px!important}
+html.cel body #menu .card .tag,html.cel body #menu .card .tag-adm{border-radius:var(--raio-p)!important;background:var(--fundo-4)!important;color:var(--texto-2)!important;font:500 10.5px var(--fonte)!important;border:0!important}
+html.cel body #menu .card .fixar{border-radius:var(--raio-p)!important}
+html.cel body #menu .grid.org .card:hover{box-shadow:none!important;background:var(--vidro-cartao)!important}
+/* ---------- ESTÚDIO, MEUS PROJETOS e MEUS ATALHOS: cartões de vidro iguais ---------- */
+html.cel body #menu .blocos{gap:var(--e3)!important}
+html.cel body #menu :is(.et,.blocos>*){background:var(--vidro-cartao)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4);backdrop-filter:blur(24px) saturate(1.4);
+  border:1px solid var(--linha)!important;border-radius:var(--raio-janela)!important;color:var(--texto)!important;box-shadow:none!important;animation:none!important;transition:background var(--rapido)!important}
+html.cel body #menu :is(.et,.blocos>*):hover,html.cel body #menu :is(.et,.blocos>*):focus-visible{background:var(--vidro-cartao-2)!important;box-shadow:none!important;outline:none}
+html.cel body #menu :is(.et,.blocos>*) *{text-shadow:none!important}
+html.cel body #menu .et[data-et="msgs"]{display:none!important}
+html.cel body #menu .et .nm{font:500 var(--t-legenda) var(--fonte)!important;color:var(--texto-2)!important}
+html.cel body #menu .et .pct{font:700 26px/1 var(--fonte)!important;color:var(--texto)}
+html.cel body #menu .et .pct small{font-size:14px;font-weight:600}
+html.cel body #menu .et .barra{height:4px!important;border-radius:2px!important;background:var(--fundo-4)!important;overflow:hidden}
+html.cel body #menu .et .barra i{border-radius:2px!important}
+html.cel body #menu .et .dia b{font:700 36px/1 var(--fonte)!important;color:var(--perigo)}
+html.cel body #menu .et .dia small{color:var(--texto-2)!important}
+html.cel body #menu .et .et-r b{font:600 var(--t-destaque) var(--fonte)!important}
+html.cel body #menu .et .et-r small{color:var(--texto-3)!important}
+html.cel body #menu .et :is(.gi,.des){color:var(--texto-2)}
+html.cel body #menu .et .foto,html.cel body #menu .et .foto>*{border-radius:50%!important;overflow:hidden}
+html.cel body #menu .et .foto{background:linear-gradient(135deg,#5cc4ff,#7c6cff);color:#fff;font:600 24px var(--fonte)!important}
+/* selo da versão */
+html.cel body .versao-site{height:24px!important;padding:0 10px!important;border:1px solid var(--linha-forte)!important;border-radius:var(--raio-p)!important;background:var(--vidro)!important;color:var(--texto-2)!important;font:500 11px var(--fonte)!important;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-grid!important;place-items:center}
+@media (prefers-reduced-transparency:reduce){html.cel body #menu :is(.et,.blocos>*){-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--fundo-2)!important}}
+</style>
 </head>
 <body>
 <div id="pagebg" hidden></div>
