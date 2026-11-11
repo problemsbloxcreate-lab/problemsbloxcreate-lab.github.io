@@ -1203,6 +1203,7 @@ html.cel body .modal .mc .hint,html.cel body .modal .mc label{color:var(--texto-
 html.cel body .modal .mc p.hint{color:var(--texto-3)!important;font-weight:400!important}
 html.cel body .modal .mc :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea){background:var(--fundo-3)!important;color:var(--texto)!important;border:1px solid transparent!important;border-radius:var(--raio-controle)!important;min-height:36px;padding:0 var(--e3)!important;font:400 var(--t-corpo) var(--fonte)!important;box-shadow:none!important;outline:none}
 html.cel body .modal .mc :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea):focus{border-color:var(--acento)!important;box-shadow:0 0 0 3px var(--acento-suave)!important}
+html.cel body .modal .mc .at-cor[style*="rgb(255, 255, 255)"],html.cel body .modal .mc .at-cor[style*="#fff"]{border-color:var(--acento)!important;box-shadow:0 0 0 2px var(--acento-suave)!important}
 html.cel body .modal .mc .at-cor{width:32px!important;height:32px!important;border-radius:var(--raio-controle)!important;border-width:2px!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
 html.cel body .modal .mc .btn,html.cel body .modal .mc button.btn{height:var(--alt-controle)!important;padding:0 var(--e3)!important;border:0!important;border-radius:var(--raio-controle)!important;background:var(--fundo-3)!important;color:var(--texto)!important;font:500 var(--t-corpo) var(--fonte)!important;box-shadow:none!important}
 html.cel body .modal .mc .btn:hover{background:var(--fundo-4)!important}
@@ -2195,7 +2196,7 @@ const clima = {
     const c = this.cidades(), d = this.dados;
     if (!d) { this.busca(); return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="des">${ICE(this.IC.nuv, 34)}</span><span class="pct">—</span><span class="nm">${esc(c[0].n)}</span></button>`; }
     const faces = c.map((x, k) => { const v = d[k] || {}, [txt, ic] = this.tipo(v.w, v.dia);
-      return `<span class="cl-f" title="${esc(x.n)}: ${esc(txt)}"><span class="des">${ICE(this.IC[ic], 34)}</span><span class="pct">${isNaN(v.t) ? '—' : v.t + '<small>°</small>'}</span><span class="cl-mm">${isNaN(v.mx) ? '' : `${v.mx}° / ${v.mn}°`}</span><span class="nm">${esc(x.n)}</span></span>`; }).join('');
+      return `<span class="cl-f" title="${esc(x.n)}: ${esc(txt)}"><span class="des">${ICE(this.IC[ic], 34)}</span><span class="pct">${v.t == null || isNaN(v.t) ? '—' : v.t + '<small>°</small>'}</span><span class="cl-mm">${v.mx == null || isNaN(v.mx) ? '' : `${v.mx}° / ${v.mn}°`}</span><span class="nm">${esc(x.n)}</span></span>`; }).join('');
     return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="cl-faces" style="--i:${this.i % c.length}">${faces}</span></button>`;
   },
   liga(box) { // mais de uma cidade: passa de uma em uma (devagar)

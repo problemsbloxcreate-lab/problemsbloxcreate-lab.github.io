@@ -1238,6 +1238,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const p = document.createElement('div'); p.className = 'ep-progs'; p.setAttribute('role', 'menu'); p.setAttribute('aria-label', 'Programas');
     p.innerHTML = `<a class="ep-pg-it inicio" href="/" role="menuitem"><span class="ic">${ICONES.inicio}</span><b>Início</b></a>`
       + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic">${icDe(x.ic) || esc(String(x.nome)[0] || '?')}</span><b>${esc(x.nome)}</b></a>`; }).join('');
+    p.style.gridTemplateColumns = 'repeat(' + Math.min(4, L.length + 1) + ',88px)'; // poucos programas: a caixa fica do tamanho deles
     document.body.appendChild(p);
     const r = bt.getBoundingClientRect(); p.style.top = (r.bottom + 8) + 'px'; p.style.right = Math.max(8, innerWidth - r.right - 8) + 'px';
     const fora = e => { if (!p.contains(e.target) && !bt.contains(e.target)) fecha(); }, tecla = e => { if (e.key === 'Escape') fecha(); };

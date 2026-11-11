@@ -57,6 +57,7 @@ html.cel .top .abas :is(button,a):hover{color:var(--texto)}
 html.cel .top .abas :is(button,a):is(.on,[aria-selected="true"],[aria-current="page"]){background:var(--fundo-4);color:var(--texto);box-shadow:var(--sombra-1)}
 html.cel[data-tema="claro"] .top .abas :is(button,a):is(.on,[aria-selected="true"],[aria-current="page"]){background:#fff}
 html.cel .top .abas svg{width:14px;height:14px;color:inherit}
+html.cel .top .abas:empty{display:none}
 html.cel .top input[type=search]{height:var(--alt-controle);width:220px;padding:0 var(--e3);border:1px solid transparent;border-radius:var(--raio-controle);background:var(--fundo-3);color:var(--texto);font:400 var(--t-corpo) var(--fonte)}
 html.cel .top input[type=search]::placeholder{color:var(--texto-3)}
 html.cel .top input[type=search]:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-suave)}
