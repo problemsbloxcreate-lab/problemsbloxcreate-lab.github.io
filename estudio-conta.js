@@ -1076,7 +1076,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   /* CELESTE (11/11/2026): nas páginas com <html class="cel">, o botão sol/lua (claro ↔ escuro) entra sozinho antes do canto da conta.
      A escolha fica em localStorage "ep-tema" e vale para o Estúdio todo (as outras abas mudam junto). Página que já tem [data-tema-bt] cuida do dela. */
   function poeTema(alvo) {
-    const H = document.documentElement; if (!H.classList.contains('cel') || document.querySelector('[data-tema-bt]')) return;
+    const H = document.documentElement; if (!H.classList.contains('cel') || H.hasAttribute('data-tema-fixo') || document.querySelector('[data-tema-bt]')) return; // data-tema-fixo: programa que ainda não tem o claro (ex.: Animador)
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tema-bt'; b.dataset.temaBt = '';
     const SOL = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
     const LUA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
