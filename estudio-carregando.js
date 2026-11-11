@@ -25,17 +25,17 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '1.3 - Flower Field', em: '10/11/2026',
+window.EstudioVersao ||= { nome: '1.4 - Flower Field', em: '11/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
-    ['Programas novos', ['Cérebro: a memória da equipe e das IAs, com uma página para cada programa.', 'Músicas: o álbum de sons da equipe, com envio, lixeira e espaço usado.']],
-    ['Nuvem', ['Plano pago de 5 GB, com tudo num lugar só e uma pausa de aviso antes de qualquer cobrança.', 'Os sons antigos agora ficam na nuvem principal, conferidos um por um, sem mudar nenhum projeto.', 'Sons grandes (mais de 10 MB) já podem ser enviados.', 'O espaço na nuvem voltou a aparecer, conta os sons e ganhou o botão Atualizar.']],
-    ['Animador e Ateliê', ['A tela só abre com imagens e sons prontos.', 'Exportação no estilo Metro, com qualidade (bitrate) e legendas .srt para o YouTube.', 'Volume geral da animação, com mudo, na prévia e no vídeo.', 'Botão Pu: manda a animação para o Publicações.', 'Ateliê novo: tema Metro, movimento suave e a pergunta "Ateliê geral ou só este projeto". Os personagens antigos ficam guardados na pasta LEGACY.']],
-    ['Preparativos e Publicações', ['Preparativos: apagar roteiro pelo botão direito, arrastar para pastas, menu mais simples e cabeçalho do roteiro arrumado.', 'Publicações: canais da equipe, faixa Hoje, abas e filtros, e a janela Postar refeita.']],
-    ['Menu', ['Perfil em blocos Metro, selo ADM de volta e a nuvem roxa.']]
+    ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Menu redesenhado em uma coluna, com o mesmo cabeçalho dos programas e uma grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Uma tela só, com a foto da montanha, do clique no menu até o programa aberto.']],
+    ['Cérebro', ['A Montanha: o Cérebro virou um mapa de pontos em forma de montanha. A rodinha do mouse dá zoom e clicar num ponto explica o que é.', 'Busca que acha o trecho certo dentro das páginas.', 'Adicionar ao Cérebro: gera o pedido pronto para a CelestIA e guarda em Pedidos.', 'Telas do Cérebro no visual novo, sem os blocos coloridos.']],
+    ['Atualizações', ['Aviso de versão nova em qualquer página, com Atualizar e Fechar. Atualizar é opcional.', 'Preparativos e Publicações ficam guardados no computador e abrem na hora.']],
+    ['Animador e Ateliê', ['Juntas com trava: cotovelo e joelho só dobram para o lado certo.', 'Andar sem travar e acessórios com atraso suave.']],
+    ['Saiu', ['As Mensagens saíram do menu.']]
   ] };
 window.ESTUDIO_VERSAO ||= window.EstudioVersao.nome; // nome antigo (compatibilidade)
 window.EstudioDiario ||= (() => {
