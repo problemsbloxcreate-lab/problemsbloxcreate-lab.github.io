@@ -283,6 +283,7 @@ window.EstudioPerm ||= (() => {
     adm: svg('<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>'),
     chave: svg('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),
     inicio: svg('<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z"/>'),
+    grade: svg('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),
     msg: svg('<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/>'),
     equipe: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2a5 5 0 0 1 5.5 5.3"/>'),
     enviar: svg('<path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/>'),
@@ -935,6 +936,20 @@ html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-
 :root:root body :is(.ep-conta-pop,.ep-esp .cx){animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
 @keyframes epCelEntra{from{opacity:0;transform:translateX(24px)}}
 :root:root body .ep-esp details[open] .grp-l,:root:root body .ep-esp details[open]>.linha{animation:none!important}
+/* --- TROCAR DE PROGRAMA: grade de ícones que abre do botão de grade do cabeçalho --- */
+.ep-progs{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-fundo-3:#28282c;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-suave:rgba(92,196,255,.16);
+  position:fixed;z-index:2147483002;display:grid;grid-template-columns:repeat(4,88px);gap:4px;padding:10px;background:var(--ce-elevado);color:var(--ce-texto);border:1px solid var(--ce-linha);border-radius:14px;
+  box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55);font:400 12px/1.25 var(--ce-fonte);animation:epProgsEntra .18s cubic-bezier(.1,.9,.2,1) both;box-sizing:border-box}
+html[data-tema="claro"] .ep-progs{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-texto-2:rgba(60,60,67,.72);--ce-fundo-3:#ececf0;--ce-linha:rgba(0,0,0,.08);--ce-acento:#0a74c9;--ce-acento-suave:rgba(10,116,201,.12)}
+.ep-progs .ep-pg-it{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 8px;border-radius:10px;color:inherit;text-decoration:none;outline:0}
+.ep-progs .ep-pg-it:hover,.ep-progs .ep-pg-it:focus-visible{background:var(--ce-fundo-3)}
+.ep-progs .ep-pg-it.on{background:var(--ce-acento-suave)}
+.ep-progs .ep-pg-it .ic{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;overflow:hidden;font:700 18px var(--ce-fonte)}
+.ep-progs .ep-pg-it .ic svg{width:44px;height:44px;display:block}
+.ep-progs .ep-pg-it.inicio .ic{background:var(--ce-fundo-3);color:var(--ce-texto-2)}.ep-progs .ep-pg-it.inicio .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9}
+.ep-progs .ep-pg-it b{font-weight:500;max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+@keyframes epProgsEntra{from{opacity:0;transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.ep-progs{animation:none}}
 @media (prefers-reduced-motion:reduce){:root:root body :is(.ep-conta-pop,.ep-esp .cx,.ep-esq){animation:none!important}}`;
   // cara de programa de computador: botões, menus e partes da tela não ficam selecionáveis (nem arrastam como imagem);
   // o que é para copiar continua: campos, textos editáveis, código, a classe "selecionavel" e alguns textos dos programas
@@ -1001,17 +1016,17 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   });
   /* VOLTAR AO MENU (mesma aba): salva o que está aberto antes. Se não tem nada para salvar (ou salva num instante), vai direto;
      se está salvando, aparece a janela "Indo para o menu" até terminar; se não conseguir salvar, pergunta se vai mesmo assim. */
-  async function irAoMenu(e) {
+  async function irAoMenu(e, para = '/') {
     if (e && (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1)) return; // nova aba/janela: o navegador faz sozinho
-    e?.preventDefault(); const vai = () => { location.href = '/'; };
+    e?.preventDefault(); const vai = () => { location.href = para; }, nomeDe = para === '/' ? 'o menu' : 'o outro programa';
     if (!salvadores().length) return vai();
     let pronto = false, erro = null; const sal = salvarAntesDeSair().then(() => { pronto = true; }, x => { erro = x; pronto = true; });
     await Promise.race([sal, new Promise(r => setTimeout(r, 350))]);
     let d = null;
     if (!pronto) { d = document.createElement('div'); d.className = 'ep-pg';
-      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="Indo para o menu"><div class="ic azul">${ICONES.inicio}</div><div class="t">Indo para o menu</div><p class="x"><span class="ep-gira"></span>Salvando o que está aberto antes de sair…</p></div>`;
+      d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="Saindo"><div class="ic azul">${ICONES.inicio}</div><div class="t">Indo para ${nomeDe}</div><p class="x"><span class="ep-gira"></span>Salvando o que está aberto antes de sair…</p></div>`;
       document.body.appendChild(d); await sal; }
-    if (erro) { d?.remove(); if (await pergunta({ titulo: 'Não consegui salvar', texto: (erro.message || 'O projeto aberto não foi salvo.') + ' Ir para o menu mesmo assim?', ok: 'Ir sem salvar', okErro: 'Ir sem salvar', icone: ICONES.inicio })) vai(); return; }
+    if (erro) { d?.remove(); if (await pergunta({ titulo: 'Não consegui salvar', texto: (erro.message || 'O projeto aberto não foi salvo.') + ' Ir mesmo assim?', ok: 'Ir sem salvar', okErro: 'Ir sem salvar', icone: ICONES.inicio })) vai(); return; }
     vai();
   }
   /* MINHA CONTA em qualquer programa: abre a janela da conta do menu por cima (sem sair do programa), como as Mensagens */
@@ -1042,7 +1057,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   function caixa(p) {
     const box = document.createElement('div'); box.className = 'ep-conta' + (MSG.denuncias ? ' ep-denuncia' : '') + (VERSAO.nova ? ' ep-novo' : '') + (MSG.mencoes ? ' ep-mencao' : MSG.nao ? ' ep-msg' : '');
     // redesign (03/11/2026): só a casinha, na mesma pílula, em todos os programas (o nome fica para leitores de tela e na dica)
-    const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Voltar ao menu do Estúdio Problems" aria-label="Voltar ao menu">${ICONES.inicio}</a>`;
+    const menu = CFG.semMenu ? '' : `<a class="ep-conta-menu" href="/" title="Programas e Início" aria-label="Programas e Início" aria-haspopup="true">${ICONES.grade || ICONES.inicio}</a>`;
     const nuvemBt = CFG.nuvem ? `<button class="ep-conta-nuvem" type="button" title="Espaço na nuvem da equipe">${anelNuvem(0)}</button>` : '';
     box.innerHTML = `${nuvemBt}<button class="ep-conta-espaco" type="button" title="Espaço usado no navegador">${anel(0)}</button>${menu}<span class="ep-conta-fw"><button class="ep-conta-btn" type="button" aria-haspopup="true" aria-expanded="false" title="${esc(p.nome)} · ${esc(p.email)}">${av(p)}</button><i class="v" title="Tem versão nova: atualize os sites"></i><i class="m" title="Mensagem nova"></i><i class="a" title="Citaram você com @">@</i><i class="d" title="Tem denúncia para os ADMs verem">!</i></span>
       <div class="ep-conta-pop" hidden role="menu"></div>`;
@@ -1085,7 +1100,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     };
     btn.onclick = e => { e.stopPropagation(); pop.hidden ? abre() : fecha(); };
     box.querySelector('.ep-conta-espaco').onclick = () => { fecha(); painelEspaco(); };
-    const bm = box.querySelector('.ep-conta-menu'); if (bm) bm.onclick = ev => irAoMenu(ev); // salva antes de ir (e avisa se demorar)
+    const bm = box.querySelector('.ep-conta-menu'); if (bm) bm.onclick = ev => { if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button === 1) return; ev.preventDefault(); abreProgramas(bm); }; // salva antes de ir (e avisa se demorar)
     const nb = box.querySelector('.ep-conta-nuvem'); if (nb) { nb.onclick = () => { fecha(); painelNuvem(); }; setTimeout(() => atualizaNuvem(), 0); }
     atualizaAneis();
     document.addEventListener('click', e => { if (!box.contains(e.target) && !pop.contains(e.target)) fecha(); });
@@ -1096,6 +1111,30 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   let P = null;
   /* CELESTE (11/11/2026): nas páginas com <html class="cel">, o botão sol/lua (claro ↔ escuro) entra sozinho antes do canto da conta.
      A escolha fica em localStorage "ep-tema" e vale para o Estúdio todo (as outras abas mudam junto). Página que já tem [data-tema-bt] cuida do dela. */
+  /* TROCAR DE PROGRAMA (Celeste, pedido da dona 11/11/2026: "fácil de seguir de um programa ao outro"): o botão de grade do cabeçalho
+     abre a lista de programas (a mesma do menu, guardada em localStorage 'ep-programas' quando a pessoa abre o menu) + Início.
+     Ctrl/Shift/botão do meio continuam abrindo o menu como link. Sem a lista guardada, usa os programas conhecidos (respeitando a permissão). */
+  const PROGS_PADRAO = [['Animador', '/animador/', 'an', 'animador'], ['Shorts', '/shorts/', 'sh', 'shorts'], ['Editor', '/editor/', 'ed', 'editor'], ['Modelador', '/modelador/', 'md', 'modelador'],
+    ['Preparativos', '/preparativos/', 'pr', 'preparativos'], ['Publicações', '/publicacoes/', 'x-publicacoes', 'publicacoes'], ['Músicas', '/musicas/', 'mu', 'musicas'], ['Cérebro', '/cerebro/', 'cb', 'cerebro']];
+  function listaProgramas() {
+    try { const j = JSON.parse(localStorage.getItem('ep-programas') || 'null'); if (j?.L?.length) return j.L; } catch { }
+    return PROGS_PADRAO.filter(p => window.EstudioPerm?.pode?.(p[3]) !== false).map(([nome, url, ic]) => ({ nome, url, ic }));
+  }
+  function abreProgramas(bt) {
+    const ja = document.querySelector('.ep-progs'); if (ja) { ja.remove(); return; }
+    const icDe = id => { try { return id && window.EstudioIcones?.svg ? window.EstudioIcones.svg(id, 44) : ''; } catch { return ''; } };
+    const aqui = location.pathname, L = listaProgramas();
+    const p = document.createElement('div'); p.className = 'ep-progs'; p.setAttribute('role', 'menu'); p.setAttribute('aria-label', 'Programas');
+    p.innerHTML = `<a class="ep-pg-it inicio" href="/" role="menuitem"><span class="ic">${ICONES.inicio}</span><b>Início</b></a>`
+      + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic">${icDe(x.ic) || esc(String(x.nome)[0] || '?')}</span><b>${esc(x.nome)}</b></a>`; }).join('');
+    document.body.appendChild(p);
+    const r = bt.getBoundingClientRect(); p.style.top = (r.bottom + 8) + 'px'; p.style.right = Math.max(8, innerWidth - r.right - 8) + 'px';
+    const fora = e => { if (!p.contains(e.target) && !bt.contains(e.target)) fecha(); }, tecla = e => { if (e.key === 'Escape') fecha(); };
+    const fecha = () => { p.remove(); removeEventListener('pointerdown', fora, true); removeEventListener('keydown', tecla, true); bt.setAttribute('aria-expanded', 'false'); };
+    setTimeout(() => { addEventListener('pointerdown', fora, true); addEventListener('keydown', tecla, true); }); bt.setAttribute('aria-expanded', 'true');
+    p.querySelectorAll('.ep-pg-it').forEach(a => a.onclick = ev => { if (a.classList.contains('on')) { ev.preventDefault(); fecha(); return; } fecha(); irAoMenu(ev, a.getAttribute('href')); });
+    p.querySelector('.ep-pg-it.on, .ep-pg-it')?.focus();
+  }
   function poeTema(alvo) {
     const H = document.documentElement; if (!H.classList.contains('cel') || H.hasAttribute('data-tema-fixo') || document.querySelector('[data-tema-bt]')) return; // data-tema-fixo: programa que ainda não tem o claro (ex.: Animador)
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tema-bt'; b.dataset.temaBt = '';
