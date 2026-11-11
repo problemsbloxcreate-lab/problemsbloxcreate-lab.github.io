@@ -1054,6 +1054,9 @@ async function cbPrepara(db) { if (CB.prep) return; await db.batch([
    Cada página é cortada nos títulos (#, ##, ###) e em pedaços de até ~3000 letras. A busca devolve só os melhores trechos. O que está nas pastas de
    CB_ARQUIVO fica fora da busca padrão (só com arquivo=1). Os trechos são refeitos a cada gravação; nada disso substitui o histórico em cerebro_ver. */
 const CB_ARQUIVO = new Set(['Arquivo da conta anterior']), CB_TRECHO_MAX = 3000, CB_CARTOES_MAX = 40;
+// ARQUIVO FRIO (decisão da dona, 11/11/2026): guardado com histórico e pode voltar, mas fica fora da busca, do índice das IAs e da camada leve do computador
+const CB_FRIO = 'Arquivo frio';
+const cbSemFrio = itens => { const m = new Map(itens.map(x => [x.id, x])), raiz = x => { let y = x; for (let i = 0; y?.pai && i < 20; i++) y = m.get(y.pai); return y; }; return itens.filter(x => raiz(x)?.nome !== CB_FRIO || raiz(x)?.pai); };
 const cbSemMd = t => String(t || '').replace(/```[\s\S]*?```/g, ' ').replace(/[#>*_`|\[\]]+/g, ' ').replace(/\(https?:[^)]*\)/g, '').replace(/\s+/g, ' ').trim();
 const cbResumoAuto = t => { const s = cbSemMd(t); if (s.length <= 160) return s; const c = s.slice(0, 160), p = Math.max(c.lastIndexOf('. '), c.lastIndexOf('; ')); return (p > 60 ? c.slice(0, p + 1) : c.replace(/\s+\S*$/, '') + '…'); };
 const cbSlug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
@@ -1073,7 +1076,7 @@ async function cbIndexa(db, id) {
   const n = await db.prepare('SELECT id, pai, tipo, nome, resumo, corpo, apagado FROM cerebro_no WHERE id = ?').bind(id).first(), st = [db.prepare('DELETE FROM cerebro_trecho WHERE no = ?').bind(id)];
   if (n && !n.apagado && n.tipo !== 'pasta' && n.tipo !== 'imagem' && n.corpo) { const cam = [n.nome]; let vivo = true;
     for (let p = n.pai, i = 0; p && i < 20; i++) { const f = await db.prepare('SELECT pai, nome, apagado FROM cerebro_no WHERE id = ?').bind(p).first(); if (!f || f.apagado) { vivo = false; break; } cam.unshift(f.nome); p = f.pai; }
-    if (vivo) { const caminho = cam.join('/'), arq = CB_ARQUIVO.has(cam[0]) ? 1 : 0;
+    if (vivo && cam[0] !== CB_FRIO) { const caminho = cam.join('/'), arq = CB_ARQUIVO.has(cam[0]) ? 1 : 0;
       cbCorta(n.corpo).slice(0, 900).forEach((t, i) => st.push(db.prepare('INSERT INTO cerebro_trecho (no, ordem, caminho, titulo, resumo, texto, arquivo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(n.id, i, caminho, t.titulo, i === 0 && n.resumo ? n.resumo : cbResumoAuto(t.texto), t.texto, arq))); } }
   for (let i = 0; i < st.length; i += 80) await db.batch(st.slice(i, i + 80));
 }
@@ -1109,7 +1112,7 @@ async function cerebro(req, env, login, path, cors) {
       return ok({ itens: todos.filter(x => !x.apagado && !escondido(x)), lixeira: adm ? todos.filter(x => x.apagado) : [], adm, ia, pedidosNovos: novos?.n || 0 }); }
     if (rota === '/comece') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT nome FROM cerebro_no WHERE pai IS NULL AND apagado = 0 ORDER BY nome').all(), novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
       return ok({ texto: n?.corpo || '', pastas: (results || []).map(x => x.nome), pedidosNovos: novos?.n || 0 }); }
-    if (rota === '/inicio') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, apagado FROM cerebro_no').all(), t = results || [], m = new Map(t.map(x => [x.id, x])), cam = x => { const o = []; for (let y = x, i = 0; y && i < 20; y = m.get(y.pai), i++) { if (y.apagado) return null; o.unshift(y.nome); } return o.join('/'); }, novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
+    if (rota === '/inicio') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, apagado FROM cerebro_no').all(), t = results || [], m = new Map(t.map(x => [x.id, x])), cam = x => { const o = []; for (let y = x, i = 0; y && i < 20; y = m.get(y.pai), i++) { if (y.apagado) return null; o.unshift(y.nome); } return o[0] === CB_FRIO ? null : o.join('/'); }, novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
       const lin = t.filter(x => x.tipo !== 'pasta').map(x => [cam(x), x]).filter(([c]) => c).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true })).map(([c, x]) => `- ${c}${x.marca ? ' (' + x.marca + ')' : ''}${x.resumo ? ': ' + x.resumo : ''}`);
       return new Response(`${n?.corpo || ''}\n\n# Índice (${lin.length} arquivos, ${novos?.n || 0} pedido(s) esperando)\n\nPara abrir: GET /cerebro/item?caminho=<Pasta/Arquivo>\n\n${lin.join('\n')}\n`, { headers: { ...nc, 'content-type': 'text/plain; charset=utf-8' } }); }
     if (rota === '/chaves') { if (ia || !adm) return erro('Só um ADM, pelo site, vê os acessos das IAs.', 403, 'adm'); const { results } = await db.prepare('SELECT h, nome, em, por, revogada FROM cerebro_chave ORDER BY em DESC LIMIT 100').all(); return ok({ itens: results || [] }); }
@@ -1125,7 +1128,7 @@ async function cerebro(req, env, login, path, cors) {
     if (rota === '/leve') { const [s, no, ca, as, et, li] = await db.batch([db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca'), db.prepare(`SELECT ${CB_LEVE} FROM cerebro_no`),
         db.prepare('SELECT id, ordem, texto, aponta, ver, em FROM cerebro_cartao WHERE apagado = 0 ORDER BY ordem, em'), db.prepare('SELECT id, pai, nome, resumo, ver, em FROM cerebro_assunto WHERE apagado = 0'),
         db.prepare('SELECT no, assunto FROM cerebro_etiqueta'), db.prepare('SELECT de, para, nota FROM cerebro_liga')]);
-      return ok({ seq: s.results?.[0]?.s || 0, itens: no.results || [], cartoes: ca.results || [], assuntos: as.results || [], etiquetas: et.results || [], ligas: li.results || [], busca: !!CB.fts }); }
+      return ok({ seq: s.results?.[0]?.s || 0, itens: cbSemFrio(no.results || []), cartoes: ca.results || [], assuntos: as.results || [], etiquetas: et.results || [], ligas: li.results || [], busca: !!CB.fts }); }
     // só o que mudou depois de "desde" (uma consulta de uma linha quando nada mudou). refazer = mudou demais, baixe /leve de novo.
     if (rota === '/mudou') { const desde = Math.max(0, +q.get('desde') || 0), s = (await db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca').first())?.s || 0;
       if (s <= desde) return ok({ seq: s, nada: true });
