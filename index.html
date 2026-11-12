@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR" class="cel">
 <head>
-<script>/* VISUAL METRO 2.0 (12/11/2026): ligado por padrão; "?visual=celeste" volta ao anterior, "?visual=metro" liga de novo */try{const q=new URLSearchParams(location.search).get('visual');if(q==='celeste'||q==='metro')localStorage.setItem('ep-visual',q);if(localStorage.getItem('ep-visual')!=='celeste')document.documentElement.classList.add('m2')}catch{document.documentElement.classList.add('m2')}</script>
+<script>/* MENU EM COLUNAS (teste de 12/11/2026, reprovado pela dona): DESLIGADO por padrão. Só liga com ?visual=colunas; ?visual=celeste desliga. */try{const q=new URLSearchParams(location.search).get('visual');if(q==='celeste'||q==='colunas')localStorage.setItem('ep-visual',q);if(localStorage.getItem('ep-visual')==='colunas')document.documentElement.classList.add('m2')}catch{}</script>
 <!-- Para IAs: antes de qualquer tarefa neste projeto, leia o Cérebro (memória compartilhada da equipe): rotas /cerebro do Worker turma-ia, comandos em cerebro/cerebro.mjs do repositório do site. Depois grave nele o que aprendeu. -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1305,20 +1305,20 @@ html.cel.m2 body #menu .blocos.meus{flex:1!important;min-height:0!important}
 @media (max-width:760px){html.cel.m2{--m2-u:92px;--m2-margem:18px}html.cel.m2 body #menu .mn-area{flex-direction:column!important}html.cel.m2 body #top #hello{display:none}}
 @media (prefers-reduced-motion:reduce){html.cel.m2 body #menu *{animation:none!important}}
 /* saída do menu e login = a mesma tela do carregamento (Celeste): foto escurecida, ícone pulando, título, porcentagem e uma frase */
-html.cel.m2 body #saida .ep-lg,html.cel.m2 body .login .lcard .logo{width:96px!important;height:96px!important;border-radius:22px!important;overflow:hidden!important;box-shadow:0 14px 34px rgba(0,0,0,.35)!important;animation:apPula 1.15s cubic-bezier(.3,0,.3,1) infinite}
-html.cel.m2 body #saida .ep-lg :is(svg,img){width:96px!important;height:96px!important}
+html.cel body #saida .ep-lg,html.cel body .login .lcard .logo{width:96px!important;height:96px!important;border-radius:22px!important;overflow:hidden!important;box-shadow:0 14px 34px rgba(0,0,0,.35)!important;animation:apPula 1.15s cubic-bezier(.3,0,.3,1) infinite}
+html.cel body #saida .ep-lg :is(svg,img){width:96px!important;height:96px!important}
 @keyframes apPula{0%,100%{transform:translateY(0)}38%{transform:translateY(-22px)}58%{transform:translateY(0) scale(1.06,.94)}72%{transform:translateY(-4px)}}
-html.cel.m2 body #saida .ep-nm,html.cel.m2 body .login .lcard h1{margin:34px 0 10px!important;font:600 22px/1.2 var(--fonte)!important;color:#fff!important}
-html.cel.m2 body #saida .ep-br{width:min(360px,80vw)!important;height:5px!important;border-radius:3px!important;background:rgba(255,255,255,.2)!important}
-html.cel.m2 body #saida .ep-br>i{border-radius:3px!important;background:#fff!important}
-html.cel.m2 body .login{z-index:60!important}
-html.cel.m2 body .login .msg{display:grid!important;justify-items:center;gap:10px;margin:0!important;font:400 14px var(--fonte)!important;color:rgba(255,255,255,.8)!important}
-html.cel.m2 body .login .msg .ep-pc2{order:-1;display:block!important}
-html.cel.m2 body .login .msg .ep-pc2 b{display:block;font:700 44px/1.05 var(--fonte)!important;letter-spacing:-.02em;color:#fff!important}
-html.cel.m2 body .login .msg .ep-pc2 [data-ep-arq]{display:none!important}
-html.cel.m2 body .login .msg .ep-det{display:block!important;width:min(360px,80vw)!important;height:5px!important;border-radius:3px!important;background:rgba(255,255,255,.2)!important;overflow:hidden;border:0!important;animation:none!important}
-html.cel.m2 body .login .msg .ep-det>i{display:block;height:100%;border-radius:3px!important;background:#fff!important}
-@media (prefers-reduced-motion:reduce){html.cel.m2 body :is(#saida .ep-lg,.login .lcard .logo){animation:none!important}}
+html.cel body #saida .ep-nm,html.cel body .login .lcard h1{margin:34px 0 10px!important;font:600 22px/1.2 var(--fonte)!important;color:#fff!important}
+html.cel body #saida .ep-br{width:min(360px,80vw)!important;height:5px!important;border-radius:3px!important;background:rgba(255,255,255,.2)!important}
+html.cel body #saida .ep-br>i{border-radius:3px!important;background:#fff!important}
+html.cel body .login{z-index:60!important}
+html.cel body .login .msg{display:grid!important;justify-items:center;gap:10px;margin:0!important;font:400 14px var(--fonte)!important;color:rgba(255,255,255,.8)!important}
+html.cel body .login .msg .ep-pc2{order:-1;display:block!important}
+html.cel body .login .msg .ep-pc2 b{display:block;font:700 44px/1.05 var(--fonte)!important;letter-spacing:-.02em;color:#fff!important}
+html.cel body .login .msg .ep-pc2 [data-ep-arq]{display:none!important}
+html.cel body .login .msg .ep-det{display:block!important;width:min(360px,80vw)!important;height:5px!important;border-radius:3px!important;background:rgba(255,255,255,.2)!important;overflow:hidden;border:0!important;animation:none!important}
+html.cel body .login .msg .ep-det>i{display:block;height:100%;border-radius:3px!important;background:#fff!important}
+@media (prefers-reduced-motion:reduce){html.cel body :is(#saida .ep-lg,.login .lcard .logo){animation:none!important}}
 </style>
 </head>
 <body>

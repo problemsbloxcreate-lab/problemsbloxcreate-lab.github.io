@@ -472,7 +472,7 @@ html[data-tema="claro"] #estudio-porta.m2::before{background:linear-gradient(180
   (document.head || root).appendChild(st);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = document.createElement('div');
-  el.id = 'estudio-porta'; try { if (localStorage.getItem('ep-visual') !== 'celeste') el.classList.add('m2'); } catch { el.classList.add('m2'); } // METRO 2.0 (12/11/2026) el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+  el.id = 'estudio-porta'; el.classList.add('m2'); // carregamento novo (12/11/2026): foto escurecida, ícone pulando, porcentagem e uma frase el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
   el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(TITULO)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m>Carregando</div></div>`;
   // entra já, antes do <body> existir; quando o <body> chega, a tela passa para dentro dele (fica por cima de tudo)
   root.appendChild(el);
