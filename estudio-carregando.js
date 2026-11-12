@@ -340,7 +340,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
     document.querySelectorAll('[data-ep-pct]').forEach(e => e.textContent = Math.round(mostrado) + '%');
     document.querySelectorAll('[data-ep-arq]').forEach(e => { if (e.textContent !== t) e.textContent = t; });
     document.querySelectorAll('[data-ep-barra]').forEach(e => e.style.width = mostrado.toFixed(1) + '%');
-    document.querySelectorAll('#estudio-porta, .login').forEach(e => e.style.setProperty('--ep-p', mostrado.toFixed(1))); // anel do carregamento
+    document.querySelectorAll('#estudio-porta, .login, #turma-login').forEach(e => e.style.setProperty('--ep-p', mostrado.toFixed(1))); // anel do carregamento
   };
   let rodando = false;
   let semTela = 0;
