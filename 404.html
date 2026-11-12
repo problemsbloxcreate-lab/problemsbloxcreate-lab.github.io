@@ -1375,6 +1375,10 @@ html.cel.ip body #menu .ip-wid{order:1}
 /* WIDGETS (à esquerda) */
 html.cel.ip body .ip-wid{display:grid;grid-template-columns:repeat(2,var(--ip-w));grid-template-rows:auto auto minmax(0,1fr);gap:16px;min-height:0;height:100%}
 html.cel.ip body .ip-ola{grid-column:span 2;padding:2px 4px 0;order:0}html.cel.ip body #menu .ip-wid #g-est{order:1!important}
+/* SELO DO CARGO (ADM) na barra (pedido da dona, 12/11/2026: "o selo adm tá torto"): estava 7 px abaixo da pílula da versão. Agora
+   fica no mesmo meio e na mesma altura, em pílula como a versão. */
+html.cel body #top .brand .selos-cargo{display:inline-flex!important;align-items:center!important;align-self:center!important;gap:4px;height:20px!important;margin:0 0 0 6px!important;padding:0!important;position:static!important;top:auto!important;transform:none!important;vertical-align:middle}
+html.cel body #top .brand .selos-cargo .badge{display:inline-flex!important;align-items:center;height:20px!important;line-height:1!important;margin:0!important;padding:0 8px!important;border-radius:999px!important;position:static!important;top:auto!important;transform:none!important;font:700 11px var(--fonte)!important;letter-spacing:.02em}
 /* ADM SEM RESTOS DO METRO (pedido da dona, 12/11/2026): no tema claro os rótulos e textos da ADM tinham cor clara fixa (sumiam no branco);
    o seletor Com borda / Sem borda tinha canto reto. Agora tudo vem dos tokens do Celeste, nos dois temas. */
 html.cel[data-tema="claro"] body #adm .ic-lista button:not([aria-selected="true"]) span{color:var(--texto)!important}
