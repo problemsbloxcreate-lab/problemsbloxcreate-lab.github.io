@@ -77,7 +77,7 @@
   function pinta(raiz) {
     favicon();
     if (!porCaminho && !atual) atual = doCaminho();
-    (raiz || document).querySelectorAll?.('[data-estudio-icone]').forEach(el => { let id = el.getAttribute('data-estudio-icone'); if (id === 'auto') id = atual || 'an'; const ch = JSON.stringify(cfg[id] || '') + id;
+    (raiz || document).querySelectorAll?.('[data-estudio-icone]').forEach(el => { let id = el.getAttribute('data-estudio-icone'); if (id === 'auto') id = atual || 'an'; if (!cfg[id] && !PADRAO[id]) return; /* ícone novo da ADM que ainda não chegou: mantém o que já está (ex.: as letras), em vez de mostrar o do Animador */ const ch = JSON.stringify(cfg[id] || '') + id;
       if (el._epIc === ch) return; el._epIc = ch; el.innerHTML = svg(id); });
     // <img data-estudio-icone-img="an"> (telas de carregamento): troca a imagem pela de agora
     // imagens com os ícones ANTIGOS em qualquer lugar (botões, menus…): viram o ícone de agora (o mesmo da ADM)
