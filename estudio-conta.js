@@ -814,7 +814,8 @@ html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-
 :root:root body .ep-conta-fw::before{display:none!important}
 :root:root body .ep-conta-fw>i.v{top:-1px!important;right:-1px!important;width:10px!important;height:10px!important;border:0!important;box-sizing:border-box!important;box-shadow:0 1px 3px rgba(0,0,0,.35)!important}
 :root:root body .ep-conta-fw>i.a{border:0!important;box-shadow:0 1px 3px rgba(0,0,0,.35)!important}
-:root:root body .ep-conta .ep-conta-btn{box-shadow:none!important} /* o contorno escuro só servia para separar a foto do anel, que saiu */
+:root:root body .ep-conta .ep-conta-btn{box-shadow:none!important}
+:root:root body .ep-conta-fw>i.a{display:none!important} /* sem Mensagens (2.0): o @ de menção não leva a lugar nenhum */ /* o contorno escuro só servia para separar a foto do anel, que saiu */
 /* --- véu atrás dos painéis --- */
 :root:root body .ep-conta-fundo{background:var(--ce-veu)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
 :root:root body :is(.ep-esp,.ep-pg){background:var(--ce-veu)!important}
@@ -1192,7 +1193,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       pop.innerHTML = `<h2 class="ep-pop-tit">${ICONES.conta} Sua conta <button type="button" class="ep-pop-x" data-a="fechar">Fechar</button></h2><div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? seloAdmDe() : ''}</b><small>${esc(p.email)}</small></span></div>
         ${htmlNotifs()}
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
-        <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs"${window.EstudioPerm?.pode('geral.mensagens') === false ? ' hidden' : ''}>${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
+        <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs" hidden>${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
         ${p.adm && MSG.denuncias ? `<button class="it denun" type="button" role="menuitem" data-a="adm" data-aba="denuncias">${ICONES.adm}<span>ADM<small>${MSG.denuncias} denúncia${MSG.denuncias > 1 ? 's' : ''} para ver</small></span><b class="cont arroba">!</b></button>` : ''}
         ${p.adm ? (/^\/adm\/?$/i.test(location.pathname) ? `<a class="it" href="/" role="menuitem">${ICONES.inicio}Ver o menu</a>` : MSG.denuncias ? '' : `<button class="it" type="button" role="menuitem" data-a="adm">${ICONES.adm}ADM</button>`) : ''}
         ${CFG.semMenu ? '' : `<a class="it" href="/" role="menuitem">${ICONES.inicio}Voltar ao menu</a>`}
@@ -2646,7 +2647,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   let DOCK_PC = null, DOCK_PC_T = 0; // uso do espaço deste computador (0–1), medido no navegador
   function pintaDock() {
     const dk = document.querySelector('.ep-dock'); if (!dk) return;
-    const fixos = [...(window.EstudioPerm?.pode('geral.mensagens') === false ? [] : [['msgs', 'Mensagens', ICONES.msg, 'linear-gradient(180deg,#3ad466,#1fae47)', MSG.nao ? `<b class="n vm">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : '']]), // NÍVEIS DE ACESSO: sem Mensagens no cargo, o atalho some
+    const fixos = [...(true /* SEM MENSAGENS (2.0, pedido da dona, 12/11/2026) */ ? [] : [['msgs', 'Mensagens', ICONES.msg, 'linear-gradient(180deg,#3ad466,#1fae47)', MSG.nao ? `<b class="n vm">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : '']]), // NÍVEIS DE ACESSO: sem Mensagens no cargo, o atalho some
       ['conta', 'Personalizar o perfil', ICONES.conta, 'linear-gradient(180deg,#5e9bff,#2f6be6)', ''],
       ...(P?.adm ? [['adm', 'ADM', ICONES.adm, 'linear-gradient(180deg,#8e8e93,#5a5a5f)', MSG.denuncias ? '<b class="n vm">!</b>' : '']] : [])];
     // espaço: abrir o painel não pede nada a mais do que o círculo do cabeçalho já pede (a nuvem usa a medida guardada de 5 min)

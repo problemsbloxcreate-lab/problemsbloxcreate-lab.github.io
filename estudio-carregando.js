@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '(ALPHA) 2.0.1 - Celeste', em: '12/11/2026',
+window.EstudioVersao ||= { nome: '(ALPHA) 2.0.2 - Celeste', em: '12/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Correções (2.0.2)', ['Atualizar nunca é forçado: com Atualizar sozinho desligado aparece só o aviso, com Atualizar e Fechar.', 'O aviso só aparece quando muda o programa que você está usando.', 'Com Atualizar sozinho ligado, um desfoque com o anel e o ícone do programa (sem a tela da montanha).', 'Saíram os últimos restos das Mensagens (Citar em mensagens, Enviar para…).']],
     ['Correções (2.0.1)', ['Carregamento: a nuvem só aparece quando o programa confere ou baixa a versão mais nova na nuvem (Animador e Ateliê ao abrir um projeto); conferência rápida nem mostra a nuvem.', 'Ícone, nuvem e anel sempre no centro; a porcentagem não empurra mais a frase.', 'Foto da conta: a marca de novidade virou um ponto pequeno, sem anel.']],
     ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Uso da nuvem e do computador no cabeçalho de todos os programas.', 'Menu numa tela só, no jeito do iPad e do Mac: relógio, Calendário, Clima e Meus projetos à esquerda, programas à direita e fixados embaixo.', 'Grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Carregamento único do começo ao fim: o ícone do programa dentro de um anel de progresso, e a nuvem aparece quando baixa da nuvem.']],
     ['Cérebro', ['A Montanha: o Cérebro virou um mapa de pontos em forma de montanha. A rodinha do mouse dá zoom e clicar num ponto explica o que é.', 'Busca que acha o trecho certo dentro das páginas.', 'Adicionar ao Cérebro: gera o pedido pronto para a CelestIA e guarda em Pedidos.', 'Telas do Cérebro no visual novo, sem os blocos coloridos.']],
