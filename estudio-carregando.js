@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '(ALPHA) 2.0 - Celeste', em: '12/11/2026',
+window.EstudioVersao ||= { nome: '(ALPHA) 2.0.1 - Celeste', em: '12/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Correções (2.0.1)', ['Carregamento: a nuvem só aparece enquanto baixa da nuvem e depois volta o ícone do programa.', 'Ícone, nuvem e anel sempre no centro; a porcentagem não empurra mais a frase.', 'Foto da conta: a marca de novidade virou um ponto pequeno, sem anel.']],
     ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Uso da nuvem e do computador no cabeçalho de todos os programas.', 'Menu numa tela só, no jeito do iPad e do Mac: relógio, Calendário, Clima e Meus projetos à esquerda, programas à direita e fixados embaixo.', 'Grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Carregamento único do começo ao fim: o ícone do programa dentro de um anel de progresso, e a nuvem aparece quando baixa da nuvem.']],
     ['Cérebro', ['A Montanha: o Cérebro virou um mapa de pontos em forma de montanha. A rodinha do mouse dá zoom e clicar num ponto explica o que é.', 'Busca que acha o trecho certo dentro das páginas.', 'Adicionar ao Cérebro: gera o pedido pronto para a CelestIA e guarda em Pedidos.', 'Telas do Cérebro no visual novo, sem os blocos coloridos.']],
     ['Atualizações', ['Aviso de versão nova em qualquer página, com Atualizar e Fechar. Atualizar é opcional.', 'Histórico de notificações em Sua conta, com a chave Atualizar sozinho (vem desligada).', 'Preparativos e Publicações ficam guardados no computador e abrem na hora.']],
@@ -294,38 +295,32 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   const NOMES_ARQ = [[/^\/pessoa(\/|$)/, 'nomes e fotos da equipe'], [/^\/conta(\/|$)/, 'a sua conta'], [/^\/personagens/, 'a biblioteca de personagens'], [/^\/nuvem-uso/, 'o espaço na nuvem'], [/^\/cenarios/, 'os cenários da equipe'], [/^\/menu/, 'o menu']];
   const curto = u => { try { const x = new URL(u, location.href); if (/(^|.)(turma-ia|sons-problems|estudio-reserva)./i.test(x.hostname)) return 'da nuvem'; if (x.origin === location.origin) { const n = NOMES_ARQ.find(([re]) => re.test(x.pathname)); if (n) return n[1]; } let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
   const muda = () => { if (ativo) agenda(); };
-  /* A NUVEM NO CARREGAMENTO (pedido da dona, 12/11/2026, vale para TODO programa que carrega da nuvem): quando um pedido à nossa
-     nuvem demora mais de 0,4 s, a logo some devagar e a nuvem com as bolinhas aparece no mesmo lugar, dentro do MESMO anel parado
-     (fade + leve subida, 380 ms). Mesmo tema e cores; não volta para a logo (nada de piscar). Conferir o acesso não conta. */
-  const NUVEM_URL = u => { try { const x = new URL(u, location.href); if (/^\/(quem|conta|pessoa|presenca|sessao|mensagens)(\/|$)/i.test(x.pathname)) return false;
-    return /(^|\.)(turma-ia|sons-problems|estudio-reserva)\./i.test(x.hostname) || (x.origin === location.origin && /^\/(nuvem|personagens|cenarios|animacoes|projetos|roteiros|arquivo|menu)(\/|\?|$)/i.test(x.pathname)); } catch { return false; } };
-  let naNuvem = false;
-  const NV_SVG = '<svg viewBox="0 0 132 92" aria-hidden="true"><path d="M34 82 H100 A26 26 0 0 0 104 30.4 A34 34 0 0 0 40.6 22 A30 30 0 0 0 34 82 Z"/></svg><span class="ep-nv-d"><i></i><i></i><i></i><i></i><i></i></span>';
+  /* A NUVEM NO CARREGAMENTO (pedido da dona, 12/11/2026, vale para TODO programa que carrega da nuvem): enquanto um pedido à nossa
+     nuvem estiver DE FATO esperando a rede (mais de 0,4 s), a logo some devagar e a nuvem com as bolinhas aparece no mesmo lugar,
+     dentro do MESMO anel parado (fade + leve subida, 380 ms). Quando não há mais nada vindo da nuvem (0,5 s sem pedido), volta a logo,
+     também suave. Etapas locais ("Abrindo o menu…", arquivos do site) ficam com a logo. Conferir o acesso não conta.
+     NADA TORTO: a nuvem é uma camada própria (não é o svg da logo, então as regras da logo não a encolhem nem a fazem pulsar),
+     num quadro de tamanho fixo e pixels inteiros, centrada no mesmo ponto do anel; ela não gira nem pulsa (só as bolinhas giram). */
+  const NUVEM_URL = u => { try { const x = new URL(u, location.href); if (/^\/(quem|conta|pessoa|presenca|sessao|mensagens|menu)(\/|$)/i.test(x.pathname)) return false;
+    return /(^|\.)(turma-ia|sons-problems|estudio-reserva)\./i.test(x.hostname) || (x.origin === location.origin && /^\/(nuvem|personagens|cenarios|animacoes|projetos|roteiros|arquivo)(\/|\?|$)/i.test(x.pathname)); } catch { return false; } };
+  let naNuvem = false, nvSai = 0; const nvPend = new Set();
+  const NV_SVG = '<svg class="ep-nv-s" viewBox="0 0 132 92" aria-hidden="true"><path d="M34 82 H100 A26 26 0 0 0 104 30.4 A34 34 0 0 0 40.6 22 A30 30 0 0 0 34 82 Z"/></svg><span class="ep-nv-d"><i></i><i></i><i></i><i></i><i></i></span>';
+  const NV_CSS = "\n#estudio-porta{--nv-c:var(--pt-tx,#f5f5f7)}.login{--nv-c:var(--anel-c,#f5f5f7)}\nhtml body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{position:absolute!important;left:50%!important;top:50%!important;width:78px!important;height:54px!important;margin:-25px 0 0 -39px!important;padding:0!important;z-index:2;pointer-events:none;opacity:0;transform:translateY(7px);transform-origin:50% 50%;transition:opacity .38s cubic-bezier(.2,.7,.2,1),transform .38s cubic-bezier(.2,.7,.2,1);animation:none!important}\nhtml body :is(#estudio-porta,.login).ep-nuvem :is(.ep-lg,.lcard .logo)>.ep-nv.on{opacity:1;transform:none}\nhtml body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv>svg.ep-nv-s{position:absolute!important;inset:0!important;display:block!important;width:78px!important;height:54px!important;margin:0!important;overflow:visible;box-shadow:none!important;animation:none!important;transform:none!important;border-radius:0!important;background:none!important}\nhtml body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv path{fill:none;stroke:var(--nv-c);stroke-width:4.2;stroke-linejoin:round}\n.ep-nv-d{position:absolute;left:28px;top:21px;width:22px;height:22px}.ep-nv-d i{position:absolute;inset:0;transform-origin:50% 50%;animation:epNvGira 2.2s infinite}\n.ep-nv-d i::after{content:'';position:absolute;left:9px;top:0;width:4px;height:4px;border-radius:50%;background:var(--nv-c)}\n.ep-nv-d i:nth-child(2){animation-delay:.12s}.ep-nv-d i:nth-child(3){animation-delay:.24s}.ep-nv-d i:nth-child(4){animation-delay:.36s}.ep-nv-d i:nth-child(5){animation-delay:.48s}\n@keyframes epNvGira{0%{transform:rotate(225deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(345deg);animation-timing-function:linear}30%{transform:rotate(455deg);animation-timing-function:ease-in-out}39%{transform:rotate(690deg);animation-timing-function:linear}70%{transform:rotate(815deg);opacity:1;animation-timing-function:ease-out}75%{transform:rotate(945deg);animation-timing-function:ease-out}76%{transform:rotate(945deg);opacity:0}100%{transform:rotate(945deg);opacity:0}}\n:is(#estudio-porta .ep-lg,.login .lcard .logo)>:not(.ep-nv){transition:opacity .32s ease}\n:is(#estudio-porta,.login).ep-nuvem :is(.ep-lg,.lcard .logo)>:not(.ep-nv){opacity:0!important}\n@media (prefers-reduced-motion:reduce){html body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{transform:none!important;transition:opacity .35s ease!important}.ep-nv-d i{animation:none!important}}";
   const pintaNuvem = () => {
-    if (!naNuvem) return;
-    if (!document.getElementById('ep-nv-css')) { const s = document.createElement('style'); s.id = 'ep-nv-css'; s.textContent = `
-#estudio-porta{--nv-c:var(--pt-tx,#f5f5f7)}.login{--nv-c:var(--anel-c,#f5f5f7)}
-:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{position:absolute;left:50%;top:50%;width:78px;height:54px;margin:-29px 0 0 -39px;z-index:2;pointer-events:none;opacity:0;transform:translateY(7px);transition:opacity .38s cubic-bezier(.2,.7,.2,1),transform .38s cubic-bezier(.2,.7,.2,1)}
-:is(#estudio-porta,.login).ep-nuvem :is(.ep-lg,.lcard .logo)>.ep-nv.on{opacity:1;transform:none}
-:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv svg{display:block;width:78px!important;height:54px!important;overflow:visible;box-shadow:none!important;animation:none!important;border-radius:0!important}
-:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv path{fill:none;stroke:var(--nv-c);stroke-width:4.2;stroke-linejoin:round}
-.ep-nv-d{position:absolute;left:50%;top:58%;width:22px;height:22px;margin:-11px 0 0 -11px}.ep-nv-d i{position:absolute;inset:0;animation:epNvGira 2.2s infinite}
-.ep-nv-d i::after{content:'';position:absolute;left:50%;top:0;width:3.4px;height:3.4px;margin-left:-1.7px;border-radius:50%;background:var(--nv-c)}
-.ep-nv-d i:nth-child(2){animation-delay:.12s}.ep-nv-d i:nth-child(3){animation-delay:.24s}.ep-nv-d i:nth-child(4){animation-delay:.36s}.ep-nv-d i:nth-child(5){animation-delay:.48s}
-@keyframes epNvGira{0%{transform:rotate(225deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(345deg);animation-timing-function:linear}30%{transform:rotate(455deg);animation-timing-function:ease-in-out}39%{transform:rotate(690deg);animation-timing-function:linear}70%{transform:rotate(815deg);opacity:1;animation-timing-function:ease-out}75%{transform:rotate(945deg);animation-timing-function:ease-out}76%{transform:rotate(945deg);opacity:0}100%{transform:rotate(945deg);opacity:0}}
-:is(#estudio-porta .ep-lg,.login .lcard .logo)>:not(.ep-nv){transition:opacity .32s ease}
-.ep-nuvem :is(.ep-lg,.lcard .logo)>:not(.ep-nv){opacity:0!important}
-@media (prefers-reduced-motion:reduce){:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{transform:none!important;transition:opacity .35s ease!important}.ep-nv-d i{animation:none!important}}`; (document.head || document.documentElement).appendChild(s); }
-    document.querySelectorAll('#estudio-porta .ep-lg, .login .lcard .logo').forEach(lg => {
-      const raiz = lg.closest('#estudio-porta, .login'); if (!raiz || raiz.classList.contains('ep-erro') || raiz.hidden) return;
-      let nv = lg.querySelector(':scope>.ep-nv'); if (!nv) { nv = document.createElement('span'); nv.className = 'ep-nv'; nv.innerHTML = NV_SVG; lg.appendChild(nv); }
-      raiz.classList.add('ep-nuvem'); if (!nv.classList.contains('on') && !nv._liga) { nv._liga = 1; requestAnimationFrame(() => requestAnimationFrame(() => nv.classList.add('on'))); }
+    const telas = document.querySelectorAll('#estudio-porta .ep-lg, .login .lcard .logo'); if (!telas.length) return;
+    if (naNuvem && !document.getElementById('ep-nv-css')) { const s = document.createElement('style'); s.id = 'ep-nv-css'; s.textContent = NV_CSS; (document.head || document.documentElement).appendChild(s); }
+    telas.forEach(lg => {
+      const raiz = lg.closest('#estudio-porta, .login'); if (!raiz) return; let nv = lg.querySelector(':scope>.ep-nv');
+      if (!naNuvem || raiz.classList.contains('ep-erro') || raiz.hidden) { raiz.classList.remove('ep-nuvem'); if (nv) { nv.classList.remove('on'); nv._liga = 0; } return; } // volta a logo, suave
+      if (!nv) { nv = document.createElement('span'); nv.className = 'ep-nv'; nv.innerHTML = NV_SVG; lg.appendChild(nv); }
+      raiz.classList.add('ep-nuvem'); if (!nv.classList.contains('on') && !nv._liga) { nv._liga = 1; requestAnimationFrame(() => requestAnimationFrame(() => { if (naNuvem) nv.classList.add('on'); })); }
     });
   };
-  const olhaNuvem = (id, u) => { if (naNuvem || !NUVEM_URL(u)) return; setTimeout(() => { if (pend.has(id) && ativo) { naNuvem = true; pintaNuvem(); } }, 400); };
+  const nvAcaba = id => { if (!nvPend.delete(id) || nvPend.size) return; clearTimeout(nvSai); nvSai = setTimeout(() => { if (!nvPend.size && naNuvem) { naNuvem = false; pintaNuvem(); } }, 500); };
+  const olhaNuvem = (id, u) => { if (!NUVEM_URL(u)) return; nvPend.add(id); clearTimeout(nvSai); setTimeout(() => { if (pend.has(id) && ativo && !naNuvem) { naNuvem = true; pintaNuvem(); } }, 400); };
   try { new PerformanceObserver(l => { for (const e of l.getEntries()) { if (IGNORA.test(e.name)) continue; feitos.add(abs(e.name)); if (!ultimo || pend.size === 0) ultimo = curto(e.name); } muda(); }).observe({ type: 'resource', buffered: true }); } catch { }
   const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); olhaNuvem(id, u); muda(); return id; };
-  const acaba = id => { if (id == null) return; const u = pend.get(id); pend.delete(id); if (u) feitos.add(abs(u)); muda(); };
+  const acaba = id => { if (id == null) return; const u = pend.get(id); pend.delete(id); nvAcaba(id); if (u) feitos.add(abs(u)); muda(); };
   const f0 = window.fetch;
   if (f0) window.fetch = function (i, o) { let u = ''; try { u = abs(typeof i === 'string' ? i : i?.url || String(i)); } catch { } const id = o?.epFundo ? null : comeca(u); const p = f0.apply(this, arguments); if (id != null) p.then(() => acaba(id), () => acaba(id)); return p; };
   try { const X = XMLHttpRequest.prototype, op = X.open, se = X.send;
@@ -502,6 +497,8 @@ html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260
 #estudio-porta.m2 .ep-pc{margin:0!important;justify-self:end}
 #estudio-porta.m2 .ep-pc b{font:600 13.5px "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:var(--pt-tx)!important;font-variant-numeric:tabular-nums;text-shadow:none!important}
 #estudio-porta.m2 .ep-pc b::after{content:" ·";color:var(--pt-tx2)}
+#estudio-porta.m2 .ep-pc b{display:inline-block!important;min-width:3.4em!important;text-align:right!important;font-variant-numeric:tabular-nums!important;white-space:nowrap} /* % com largura fixa: 9%, 97% e 100% não empurram a frase (pedido da dona, 12/11/2026) */
+#estudio-porta.m2 .ep-c{column-gap:5px!important} /* número e frase juntos, sem vão grande */
 #estudio-porta.m2 .ep-m,#estudio-porta.m2:not(.ep-erro) .ep-m{display:block!important;justify-self:start;margin:0!important;font:400 13.5px "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:var(--pt-tx2)!important;text-shadow:none!important;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #estudio-porta.m2.ep-erro .ep-pc{display:none!important}#estudio-porta.m2.ep-erro .ep-m{grid-column:1/-1;justify-self:center;white-space:normal;color:var(--pt-tx)!important}
 #estudio-porta.m2.ep-erro .ep-lg::before{background:color-mix(in srgb,#ff453a 70%,transparent)}
