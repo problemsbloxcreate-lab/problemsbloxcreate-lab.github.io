@@ -1,3 +1,4 @@
+/* TEMA CEDO */try{const H=document.documentElement;if(!H.dataset.tema)H.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{}
 /* ===================== estudio-carregando.js — tela de carregamento padrão do Estúdio Problems =====================
    Só VISUAL: mostra a mesma tela de carregamento do estudio-login.js (logo, NOME do programa, "Estúdio Problems",
    barra andando e a mensagem) enquanto o programa abre, para todos os programas ficarem com o mesmo visual.
@@ -452,16 +453,18 @@ html:not([data-tema="claro"]) #estudio-porta :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.e
    suave na cor do programa atrás; embaixo o nome e uma linha "54% · o que está acontecendo". Sem foto, sem barra, sem lista de passos. ===== */
 #estudio-porta.m2{background:#141416!important;--pt-tx:#f5f5f7!important;--pt-tx2:rgba(235,235,245,.66)!important}
 html[data-tema="claro"] #estudio-porta.m2{background:#f2f2f5!important;--pt-tx:#1d1d1f!important;--pt-tx2:rgba(60,60,67,.66)!important}
-#estudio-porta.m2::before{content:""!important;position:absolute;inset:0;z-index:0;pointer-events:none;filter:none!important;animation:none!important;background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 30%,transparent),transparent 72%)!important}
+#estudio-porta.m2::before{content:""!important;position:absolute;inset:0;z-index:0;pointer-events:none;filter:none!important;animation:epBrilho 1.8s ease-in-out infinite alternate!important;background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 30%,transparent),transparent 72%)!important}
 html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 22%,transparent),transparent 72%)!important}
 #estudio-porta.m2::after{display:none!important}
 #estudio-porta.m2 .ep-c{display:grid!important;grid-template-columns:auto auto;justify-content:center;align-items:center;column-gap:6px;row-gap:0!important;transform:translateY(-4vh)!important;width:auto!important;text-align:center}
-#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg.ep-prog,#estudio-porta.m2.ep-erro .ep-lg{grid-column:1/-1;justify-self:center;position:relative;width:74px!important;height:74px!important;margin:23px!important;border-radius:18px!important;overflow:visible!important;box-shadow:none!important;background:none!important;animation:epRespira2 2.6s ease-in-out infinite}
-@keyframes epRespira2{50%{transform:scale(1.035)}}
+#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg.ep-prog,#estudio-porta.m2.ep-erro .ep-lg{grid-column:1/-1;justify-self:center;position:relative;width:60px!important;height:60px!important;margin:30px!important;border-radius:15px!important;overflow:visible!important;box-shadow:none!important;background:none!important;animation:none!important;transform:none!important}
+/* só a LOGO pulsa; o anel fica parado; o brilho atrás pisca leve (pedido da dona, 12/11/2026) */
+@keyframes epRespira2{50%{transform:scale(1.06)}}@keyframes epBrilho{from{opacity:.6}to{opacity:1}}
 /* o anel: fica 16 px para fora do ícone; a parte cheia segue a porcentagem (--ep-p, posto pelo contador) */
-#estudio-porta.m2 .ep-lg::before{content:"";position:absolute;inset:-23px;border-radius:50%;background:conic-gradient(var(--pt-tx) calc(var(--ep-p,0) * 1%),color-mix(in srgb,var(--pt-tx) 13%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));transition:background .3s}
+#estudio-porta.m2 .ep-lg::before{content:"";position:absolute;inset:-30px;border-radius:50%;background:conic-gradient(var(--pt-tx) calc(var(--ep-p,0) * 1%),color-mix(in srgb,var(--pt-tx) 13%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));transition:background .3s}
 #estudio-porta.m2 .ep-lg::after{display:none!important}
-#estudio-porta.m2 .ep-lg :is(.ep-img,.ep-cam),#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:74px!important;height:74px!important;border-radius:17px!important;display:block;box-shadow:0 10px 26px rgba(0,0,0,.3)}
+#estudio-porta.m2 .ep-lg :is(.ep-img,.ep-cam),#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:60px!important;height:60px!important;border-radius:14px!important;display:block;box-shadow:0 8px 22px rgba(0,0,0,.3);animation:epRespira2 2.6s ease-in-out infinite!important}
+@media (prefers-reduced-motion:reduce){#estudio-porta.m2::before,#estudio-porta.m2 .ep-lg :is(.ep-img,.ep-cam){animation:none!important}}
 #estudio-porta.m2 .ep-lg:not(.ep-prog){background:none!important}
 #estudio-porta.m2 .ep-lg.ep-prog .ep-cam{display:none!important} /* com o ícone do programa, a claquete do Estúdio some (antes aparecia embaixo, por cima do título) */
 #estudio-porta.m2 .ep-nm{grid-column:1/-1;display:block!important;margin:26px 0 4px!important;font:600 20px/1.25 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;letter-spacing:-.01em!important;color:var(--pt-tx)!important;text-shadow:none!important}
