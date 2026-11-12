@@ -1023,7 +1023,7 @@ const cbMascara = e => { const [u, d = ''] = e.split('@'); return (u.length <= 2
 const cbLimpa = (s, n) => String(s ?? '').replace(CB_EMAIL, m => /^(no-?reply|git)@/i.test(m) ? m : cbMascara(m)).slice(0, n);
 const cbNome = s => cbLimpa(s, 120).replace(/[\/\\\r\n\t]+/g, '-').trim();
 // a chave principal (segredo do Worker) ou a chave de um computador que um ADM autorizou (só o resumo dela fica no banco; a chave nunca sai de lá)
-async function cbChaveOk(env, v) { if (!v) return false; const t = x => new TextEncoder().encode(x), h = await sha(t(v)); if (env.CEREBRO_CHAVE && h === await sha(t(env.CEREBRO_CHAVE))) return true; if (!env.EQUIPE_DB) return false; try { await cbPrepara(env.EQUIPE_DB); return !!(await env.EQUIPE_DB.prepare('SELECT 1 AS ok FROM cerebro_chave WHERE h = ? AND revogada = 0').bind(h).first()); } catch { return false; } }
+async function cbChaveOk(env, v) { if (!v) return null; const t = x => new TextEncoder().encode(x), h = await sha(t(v)); if (env.CEREBRO_CHAVE && h === await sha(t(env.CEREBRO_CHAVE))) return { adm: true, nome: 'principal' }; if (!env.EQUIPE_DB) return null; try { await cbPrepara(env.EQUIPE_DB); const r = await env.EQUIPE_DB.prepare('SELECT h, nome, adm, dono FROM cerebro_chave WHERE h = ? AND revogada = 0').bind(h).first(); return r ? { adm: r.adm !== 0, nome: r.nome || 'IA', dono: r.dono || null } : null; } catch { return null; } }
 const cbNovoId = () => 'c' + Date.now().toString(36) + [...crypto.getRandomValues(new Uint8Array(5))].map(x => x.toString(16).padStart(2, '0')).join('');
 async function cbPrepara(db) { if (CB.prep) return; await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS cerebro_no (id TEXT PRIMARY KEY, pai TEXT, tipo TEXT NOT NULL, nome TEXT NOT NULL, marca TEXT, resumo TEXT, corpo TEXT, url TEXT, img TEXT, ver INTEGER NOT NULL, em INTEGER NOT NULL, por TEXT, ia TEXT, pedido TEXT, motivo TEXT, apagado INTEGER NOT NULL DEFAULT 0)'),
@@ -1044,6 +1044,10 @@ async function cbPrepara(db) { if (CB.prep) return; await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS cerebro_trecho (rid INTEGER PRIMARY KEY, no TEXT NOT NULL, ordem INTEGER NOT NULL, caminho TEXT, titulo TEXT, resumo TEXT, texto TEXT, arquivo INTEGER NOT NULL DEFAULT 0)'),
   db.prepare('CREATE INDEX IF NOT EXISTS cerebro_trecho_no ON cerebro_trecho (no, ordem)'),
 ]); CB.prep = true;
+  // 12/11/2026: a chave guarda de quem é (dono = código sem e-mail) e se foi autorizada por ADM; gravações de chave não-ADM vão para a revisão
+  for (const s of ['ALTER TABLE cerebro_chave ADD COLUMN adm INTEGER NOT NULL DEFAULT 1', 'ALTER TABLE cerebro_chave ADD COLUMN dono TEXT']) { try { await db.prepare(s).run(); } catch { } }
+  try { await db.batch([db.prepare('CREATE TABLE IF NOT EXISTS cerebro_revisao (seq INTEGER PRIMARY KEY AUTOINCREMENT, tipo TEXT NOT NULL, ref TEXT NOT NULL, ver INTEGER, acao TEXT, caminho TEXT, quem TEXT, ia TEXT, pedido TEXT, motivo TEXT, em INTEGER NOT NULL, skill INTEGER NOT NULL DEFAULT 0, ok INTEGER NOT NULL DEFAULT 0, por_ok TEXT, em_ok INTEGER)'),
+    db.prepare('CREATE INDEX IF NOT EXISTS cerebro_revisao_ok ON cerebro_revisao (ok, seq)'), db.prepare('CREATE INDEX IF NOT EXISTS cerebro_revisao_ref ON cerebro_revisao (ref, ok)')]); } catch { }
   // a busca (FTS5) fica à parte: se falhar, o resto do Cérebro continua funcionando e só /trechos avisa
   try { await db.batch([
     db.prepare("CREATE VIRTUAL TABLE IF NOT EXISTS cerebro_busca USING fts5(caminho, titulo, texto, content='cerebro_trecho', content_rowid='rid', tokenize='unicode61 remove_diacritics 2')"),
@@ -1097,7 +1101,8 @@ function cbGrava(db, n, antes, acao, a, motivo) {
 async function cerebro(req, env, login, path, cors) {
   const nc = { ...cors, 'cache-control': 'no-store' }, ok = (o, s = 200) => json(o, s, nc), erro = (m, s = 400, type = 'cerebro') => json({ error: { type, message: m } }, s, nc), db = env.EQUIPE_DB;
   if (!db) return erro('O banco do Cérebro não está ligado neste servidor.', 503);
-  const ia = !!login.ia, adm = ia || ehAdmin(env, login.email), rota = path.slice('/cerebro'.length) || '/', q = new URL(req.url).searchParams;
+  const ia = !!login.ia, iaAdm = ia && login.iaAdm !== false, adm = iaAdm || (!ia && ehAdmin(env, login.email)), rota = path.slice('/cerebro'.length) || '/', q = new URL(req.url).searchParams;
+  const meuCod = async () => ia ? null : (await semEmail({ por: login.email })).por;
   if (!ia && !(await pode(env, login.email, 'cerebro'))) return erro('O seu cargo não inclui o Cérebro. Peça para um ADM liberar.', 403, 'permissao');
   await cbPrepara(db);
   const pega = id => db.prepare('SELECT * FROM cerebro_no WHERE id = ?').bind(id).first();
@@ -1115,7 +1120,16 @@ async function cerebro(req, env, login, path, cors) {
     if (rota === '/inicio') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, apagado FROM cerebro_no').all(), t = results || [], m = new Map(t.map(x => [x.id, x])), cam = x => { const o = []; for (let y = x, i = 0; y && i < 20; y = m.get(y.pai), i++) { if (y.apagado) return null; o.unshift(y.nome); } return o[0] === CB_FRIO ? null : o.join('/'); }, novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
       const lin = t.filter(x => x.tipo !== 'pasta').map(x => [cam(x), x]).filter(([c]) => c).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true })).map(([c, x]) => `- ${c}${x.marca ? ' (' + x.marca + ')' : ''}${x.resumo ? ': ' + x.resumo : ''}`);
       return new Response(`${n?.corpo || ''}\n\n# Índice (${lin.length} arquivos, ${novos?.n || 0} pedido(s) esperando)\n\nPara abrir: GET /cerebro/item?caminho=<Pasta/Arquivo>\n\n${lin.join('\n')}\n`, { headers: { ...nc, 'content-type': 'text/plain; charset=utf-8' } }); }
-    if (rota === '/chaves') { if (ia || !adm) return erro('Só um ADM, pelo site, vê os acessos das IAs.', 403, 'adm'); const { results } = await db.prepare('SELECT h, nome, em, por, revogada FROM cerebro_chave ORDER BY em DESC LIMIT 100').all(); return ok({ itens: results || [] }); }
+    if (rota === '/chaves') { if (ia) return erro('Uma IA não vê os acessos: isso é pelo site.', 403, 'adm'); const { results } = adm ? await db.prepare('SELECT h, nome, em, por, revogada, adm FROM cerebro_chave ORDER BY em DESC LIMIT 100').all() : await db.prepare('SELECT h, nome, em, por, revogada, adm FROM cerebro_chave WHERE dono = ? ORDER BY em DESC LIMIT 50').bind(await meuCod()).all(); return ok({ itens: results || [], adm }); }
+    // a pessoa já tem a CelestIA (alguma chave dela ativa)? Usado pelo aviso discreto nos programas
+    if (rota === '/minha-celestia') { if (ia) return ok({ tem: true }); const r = await db.prepare('SELECT 1 AS x FROM cerebro_chave WHERE revogada = 0 AND (dono = ?' + (adm ? ' OR dono IS NULL' : '') + ') LIMIT 1').bind(await meuCod()).first(); return ok({ tem: !!r }); }
+    // revisão dos ADMs: o que as IAs de quem não é ADM mudaram
+    if (rota === '/revisao') { if (ia || !adm) return erro('Só um ADM, pelo site, revisa.', 403, 'adm'); const { results } = await db.prepare('SELECT * FROM cerebro_revisao WHERE ok = 0 ORDER BY seq DESC LIMIT 200').all(); return ok({ itens: results || [] }); }
+    // skills com a versão que pode ser instalada sozinha (a última que não espera revisão de ADM)
+    if (rota === '/skills') { const { results } = await db.prepare('SELECT id, pai, tipo, nome, ver, em, apagado FROM cerebro_no').all(), t = results || [], raizS = t.find(x => x.nome === 'Skills' && !x.pai && !x.apagado); if (!raizS) return ok({ itens: [] });
+      const { results: pend } = await db.prepare("SELECT ref, min(ver) AS v FROM cerebro_revisao WHERE ok = 0 AND tipo = 'no' AND skill = 1 GROUP BY ref").all(), pv = new Map((pend || []).map(x => [x.ref, x.v])), out = [];
+      for (const p of t.filter(x => x.pai === raizS.id && x.tipo === 'pasta' && !x.apagado)) for (const c of t.filter(x => x.pai === p.id && x.tipo !== 'pasta' && !x.apagado)) { const verOk = pv.has(c.id) ? pv.get(c.id) - 1 : c.ver; if (verOk >= 1) out.push({ id: c.id, pasta: p.nome, nome: c.nome, ver: c.ver, verOk, em: c.em }); }
+      return ok({ itens: out }); }
     if (rota === '/item') { const n = q.get('id') ? await pega(q.get('id')) : await peloCaminho(q.get('caminho')); if (!n || (n.apagado && !adm)) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
       const { results } = await db.prepare('SELECT ver, acao, em, por, ia, pedido, motivo FROM cerebro_ver WHERE id = ? ORDER BY ver DESC LIMIT 60').bind(n.id).all(); return ok({ item: n, versoes: results || [], adm }); }
     if (rota === '/versao') { const v = await db.prepare('SELECT * FROM cerebro_ver WHERE id = ? AND ver = ?').bind(q.get('id') || '', +q.get('ver') || 0).first(); if (!v) return erro('Versão não encontrada.', 404, 'nao_achei'); return ok({ ver: v.ver, acao: v.acao, em: v.em, por: v.por, ia: v.ia, pedido: v.pedido, motivo: v.motivo, ...JSON.parse(v.snap) }); }
@@ -1128,13 +1142,13 @@ async function cerebro(req, env, login, path, cors) {
       const pt = pal.map((_, i) => `(CASE WHEN ${em('nome', i)} THEN 3 ELSE 0 END + CASE WHEN ${em('resumo', i)} THEN 2 ELSE 0 END + CASE WHEN ${em('corpo', i)} THEN 1 ELSE 0 END)`).join(' + ');
       const { results } = await db.prepare(`SELECT id, pai, tipo, nome, marca, resumo, ver, em, corpo, (${pt}) AS pts FROM cerebro_no WHERE apagado = 0 AND pts > 0 ORDER BY pts DESC, em DESC LIMIT 40`).bind(...L).all();
       return ok({ itens: (results || []).map(({ corpo, pts, ...x }) => { const c = String(corpo || ''), cl = c.toLowerCase(); let i = -1; for (const w of pal) { i = cl.indexOf(w); if (i >= 0) break; } return { ...x, trecho: i >= 0 ? c.slice(Math.max(0, i - 70), i + 150) : '' }; }) }); }
-    if (rota === '/tudo') { if (!adm) return erro('Só ADM ou IA baixa o Cérebro inteiro.', 403, 'adm'); const { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, corpo, url, img, ver, em, por, ia, pedido FROM cerebro_no WHERE apagado = 0').all(); return ok({ itens: results || [] }); }
+    if (rota === '/tudo') { if (!adm && !ia) return erro('Só ADM ou IA baixa o Cérebro inteiro.', 403, 'adm'); const { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, corpo, url, img, ver, em, por, ia, pedido FROM cerebro_no WHERE apagado = 0').all(); return ok({ itens: results || [] }); }
     // 2.0 Celeste: a "camada leve" que o computador guarda (memórias rápidas, índice com resumos, assuntos, etiquetas e ligações) e o número da última mudança
     if (rota === '/leve') { const [s, no, ca, as, et, li, pn] = await db.batch([db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca'), db.prepare(`SELECT ${CB_LEVE} FROM cerebro_no`),
         db.prepare('SELECT id, ordem, texto, aponta, ver, em FROM cerebro_cartao WHERE apagado = 0 ORDER BY ordem, em'), db.prepare('SELECT id, pai, nome, resumo, ver, em FROM cerebro_assunto WHERE apagado = 0'),
         db.prepare('SELECT no, assunto FROM cerebro_etiqueta'), db.prepare('SELECT de, para, nota FROM cerebro_liga'), db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'")]);
       // adm e pedidosNovos: a Montanha do site mostra as abas certas sem precisar baixar a lista inteira (/)
-      return ok({ seq: s.results?.[0]?.s || 0, itens: cbSemFrio(no.results || []), cartoes: ca.results || [], assuntos: as.results || [], etiquetas: et.results || [], ligas: li.results || [], busca: !!CB.fts, adm, pedidosNovos: pn.results?.[0]?.n || 0 }); }
+      return ok({ seq: s.results?.[0]?.s || 0, itens: cbSemFrio(no.results || []), cartoes: ca.results || [], assuntos: as.results || [], etiquetas: et.results || [], ligas: li.results || [], busca: !!CB.fts, adm, pedidosNovos: pn.results?.[0]?.n || 0, revisar: adm && !ia ? ((await db.prepare('SELECT count(*) AS n FROM cerebro_revisao WHERE ok = 0').first().catch(() => null))?.n || 0) : 0 }); }
     // só o que mudou depois de "desde" (uma consulta de uma linha quando nada mudou). refazer = mudou demais, baixe /leve de novo.
     if (rota === '/mudou') { const desde = Math.max(0, +q.get('desde') || 0), s = (await db.prepare('SELECT max(seq) AS s FROM cerebro_mudanca').first())?.s || 0;
       if (s <= desde) return ok({ seq: s, nada: true });
@@ -1173,18 +1187,36 @@ async function cerebro(req, env, login, path, cors) {
     const por = ia ? cbLimpa(b.pedidoPor, 80) : eu; if (!por) return erro('Diga quem pediu (pedidoPor).'); const cod = ia ? 'ia' : (await semEmail({ por: login.email })).por;
     if (!adm) { const c = await db.prepare('SELECT count(*) AS n FROM cerebro_ped WHERE cod = ? AND em > ?').bind(cod, Date.now() - 864e5).first(); if ((c?.n || 0) >= 30) return erro('Muitos pedidos hoje. Tente amanhã.', 429); }
     const id = cbNovoId(); await db.prepare("INSERT INTO cerebro_ped (id, tipo, texto, alvo, por, cod, em, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'novo')").bind(id, tipo, texto, cbLimpa(b.alvo, 300) || null, por, cod, Date.now()).run(); return ok({ ok: true, id }); }
-  if (!adm) return erro('Só ADMs e o Claude mudam o Cérebro. Use "Pedir para aprender" que o pedido fica registrado.', 403, 'adm');
-  if (rota === '/chaves') { if (ia) return erro('Uma IA não autoriza outra: quem faz isso é um ADM, pelo site.', 403, 'adm');
-    if (b.acao === 'autorizar') { const h = String(b.codigo || '').trim().toLowerCase().replace(/^c-/, ''), nome = cbLimpa(b.nome, 80).trim(); if (!/^[0-9a-f]{64}$/.test(h)) return erro('Esse código não parece certo. Ele aparece quando a IA roda "cerebro.mjs entrar".'); if (!nome) return erro('Dê um nome para esse acesso.'); await db.prepare('INSERT OR REPLACE INTO cerebro_chave (h, nome, em, por, revogada) VALUES (?, ?, ?, ?, 0)').bind(h, nome, Date.now(), eu).run(); return ok({ ok: true }); }
-    if (b.acao === 'revogar') { const r = await db.prepare('UPDATE cerebro_chave SET revogada = 1 WHERE h = ?').bind(String(b.h || '')).run(); return r.meta?.changes ? ok({ ok: true }) : erro('Acesso não encontrado.', 404, 'nao_achei'); }
+  if (!adm && !ia && rota !== '/chaves') return erro('Quem muda o Cérebro são os ADMs e as IAs da equipe (cada pessoa autoriza a chave do próprio computador na aba Acesso das IAs). Use "Pedir para aprender" que o pedido fica registrado.', 403, 'adm');
+  // chaves (12/11/2026): a pessoa logada autoriza o código do PRÓPRIO computador; ADM vê e revoga todas, cada um revoga as suas
+  if (rota === '/chaves') { if (ia) return erro('Uma IA não autoriza outra: quem autoriza é a pessoa, logada no site.', 403, 'adm'); const meu = await meuCod();
+    if (b.acao === 'autorizar') { const h = String(b.codigo || '').trim().toLowerCase().replace(/^c-/, ''), nome = cbLimpa(b.nome, 80).trim(); if (!/^[0-9a-f]{64}$/.test(h)) return erro('Esse código não parece certo. Ele aparece quando a IA roda "cerebro.mjs instalar" (ou "entrar").'); if (!nome) return erro('Dê um nome para esse acesso (ex.: o nome do computador).');
+      const ja = await db.prepare('SELECT dono, revogada FROM cerebro_chave WHERE h = ?').bind(h).first();
+      if (ja && !adm && ja.revogada) return erro('Esse acesso foi revogado. Crie um código novo: apague ~/.claude/cerebro-chave.txt e rode de novo node ~/.claude/cerebro.mjs instalar.', 403, 'adm');
+      if (ja && !adm && ja.dono !== meu) return erro('Esse código já foi autorizado por outra pessoa.', 403, 'adm');
+      await db.prepare('INSERT OR REPLACE INTO cerebro_chave (h, nome, em, por, revogada, adm, dono) VALUES (?, ?, ?, ?, 0, ?, ?)').bind(h, nome, Date.now(), eu, adm ? 1 : 0, ja?.dono ?? meu).run(); return ok({ ok: true, adm }); }
+    if (b.acao === 'revogar') { const ja = await db.prepare('SELECT dono FROM cerebro_chave WHERE h = ?').bind(String(b.h || '')).first(); if (!ja) return erro('Acesso não encontrado.', 404, 'nao_achei'); if (!adm && ja.dono !== meu) return erro('Só quem autorizou (ou um ADM) revoga esse acesso.', 403, 'adm');
+      await db.prepare('UPDATE cerebro_chave SET revogada = 1 WHERE h = ?').bind(String(b.h || '')).run(); return ok({ ok: true }); }
     return erro('Ação desconhecida.'); }
-  const a = ia ? { por: cbLimpa(b.ia, 80), ia: cbLimpa(b.ia, 80), pedido: cbLimpa(b.pedidoPor, 80) } : { por: eu, ia: null, pedido: cbLimpa(b.pedidoPor, 80) || eu };
+  const a = ia ? { por: cbLimpa(b.ia, 80) + (iaAdm ? '' : ' · ' + cbLimpa(login.iaNome, 60)), ia: cbLimpa(b.ia, 80), pedido: cbLimpa(b.pedidoPor, 80) } : { por: eu, ia: null, pedido: cbLimpa(b.pedidoPor, 80) || eu };
   if (rota === '/pedido') { if (!['feito', 'recusado', 'novo'].includes(b.estado)) return erro('Estado desconhecido.'); const r = await db.prepare('UPDATE cerebro_ped SET estado = ?, feito_por = ?, feito_em = ?, nota = ? WHERE id = ?').bind(b.estado, a.por || 'IA', Date.now(), cbLimpa(b.nota, 600) || null, String(b.id || '')).run(); return r.meta?.changes ? ok({ ok: true }) : erro('Pedido não encontrado.', 404, 'nao_achei'); }
   if (ia && (!a.ia || !a.pedido || !motivo)) return erro('A IA precisa mandar: ia (o nome dela), pedidoPor (quem pediu) e motivo (o que mudou e por quê).', 400, 'registro');
   const roda = async (st) => { try { await db.batch(st); return null; } catch (e) { if (/UNIQUE|constraint/i.test(String(e?.message || e))) return erro('Outra pessoa gravou esse arquivo agora mesmo. Abra de novo e refaça.', 409, 'conflito'); throw e; } };
   // refaz os trechos depois de gravar; se falhar, a gravação continua valendo (dá para refazer com /reindexar)
   const reindexa = async (id, arvore) => { try { if (arvore) await cbIndexaArvore(db, id); else await cbIndexa(db, id); } catch (e) { console.log('cerebro: trechos não refeitos', id, String(e?.message || e).slice(0, 200)); } };
   const achaNo = async (id, cam) => id ? await pega(String(id)) : cam ? await peloCaminho(cam) : null;
+  const caminhoDe = async id => { const o = []; for (let x = await pega(id), i = 0; x && i < 20; x = x.pai ? await pega(x.pai) : null, i++) o.unshift(x.nome); return o.join('/'); };
+  const revisa = async (tipo, ref, ver, acao, rotulo) => { if (!ia || iaAdm) return; try { const cam = tipo === 'no' ? await caminhoDe(ref) : rotulo;
+    await db.prepare('INSERT INTO cerebro_revisao (tipo, ref, ver, acao, caminho, quem, ia, pedido, motivo, em, skill) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(tipo, ref, ver ?? null, acao, cbLimpa(cam, 400), cbLimpa(login.iaNome, 80), a.ia, a.pedido, motivo, Date.now(), /^Skills\//.test(cam || '') ? 1 : 0).run(); } catch (e) { console.log('cerebro: revisão não registrada', String(e?.message || e).slice(0, 200)); } };
+  if (rota === '/revisao') { if (ia || !adm) return erro('Só um ADM, pelo site, revisa.', 403, 'adm'); const quem = eu;
+    if (b.acao === 'ok-todos') { await db.prepare('UPDATE cerebro_revisao SET ok = 1, por_ok = ?, em_ok = ? WHERE ok = 0').bind(quem, Date.now()).run(); return ok({ ok: true }); }
+    const r = await db.prepare('SELECT * FROM cerebro_revisao WHERE seq = ?').bind(+b.seq || 0).first(); if (!r) return erro('Essa mudança não está mais na revisão.', 404, 'nao_achei');
+    if (b.acao === 'ok') { await db.prepare('UPDATE cerebro_revisao SET ok = 1, por_ok = ?, em_ok = ? WHERE seq = ?').bind(quem, Date.now(), r.seq).run(); return ok({ ok: true }); }
+    if (b.acao !== 'desfazer') return erro('Ação desconhecida.');
+    if (r.tipo !== 'no') return erro('Isso (memória rápida, assunto, etiqueta ou ligação) se desfaz direto onde foi mudado. Marque como visto depois.', 400);
+    const n = await pega(r.ref); if (!n) return erro('Esse arquivo não existe mais.', 404, 'nao_achei'); if (n.ver !== r.ver) return erro(`Esse arquivo mudou de novo depois (agora está na versão ${n.ver}). Abra o histórico dele para escolher a versão.`, 409, 'conflito');
+    let novo, acao2; if (r.ver <= 1) { novo = { ...n, apagado: 1 }; acao2 = 'lixeira'; } else { const v = await db.prepare('SELECT snap FROM cerebro_ver WHERE id = ? AND ver = ?').bind(n.id, r.ver - 1).first(); if (!v) return erro('Versão anterior não encontrada.', 404, 'nao_achei'); novo = { ...n, ...JSON.parse(v.snap), id: n.id }; acao2 = 'restaurar'; }
+    const g = cbGrava(db, novo, n, acao2, a, 'Desfeito na revisão de ADM (mudança de ' + (r.quem || 'IA') + ')'); const e0 = await roda([...g.st, db.prepare('UPDATE cerebro_revisao SET ok = 2, por_ok = ?, em_ok = ? WHERE seq = ?').bind(quem, Date.now(), r.seq)]); if (e0) return e0; await reindexa(n.id, true); return ok({ ok: true, ver: g.ver }); }
   if (rota === '/reindexar') { const { results } = await db.prepare('SELECT id FROM cerebro_no WHERE id > ? ORDER BY id LIMIT 30').bind(String(b.depois || '')).all(), r = results || [];
     for (const x of r) await cbIndexa(db, x.id); const t = await db.prepare('SELECT count(*) AS n FROM cerebro_trecho').first();
     return ok({ ok: true, feitos: r.length, depois: r.length ? r[r.length - 1].id : null, fim: r.length < 30, trechos: t?.n || 0, busca: !!CB.fts }); }
@@ -1197,7 +1229,7 @@ async function cerebro(req, env, login, path, cors) {
       novo = { id: n?.id || cbNovoId(), ordem: b.ordem != null ? (+b.ordem || 0) : (n?.ordem ?? 100), texto, aponta: b.aponta !== undefined ? (cbLimpa(b.aponta, 300).trim() || null) : (n?.aponta || null), apagado: 0 }; }
     const ver = (n?.ver || 0) + 1, em = Date.now();
     const e0 = await roda([db.prepare('INSERT OR REPLACE INTO cerebro_cartao (id, ordem, texto, aponta, ver, em, por, ia, apagado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(novo.id, novo.ordem, novo.texto, novo.aponta, ver, em, a.por, a.ia, novo.apagado ? 1 : 0),
-      cbMuda(db, 'cartao', novo.id, { ordem: novo.ordem, texto: novo.texto, aponta: novo.aponta, apagado: novo.apagado ? 1 : 0, ver, pedido: a.pedido, motivo }, a.por)]); if (e0) return e0; return ok({ ok: true, id: novo.id, ver }); }
+      cbMuda(db, 'cartao', novo.id, { ordem: novo.ordem, texto: novo.texto, aponta: novo.aponta, apagado: novo.apagado ? 1 : 0, ver, pedido: a.pedido, motivo }, a.por)]); if (e0) return e0; await revisa('cartao', novo.id, ver, b.apagar ? 'tirou memória rápida' : 'memória rápida', 'Memória rápida: ' + String(novo.texto || '').slice(0, 120)); return ok({ ok: true, id: novo.id, ver }); }
   // cascata de assuntos: cada assunto tem um pai só e um resumo de até 160 letras
   if (rota === '/assunto') { const nome = cbNome(b.nome).slice(0, 80), id = cbSlug(b.id || nome); if (!id) return erro('Dê um nome para o assunto.');
     const n = await db.prepare('SELECT * FROM cerebro_assunto WHERE id = ?').bind(id).first(); let novo;
@@ -1208,14 +1240,14 @@ async function cerebro(req, env, login, path, cors) {
       novo = { id, pai, nome: nome || n?.nome || id, resumo, apagado: 0 }; }
     const ver = (n?.ver || 0) + 1, em = Date.now();
     const e0 = await roda([db.prepare('INSERT OR REPLACE INTO cerebro_assunto (id, pai, nome, resumo, ver, em, por, ia, apagado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(novo.id, novo.pai, novo.nome, novo.resumo, ver, em, a.por, a.ia, novo.apagado ? 1 : 0),
-      cbMuda(db, 'assunto', novo.id, { pai: novo.pai, nome: novo.nome, resumo: novo.resumo, apagado: novo.apagado ? 1 : 0, ver, pedido: a.pedido, motivo }, a.por)]); if (e0) return e0; return ok({ ok: true, id: novo.id, ver }); }
+      cbMuda(db, 'assunto', novo.id, { pai: novo.pai, nome: novo.nome, resumo: novo.resumo, apagado: novo.apagado ? 1 : 0, ver, pedido: a.pedido, motivo }, a.por)]); if (e0) return e0; await revisa('assunto', novo.id, ver, b.apagar ? 'tirou assunto' : 'assunto', 'Assunto: ' + novo.nome); return ok({ ok: true, id: novo.id, ver }); }
   // etiqueta: liga uma página a um assunto (uma página pode ter vários)
   if (rota === '/etiqueta') { const n = await achaNo(b.no, b.caminho); if (!n || n.apagado) return erro('Essa página não existe no Cérebro.', 404, 'nao_achei'); const as = cbSlug(b.assunto);
     if (!b.tirar && !(await db.prepare('SELECT 1 AS x FROM cerebro_assunto WHERE id = ? AND apagado = 0').bind(as).first())) return erro(`O assunto "${as}" não existe. Crie ele antes.`, 404, 'nao_achei');
-    await db.batch([db.prepare(b.tirar ? 'DELETE FROM cerebro_etiqueta WHERE no = ? AND assunto = ?' : 'INSERT OR IGNORE INTO cerebro_etiqueta (no, assunto) VALUES (?, ?)').bind(n.id, as), cbMuda(db, 'etiqueta', n.id, { assunto: as, tirar: !!b.tirar, pedido: a.pedido, motivo }, a.por)]); return ok({ ok: true }); }
+    await db.batch([db.prepare(b.tirar ? 'DELETE FROM cerebro_etiqueta WHERE no = ? AND assunto = ?' : 'INSERT OR IGNORE INTO cerebro_etiqueta (no, assunto) VALUES (?, ?)').bind(n.id, as), cbMuda(db, 'etiqueta', n.id, { assunto: as, tirar: !!b.tirar, pedido: a.pedido, motivo }, a.por)]); await revisa('etiqueta', n.id, null, b.tirar ? 'tirou etiqueta' : 'etiqueta', 'Etiqueta ' + as + ' em ' + n.nome); return ok({ ok: true }); }
   // ligação livre entre duas páginas (o mapa usa)
   if (rota === '/liga') { const de = await achaNo(b.de, b.deCaminho), para = await achaNo(b.para, b.paraCaminho); if (!de || !para || de.apagado || para.apagado) return erro('Uma das páginas não existe no Cérebro.', 404, 'nao_achei'); if (de.id === para.id) return erro('Uma página não se liga a ela mesma.');
-    await db.batch([b.tirar ? db.prepare('DELETE FROM cerebro_liga WHERE de = ? AND para = ?').bind(de.id, para.id) : db.prepare('INSERT OR REPLACE INTO cerebro_liga (de, para, nota) VALUES (?, ?, ?)').bind(de.id, para.id, cbLimpa(b.nota, 200) || null), cbMuda(db, 'liga', de.id, { para: para.id, tirar: !!b.tirar, pedido: a.pedido, motivo }, a.por)]); return ok({ ok: true }); }
+    await db.batch([b.tirar ? db.prepare('DELETE FROM cerebro_liga WHERE de = ? AND para = ?').bind(de.id, para.id) : db.prepare('INSERT OR REPLACE INTO cerebro_liga (de, para, nota) VALUES (?, ?, ?)').bind(de.id, para.id, cbLimpa(b.nota, 200) || null), cbMuda(db, 'liga', de.id, { para: para.id, tirar: !!b.tirar, pedido: a.pedido, motivo }, a.por)]); await revisa('liga', de.id, null, b.tirar ? 'tirou ligação' : 'ligação', 'Ligação ' + de.nome + ' → ' + para.nome); return ok({ ok: true }); }
   if (rota === '/salvar') {
     let n = b.id ? await pega(String(b.id)) : null, pai, nome = b.nome != null ? cbNome(b.nome) : null; const criar = [], s = b.caminho ? segs(b.caminho) : null;
     if (b.id && !n) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
@@ -1240,6 +1272,7 @@ async function cerebro(req, env, login, path, cors) {
     if (n && pai === n.pai && nome === n.nome && (n.marca || '') === marca && (n.resumo || '') === (resumo || '') && (n.corpo ?? null) === corpo && (n.url || null) === (url || null) && (n.img || null) === img) return ok({ ok: true, igual: true, id: n.id, ver: n.ver });
     const g = cbGrava(db, novo, n, n ? 'editar' : 'criar', a, motivo); const e0 = await roda([...st, ...g.st]); if (e0) return e0;
     if (tipo !== 'pasta') await reindexa(novo.id); else if (n && (nome !== n.nome || pai !== n.pai)) await reindexa(novo.id, true);
+    await revisa('no', novo.id, g.ver, n ? 'editou' : 'criou');
     return ok({ ok: true, id: novo.id, ver: g.ver, em: g.em, ...(ia && tipo === 'texto' && !resumo ? { aviso: 'Grave também um resumo curto (--resumo, até 160 letras): no Cérebro novo ele será obrigatório.' } : {}) });
   }
   if (rota === '/lixeira' || rota === '/restaurar') { const n = await pega(String(b.id || '')); if (!n) return erro('Esse arquivo não existe no Cérebro.', 404, 'nao_achei');
@@ -1248,7 +1281,7 @@ async function cerebro(req, env, login, path, cors) {
     else { acao = 'restaurar'; if (b.ver != null) { const v = await db.prepare('SELECT snap FROM cerebro_ver WHERE id = ? AND ver = ?').bind(n.id, +b.ver).first(); if (!v) return erro('Versão não encontrada.', 404, 'nao_achei'); novo = { ...novo, ...JSON.parse(v.snap), id: n.id }; } novo.apagado = 0;
       if (novo.pai) { const f = await pega(novo.pai); if (!f || f.apagado) return erro('A pasta dele está na lixeira. Restaure a pasta primeiro.', 409, 'lixeira'); }
       const irmao = await noNome(novo.pai ?? null, novo.nome); if (irmao && irmao.id !== n.id) return erro(`Já existe "${novo.nome}" nessa pasta. Renomeie antes de restaurar.`, 409, 'mesmo_nome'); }
-    const g = cbGrava(db, novo, n, acao, a, motivo || (acao === 'restaurar' ? (b.ver != null ? 'Voltou para a versão ' + b.ver : 'Tirou da lixeira') : 'Mandou para a lixeira')); const e0 = await roda(g.st); if (e0) return e0; await reindexa(n.id, true); return ok({ ok: true, ver: g.ver }); }
+    const g = cbGrava(db, novo, n, acao, a, motivo || (acao === 'restaurar' ? (b.ver != null ? 'Voltou para a versão ' + b.ver : 'Tirou da lixeira') : 'Mandou para a lixeira')); const e0 = await roda(g.st); if (e0) return e0; await reindexa(n.id, true); await revisa('no', n.id, g.ver, acao === 'lixeira' ? 'mandou para a lixeira' : 'restaurou'); return ok({ ok: true, ver: g.ver }); }
   return erro('Pedido desconhecido.', 404);
 }
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
@@ -1292,7 +1325,8 @@ export default {
     const path0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
     // CÉREBRO: as IAs (sem navegador) entram com a chave x-cerebro-chave, que só vale nas rotas /cerebro
     const ehCerebro = path0 === '/cerebro' || path0.startsWith('/cerebro/'), ehMusicas = path0 === '/musicas' || path0.startsWith('/musicas/'), chaveCb = ehCerebro || path0.startsWith('/musicas/copia') ? req.headers.get('x-cerebro-chave') : null; // a chave das IAs só vale no Cérebro e em copiar a biblioteca para as Músicas
-    if (chaveCb && !(await cbChaveOk(env, chaveCb))) return json({ error: { type: 'chave', message: 'Chave do Cérebro errada.' } }, 401, cors);
+    const chaveInfo = chaveCb ? await cbChaveOk(env, chaveCb) : null;
+    if (chaveCb && !chaveInfo) return json({ error: { type: 'chave', message: 'Chave do Cérebro errada ou ainda não autorizada. Cole o código c-... em https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves, logado na sua conta.' } }, 401, cors);
     // aberto direto na barra do navegador (sem "origin"): mostra que está funcionando e o uso
     if (!origin && req.method === 'GET' && (path0 === '/' || path0 === '/uso')) return json({ ok: 'Servidor da IA da turma funcionando', login: env.FIREBASE_PROJECT_ID ? 'ligado (' + env.FIREBASE_PROJECT_ID + ')' : 'DESLIGADO — falta FIREBASE_PROJECT_ID', emails: (env.EMAILS_PERMITIDOS || '').split(',').filter(x => x.trim()).length, app: env.APP_KEY ? 'protegido (APP_KEY ok)' : 'falta APP_KEY', chave_ia: env.ANTHROPIC_API_KEY ? 'ok' : 'falta ANTHROPIC_API_KEY' }, 200, cors);
     else if (!liberado && !chaveCb) return json({ error: { type: 'origem', message: 'Este site não está liberado no servidor da turma.' } }, 403, cors);
@@ -1302,7 +1336,7 @@ export default {
     // dentro da Cloudflare (Service Binding TURMA) e manda o e-mail da sessão. Pedido da internet SEMPRE tem req.cf; pela ligação
     // direta não tem — então este caminho só vale pela ligação. Mesmo assim o e-mail precisa estar na lista de quem entra.
     const peloPorteiro = ((p00 === '/permissoes' || p00 === '/musicas/bib') && req.method === 'GET' || p00 === '/musicas/enviar' && req.method === 'POST') && !req.cf && req.headers.get('x-porteiro-email'); // /musicas/bib: o porteiro entrega a cópia conferida dos sons antigos
-    const login = chaveCb ? { ok: true, ia: true } : peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
+    const login = chaveCb ? { ok: true, ia: true, iaAdm: chaveInfo.adm, iaNome: chaveInfo.nome } : peloPorteiro ? await (async e => { e = String(e).trim().toLowerCase(); return EMAIL_OK.test(e) && (baseFixa(env).includes(e) || (await extrasAcesso(env)).some(x => x.email === e)) ? { ok: true, email: e } : { ok: false }; })(peloPorteiro) : await confereLogin(req, env);
     if (!login.ok) return json({ error: { type: 'login', message: login.motivo || 'Entre com sua conta Google pelo menu do Estúdio.' } }, 401, cors);
     await planoEstado(env);
     if (path0 === '/plano' && req.method === 'GET') { const u = PLANO.uso; return json({ pausado: planoPausado(), adm: ehAdmin(env, login.email), ciclo: u?.ciclo || null, fim: u?.fim || null, em: u?.em || null, pct: u ? Math.round(planoPct(u) * 1000) / 10 : null, itens: u ? Object.values(u.itens).filter(x => x.lim && x.v / x.lim >= 0.5).map(x => ({ nome: x.nome, v: x.v, lim: x.lim })) : [] }, 200, { ...cors, 'cache-control': 'no-store' }); }

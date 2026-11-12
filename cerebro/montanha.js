@@ -43,7 +43,7 @@ function monta() { const m = new Map(L.itens.map(x => [x.id, x]));
   D = { paginas, assuntos: L.assuntos.filter(a => !a.apagado), cartoes: L.cartoes.filter(c => !c.apagado).sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)), etiquetas: L.etiquetas.filter(e => ok.has(e.no)), ligas: L.ligas };
   A = new Map(D.assuntos.map(a => [a.id, a])); P = new Map(D.paginas.map(p => [p.id, p])); etiq = new Map();
   for (const e of D.etiquetas) { if (!etiq.has(e.assunto)) etiq.set(e.assunto, []); etiq.get(e.assunto).push(e.no); }
-  if (L.adm != null && window.S) { S.adm = L.adm; if (L.pedidosNovos != null) S.pedidosNovos = L.pedidosNovos; } }
+  if (L.adm != null && window.S) { S.adm = L.adm; if (L.pedidosNovos != null) S.pedidosNovos = L.pedidosNovos; if (L.revisar != null) S.revisar = L.revisar; } }
 const porNome = (a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true });
 const filhos = id => D.assuntos.filter(a => (a.pai || null) === id).sort(porNome);
 const pagsDe = id => (etiq.get(id) || []).map(n => P.get(n)).filter(Boolean).sort(porNome);
