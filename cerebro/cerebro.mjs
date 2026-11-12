@@ -24,13 +24,15 @@ async function pede(rota, corpo) { const k = chave(); if (!k) throw new Error('S
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error?.message || 'O servidor respondeu ' + r.status) + (r.status === 409 ? '\nNADA FOI GRAVADO. Rode: node cerebro.mjs ler "<Pasta/Arquivo>", veja a versão e grave de novo com --base <versão>.' : r.status === 401 || r.status === 403 ? '\nSem permissão. Rode: node cerebro.mjs entrar e peça a um ADM para autorizar.' : '')); return j; }
 async function comeceEmCache() { const f = join(homedir(), '.claude', 'cerebro-aviso-cache.json'); try { const c = JSON.parse(readFileSync(f, 'utf8')); if (Date.now() - c.t < 600000) return c.j; } catch {} const j = await pede('/comece'); try { writeFileSync(f, JSON.stringify({ t: Date.now(), j })); } catch {} return j; }
 const [cmd, ...resto] = process.argv.slice(2), pos = [], op = {};
-for (let i = 0; i < resto.length; i++) { if (resto[i].startsWith('--')) op[resto[i].slice(2)] = resto[++i]; else pos.push(resto[i]); }
+const SEM_VALOR = new Set(['simular', 'manter', 'forcar', 'help', 'ajuda']), COM_VALOR = new Set(['arquivo', 'base', 'marca', 'ia', 'pedido', 'motivo', 'texto', 'url', 'tipo', 'resumo', 'acrescentar', 'estado', 'nota', 'so']), desconhecidas = [];
+for (let i = 0; i < resto.length; i++) { const a = resto[i]; if (a === '-h') op.help = true; else if (a.startsWith('--')) { const n = a.slice(2); if (SEM_VALOR.has(n)) op[n] = true; else if (COM_VALOR.has(n)) op[n] = resto[++i]; else desconhecidas.push(a); } else pos.push(a); }
+const AJUDA = () => console.log(readFileSync(new URL(import.meta.url), 'utf8').split('*/')[0]);
 const reg = () => ({ ia: op.ia || process.env.CEREBRO_IA, pedidoPor: op.pedido, motivo: op.motivo });
 const mostra = o => console.log(JSON.stringify(o, null, 1));
 const hoje = () => new Date().toISOString().slice(0, 10);
 async function entrarAqui() { if (chave()) { console.log('Este computador já tem a chave do Cérebro.'); } else { const d = join(homedir(), '.claude'), k = randomBytes(32).toString('base64url'); mkdirSync(d, { recursive: true }); writeFileSync(join(d, 'cerebro-chave.txt'), k, { mode: 0o600 }); console.log('Chave criada e guardada só neste computador.\n\nPasse este código para um ADM (não é segredo):\n\nc-' + createHash('sha256').update(k).digest('hex') + '\n\nO ADM autoriza em https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves'); } }
 // ---- instalar / conferir (12/11/2026): põe as skills e os agentes do Cérebro neste computador e liga o gancho do começo da sessão ----
-import { existsSync, copyFileSync, readdirSync, chmodSync } from 'node:fs'; import { dirname, resolve } from 'node:path'; import { fileURLToPath } from 'node:url';
+import { existsSync, copyFileSync, readdirSync, chmodSync, statSync } from 'node:fs'; import { dirname, resolve } from 'node:path'; import { fileURLToPath } from 'node:url';
 const CL = () => join(homedir(), '.claude'), MANI = () => join(CL(), 'cerebro-instalado.json');
 const seguro = s => String(s).replace(/[<>:"|?*\\/]/g, '_').replace(/^\.+/, '_');
 function destinoDe(pasta, nome) { // onde cada item de Skills/<pasta> vai no computador
@@ -54,9 +56,10 @@ function poeGancho() { const f = join(CL(), 'settings.json'); let s = {};
   s.hooks.SessionStart.push({ hooks: [{ type: 'command', command: 'node ' + join(CL(), 'cerebro.mjs').replace(/\\/g, '/') + ' aviso', timeout: 25, statusMessage: 'Abrindo o Cérebro' }] });
   writeFileSync(f, JSON.stringify(s, null, 2)); return 'Gancho do Cérebro adicionado ao settings.json (o resto foi mantido; cópia em settings.json.antes-do-cerebro).'; }
 async function instalar() {
-  mkdirSync(CL(), { recursive: true });
-  const eu = fileURLToPath(import.meta.url), casa = join(CL(), 'cerebro.mjs');
-  if (resolve(eu) !== resolve(casa)) { copyFileSync(eu, casa); console.log('Copiei o cerebro.mjs para ' + casa); }
+  if (!('simular' in op)) mkdirSync(CL(), { recursive: true });
+  const eu = fileURLToPath(import.meta.url), casa = join(CL(), 'cerebro.mjs'), sim = 'simular' in op;
+  if (!sim && resolve(eu) !== resolve(casa)) { copyFileSync(eu, casa); console.log('Copiei o cerebro.mjs para ' + casa); }
+  if (!chave() && sim) { console.log('Sem chave neste computador: --simular não cria nada. Rode sem --simular para criar a chave.'); return; }
   if (!chave()) { console.log('Este computador ainda não tem chave do Cérebro. Criando...\n'); await entrarAqui(); console.log('\nDepois que um ADM autorizar, rode de novo: node ~/.claude/cerebro.mjs instalar'); return; }
   const so = op.so ? op.so.split(',').map(x => x.trim()) : null, man = lerJson(MANI(), {}), dia = join(CL(), 'cerebro-backup', hoje() + '-' + Date.now()), nov = [], atu = [], ok = [], dif = [];
   let it; try { it = await itensDeSkills(); } catch (e) { if (/401|403|autoriza/i.test(e.message)) throw new Error('A chave deste computador ainda não foi autorizada por um ADM (Cérebro > Acesso das IAs).'); throw e; }
@@ -65,12 +68,13 @@ async function instalar() {
     if (existe && man[c.id] === c.ver) { ok.push(c.nome); continue; }
     const { item } = await pede('/item?id=' + encodeURIComponent(c.id)), corpo = item.corpo || '';
     if (existe) { const loc = readFileSync(dest, 'utf8'); if (igualTxt(loc, corpo)) { man[c.id] = c.ver; ok.push(c.nome); continue; }
-      if ('manter' in op) { dif.push(c.pasta + '/' + c.nome); continue; } const bk = join(dia, ...destinoDe(c.pasta, c.nome)); mkdirSync(dirname(bk), { recursive: true }); copyFileSync(dest, bk); atu.push(c.pasta + '/' + c.nome); } else nov.push(c.pasta + '/' + c.nome);
-    if ('simular' in op) continue;
+      if (!('forcar' in op) && ('manter' in op || statSync(dest).mtimeMs > (c.em || 0))) { dif.push(c.pasta + '/' + c.nome); continue; }
+      atu.push(c.pasta + '/' + c.nome); if (!sim) { const bk = join(dia, ...destinoDe(c.pasta, c.nome)); mkdirSync(dirname(bk), { recursive: true }); copyFileSync(dest, bk); } } else nov.push(c.pasta + '/' + c.nome);
+    if (sim) continue;
     mkdirSync(dirname(dest), { recursive: true }); writeFileSync(dest, corpo); if (/\.(sh|mjs)$/.test(dest)) { try { chmodSync(dest, 0o755); } catch {} } man[c.id] = c.ver; }
   if (!('simular' in op)) writeFileSync(MANI(), JSON.stringify(man));
-  console.log(`Skills e agentes: ${nov.length} novos, ${atu.length} atualizados, ${ok.length} já em dia.` + (atu.length ? ' (os arquivos que você tinha mexido foram copiados para ' + dia + ')' : ''));
-  if (dif.length) console.log('Diferentes do Cérebro (mantive os daqui, sem sobrescrever): ' + dif.join(', '));
+  console.log((sim ? '[SIMULAÇÃO: nada foi gravado] ' : '') + `Skills e agentes: ${nov.length} novos, ${atu.length} a atualizar, ${ok.length} já em dia.` + (atu.length ? ' (os arquivos que você tinha mexido foram copiados para ' + dia + ')' : ''));
+  if (dif.length) console.log('LOCAL MAIS NOVO OU DIFERENTE, NÃO SOBRESCREVI (grave no Cérebro com ~/.claude/skills/celestia/scripts/gravar-cerebro.sh, ou use --forcar para trocar pelo do Cérebro, com backup): ' + dif.join(', '));
   if (nov.length) console.log('Novos: ' + nov.join(', ')); if (atu.length) console.log('Atualizados: ' + atu.join(', '));
   if (!('simular' in op)) { console.log(poeGancho());
     const ve = existsSync(join(CL(), 'skills', 'ouvir', '.venv'));
@@ -84,6 +88,8 @@ async function conferir(forca) { const fc = join(CL(), 'cerebro-conferido.json')
   let n = 0; try { const man = lerJson(MANI(), {}), it = await itensDeSkills(); for (const x of it) { if (man[x.id] !== x.ver || !existsSync(join(CL(), ...destinoDe(x.pasta, x.nome)))) n++; } writeFileSync(fc, JSON.stringify({ t: Date.now(), n })); } catch { return { n: c.n, falta }; }
   return { n, falta }; }
 const PASTAS = { evitar: 'A evitar', aprendizado: 'Aprendizados', referencia: 'Referências', regra: 'Regras' };
+if (!cmd || cmd === 'ajuda' || cmd === 'help' || cmd === '-h' || cmd === '--help' || op.help || op.ajuda) { AJUDA(); process.exit(0); }
+if (desconhecidas.length) { console.error('Opção desconhecida: ' + desconhecidas.join(' ') + '. Nada foi feito. Veja: node cerebro.mjs --help'); process.exit(1); }
 try {
   if (cmd === 'entrar') await entrarAqui();
   else if (cmd === 'instalar') await instalar();
