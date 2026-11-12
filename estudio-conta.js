@@ -2797,53 +2797,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   document.addEventListener('drop', e => { for (const f of e.dataTransfer?.files || []) guardar(f); }, true);
 })();
 
-/* ===== CELESTIA PARA A EQUIPE (pedido da dona, 12/11/2026) =====
-   EstudioCelestia.mostrar(): janela "Instalar a CelestIA" com o texto pronto para colar no Claude Code (o menu e o Cérebro chamam).
-   Aviso discreto nos programas para quem ainda não ligou a CelestIA em nenhum computador: pergunta no máximo 1 vez por dia ao
-   /cerebro/minha-celestia (não manda e-mail; o servidor sabe pela sessão). "Agora não" cala por 30 dias.
-   A pessoa autoriza o próprio computador em Cérebro › Acesso das IAs (não precisa de ADM).
-   Página pública (sem login), para pessoas e IAs: https://problemsbloxcreate-lab.github.io/cerebro/instalar.html */
-(() => { if (window.EstudioCelestia) return;
-  const MJS = 'https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs', CHAVES = 'https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves';
-  const PEDIDO = 'Instale a CelestIA do Estúdio Problems neste computador e ligue o Cérebro.\n' +
-    '1. Baixe o programa do Cérebro (não tem chave nenhuma dentro): ' + MJS + '\n' +
-    '   PowerShell: Invoke-WebRequest ' + MJS + ' -OutFile cerebro.mjs\n' +
-    '   Mac/Linux: curl -fsSL ' + MJS + ' -o cerebro.mjs\n' +
-    '2. Rode: node cerebro.mjs instalar. Ele cria a chave só neste computador e mostra um código c-...\n' +
-    '3. Me mostre o código e espere eu colar em ' + CHAVES + ' (logado na minha conta).\n' +
-    '4. Rode de novo: node ~/.claude/cerebro.mjs instalar (baixa as skills e liga o aviso do começo das conversas).\n' +
-    'Depois disso, em toda tarefa do Estúdio: antes de mudar qualquer coisa, rode node ~/.claude/cerebro.mjs conferir (e instalar, se ele pedir) e leia no Cérebro a página do programa; depois, grave no Cérebro o que mudou ou o que aprendeu.';
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const css = '.ep-cel{position:fixed;inset:0;z-index:2147483004;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px;font:14px/1.45 var(--fonte,"Inter","Segoe UI",system-ui,sans-serif);color:var(--texto,#f5f5f7)}' +
-    '.ep-cel .cx{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--elevado,#242428);border-radius:14px;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55);padding:24px}' +
-    '.ep-cel h3{margin:0 0 6px;font-size:17px;font-weight:600}.ep-cel p{margin:0 0 14px;color:var(--texto-2,rgba(235,235,245,.64));font-size:13px}' +
-    '.ep-cel pre{white-space:pre-wrap;font:12.5px/1.55 ui-monospace,"Cascadia Mono",Consolas,monospace;background:var(--fundo-2,#1e1e21);border:1px solid var(--linha,rgba(255,255,255,.09));border-radius:8px;padding:12px;margin:0 0 16px;overflow-wrap:anywhere;max-height:44vh;overflow:auto}' +
-    '.ep-cel .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}' +
-    '.ep-cel a,.ep-cel button{height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--fundo-3,#28282c);color:inherit;font-weight:500;font-size:14px;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}' +
-    '.ep-cel .pri{background:var(--acento,#5cc4ff);color:var(--acento-texto,#04223a);font-weight:600}' +
-    '.ep-cel-av{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483002;display:flex;align-items:center;gap:10px;background:var(--elevado,#242428);color:var(--texto,#f5f5f7);border-radius:10px;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.45);padding:8px 8px 8px 14px;font:13px var(--fonte,"Inter","Segoe UI",system-ui,sans-serif);max-width:calc(100vw - 32px)}' +
-    '.ep-cel-av button{height:28px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--acento,#5cc4ff);font-weight:500;font-size:13px;font-family:inherit;cursor:pointer}.ep-cel-av button:hover{background:var(--acento-suave,rgba(92,196,255,.16))}';
-  const estilo = () => { if (document.getElementById('ep-cel-css')) return; const s = document.createElement('style'); s.id = 'ep-cel-css'; s.textContent = css; document.head.appendChild(s); };
-  function mostrar() { estilo(); const d = document.createElement('div'); d.className = 'ep-cel'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Instalar a CelestIA');
-    d.innerHTML = '<div class="cx"><h3>Instalar a CelestIA</h3><p>Cole no Claude Code do seu computador. Quando aparecer o código c-…, autorize em Cérebro › Acesso das IAs, logado na sua conta. Não precisa de ADM.</p><pre>' + esc(PEDIDO) + '</pre><div class="acts"><button type="button" data-f>Fechar</button><a href="' + CHAVES + '" target="_blank" rel="noopener">Abrir Acesso das IAs</a><button type="button" class="pri" data-c>Copiar</button></div></div>';
-    const tc = e => { if (e.key === 'Escape') { e.stopPropagation(); sai(); } }, sai = () => { d.remove(); removeEventListener('keydown', tc, true); };
-    d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-f]')) sai(); });
-    d.querySelector('[data-c]').onclick = async e => { try { await navigator.clipboard.writeText(PEDIDO); e.target.textContent = 'Copiado'; } catch { e.target.textContent = 'Selecione e copie'; } };
-    addEventListener('keydown', tc, true); document.body.appendChild(d); d.querySelector('[data-c]').focus(); }
-  window.EstudioCelestia = { mostrar, PEDIDO };
-  // o login da página (o Animador guarda como TurmaAuth)
-  const token = async () => { try { const C = window.ESTUDIO_CONTA; if (C && C.token) { const t = await C.token(); return t && !/^Bearer /.test(t) ? 'Bearer ' + t : t; } if (window.EstudioLogin && window.EstudioLogin.token) return await window.EstudioLogin.token();
-    const ta = typeof TurmaAuth !== 'undefined' ? TurmaAuth : window.TurmaAuth; if (ta && ta.token) { const t = await ta.token(); return t ? (/^Bearer /.test(t) ? t : 'Bearer ' + t) : null; } } catch { } return null; }; // eslint-disable-line no-undef
-  // aviso discreto: só nos programas (não no menu, no Cérebro nem na ADM), no máximo 1 vez por dia
-  async function talvezAvise() { const p = location.pathname; if (p === '/' || p === '/index.html' || p.startsWith('/cerebro') || p.startsWith('/adm')) return;
-    const hoje = new Date().toISOString().slice(0, 10); try { if ((+localStorage.getItem('ep-celestia-calar') || 0) > Date.now() || localStorage.getItem('ep-celestia-visto') === hoje) return; } catch { return; }
-    const t = await token(); if (!t) return; let j = null;
-    try { const r = await fetch('https://turma-ia.problemsraiz.workers.dev/cerebro/minha-celestia', { headers: { authorization: t }, cache: 'no-store' }); if (!r.ok) return; j = await r.json(); } catch { return; }
-    try { localStorage.setItem('ep-celestia-visto', hoje); } catch { } if (!j || j.tem !== false) return;
-    estilo(); const a = document.createElement('div'); a.className = 'ep-cel-av'; a.setAttribute('role', 'status');
-    a.innerHTML = '<span>Ligue a CelestIA no seu computador: ela lê o Cérebro antes de mudar algo.</span><button type="button" data-v>Como</button><button type="button" data-n>Agora não</button>';
-    a.querySelector('[data-v]').onclick = () => { a.remove(); mostrar(); };
-    a.querySelector('[data-n]').onclick = () => { a.remove(); try { localStorage.setItem('ep-celestia-calar', String(Date.now() + 30 * 864e5)); } catch { } };
-    document.body.appendChild(a); setTimeout(() => a.remove(), 15000); }
-  if (document.readyState === 'complete') setTimeout(talvezAvise, 4000); else addEventListener('load', () => setTimeout(talvezAvise, 4000), { once: true });
-})();
+/* CELESTIA (12/11/2026): a instalação é só automática. Quando a pessoa pede ao Claude algo do Estúdio, ele instala a CelestIA e o Cérebro
+   sozinho e mostra um código; a pessoa só cola o código em Cérebro › Acesso das IAs. Por isso não há mais botão nem aviso de "Instalar" no site
+   (pedido da dona). window.EstudioCelestia fica vazio só para nada quebrar se alguma página antiga ainda chamar. */
+window.EstudioCelestia = window.EstudioCelestia || { mostrar() { location.href = '/cerebro/?aba=chaves'; } };

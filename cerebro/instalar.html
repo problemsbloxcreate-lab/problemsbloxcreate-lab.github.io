@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
-<title>Instalar a CelestIA · Estúdio Problems</title>
-<meta name="description" content="Como ligar a CelestIA e o Cérebro do Estúdio Problems num computador. Página pública: não tem chave nem dado pessoal.">
+<title>Cérebro e CelestIA · Estúdio Problems</title>
+<meta name="description" content="Para a IA: como ligar o Cérebro e a CelestIA do Estúdio Problems sozinha, ao começar uma tarefa do Estúdio. Página pública: não tem chave nem dado pessoal.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/estudio-visual.css">
-<!-- PÁGINA PÚBLICA (pedido da dona, 12/11/2026): abre sem login, para pessoas e IAs. Não tem chave, senha nem e-mail.
-     Ela NÃO dá acesso a nada: quem libera o computador é a pessoa, logada no site, colando o código na aba Acesso das IAs. -->
+<!-- PÁGINA PÚBLICA, PARA A IA (pedido da dona, 12/11/2026): a instalação é só automática. Ninguém instala à mão: a IA instala ao começar uma tarefa
+     do Estúdio e a pessoa só autoriza o código. Os CLAUDE.md dos repositórios do Estúdio apontam para cá. Não tem chave, senha nem e-mail. -->
 <style>
   body{margin:0;background:var(--fundo);color:var(--texto);font:400 15px/1.6 var(--fonte)}
   main{max-width:820px;margin:0 auto;padding:40px 20px 80px}
@@ -18,62 +18,37 @@
   p,li{color:var(--texto-2)} b{color:var(--texto)}
   ol,ul{padding-left:22px} li{margin:6px 0}
   .caixa{background:var(--fundo-2);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:12px 0}
-  pre{white-space:pre-wrap;font:13px/1.55 ui-monospace,"Cascadia Mono",Consolas,monospace;background:var(--fundo-2);border:1px solid var(--linha);border-radius:8px;padding:14px;margin:10px 0;overflow-wrap:anywhere;color:var(--texto)}
   code{font:13px ui-monospace,"Cascadia Mono",Consolas,monospace;background:var(--fundo-3);padding:1px 6px;border-radius:6px;color:var(--texto)}
   a{color:var(--acento-link,var(--acento))}
-  .bt{height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--acento);color:var(--acento-texto);font:600 14px var(--fonte);cursor:pointer}
   .sub{font-size:16px;margin:0 0 24px}
 </style>
 </head>
 <body>
 <main>
-  <h1>Instalar a CelestIA</h1>
-  <p class="sub">A CelestIA é a ajudante do Estúdio Problems que roda no Claude Code do seu computador. Com ela, toda mudança começa pelo <b>Cérebro</b> (a memória da equipe) e tudo o que a IA aprende volta para ele.</p>
+  <h1>Cérebro e CelestIA</h1>
+  <p class="sub">Esta página é para a IA. As pessoas da equipe não instalam nada à mão: quando pedem ao Claude algo do Estúdio Problems, ele liga o Cérebro e a CelestIA sozinho, e a pessoa só autoriza um código.</p>
 
   <h2>Quando usar o Cérebro</h2>
   <div class="caixa">
-    <p><b>Só em tarefas do Estúdio Problems:</b> os programas do site (Animador, Ateliê, Editor, Shorts, Preparativos, Publicações, Cérebro etc.), os personagens, as animações, os Shorts e os vídeos do canal (inclusive os Shorts de Minecraft feitos no Estúdio) e os repositórios do Estúdio.</p>
-    <p><b>Fora disso</b> (outro site, Minecraft direto, como mods ou mundo, ou qualquer outro assunto), a IA não lê, não grava e não cita o Cérebro. Na dúvida, ela pergunta.</p>
-    <p><b>Para a IA:</b> se a tarefa for do Estúdio e este computador ainda não tiver o Cérebro e a CelestIA (sem <code>~/.claude/cerebro.mjs</code>, sem a skill celestia ou sem a chave), pergunte uma vez ("Posso instalar o Cérebro e a CelestIA neste computador?") e, com o sim, instale você mesma, com os passos abaixo, antes de mexer em qualquer coisa. A pessoa não precisa fazer nada à mão, só dizer sim e autorizar o código.</p>
+    <p><b>Só em tarefas do Estúdio Problems:</b> os programas do site (Animador, Ateliê, Editor, Shorts, Preparativos, Publicações, Cérebro etc.), os personagens, as animações, os Shorts e os vídeos do canal (inclusive os Shorts de Minecraft feitos no Estúdio) e os repositórios do Estúdio. Vale para qualquer pessoa: criar uma animação no Animador ou usar o Preparativos também passa pelo Cérebro antes.</p>
+    <p><b>Fora disso</b> (outro site, Minecraft direto, como mods ou mundo, ou qualquer outro assunto), não leia, não grave e não cite o Cérebro. Na dúvida, pergunte.</p>
   </div>
 
-  <h2>Para a pessoa</h2>
-  <ol>
-    <li>Abra o <b>Claude Code</b> no seu computador.</li>
-    <li>Cole o texto abaixo e siga o que ele pedir.</li>
-    <li>Quando ele mostrar um código que começa com <code>c-</code>, abra o <a href="https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves">Cérebro › Acesso das IAs</a>, logada na <b>sua</b> conta, cole o código e clique em Autorizar. Não precisa de ADM.</li>
-  </ol>
-  <pre id="pedido">Instale a CelestIA do Estúdio Problems neste computador e ligue o Cérebro.
-1. Baixe o programa do Cérebro (não tem chave nenhuma dentro): https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs
-   PowerShell: Invoke-WebRequest https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs -OutFile cerebro.mjs
-   Mac/Linux: curl -fsSL https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs -o cerebro.mjs
-2. Rode: node cerebro.mjs instalar. Ele cria a chave só neste computador e mostra um código c-...
-3. Me mostre o código e espere eu colar em https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves (logado na minha conta).
-4. Rode de novo: node ~/.claude/cerebro.mjs instalar (baixa as skills e liga o aviso do começo das conversas).
-Depois disso, em toda tarefa do Estúdio: antes de mudar qualquer coisa, rode node ~/.claude/cerebro.mjs conferir (e instalar, se ele pedir) e leia no Cérebro a página do programa; depois, grave no Cérebro o que mudou ou o que aprendeu.</pre>
-  <button class="bt" type="button" id="copiar">Copiar</button>
-
-  <h2>Para a IA que está instalando</h2>
+  <h2>Ao começar uma tarefa do Estúdio</h2>
   <div class="caixa">
-    <p><b>Pergunte antes de começar</b> (uma vez, curto):</p>
-    <ul>
-      <li>Este computador é seu e o Claude Code está instalado nele?</li>
-      <li>Que nome dar a este computador? (ex.: "notebook de casa")</li>
-      <li>Você já tem conta no Estúdio Problems e entra pelo menu com o Google?</li>
-    </ul>
-    <p><b>Depois:</b></p>
+    <p>Se este computador ainda não tiver o Cérebro e a CelestIA (sem <code>~/.claude/cerebro.mjs</code>, sem a skill celestia ou sem a chave):</p>
     <ol>
-      <li>Baixe o <code>cerebro.mjs</code> (link acima) e rode <code>node cerebro.mjs instalar</code>. Ele copia o programa para <code>~/.claude</code>, cria a chave <b>só neste computador</b> e mostra um código <code>c-…</code>. O código não é segredo; a chave nunca sai daqui.</li>
-      <li>Mostre o código e o link do Acesso das IAs. Espere a pessoa dizer que autorizou.</li>
+      <li>Pergunte uma vez: "Posso instalar o Cérebro e a CelestIA neste computador?" e espere o sim.</li>
+      <li>Baixe <code>https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs</code> (não tem chave nenhuma dentro) e rode <code>node cerebro.mjs instalar</code>. Ele copia o programa para <code>~/.claude</code>, cria a chave <b>só neste computador</b> e mostra um código <code>c-…</code>.</li>
+      <li>Mostre o código e peça para a pessoa colar em <a href="https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves">Cérebro › Acesso das IAs</a>, logada na conta dela (não precisa de ADM). Espere ela dizer que autorizou.</li>
       <li>Rode <code>node ~/.claude/cerebro.mjs instalar</code> de novo: ele baixa as skills (CelestIA, design, animação, ouvir…) e liga o aviso do começo das conversas no <code>settings.json</code>, sem apagar o que já existe.</li>
-      <li>Rode <code>node ~/.claude/cerebro.mjs comece</code> e siga o que o Cérebro manda.</li>
+      <li>Rode <code>node ~/.claude/cerebro.mjs comece</code> e siga o Cérebro.</li>
     </ol>
-    <p><b>Regra de toda tarefa do Estúdio</b> (fora do Estúdio, nada disso vale): antes de mudar algo, <code>conferir</code> (e <code>instalar</code> se ele pedir) e leia a página do programa no Cérebro. Depois, grave o que mudou ou aprendeu (<code>salvar</code> ou <code>aprender</code>, com quem pediu e qual IA gravou). Nunca grave senha, chave, token nem e-mail.</p>
+    <p>Já instalado: rode <code>node ~/.claude/cerebro.mjs conferir</code> e, se ele pedir, <code>instalar</code>, para ficar sempre atualizado.</p>
   </div>
 
-  <h2>Usa o Claude no navegador (claude.ai)?</h2>
-  <p>O claude.ai não roda comandos. Peça a alguém da equipe as pastas das skills em .zip, suba em Configurações › Skills e cole nas Preferências: "Só em tarefas do Estúdio Problems (os programas do site, os personagens, as animações e os vídeos do canal): leia o Cérebro (https://estudio.problemsraiz.workers.dev/cerebro/), comece pela skill celestia e cite o Cérebro numa linha no fim da resposta. Em outros assuntos (outro site, Minecraft direto etc.), não use o Cérebro. Na dúvida, pergunte." O que for aprendido lá, grave depois pelo Claude Code.</p>
+  <h2>Regra de toda tarefa do Estúdio</h2>
+  <p>Antes de mudar algo, <code>conferir</code> (e <code>instalar</code> se ele pedir) e leia no Cérebro a página do programa. Depois, grave o que mudou ou aprendeu (<code>salvar</code> ou <code>aprender</code>, com <code>--resumo</code>, quem pediu e qual IA gravou). Nunca grave senha, chave, token nem e-mail.</p>
 </main>
-<script>document.getElementById('copiar').onclick=async e=>{try{await navigator.clipboard.writeText(document.getElementById('pedido').textContent);e.target.textContent='Copiado'}catch{e.target.textContent='Selecione e copie'}}</script>
 </body>
 </html>
