@@ -30,6 +30,13 @@
   <h1>Instalar a CelestIA</h1>
   <p class="sub">A CelestIA é a ajudante do Estúdio Problems que roda no Claude Code do seu computador. Com ela, toda mudança começa pelo <b>Cérebro</b> (a memória da equipe) e tudo o que a IA aprende volta para ele.</p>
 
+  <h2>Quando usar o Cérebro</h2>
+  <div class="caixa">
+    <p><b>Só em tarefas do Estúdio Problems:</b> os programas do site (Animador, Ateliê, Editor, Shorts, Preparativos, Publicações, Cérebro etc.), os personagens, as animações, os Shorts e os vídeos do canal (inclusive os Shorts de Minecraft feitos no Estúdio) e os repositórios do Estúdio.</p>
+    <p><b>Fora disso</b> (outro site, Minecraft direto, como mods ou mundo, ou qualquer outro assunto), a IA não lê, não grava e não cita o Cérebro. Na dúvida, ela pergunta.</p>
+    <p><b>Para a IA:</b> se a tarefa for do Estúdio e este computador ainda não tiver o Cérebro e a CelestIA (sem <code>~/.claude/cerebro.mjs</code>, sem a skill celestia ou sem a chave), instale você mesma, com os passos abaixo, antes de mexer em qualquer coisa. A pessoa não precisa fazer nada à mão, só autorizar o código.</p>
+  </div>
+
   <h2>Para a pessoa</h2>
   <ol>
     <li>Abra o <b>Claude Code</b> no seu computador.</li>
@@ -61,11 +68,11 @@ Depois disso, em toda tarefa do Estúdio: antes de mudar qualquer coisa, rode no
       <li>Rode <code>node ~/.claude/cerebro.mjs instalar</code> de novo: ele baixa as skills (CelestIA, design, animação, ouvir…) e liga o aviso do começo das conversas no <code>settings.json</code>, sem apagar o que já existe.</li>
       <li>Rode <code>node ~/.claude/cerebro.mjs comece</code> e siga o que o Cérebro manda.</li>
     </ol>
-    <p><b>Regra de toda tarefa do Estúdio:</b> antes de mudar algo, <code>conferir</code> (e <code>instalar</code> se ele pedir) e leia a página do programa no Cérebro. Depois, grave o que mudou ou aprendeu (<code>salvar</code> ou <code>aprender</code>, com quem pediu e qual IA gravou). Nunca grave senha, chave, token nem e-mail.</p>
+    <p><b>Regra de toda tarefa do Estúdio</b> (fora do Estúdio, nada disso vale): antes de mudar algo, <code>conferir</code> (e <code>instalar</code> se ele pedir) e leia a página do programa no Cérebro. Depois, grave o que mudou ou aprendeu (<code>salvar</code> ou <code>aprender</code>, com quem pediu e qual IA gravou). Nunca grave senha, chave, token nem e-mail.</p>
   </div>
 
   <h2>Usa o Claude no navegador (claude.ai)?</h2>
-  <p>O claude.ai não roda comandos. Peça a alguém da equipe as pastas das skills em .zip, suba em Configurações › Skills e cole nas Preferências: "Antes de qualquer tarefa do Estúdio Problems, leia o Cérebro (https://estudio.problemsraiz.workers.dev/cerebro/), comece pela skill celestia e cite o Cérebro numa linha no fim de cada resposta." O que for aprendido lá, grave depois pelo Claude Code.</p>
+  <p>O claude.ai não roda comandos. Peça a alguém da equipe as pastas das skills em .zip, suba em Configurações › Skills e cole nas Preferências: "Só em tarefas do Estúdio Problems (os programas do site, os personagens, as animações e os vídeos do canal): leia o Cérebro (https://estudio.problemsraiz.workers.dev/cerebro/), comece pela skill celestia e cite o Cérebro numa linha no fim da resposta. Em outros assuntos (outro site, Minecraft direto etc.), não use o Cérebro. Na dúvida, pergunte." O que for aprendido lá, grave depois pelo Claude Code.</p>
 </main>
 <script>document.getElementById('copiar').onclick=async e=>{try{await navigator.clipboard.writeText(document.getElementById('pedido').textContent);e.target.textContent='Copiado'}catch{e.target.textContent='Selecione e copie'}}</script>
 </body>
