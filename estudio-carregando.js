@@ -292,10 +292,39 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   const feitos = new Set(), pend = new Map(), pendEls = new Set(), vistos = new WeakSet(); let ativo = true, ultimo = '', etapa = '', mostrado = 0, alvo = 0, nId = 0, imgsTotal = 0, imgsOk = 0;
   const abs = u => { try { return new URL(u, location.href).href.split('#')[0]; } catch { return String(u || ''); } };
   const NOMES_ARQ = [[/^\/pessoa(\/|$)/, 'nomes e fotos da equipe'], [/^\/conta(\/|$)/, 'a sua conta'], [/^\/personagens/, 'a biblioteca de personagens'], [/^\/nuvem-uso/, 'o espaço na nuvem'], [/^\/cenarios/, 'os cenários da equipe'], [/^\/menu/, 'o menu']];
-  const curto = u => { try { const x = new URL(u, location.href); if (x.origin === location.origin) { const n = NOMES_ARQ.find(([re]) => re.test(x.pathname)); if (n) return n[1]; } let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
+  const curto = u => { try { const x = new URL(u, location.href); if (/(^|.)(turma-ia|sons-problems|estudio-reserva)./i.test(x.hostname)) return 'da nuvem'; if (x.origin === location.origin) { const n = NOMES_ARQ.find(([re]) => re.test(x.pathname)); if (n) return n[1]; } let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
   const muda = () => { if (ativo) agenda(); };
+  /* A NUVEM NO CARREGAMENTO (pedido da dona, 12/11/2026, vale para TODO programa que carrega da nuvem): quando um pedido à nossa
+     nuvem demora mais de 0,4 s, a logo some devagar e a nuvem com as bolinhas aparece no mesmo lugar, dentro do MESMO anel parado
+     (fade + leve subida, 380 ms). Mesmo tema e cores; não volta para a logo (nada de piscar). Conferir o acesso não conta. */
+  const NUVEM_URL = u => { try { const x = new URL(u, location.href); if (/^\/(quem|conta|pessoa|presenca|sessao|mensagens)(\/|$)/i.test(x.pathname)) return false;
+    return /(^|\.)(turma-ia|sons-problems|estudio-reserva)\./i.test(x.hostname) || (x.origin === location.origin && /^\/(nuvem|personagens|cenarios|animacoes|projetos|roteiros|arquivo|menu)(\/|\?|$)/i.test(x.pathname)); } catch { return false; } };
+  let naNuvem = false;
+  const NV_SVG = '<svg viewBox="0 0 132 92" aria-hidden="true"><path d="M34 82 H100 A26 26 0 0 0 104 30.4 A34 34 0 0 0 40.6 22 A30 30 0 0 0 34 82 Z"/></svg><span class="ep-nv-d"><i></i><i></i><i></i><i></i><i></i></span>';
+  const pintaNuvem = () => {
+    if (!naNuvem) return;
+    if (!document.getElementById('ep-nv-css')) { const s = document.createElement('style'); s.id = 'ep-nv-css'; s.textContent = `
+#estudio-porta{--nv-c:var(--pt-tx,#f5f5f7)}.login{--nv-c:var(--anel-c,#f5f5f7)}
+:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{position:absolute;left:50%;top:50%;width:78px;height:54px;margin:-29px 0 0 -39px;z-index:2;pointer-events:none;opacity:0;transform:translateY(7px);transition:opacity .38s cubic-bezier(.2,.7,.2,1),transform .38s cubic-bezier(.2,.7,.2,1)}
+:is(#estudio-porta,.login).ep-nuvem :is(.ep-lg,.lcard .logo)>.ep-nv.on{opacity:1;transform:none}
+:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv svg{display:block;width:78px!important;height:54px!important;overflow:visible;box-shadow:none!important;animation:none!important;border-radius:0!important}
+:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv path{fill:none;stroke:var(--nv-c);stroke-width:4.2;stroke-linejoin:round}
+.ep-nv-d{position:absolute;left:50%;top:58%;width:22px;height:22px;margin:-11px 0 0 -11px}.ep-nv-d i{position:absolute;inset:0;animation:epNvGira 2.2s infinite}
+.ep-nv-d i::after{content:'';position:absolute;left:50%;top:0;width:3.4px;height:3.4px;margin-left:-1.7px;border-radius:50%;background:var(--nv-c)}
+.ep-nv-d i:nth-child(2){animation-delay:.12s}.ep-nv-d i:nth-child(3){animation-delay:.24s}.ep-nv-d i:nth-child(4){animation-delay:.36s}.ep-nv-d i:nth-child(5){animation-delay:.48s}
+@keyframes epNvGira{0%{transform:rotate(225deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(345deg);animation-timing-function:linear}30%{transform:rotate(455deg);animation-timing-function:ease-in-out}39%{transform:rotate(690deg);animation-timing-function:linear}70%{transform:rotate(815deg);opacity:1;animation-timing-function:ease-out}75%{transform:rotate(945deg);animation-timing-function:ease-out}76%{transform:rotate(945deg);opacity:0}100%{transform:rotate(945deg);opacity:0}}
+:is(#estudio-porta .ep-lg,.login .lcard .logo)>:not(.ep-nv){transition:opacity .32s ease}
+.ep-nuvem :is(.ep-lg,.lcard .logo)>:not(.ep-nv){opacity:0!important}
+@media (prefers-reduced-motion:reduce){:is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{transform:none!important;transition:opacity .35s ease!important}.ep-nv-d i{animation:none!important}}`; (document.head || document.documentElement).appendChild(s); }
+    document.querySelectorAll('#estudio-porta .ep-lg, .login .lcard .logo').forEach(lg => {
+      const raiz = lg.closest('#estudio-porta, .login'); if (!raiz || raiz.classList.contains('ep-erro') || raiz.hidden) return;
+      let nv = lg.querySelector(':scope>.ep-nv'); if (!nv) { nv = document.createElement('span'); nv.className = 'ep-nv'; nv.innerHTML = NV_SVG; lg.appendChild(nv); }
+      raiz.classList.add('ep-nuvem'); if (!nv.classList.contains('on') && !nv._liga) { nv._liga = 1; requestAnimationFrame(() => requestAnimationFrame(() => nv.classList.add('on'))); }
+    });
+  };
+  const olhaNuvem = (id, u) => { if (naNuvem || !NUVEM_URL(u)) return; setTimeout(() => { if (pend.has(id) && ativo) { naNuvem = true; pintaNuvem(); } }, 400); };
   try { new PerformanceObserver(l => { for (const e of l.getEntries()) { if (IGNORA.test(e.name)) continue; feitos.add(abs(e.name)); if (!ultimo || pend.size === 0) ultimo = curto(e.name); } muda(); }).observe({ type: 'resource', buffered: true }); } catch { }
-  const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); muda(); return id; };
+  const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); olhaNuvem(id, u); muda(); return id; };
   const acaba = id => { if (id == null) return; const u = pend.get(id); pend.delete(id); if (u) feitos.add(abs(u)); muda(); };
   const f0 = window.fetch;
   if (f0) window.fetch = function (i, o) { let u = ''; try { u = abs(typeof i === 'string' ? i : i?.url || String(i)); } catch { } const id = o?.epFundo ? null : comeca(u); const p = f0.apply(this, arguments); if (id != null) p.then(() => acaba(id), () => acaba(id)); return p; };
@@ -342,6 +371,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
     document.querySelectorAll('[data-ep-arq]').forEach(e => { if (e.textContent !== t) e.textContent = t; });
     document.querySelectorAll('[data-ep-barra]').forEach(e => e.style.width = mostrado.toFixed(1) + '%');
     document.querySelectorAll('#estudio-porta, .login, #turma-login').forEach(e => e.style.setProperty('--ep-p', mostrado.toFixed(1))); // anel do carregamento
+    pintaNuvem(); // a nuvem também na tela que nasceu depois
   };
   let rodando = false;
   let semTela = 0;
