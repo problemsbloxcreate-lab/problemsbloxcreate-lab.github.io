@@ -1056,7 +1056,8 @@ html[data-tema="claro"] .ep-progs{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-text
 .ep-progs .ep-pg-it.on{background:var(--ce-acento-suave)}
 .ep-progs .ep-pg-it .ic{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;overflow:hidden;font:700 18px var(--ce-fonte)}
 .ep-progs .ep-pg-it .ic svg{width:44px;height:44px;display:block}
-.ep-progs .ep-pg-it.inicio .ic{background:var(--ce-fundo-3);color:var(--ce-texto-2)}.ep-progs .ep-pg-it.inicio .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9}
+.ep-progs .ep-pg-it.inicio .ic{background:var(--ce-fundo-3);color:var(--ce-texto-2)}
+.ep-pg-it.inicio .ic.ic-claq{background:none!important;padding:0!important}.ep-pg-it.inicio .ic.ic-claq svg{width:100%!important;height:100%!important;stroke:none!important;display:block}.ep-progs .ep-pg-it.inicio .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9}
 .ep-progs .ep-pg-it b{font-weight:500;max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 @keyframes epProgsEntra{from{opacity:0;transform:translateY(-4px)}}
 @media (prefers-reduced-motion:reduce){.ep-progs{animation:none}}
@@ -1236,7 +1237,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const icDe = id => { try { return id && window.EstudioIcones?.svg ? window.EstudioIcones.svg(id, 44) : ''; } catch { return ''; } };
     const aqui = location.pathname, L = listaProgramas();
     const p = document.createElement('div'); p.className = 'ep-progs'; p.setAttribute('role', 'menu'); p.setAttribute('aria-label', 'Programas');
-    p.innerHTML = `<a class="ep-pg-it inicio" href="/" role="menuitem"><span class="ic">${ICONES.inicio}</span><b>Início</b></a>`
+    p.innerHTML = `<a class="ep-pg-it inicio" href="/" role="menuitem"><span class="ic ic-claq"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="epclq-grade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq-grade)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg></span><b>Início</b></a>`
       + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic">${icDe(x.ic) || esc(String(x.nome)[0] || '?')}</span><b>${esc(x.nome)}</b></a>`; }).join('');
     p.style.gridTemplateColumns = 'repeat(' + Math.min(4, L.length + 1) + ',88px)'; // poucos programas: a caixa fica do tamanho deles
     document.body.appendChild(p);
