@@ -446,12 +446,39 @@ html[data-tema="claro"] #estudio-porta::after{background:radial-gradient(40% 32%
 html:not([data-tema="claro"]) #estudio-porta :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){#estudio-porta::before{animation:none}}
-#estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}`;
+#estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}
+/* ===== METRO 2.0 (carregamento) — pedido da dona em 12/11/2026: menos informação, nada que pule do nada.
+   O fundo é a foto do menu (escurecida); o bloco do programa pula; embaixo só o nome, a porcentagem grande,
+   a barra e UMA frase do que está acontecendo. Cantos retos, letra grande e leve. ===== */
+#estudio-porta.m2::before{background:linear-gradient(180deg,rgba(6,8,14,.55),rgba(6,8,14,.72)),url(/fundo-montanha.jpg) center 40%/cover no-repeat!important;filter:blur(3px)}
+#estudio-porta.m2::after{display:none!important}
+html[data-tema="claro"] #estudio-porta.m2::before{background:linear-gradient(180deg,rgba(6,8,14,.45),rgba(6,8,14,.62)),url(/fundo-montanha.jpg) center 40%/cover no-repeat!important}
+#estudio-porta.m2{--pt-tx:#fff!important;--pt-tx2:rgba(255,255,255,.78)!important;--pt-tx3:rgba(255,255,255,.55)!important;font-family:"Segoe UI Variable Text","Segoe UI","Inter",system-ui,sans-serif!important}
+#estudio-porta.m2 .ep-c{gap:0!important;transform:translateY(-4vh);width:min(420px,84vw);align-items:center}
+#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg.ep-prog{width:104px!important;height:104px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:none!important;animation:m2Pula 1.15s cubic-bezier(.3,0,.3,1) infinite;position:relative}
+#estudio-porta.m2 .ep-lg::after{content:"";position:absolute;left:12%;right:12%;bottom:-18px;height:10px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(5px);animation:m2Sombra 1.15s cubic-bezier(.3,0,.3,1) infinite}
+@keyframes m2Pula{0%,100%{transform:translateY(0)}38%{transform:translateY(-24px)}58%{transform:translateY(0) scale(1.06,.94)}72%{transform:translateY(-4px)}}
+@keyframes m2Sombra{0%,58%,100%{transform:translateY(0) scale(1);opacity:1}38%{transform:translateY(24px) scale(.6);opacity:.45}72%{transform:translateY(4px) scale(.95)}}
+#estudio-porta.m2 .ep-lg .ep-img,#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:104px!important;height:104px!important;border-radius:0!important;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+#estudio-porta.m2 .ep-img rect{rx:0;ry:0}
+#estudio-porta.m2 .ep-lg svg rect{fill:color-mix(in srgb,var(--m2c,#1ba1e2) 60%,#000)!important;stroke:none!important}#estudio-porta.m2 .ep-lg svg text{fill:#fff!important}
+#estudio-porta.m2 .ep-lg:not(.ep-prog){background:#1ba1e2!important;display:grid!important;place-items:center}
+#estudio-porta.m2 .ep-nm{margin:44px 0 0!important;font:300 28px/1.2 "Segoe UI Variable Display","Segoe UI Light","Segoe UI","Inter",sans-serif!important;color:#fff!important;text-align:center}
+#estudio-porta.m2 .ep-pc{order:0;margin:6px 0 10px!important}
+#estudio-porta.m2 .ep-pc b{display:block;font:200 56px/1.05 "Segoe UI Variable Display","Segoe UI Light","Segoe UI","Inter",sans-serif!important;color:#fff!important;font-variant-numeric:tabular-nums}
+#estudio-porta.m2 .ep-br{width:100%!important;height:3px!important;border-radius:0!important;background:rgba(255,255,255,.22)!important}
+#estudio-porta.m2 .ep-br>i{border-radius:0!important;background:#fff!important}
+#estudio-porta.m2 .ep-m,#estudio-porta.m2:not(.ep-erro) .ep-m{margin:14px 0 0!important;font-size:14px!important;color:rgba(255,255,255,.8)!important;text-align:center;min-height:20px}
+#estudio-porta.m2 .ep-c>.ep-lg{order:-2}#estudio-porta.m2 .ep-c>.ep-nm{order:-1}#estudio-porta.m2 .ep-c>.ep-pc{order:0}#estudio-porta.m2 .ep-c>.ep-br{order:1}#estudio-porta.m2 .ep-c>.ep-m{order:2}
+#estudio-porta.m2 a.ep-bt{border-radius:0!important;background:#fff!important;color:#111!important}
+@media (prefers-reduced-motion:reduce){#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg::after{animation:none}}
+`;
   (document.head || root).appendChild(st);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = document.createElement('div');
-  el.id = 'estudio-porta'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+  el.id = 'estudio-porta'; try { if (localStorage.getItem('ep-visual') !== 'celeste') el.classList.add('m2'); } catch { el.classList.add('m2'); } // METRO 2.0 (12/11/2026) el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
   el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(TITULO)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m>Carregando</div></div>`;
+  try { const t = el.querySelector('.ep-lg svg text'); const cor = t && t.getAttribute('fill'); if (cor) el.style.setProperty('--m2c', cor); } catch { } // METRO 2.0: o bloco do programa na cor dele, letras brancas (igual ao menu)
   // entra já, antes do <body> existir; quando o <body> chega, a tela passa para dentro dele (fica por cima de tudo)
   root.appendChild(el);
   const paraBody = () => { if (document.body && el.parentNode !== document.body) document.body.appendChild(el); };
