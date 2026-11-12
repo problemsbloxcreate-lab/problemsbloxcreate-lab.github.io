@@ -139,6 +139,7 @@ html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260
 #estudio-porta.m2 .ep-lg::after{display:none!important}
 #estudio-porta.m2 .ep-lg :is(.ep-img,.ep-cam),#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:74px!important;height:74px!important;border-radius:17px!important;display:block;box-shadow:0 10px 26px rgba(0,0,0,.3)}
 #estudio-porta.m2 .ep-lg:not(.ep-prog){background:none!important}
+#estudio-porta.m2 .ep-lg.ep-prog .ep-cam{display:none!important} /* com o ícone do programa, a claquete do Estúdio some (antes aparecia embaixo, por cima do título) */
 #estudio-porta.m2 .ep-nm{grid-column:1/-1;display:block!important;margin:26px 0 4px!important;font:600 20px/1.25 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;letter-spacing:-.01em!important;color:var(--pt-tx)!important;text-shadow:none!important}
 #estudio-porta.m2 .ep-sb,#estudio-porta.m2 .ep-br,#estudio-porta.m2 [data-ep-arq]{display:none!important}
 #estudio-porta.m2 .ep-pc{margin:0!important;justify-self:end}
