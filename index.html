@@ -1360,7 +1360,7 @@ html.cel.ip:has(#menu:not([hidden])) body #top .brand .logo svg{width:100%!impor
 html.cel.ip:has(#menu:not([hidden])) body #top .brand .t{display:flex!important;align-items:center;gap:8px}
 html.cel.ip:has(#menu:not([hidden])) body #top #top-nome{display:none!important}
 html.cel.ip:has(#menu:not([hidden])) body #top #top-sub{display:inline-flex!important;align-items:center;gap:8px;margin:0!important;font:700 13px var(--fonte)!important;color:#fff!important;text-shadow:none!important}
-html.cel.ip:has(#menu:not([hidden])) body #top .brand .versao-site{position:static!important;display:inline-flex!important;align-items:center;height:20px!important;padding:0 9px!important;border:0!important;border-radius:999px!important;background:var(--acento)!important;color:var(--acento-texto)!important;font:700 11px var(--fonte)!important;letter-spacing:0!important;text-shadow:none!important;cursor:pointer;backdrop-filter:none!important;box-shadow:none!important}
+html.cel.ip:has(#menu:not([hidden])) body #top .brand .versao-site{margin:0!important;align-self:center!important;position:static!important;display:inline-flex!important;align-items:center;height:20px!important;padding:0 9px!important;border:0!important;border-radius:999px!important;background:var(--acento)!important;color:var(--acento-texto)!important;font:700 11px var(--fonte)!important;letter-spacing:0!important;text-shadow:none!important;cursor:pointer;backdrop-filter:none!important;box-shadow:none!important}
 html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{font:600 13px var(--fonte);color:rgba(255,255,255,.75);white-space:nowrap;margin-right:4px;font-variant-numeric:tabular-nums}
 html.cel.ip:has(#menu:not([hidden])) body #top :is(.btn,.mn-lupa,.tema-bt){flex:none}
 /* o menu ocupa o resto da tela, sem rolar */
@@ -1490,7 +1490,7 @@ html.cel.ip body #menu>.versao-site{display:none!important}
   html.cel.ip body #menu .mn-progs{max-height:100%;overflow-y:auto;overflow-x:visible;scrollbar-width:none;padding:0 6px!important;margin:0 -6px!important}
   html.cel.ip body #menu .mn-progs::-webkit-scrollbar{display:none}
 }
-@media (max-width:820px){html.cel.ip body #menu .mn-area{grid-template-columns:1fr!important;padding-top:calc(var(--ip-barra) + 16px)!important}html.cel.ip body .ip-wid{grid-template-columns:repeat(2,minmax(0,1fr))}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:none}}
+@media (max-width:820px){html.cel.ip:has(#menu:not([hidden])) body #top #top-sub{white-space:nowrap;font-size:12px!important}html.cel.ip:has(#menu:not([hidden])) body #top .brand,html.cel.ip:has(#menu:not([hidden])) body #top .brand .t{flex:none!important;flex-wrap:nowrap!important;min-width:max-content!important}html.cel.ip body #menu .ip-wid #estudio{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important}html.cel.ip body #menu .ip-wid #g-est{width:100%!important}html.cel.ip body #menu .mn-progs .progs-cab{justify-content:flex-start!important}html.cel.ip body #menu .ip-wid{height:auto}html.cel.ip body #menu .mn-area{grid-template-columns:1fr!important;padding-top:calc(var(--ip-barra) + 16px)!important}html.cel.ip body .ip-wid{grid-template-columns:repeat(2,minmax(0,1fr))}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:none}}
 @media (prefers-reduced-motion:reduce){html.cel.ip body #menu *,html.cel.ip body .ip-dock *{transition:none!important}}
 </style>
 </head>
