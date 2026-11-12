@@ -340,6 +340,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
     document.querySelectorAll('[data-ep-pct]').forEach(e => e.textContent = Math.round(mostrado) + '%');
     document.querySelectorAll('[data-ep-arq]').forEach(e => { if (e.textContent !== t) e.textContent = t; });
     document.querySelectorAll('[data-ep-barra]').forEach(e => e.style.width = mostrado.toFixed(1) + '%');
+    document.querySelectorAll('#estudio-porta, .login').forEach(e => e.style.setProperty('--ep-p', mostrado.toFixed(1))); // anel do carregamento
   };
   let rodando = false;
   let semTela = 0;
@@ -383,7 +384,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   // logo da tela de carregamento = o ícone do próprio programa (o mesmo da aba e do cabeçalho); sem programa, o do menu
   const LOGO_PROG = { ANIMADOR: '/animador/icones/simbolo.svg', EDITOR: '/editor/icone.svg', MODELADOR: '/modelador/icone.svg', SHORTS: '/shorts/icone-shorts-180.png', BLOCKBENCH: '/modelador/icone.svg' }[NOME_PROG] || '';
   const LOGO_EP = window.EstudioIcones?.atual?.() ? window.EstudioIcones.url(window.EstudioIcones.atual()) : ''; // ícone novo do programa (Sh, Ed, An, Md; ADM › Ícones)
-  const logoHtml = () => ((LOGO_EP || LOGO_PROG) ? '<img class="ep-img" alt=""' + (LOGO_EP ? ' data-estudio-icone-img="' + window.EstudioIcones.atual() + '"' : '') + ' src="' + (LOGO_EP || LOGO_PROG) + '" onerror="this.parentNode.classList.remove(\'ep-prog\');this.remove()">' : '') + '<svg class="ep-cam" width="84" height="84" viewBox="0 0 64 64"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg>';
+  const logoHtml = () => ((LOGO_EP || LOGO_PROG) ? '<img class="ep-img" alt=""' + (LOGO_EP ? ' data-estudio-icone-img="' + window.EstudioIcones.atual() + '"' : '') + ' src="' + (LOGO_EP || LOGO_PROG) + '" onerror="this.parentNode.classList.remove(\'ep-prog\');this.remove()">' : '') + '<svg viewBox="0 0 64 64" class="ep-cam" width="84" height="84"><defs><linearGradient id="epclq-carr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq-carr)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg>';
   const st = document.createElement('style');
   st.textContent = `#estudio-porta{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);font:14px/1.5 'Segoe UI',system-ui,-apple-system,sans-serif;color:#e9ebef;padding:16px;-webkit-user-select:none;user-select:none;transition:opacity .35s ease}
 #estudio-porta.ep-saindo{opacity:0;pointer-events:none}
@@ -447,32 +448,36 @@ html:not([data-tema="claro"]) #estudio-porta :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.e
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){#estudio-porta::before{animation:none}}
 #estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}
-/* ===== CARREGAMENTO (12/11/2026, pedido da dona): menos informação, nada que pule do nada. Visual da Apple (Celeste):
-   a foto do menu escurecida atrás; o ícone do programa pula com a sombra; embaixo o nome, a porcentagem grande, a barra e UMA frase. ===== */
-#estudio-porta.m2::before{background:linear-gradient(180deg,rgba(6,8,14,.5),rgba(6,8,14,.7)),url(/fundo-montanha.jpg) center 40%/cover no-repeat!important;filter:blur(3px)}
+/* ===== CARREGAMENTO C (escolha da dona, 12/11/2026): fundo liso; o ícone com um ANEL de progresso em volta e um BRILHO
+   suave na cor do programa atrás; embaixo o nome e uma linha "54% · o que está acontecendo". Sem foto, sem barra, sem lista de passos. ===== */
+#estudio-porta.m2{background:#141416!important;--pt-tx:#f5f5f7!important;--pt-tx2:rgba(235,235,245,.66)!important}
+html[data-tema="claro"] #estudio-porta.m2{background:#f2f2f5!important;--pt-tx:#1d1d1f!important;--pt-tx2:rgba(60,60,67,.66)!important}
+#estudio-porta.m2::before{content:""!important;position:absolute;inset:0;z-index:0;pointer-events:none;filter:none!important;animation:none!important;background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 30%,transparent),transparent 72%)!important}
+html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 22%,transparent),transparent 72%)!important}
 #estudio-porta.m2::after{display:none!important}
-html[data-tema="claro"] #estudio-porta.m2::before{background:linear-gradient(180deg,rgba(6,8,14,.4),rgba(6,8,14,.6)),url(/fundo-montanha.jpg) center 40%/cover no-repeat!important}
-#estudio-porta.m2{--pt-tx:#fff!important;--pt-tx2:rgba(255,255,255,.8)!important;--pt-tx3:rgba(255,255,255,.55)!important}
-#estudio-porta.m2 .ep-c{gap:0!important;transform:translateY(-4vh);width:min(380px,84vw);align-items:center}
-#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg.ep-prog{width:96px!important;height:96px!important;border-radius:22px!important;overflow:visible!important;box-shadow:none!important;background:none!important;animation:apPula 1.15s cubic-bezier(.3,0,.3,1) infinite;position:relative}
-#estudio-porta.m2 .ep-lg::after{content:"";position:absolute;left:14%;right:14%;bottom:-18px;height:10px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(5px);animation:apSombra 1.15s cubic-bezier(.3,0,.3,1) infinite}
-@keyframes apPula{0%,100%{transform:translateY(0)}38%{transform:translateY(-22px)}58%{transform:translateY(0) scale(1.06,.94)}72%{transform:translateY(-4px)}}
-@keyframes apSombra{0%,58%,100%{transform:translateY(0) scale(1);opacity:1}38%{transform:translateY(22px) scale(.6);opacity:.45}72%{transform:translateY(4px) scale(.95)}}
-#estudio-porta.m2 .ep-lg .ep-img,#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:96px!important;height:96px!important;border-radius:22px!important;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.35)}
-#estudio-porta.m2 .ep-lg:not(.ep-prog){background:linear-gradient(160deg,#5cc4ff,#3a7bd5)!important;display:grid!important;place-items:center;border-radius:22px!important}
-#estudio-porta.m2 .ep-nm{margin:40px 0 0!important;font:600 22px/1.2 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:#fff!important;text-align:center}
-#estudio-porta.m2 .ep-pc{margin:6px 0 12px!important}
-#estudio-porta.m2 .ep-pc b{display:block;font:700 44px/1.05 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;letter-spacing:-.02em;color:#fff!important;font-variant-numeric:tabular-nums}
-#estudio-porta.m2 .ep-br{width:100%!important;height:5px!important;border-radius:3px!important;background:rgba(255,255,255,.2)!important}
-#estudio-porta.m2 .ep-br>i{border-radius:3px!important;background:#fff!important}
-#estudio-porta.m2 .ep-m,#estudio-porta.m2:not(.ep-erro) .ep-m{margin:14px 0 0!important;font-size:14px!important;color:rgba(255,255,255,.8)!important;text-align:center;min-height:20px}
-#estudio-porta.m2 .ep-c>.ep-lg{order:-2}#estudio-porta.m2 .ep-c>.ep-nm{order:-1}#estudio-porta.m2 .ep-c>.ep-pc{order:0}#estudio-porta.m2 .ep-c>.ep-br{order:1}#estudio-porta.m2 .ep-c>.ep-m{order:2}
-@media (prefers-reduced-motion:reduce){#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg::after{animation:none}}
+#estudio-porta.m2 .ep-c{display:grid!important;grid-template-columns:auto auto;justify-content:center;align-items:center;column-gap:6px;row-gap:0!important;transform:translateY(-4vh)!important;width:auto!important;text-align:center}
+#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg.ep-prog,#estudio-porta.m2.ep-erro .ep-lg{grid-column:1/-1;justify-self:center;position:relative;width:74px!important;height:74px!important;margin:23px!important;border-radius:18px!important;overflow:visible!important;box-shadow:none!important;background:none!important;animation:epRespira2 2.6s ease-in-out infinite}
+@keyframes epRespira2{50%{transform:scale(1.035)}}
+/* o anel: fica 16 px para fora do ícone; a parte cheia segue a porcentagem (--ep-p, posto pelo contador) */
+#estudio-porta.m2 .ep-lg::before{content:"";position:absolute;inset:-23px;border-radius:50%;background:conic-gradient(var(--pt-tx) calc(var(--ep-p,0) * 1%),color-mix(in srgb,var(--pt-tx) 13%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));transition:background .3s}
+#estudio-porta.m2 .ep-lg::after{display:none!important}
+#estudio-porta.m2 .ep-lg :is(.ep-img,.ep-cam),#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:74px!important;height:74px!important;border-radius:17px!important;display:block;box-shadow:0 10px 26px rgba(0,0,0,.3)}
+#estudio-porta.m2 .ep-lg:not(.ep-prog){background:none!important}
+#estudio-porta.m2 .ep-nm{grid-column:1/-1;display:block!important;margin:26px 0 4px!important;font:600 20px/1.25 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;letter-spacing:-.01em!important;color:var(--pt-tx)!important;text-shadow:none!important}
+#estudio-porta.m2 .ep-sb,#estudio-porta.m2 .ep-br,#estudio-porta.m2 [data-ep-arq]{display:none!important}
+#estudio-porta.m2 .ep-pc{margin:0!important;justify-self:end}
+#estudio-porta.m2 .ep-pc b{font:600 13.5px "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:var(--pt-tx)!important;font-variant-numeric:tabular-nums;text-shadow:none!important}
+#estudio-porta.m2 .ep-pc b::after{content:" ·";color:var(--pt-tx2)}
+#estudio-porta.m2 .ep-m,#estudio-porta.m2:not(.ep-erro) .ep-m{display:block!important;justify-self:start;margin:0!important;font:400 13.5px "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:var(--pt-tx2)!important;text-shadow:none!important;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#estudio-porta.m2.ep-erro .ep-pc{display:none!important}#estudio-porta.m2.ep-erro .ep-m{grid-column:1/-1;justify-self:center;white-space:normal;color:var(--pt-tx)!important}
+#estudio-porta.m2.ep-erro .ep-lg::before{background:color-mix(in srgb,#ff453a 70%,transparent)}
+#estudio-porta.m2 a.ep-bt{grid-column:1/-1;justify-self:center;border-radius:999px!important}
+@media (prefers-reduced-motion:reduce){#estudio-porta.m2 .ep-lg{animation:none}}
 `;
   (document.head || root).appendChild(st);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = document.createElement('div');
-  el.id = 'estudio-porta'; el.classList.add('m2'); // carregamento novo (12/11/2026): foto escurecida, ícone pulando, porcentagem e uma frase el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+  el.id = 'estudio-porta'; el.classList.add('m2'); try { const ic = window.EstudioIcones, id = ic?.atual?.(), cor = id && ic.config?.()?.[id]?.fg; el.style.setProperty('--ep-cor', /^#[0-9a-f]{6}$/i.test(cor || '') ? cor : '#5cc4ff'); } catch { } // carregamento novo (12/11/2026): foto escurecida, ícone pulando, porcentagem e uma frase el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
   el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div><div class="ep-nm">${esc(TITULO)}</div><div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m>Carregando</div></div>`;
   // entra já, antes do <body> existir; quando o <body> chega, a tela passa para dentro dele (fica por cima de tudo)
   root.appendChild(el);
