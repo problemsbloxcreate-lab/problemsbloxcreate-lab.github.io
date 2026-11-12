@@ -1036,23 +1036,32 @@ html[data-tema="claro"] .ep-notif-v{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-te
 .ep-notif-v .nv-b .nv-a{background:var(--ce-acento);color:var(--ce-acento-texto);font-weight:600}.ep-notif-v .nv-b .nv-a:hover{background:var(--ce-acento);filter:brightness(1.08)}
 @media (prefers-reduced-motion:reduce){.ep-notif-v{animation:none}}
 /* --- NOTIFICAÇÕES dentro de Sua conta (histórico + chave Atualizar sozinho) --- */
-:root:root body .ep-conta-pop .ep-nf{margin:0 16px 16px}
-:root:root body .ep-conta-pop .ep-nf .nf-cab{display:flex;align-items:center;margin:0 2px 8px;font:600 13px var(--ce-fonte);color:var(--ce-texto-2)}
-:root:root body .ep-conta-pop .ep-nf .nf-cab span{flex:1}
-:root:root body .ep-conta-pop .ep-nf .nf-limpa{border:0;background:none;color:var(--ce-acento);font:500 12px var(--ce-fonte);cursor:pointer;padding:2px 4px;border-radius:6px}
-:root:root body .ep-conta-pop .ep-nf .nf-l{background:var(--ce-fundo-2);border-radius:12px;overflow:hidden}
-:root:root body .ep-conta-pop .ep-nf .nf-l+.nf-l{margin-top:8px}
-:root:root body .ep-conta-pop .ep-nf .nf-i{padding:10px 14px;border-top:1px solid var(--ce-linha)}:root:root body .ep-conta-pop .ep-nf .nf-i:first-child{border-top:0}
-:root:root body .ep-conta-pop .ep-nf .nf-i b{display:block;font:500 14px/1.3 var(--ce-fonte);color:var(--ce-texto)}
-:root:root body .ep-conta-pop .ep-nf .nf-i.nova b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ce-novo);margin-left:6px;vertical-align:2px}
-:root:root body .ep-conta-pop .ep-nf .nf-i small{display:block;color:var(--ce-texto-3);font-size:12px;margin-top:2px}
-:root:root body .ep-conta-pop .ep-nf .nf-a{margin-top:8px;height:28px;padding:0 10px;border:0;border-radius:6px;background:var(--ce-acento);color:var(--ce-acento-texto);font:600 12px var(--ce-fonte);cursor:pointer}
-:root:root body .ep-conta-pop .ep-nf .nf-vz{padding:12px 14px;color:var(--ce-texto-3);font-size:13px}
-:root:root body .ep-conta-pop .ep-nf .nf-sz{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;font:400 14px var(--ce-fonte);color:var(--ce-texto);cursor:pointer}
-:root:root body .ep-conta-pop .ep-nf .nf-sz span{flex:1}
-:root:root body .ep-conta-pop .ep-nf .nf-chave{-webkit-appearance:none;appearance:none;width:38px;height:22px;margin:0;border-radius:999px!important;background:var(--ce-fundo-4);position:relative;cursor:pointer;transition:background .25s}
-:root:root body .ep-conta-pop .ep-nf .nf-chave::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .25s cubic-bezier(.1,.9,.2,1)}
-:root:root body .ep-conta-pop .ep-nf .nf-chave:checked{background:var(--ce-sucesso)}:root:root body .ep-conta-pop .ep-nf .nf-chave:checked::after{transform:translateX(16px)}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf{margin:0 16px 16px}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-cab{display:flex;align-items:center;margin:0 2px 8px;font:600 13px var(--ce-fonte);color:var(--ce-texto-2)}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-cab span{flex:1}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-limpa{border:0;background:none;color:var(--ce-acento);font:500 12px var(--ce-fonte);cursor:pointer;padding:2px 4px;border-radius:6px}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-l{background:var(--ce-fundo-2);border-radius:12px;overflow:hidden}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-l+.nf-l{margin-top:8px}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-i{padding:10px 14px;border-top:1px solid var(--ce-linha)}:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-i:first-child{border-top:0}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-i b{display:block;font:500 14px/1.3 var(--ce-fonte);color:var(--ce-texto)}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-i.nova b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ce-novo);margin-left:6px;vertical-align:2px}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-i small{display:block;color:var(--ce-texto-3);font-size:12px;margin-top:2px}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-a{margin-top:8px;height:28px;padding:0 10px;border:0;border-radius:6px;background:var(--ce-acento);color:var(--ce-acento-texto);font:600 12px var(--ce-fonte);cursor:pointer}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-vz{padding:12px 14px;color:var(--ce-texto-3);font-size:13px}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-mais{display:block;width:100%;min-height:57px;padding:0 14px!important;margin:0;border:0;border-top:1px solid var(--ce-linha);background:none;text-align:left;font:500 14px var(--ce-fonte);color:var(--ce-acento);cursor:pointer}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-mais:hover{background:var(--ce-fundo-3)}
+:root:root body .ep-nf-todas .cx{width:min(440px,calc(100vw - 32px))!important;max-height:min(70vh,640px);display:flex;flex-direction:column;padding:0!important;overflow:hidden}
+:root:root body .ep-nf-todas .nft-cab{display:flex;align-items:center;gap:8px;padding:16px 16px 10px}
+:root:root body .ep-nf-todas .nft-cab h2{flex:1;margin:0!important;font:600 17px var(--ce-fonte)!important;color:var(--ce-texto)!important}
+:root:root body .ep-nf-todas .nf-limpa{border:0;background:none;color:var(--ce-acento);font:500 13px var(--ce-fonte);cursor:pointer;padding:4px 6px;border-radius:6px}
+:root:root body .ep-nf-todas .nft-x{width:30px;height:30px;border:0;border-radius:50%;background:var(--ce-fundo-3);color:var(--ce-texto-2);font:400 18px/1 var(--ce-fonte);cursor:pointer}
+:root:root body .ep-nf-todas .ep-nf{margin:0 16px 16px!important;min-height:0;display:flex;flex-direction:column}
+:root:root body .ep-nf-todas .nft-l{overflow:auto;min-height:0}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-sz{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;font:400 14px var(--ce-fonte);color:var(--ce-texto);cursor:pointer}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-sz span{flex:1}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-chave{-webkit-appearance:none;appearance:none;width:38px;height:22px;margin:0;border-radius:999px!important;background:var(--ce-fundo-4);position:relative;cursor:pointer;transition:background .25s}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-chave::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .25s cubic-bezier(.1,.9,.2,1)}
+:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-chave:checked{background:var(--ce-sucesso)}:root:root body :is(.ep-conta-pop,.ep-nf-todas) .ep-nf .nf-chave:checked::after{transform:translateX(16px)}
 /* --- TROCAR DE PROGRAMA: grade de ícones que abre do botão de grade do cabeçalho --- */
 .ep-progs{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-fundo-3:#28282c;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-suave:rgba(92,196,255,.16);
   position:fixed;z-index:2147483002;display:grid;grid-template-columns:repeat(4,88px);gap:4px;padding:10px;background:var(--ce-elevado);color:var(--ce-texto);border:1px solid var(--ce-linha);border-radius:14px;
@@ -2488,7 +2497,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
     document.querySelector('.ep-notif-v')?.remove();
     const d = document.createElement('div'); d.className = 'ep-notif-v'; d.setAttribute('role', 'status');
     const ic = '<span class="nv-ep">' + (ICONES.estudio || ICONES.atualizar) + '</span>';
-    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(n.titulo) + (n.aplicada ? '</b><small>Você já está nesta versão. Veja o que mudou.</small>' : ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>')) + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
+    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(limpaV(n.titulo)) + (n.aplicada ? '</b><small>Você já está nesta versão. Veja o que mudou.</small>' : ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>')) + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
       + (n.itens.length ? '<ul>' + n.itens.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>' : '')
       + '<div class="nv-b"><button type="button" class="nv-f">Fechar</button><button type="button" class="nv-a">' + (n.aplicada ? 'Ver novidades' : 'Atualizar') + '</button></div>';
     const fecha = () => { try { (n.importante ? sessionStorage : localStorage).setItem('ep-notif-fechada:' + n.id, '1'); } catch { } d.classList.add('sai'); setTimeout(() => d.remove(), 250); };
@@ -2500,14 +2509,34 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   if (window.top === window) addEventListener('load', () => setTimeout(() => conferenciaGuarda().catch(() => { }), 3000), { once: true });
   if (window.top === window) document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - (conferenciaGuarda.t || 0) > 15 * 60e3) conferenciaGuarda().catch(() => { }); });
   // seção NOTIFICAÇÕES do painel Sua conta
+  /* NOTIFICAÇÕES (pedido da dona, 12/11/2026): o painel mostra só as 2 mais novas; a terceira linha é "Ver mais (N)", que abre um
+     pop-up separado (Celeste, .ep-esp) com todas, rolando por dentro, com Limpar e fechar (botão ou Esc). Nomes só com o número da versão:
+     os guardados antes com "(ALPHA) … - Celeste" aparecem limpos. */
+  const limpaV = s => String(s || '').replace(/\s*\((alpha|beta)\)\s*/ig, ' ').replace(/\s+-\s+(Celeste|Flower Field)\b/i, '').replace(/\s{2,}/g, ' ').trim();
+  const linhaNotif = n => '<div class="nf-i' + (n.nova ? ' nova' : '') + '" data-nf="' + esc(n.id) + '"><div class="nf-t"><b>' + esc(limpaV(n.titulo)) + '</b><small>' + (n.feito ? 'Atualizado' : n.importante ? 'Importante' : esc(n.itens?.[0] || 'Versão nova disponível')) + ' · ' + esc(new Date(n.em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })) + '</small>' + (n.nova && !n.feito ? '<button type="button" class="nf-a" data-nf-at="' + esc(n.prog) + '">Atualizar</button>' : '') + '</div></div>';
   function htmlNotifs() {
-    const L = notifs();
-    const lin = L.length ? L.slice(0, 8).map(n => '<div class="nf-i' + (n.nova ? ' nova' : '') + '" data-nf="' + esc(n.id) + '"><div class="nf-t"><b>' + esc(n.titulo) + '</b><small>' + (n.feito ? 'Atualizado' : n.importante ? 'Importante' : esc(n.itens?.[0] || 'Versão nova disponível')) + ' · ' + esc(new Date(n.em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })) + '</small>' + (n.nova && !n.feito ? '<button type="button" class="nf-a" data-nf-at="' + esc(n.prog) + '">Atualizar</button>' : '') + '</div></div>').join('') : '<div class="nf-vz">Nada por enquanto.</div>';
+    const L = notifs(), mais = L.length - 2;
+    const lin = L.length ? L.slice(0, 2).map(linhaNotif).join('') + (mais > 0 ? '<button type="button" class="nf-i nf-mais">Ver mais (' + mais + ')</button>' : '') : '<div class="nf-vz">Nada por enquanto.</div>';
     return '<div class="ep-nf"><div class="nf-cab"><span>Notificações</span>' + (L.length ? '<button type="button" class="nf-limpa">Limpar</button>' : '') + '</div><div class="nf-l">' + lin + '</div>'
       + '<div class="nf-l nf-ch"><label class="nf-sz"><span>Atualizar sozinho</span><input type="checkbox" role="switch" class="nf-chave"' + (sozinho() ? ' checked' : '') + '></label></div></div>';
   }
+  function todasNotifs(pop) {
+    document.querySelector('.ep-nf-todas')?.remove();
+    const d = document.createElement('div'); d.className = 'ep-esp ep-nf-todas';
+    const pinta = () => { const L = notifs();
+      d.innerHTML = '<div class="cx" role="dialog" aria-modal="true" aria-label="Notificações"><div class="nft-cab"><h2>Notificações</h2>' + (L.length ? '<button type="button" class="nf-limpa">Limpar</button>' : '') + '<button type="button" class="nft-x" title="Fechar (Esc)" aria-label="Fechar">×</button></div>'
+        + '<div class="ep-nf"><div class="nf-l nft-l">' + (L.length ? L.map(linhaNotif).join('') : '<div class="nf-vz">Nada por enquanto.</div>') + '</div></div></div>';
+      d.querySelector('.nft-x').onclick = fecha;
+      d.querySelector('.nf-limpa')?.addEventListener('click', () => { try { localStorage.setItem(NOTIFS_K, '[]'); } catch { } pinta(); if (pop) { const el = pop.querySelector('.ep-nf'); if (el) { el.outerHTML = htmlNotifs(); ligaNotifs(pop); } } });
+      d.querySelectorAll('[data-nf-at]').forEach(b => b.onclick = () => { b.textContent = 'Atualizando…'; atualizaTudoGuardado(); }); };
+    const esc2 = e => { if (e.key === 'Escape') { e.stopPropagation(); fecha(); } };
+    const fecha = () => { removeEventListener('keydown', esc2, true); d.remove(); };
+    d.addEventListener('click', e => { if (e.target === d) fecha(); });
+    addEventListener('keydown', esc2, true); pinta(); document.body.appendChild(d); d.querySelector('.nft-x')?.focus();
+  }
   function ligaNotifs(pop) {
     pop.querySelector('.nf-limpa')?.addEventListener('click', () => { try { localStorage.setItem(NOTIFS_K, '[]'); } catch { } const el = pop.querySelector('.ep-nf'); if (el) el.outerHTML = htmlNotifs(); ligaNotifs(pop); });
+    pop.querySelector('.nf-mais')?.addEventListener('click', () => todasNotifs(pop));
     pop.querySelectorAll('[data-nf-at]').forEach(b => b.onclick = () => { b.textContent = 'Atualizando…'; atualizaTudoGuardado(); });
     const ch = pop.querySelector('.nf-chave'); if (ch) ch.onchange = () => { try { localStorage.setItem(SOZINHO_K, ch.checked ? '1' : '0'); } catch { } };
   }

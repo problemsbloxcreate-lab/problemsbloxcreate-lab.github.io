@@ -18,7 +18,7 @@
 'use strict';
 /* ===================== VERSÃO DO SITE + DIÁRIO DE USO + RELATÓRIO DE SUPORTE (pedido da dona, 06/11/2026) =====================
    UM LUGAR SÓ: este arquivo entra em todas as páginas (programas, menu, login, telas de erro, página 403 do porteiro; o
-   /estudio-conta.js carrega ele se faltar). PARA MUDAR A VERSÃO, TROQUE SÓ AQUI (window.EstudioVersao.nome): o menu, o perfil,
+   /estudio-conta.js carrega ele se faltar). PARA MUDAR A VERSÃO, TROQUE SÓ AQUI (window.EstudioVersao.nome; SÓ O NÚMERO, ex.: 2.0.3 — pedido da dona, 12/11/2026: sem alpha/beta; o nome Celeste fica em apelido): o menu, o perfil,
    as telas de erro e o relatório leem daqui. Não muda sozinha a cada publicação.
    DIÁRIO: cada navegador anota SÓ NELE MESMO (localStorage 'ep-diario', nada vai para a nuvem): programa aberto, versão, erros de
    JavaScript (window.onerror, unhandledrejection, console.error), pedidos à nossa nuvem que falharam (status + rota, sem dados),
@@ -26,7 +26,7 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '(ALPHA) 2.0.2 - Celeste', em: '12/11/2026',
+window.EstudioVersao ||= { nome: '2.0.2', apelido: 'Celeste', em: '12/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
