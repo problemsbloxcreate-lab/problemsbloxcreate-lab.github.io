@@ -1400,6 +1400,42 @@ html.cel.ip body #menu .ip-wid .et[data-et=cal] .et-r{position:static!important;
 html.cel.ip body #menu .ip-wid .et[data-et=cal] .et-r *{font-size:12.5px!important;line-height:1.3!important;text-align:left!important}
 html.cel.ip body #menu .ip-wid .et[data-et=cal] .et-r b{font-weight:600!important;color:#fff!important;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.cel.ip body #menu .ip-wid .et[data-et=cal] .nm{display:none!important}
+/* CALENDÁRIO no jeito do iPad (pedido da dona, 12/11/2026: "o que é mês e tal"): dia da semana em vermelho em cima, o número grande com
+   "de novembro" ao lado, e embaixo uma linha só ("Nenhum lembrete marcado") ou o próximo lembrete. */
+html.cel.ip body #menu .ip-wid .et[data-et=cal] .dia small :is(.mes,br){display:none!important}
+html.cel.ip body #menu .ip-wid .et[data-et=cal] .dia b{display:flex!important;align-items:baseline;gap:6px;white-space:nowrap}
+html.cel.ip body #menu .ip-wid .et[data-et=cal] .dia b::after{content:attr(data-mes);font:500 14px/1 var(--fonte);color:var(--texto-2);letter-spacing:0}
+html.cel.ip body #menu .ip-wid .et[data-et=cal] .et-r.vz b{display:none!important}
+html.cel.ip body #menu .ip-wid .et[data-et=cal] .et-r.vz small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--texto-2)!important}
+/* CLIMA sem espaço vazio (pedido da dona, 12/11/2026): cidade e ícone em cima, a temperatura grande, a condição em texto com máx./mín.
+   e embaixo as próximas 4 horas. */
+html.cel.ip body #menu .ip-wid .et.clima .cl-f{display:grid!important;grid-template-columns:1fr auto;grid-template-rows:auto auto auto 1fr;align-content:stretch;gap:0 6px;height:100%;padding:12px 14px 10px!important;box-sizing:border-box;text-align:left}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.nm{position:static!important;grid-column:1;grid-row:1;margin:0!important;transform:none!important;font:600 13px/1.2 var(--fonte)!important;color:var(--texto)!important;text-align:left!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:1!important}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.des{position:static!important;grid-column:2;grid-row:1/3;align-self:start;width:28px!important;height:28px!important;margin:0!important;color:var(--texto);opacity:1!important}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.des svg{width:28px!important;height:28px!important}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.pct{position:static!important;grid-column:1;grid-row:2;margin:2px 0 0!important;font:300 34px/1.05 var(--fonte)!important;color:var(--texto)!important;text-align:left!important}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.cl-cond{grid-column:1;grid-row:3;align-self:center;font:500 12px/1.3 var(--fonte);color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.cl-mm{position:static!important;grid-column:2;grid-row:3;align-self:center;font:500 12px/1.3 var(--fonte)!important;color:var(--texto-2)!important;white-space:nowrap}
+html.cel.ip body #menu .ip-wid .et.clima .cl-f>.cl-hr{grid-column:1/-1;grid-row:4;align-self:end;display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--linha)}
+html.cel.ip body #menu .ip-wid .et.clima .cl-hr i{display:flex;flex-direction:column;align-items:center;gap:2px;font-style:normal;color:var(--texto)}
+html.cel.ip body #menu .ip-wid .et.clima .cl-hr small{font:500 10.5px var(--fonte);color:var(--texto-2)}
+html.cel.ip body #menu .ip-wid .et.clima .cl-hr b{font:600 11.5px var(--fonte)}
+html.cel.ip body #menu .ip-wid .et.clima .cl-hr svg{width:16px;height:16px}
+html:not(.ip) #menu .et.clima :is(.cl-cond,.cl-hr){display:none!important}
+/* PASTA (pedido da dona, 12/11/2026): nunca espremida; vazia = uma linha curta na largura toda; muitos programas = rola por dentro */
+html.cel body #menu .pasta-pop .pp-grade{display:grid!important;grid-template-columns:repeat(var(--cols,3),104px)!important;justify-content:start!important;gap:6px!important;width:auto!important;max-height:min(56vh,440px);overflow:auto;overscroll-behavior:contain}
+html.cel body #menu .pasta-pop .pp-grade>.card{width:104px!important;min-width:0!important}
+html.cel body #menu .pasta-pop .pp-vazia{grid-column:1/-1!important;padding:14px 16px!important;white-space:normal;min-height:0!important;height:auto!important;margin:0!important}
+html.cel body #menu .pasta-pop .pp-grade:has(>.pp-vazia){grid-auto-rows:auto!important}
+/* DOCK (pedido da dona, 12/11/2026): fixados padrão à esquerda e o rótulo de cima inteiro (antes saía "A.") */
+html.cel.ip body #menu .ip-dock .ip-sis{display:flex;align-items:flex-end;gap:10px}
+html.cel.ip body #menu .ip-dock .ip-sis .et{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 72%,#fff),var(--c))!important;box-shadow:0 4px 12px rgba(0,0,0,.3)!important;border:0!important}
+html.cel.ip body #menu .ip-dock .ip-sis .et .gi{position:absolute!important;inset:0!important;left:0!important;top:0!important;width:auto!important;height:auto!important;margin:0!important;transform:none!important;display:grid!important;place-items:center;color:#fff!important;background:none!important}
+html.cel.ip[data-tema="claro"] body #menu .ip-dock :is(.card .txt,.et .nm){background:rgba(255,255,255,.95)!important;color:#1d1d1f!important;box-shadow:0 2px 10px rgba(0,0,0,.15)!important}
+html.cel.ip body #menu .ip-dock .ip-sis .gi svg{width:26px!important;height:26px!important}
+html.cel.ip body #menu .ip-dock :is(.ip-sis+#g-fix:not([hidden]),.ip-sis+#g-fix[hidden]+#g-atalhos:not([hidden]))::before{content:"";width:1px;height:46px;background:rgba(255,255,255,.22);margin:0 2px 5px;flex:none}
+html.cel.ip[data-tema="claro"] body #menu .ip-dock :is(.ip-sis+#g-fix:not([hidden]),.ip-sis+#g-fix[hidden]+#g-atalhos:not([hidden]),#g-fix:not([hidden])+#g-atalhos)::before{background:rgba(0,0,0,.14)}
+html.cel.ip body #menu .ip-dock :is(.card .txt,.et .nm){width:max-content!important;max-width:240px!important;overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important}
 /* Meus projetos: o widget grande, a única lista que rola */
 html.cel.ip body #menu .ip-wid #recentes{grid-column:span 2;display:flex!important;flex-direction:column!important;min-height:0!important;max-height:100%;margin:0!important;padding:12px 8px 8px!important;width:auto!important;border-radius:22px!important;background:var(--vidro-cartao,rgba(30,30,34,.55))!important;backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);border:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important;overflow:hidden!important}
 html.cel.ip body #menu .ip-wid #recentes .progs-cab{margin:0 0 6px!important;padding:0 8px!important;gap:6px!important;flex-wrap:wrap;min-height:0!important}
@@ -2275,11 +2311,11 @@ function abrePasta(id, tile, renomear) {
   const itens = (p.itens || []).map(k => todosProgs.find(l => chaveL(l) === k)).filter(Boolean), org = organizar.on;
   const d = document.createElement('div'); d.className = 'pasta-pop'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Pasta ' + p.nome);
   d.innerHTML = `<div class="pp-cab">${org ? `<input type="text" class="pp-nome" maxlength="30" value="${esc(p.nome)}" aria-label="Nome da pasta">` : `<b>${esc(p.nome)}</b>`}<span class="sp"></span>${org ? '<button type="button" class="btn-org pp-apaga" title="Apaga a pasta (os programas voltam para a grade)">Apagar pasta</button>' : ''}<button type="button" class="pp-x" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>
-    <div class="blocos pp-grade">${itens.map(l => `<a class="card" href="${esc(normUrl(l.url || ''))}" data-k="${esc(chaveL(l))}">${cardHtml(l, '')}${org ? '<button type="button" class="pp-tira" title="Tirar da pasta">Tirar</button>' : ''}</a>`).join('') || `<p class="pp-vazia">${org ? 'Arraste programas para cima desta pasta para colocar aqui.' : 'Pasta vazia. Use "Organizar" para pôr programas aqui.'}</p>`}</div>`;
+    <div class="blocos pp-grade">${itens.map(l => `<a class="card" href="${esc(normUrl(l.url || ''))}" data-k="${esc(chaveL(l))}">${cardHtml(l, '')}${org ? '<button type="button" class="pp-tira" title="Tirar da pasta">Tirar</button>' : ''}</a>`).join('') || `<p class="pp-vazia">${org ? 'Arraste programas para cima desta pasta para colocar aqui.' : 'Pasta vazia · em Organizar, arraste programas para cá.'}</p>`}</div>`;
   $('#menu').appendChild(d);
   $$('.pp-grade .card', d).forEach(c => { const l = itens.find(x => chaveL(x) === c.dataset.k); if (l) { pintarIcone(c, l); if (l.parte) c.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}"></span>`); } });
   try { window.EstudioIcones?.pinta?.(d); } catch { }
-  $('.pp-grade', d).style.setProperty('--cols', Math.max(1, Math.min(4, itens.length || 1)));
+  $('.pp-grade', d).style.setProperty('--cols', Math.max(3, Math.min(4, itens.length || 1))); // no mínimo 3 de largura (vazia não fica espremida)
   // posição: logo embaixo do bloco da pasta (no celular, centralizada)
   const r = tile.getBoundingClientRect(), m = $('#menu').getBoundingClientRect(); d.style.top = (r.bottom - m.top + 8) + 'px'; d.style.left = Math.max(8, Math.min(r.left - m.left, m.width - d.offsetWidth - 8)) + 'px';
   const fecha = () => { d.remove(); document.removeEventListener('pointerdown', fora, true); removeEventListener('keydown', esc1); };
@@ -2450,7 +2486,7 @@ const estudio = {
     if (false /* SEM MENSAGENS (2.0, pedido da dona, 12/11/2026) */) T.push(`<button type="button" class="et" data-et="msgs" style="--c:#0f5d8f" title="${nao ? nao + (nao > 1 ? ' mensagens novas' : ' mensagem nova') : 'Mensagens'}"><span class="gi">${ICE('<path d="M4 5.5h16v11H9l-5 4z"/>')}</span>${nao ? `<span class="cnt">${nao > 99 ? '99+' : nao}</span>` : ''}<span class="nm">Mensagens</span></button>`);
     let prox = null; try { const t = Date.now() - 6e4; prox = JSON.parse(localStorage.getItem('ep-calendario') || '[]').filter(e => e.em >= t).sort((a, b) => a.em - b.em)[0] || null; } catch { }
     const quandoP = e => { const x = new Date(e.em), h = x.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return x.toDateString() === d.toDateString() ? 'hoje, ' + h : x.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '') + ', ' + h; };
-    T.unshift(`<button type="button" class="et w" data-et="cal" style="--c:#1f7a5c" title="Seu calendário (lembretes e metas)"><span class="dia"><b>${d.getDate()}</b><small>${esc(d.toLocaleDateString('pt-BR', { weekday: 'long' }))}<br>${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}</small></span><span class="et-r cal">${prox ? `<small>Próximo ${prox.tipo === 'meta' ? 'objetivo' : 'lembrete'}</small><b>${esc(prox.t)}</b><small>${esc(quandoP(prox))}</small>` : '<small>Nenhum lembrete marcado</small><b>Calendário</b>'}</span><span class="nm">${hoje ? hoje + (hoje > 1 ? ' lembretes hoje' : ' lembrete hoje') : 'Calendário'}</span></button>`);
+    T.unshift(`<button type="button" class="et w" data-et="cal" style="--c:#1f7a5c" title="Seu calendário (lembretes e metas)"><span class="dia"><b data-mes="de ${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}">${d.getDate()}</b><small><span class="sem">${esc(d.toLocaleDateString('pt-BR', { weekday: 'long' }))}</span><br><span class="mes">${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}</span></small></span><span class="et-r cal${prox ? '' : ' vz'}">${prox ? `<small>Próximo ${prox.tipo === 'meta' ? 'objetivo' : 'lembrete'}</small><b>${esc(prox.t)}</b><small>${esc(quandoP(prox))}</small>` : '<small>Nenhum lembrete</small><b>Calendário</b>'}</span><span class="nm">${hoje ? hoje + (hoje > 1 ? ' lembretes hoje' : ' lembrete hoje') : 'Calendário'}</span></button>`);
     T.push(esp('nuvem', 'Nuvem da equipe', nv, '#1a5fb4'), esp('pc', 'Este computador', this.pc, '#3b4b5b'));
     T.push(`<button type="button" class="et" data-et="perfil" style="--c:#6a4fd8"><span class="foto">${avatarHtml(CONTA?.foto, CONTA?.nome || fb?.currentUser?.displayName)}</span><span class="nm">Perfil e fundo</span></button>`);
     if (DADOS?.adm) T.push(`<button type="button" class="et" data-et="adm" style="--c:#24364a"><span class="gi">${ICE('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L4 16.7V20h3.3l5.3-5.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>')}</span><span class="nm">ADM</span></button>`);
@@ -2476,14 +2512,15 @@ const clima = {
   i: 0,
   cidades() { try { const v = JSON.parse(localStorage.getItem('ep-clima-cfg') || 'null'); if (Array.isArray(v?.c) && v.c.length) return v.c; } catch { } return this.PADRAO; },
   grava(c) { try { localStorage.setItem('ep-clima-cfg', JSON.stringify({ c })); localStorage.removeItem('ep-clima'); } catch { } this.dados = null; estudio.pinta(); },
-  chave(c) { return c.map(x => x.la.toFixed(2) + ',' + x.lo.toFixed(2)).join(';'); },
+  chave(c) { return 'h2|' + c.map(x => x.la.toFixed(2) + ',' + x.lo.toFixed(2)).join(';'); }, // h2 = com as próximas horas
   async busca() {
     const c = this.cidades(), k = this.chave(c);
     try { const v = JSON.parse(localStorage.getItem('ep-clima') || 'null'); if (v?.k === k && Date.now() - v.t < 30 * 6e4) return (this.dados = v.d); } catch { }
     if (this._buscando) return; this._buscando = true;
-    try { const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.map(x => x.la).join(',') + '&longitude=' + c.map(x => x.lo).join(',') + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=America%2FSao_Paulo';
+    try { const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.map(x => x.la).join(',') + '&longitude=' + c.map(x => x.lo).join(',') + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code,is_day&forecast_days=1&forecast_hours=6&timezone=America%2FSao_Paulo';
       const j = await (await fetch(u, { credentials: 'omit', cache: 'no-store' })).json(), L = Array.isArray(j) ? j : [j];
-      this.dados = L.map(x => ({ t: Math.round(x?.current?.temperature_2m), w: x?.current?.weather_code, dia: !!x?.current?.is_day, mx: Math.round(x?.daily?.temperature_2m_max?.[0]), mn: Math.round(x?.daily?.temperature_2m_min?.[0]) }));
+      this.dados = L.map(x => ({ t: Math.round(x?.current?.temperature_2m), w: x?.current?.weather_code, dia: !!x?.current?.is_day, mx: Math.round(x?.daily?.temperature_2m_max?.[0]), mn: Math.round(x?.daily?.temperature_2m_min?.[0]),
+        h: (x?.hourly?.time || []).slice(1, 5).map((tm, i) => ({ h: String(tm).slice(11, 13) + 'h', t: Math.round(x.hourly.temperature_2m?.[i + 1]), w: x.hourly.weather_code?.[i + 1], dia: !!x.hourly.is_day?.[i + 1] })) })); // próximas horas (pedido da dona, 12/11/2026)
       try { localStorage.setItem('ep-clima', JSON.stringify({ k, t: Date.now(), d: this.dados })); } catch { }
       estudio.pinta();
     } catch { } finally { this._buscando = false; }
@@ -2501,7 +2538,7 @@ const clima = {
     const c = this.cidades(), d = this.dados;
     if (!d) { this.busca(); return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="des">${ICE(this.IC.nuv, 34)}</span><span class="pct">—</span><span class="nm">${esc(c[0].n)}</span></button>`; }
     const faces = c.map((x, k) => { const v = d[k] || {}, [txt, ic] = this.tipo(v.w, v.dia);
-      return `<span class="cl-f" title="${esc(x.n)}: ${esc(txt)}"><span class="des">${ICE(this.IC[ic], 34)}</span><span class="pct">${v.t == null || isNaN(v.t) ? '—' : v.t + '<small>°</small>'}</span><span class="cl-mm">${v.mx == null || isNaN(v.mx) ? '' : `${v.mx}° / ${v.mn}°`}</span><span class="nm">${esc(x.n)}</span></span>`; }).join('');
+      return `<span class="cl-f" title="${esc(x.n)}: ${esc(txt)}"><span class="des">${ICE(this.IC[ic], 34)}</span><span class="pct">${v.t == null || isNaN(v.t) ? '—' : v.t + '<small>°</small>'}</span><span class="cl-mm">${v.mx == null || isNaN(v.mx) ? '' : `${v.mx}° / ${v.mn}°`}</span><span class="nm">${esc(x.n)}</span><span class="cl-cond">${esc(txt)}</span><span class="cl-hr">${(v.h || []).filter(o => !isNaN(o.t)).map(o => `<i><small>${esc(o.h)}</small>${ICE(this.IC[this.tipo(o.w, o.dia)[1]], 16)}<b>${o.t}°</b></i>`).join('')}</span></span>`; }).join('');
     return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="cl-faces" style="--i:${this.i % c.length}">${faces}</span></button>`;
   },
   liga(box) { // mais de uma cidade: passa de uma em uma (devagar)
@@ -3854,6 +3891,15 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
     for (const id of ['g-est', 'recentes']) { const el = document.getElementById(id); if (el && el.parentNode !== wid) wid.appendChild(el); }
     if (!dock) { dock = document.createElement('nav'); dock.className = 'ip-dock'; dock.setAttribute('aria-label', 'Fixados e atalhos'); $('#menu').appendChild(dock); }
     for (const id of ['g-fix', 'g-atalhos']) { const el = document.getElementById(id); if (el && el.parentNode !== dock) dock.appendChild(el); }
+    // FIXADOS PADRÃO DO DOCK (pedido da dona, 12/11/2026): uso da nuvem, este computador, customizar perfil e ADM (só para quem é ADM).
+    // Cada um só "aperta" o bloco que já existe na seção Estúdio (escondido neste menu), então abre o mesmo painel de sempre.
+    let sis = document.getElementById('ip-sis'); if (dock && !sis) { sis = document.createElement('div'); sis.id = 'ip-sis'; sis.className = 'ip-sis'; dock.prepend(sis);
+      sis.addEventListener('click', e => { const b = e.target.closest('[data-sis]'); if (b) document.querySelector('#estudio .et[data-et="' + b.dataset.sis + '"]')?.click(); }); }
+    if (sis) { const S = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+      const L = [['nuvem', 'Uso da nuvem', '#1a5fb4', '<path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/>'], ['pc', 'Este computador', '#4a5a6b', '<rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/>'],
+        ['perfil', 'Customizar perfil', '#6a4fd8', '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'], ['adm', 'ADM', '#2c4a6b', '<path d="M12 3l7.5 3v5.5c0 4.4-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5.1-7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>']]
+        .filter(x => x[0] !== 'adm' || document.querySelector('#estudio .et[data-et="adm"]'));
+      const k = L.map(x => x[0]).join(','); if (sis.dataset.k !== k) { sis.dataset.k = k; sis.innerHTML = L.map(([id, nm, c, p]) => '<button type="button" class="et ip-sis-b" data-sis="' + id + '" style="--c:' + c + '" aria-label="' + nm + '"><span class="gi">' + S + p + '</svg></span><span class="nm">' + nm + '</span></button>').join(''); } }
     if (!hora) { const t = $('#top'); if (t) { hora = document.createElement('span'); hora.className = 'ip-hora'; t.insertBefore(hora, $('#lupa') || t.querySelector('[data-estudio-conta]')); } }
     const v = document.getElementById('versao-site'), sub = document.getElementById('top-sub'); if (v && sub && v.parentNode !== sub && v.textContent) sub.appendChild(v);
     const h = document.getElementById('hello'), sd = wid.querySelector('[data-ip-saud]'); if (h && sd && sd.textContent !== h.textContent) sd.textContent = h.textContent;
