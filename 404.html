@@ -1475,6 +1475,9 @@ html.cel.ip body #menu #grid .card.pasta-b .pasta-mini .mi{position:static!impor
 html.cel.ip body #menu #grid .card.pasta-b .pasta-mini .mi .ic{position:static!important;width:100%!important;height:100%!important;display:block!important;margin:0!important;transform:none!important;box-shadow:none!important;border-radius:22%!important;overflow:hidden}
 html.cel.ip body #menu #grid .card.pasta-b .pasta-mini .mi .ic :is(span,svg,img){width:100%!important;height:100%!important;display:block!important}
 html.cel.ip body #menu #grid .card.pasta-b .pasta-mini .vazia{grid-column:1/-1;font-size:0!important;width:60%;aspect-ratio:1;margin:auto;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E")!important}
+/* pasta no tema claro: vidro escurecido e desenho escuro (branco sobre branco sumia) */
+html.cel.ip[data-tema="claro"] body #menu #grid .card.pasta-b .pasta-mini{background:rgba(0,0,0,.1)!important;box-shadow:0 6px 16px rgba(0,0,0,.12)!important}
+html.cel.ip[data-tema="claro"] body #menu #grid .card.pasta-b .pasta-mini .vazia{filter:invert(1) brightness(.35)}
 /* busca (aparece ao digitar): por cima, centralizada */
 html.cel.ip body #menu #prog-busca:not([hidden]){background:var(--elevado,#242428)!important;backdrop-filter:none!important;box-shadow:0 12px 40px rgba(0,0,0,.45)!important;position:fixed!important;top:calc(var(--ip-barra) + 12px)!important;left:50%!important;transform:translateX(-50%)!important;z-index:35!important;width:min(520px,90vw)!important;margin:0!important}
 /* a versão que ficava solta no canto foi para a barra */
