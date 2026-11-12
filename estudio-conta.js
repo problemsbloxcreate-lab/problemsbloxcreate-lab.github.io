@@ -2401,10 +2401,16 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     if (sozinho() && autoPode()) atualizaTudoGuardado(true); else avisaPrograma();
   }
   const autoPode = () => { const k = 'ep-auto-atz:' + location.pathname; let t0 = 0; try { t0 = +sessionStorage.getItem(k) || 0; sessionStorage.setItem(k, String(Date.now())); } catch { } return Date.now() - t0 > 120000; }; // contra laço
+  /* NOME DO PROGRAMA (pedido da dona, 12/11/2026): nunca o document.title (ele leva o nome do projeto aberto, ex.: "Shorts - rankeando
+     os medos — Animador", e confunde). Vem do programa da página (EstudioIcones.atual(): o Ateliê troca para 'at') ou do caminho. */
+  const NOMES_PROG = { '/animador/': 'Animador', '/editor/': 'Editor', '/shorts/': 'Shorts', '/preparativos/': 'Preparativos', '/publicacoes/': 'Publicações', '/cerebro/': 'Cérebro', '/musicas/': 'Músicas', '/modelador/': 'Modelador' };
+  const nomeProg = (caminho, id) => { let n = ''; try { const EI = window.EstudioIcones; id = id ?? (caminho === location.pathname ? EI?.atual?.() : null); n = id && EI?.config?.()?.[id]?.nome || ''; } catch { }
+    return n || NOMES_PROG[(String(caminho || '').match(/^\/[^/]+\//) || [''])[0]] || ''; };
+  const versaoNovaDe = n => 'Versão nova ' + (!n ? 'do Estúdio' : /^(Publicações|Músicas)$/.test(n) ? 'das ' + n : n === 'Preparativos' ? 'dos ' + n : 'do ' + n);
   function avisaPrograma() {
-    const bruto = (document.title.split('·')[0] || '').trim() || 'Estúdio Problems', nome = bruto.charAt(0).toUpperCase() + bruto.slice(1).toLowerCase().replace(/problems/, 'Problems').replace(/estúdio/, 'Estúdio');
+    let ic = null; try { ic = window.EstudioIcones?.atual?.() || null; } catch { }
     const id = 'p:' + location.pathname + ':' + String(VERSAO.onde || '');
-    const n = { id, prog: location.pathname, titulo: 'Versão nova do ' + nome, itens: [], em: Date.now(), nova: true };
+    const n = { id, prog: location.pathname, icone: ic, titulo: versaoNovaDe(nomeProg(location.pathname, ic)), itens: [], em: Date.now(), nova: true };
     if (!notifs().some(x => x.id === id)) guardaNotif(n);
     let fechou = false; try { fechou = localStorage.getItem('ep-notif-fechada:' + id) === '1'; } catch { }
     if (!fechou) mostraNotifVersao(n);
@@ -2515,7 +2521,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   function mostraNotifVersao(n) {
     document.querySelector('.ep-notif-v')?.remove();
     const d = document.createElement('div'); d.className = 'ep-notif-v'; d.setAttribute('role', 'status');
-    const ic = '<span class="nv-ep">' + (ICONES.estudio || ICONES.atualizar) + '</span>';
+    let svgP = ''; try { if (n.icone && window.EstudioIcones?.svg) svgP = window.EstudioIcones.svg(n.icone, 28); } catch { } const ic = '<span class="nv-ep">' + (svgP || ICONES.estudio || ICONES.atualizar) + '</span>'; // ícone do programa quando o aviso é dele
     d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(limpaV(n.titulo)) + (n.aplicada ? '</b><small>Você já está nesta versão. Veja o que mudou.</small>' : ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>')) + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
       + (n.itens.length ? '<ul>' + n.itens.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>' : '')
       + '<div class="nv-b"><button type="button" class="nv-f">Fechar</button><button type="button" class="nv-a">' + (n.aplicada ? 'Ver novidades' : 'Atualizar') + '</button></div>';
@@ -2532,7 +2538,8 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
      pop-up separado (Celeste, .ep-esp) com todas, rolando por dentro, com Limpar e fechar (botão ou Esc). Nomes só com o número da versão:
      os guardados antes com "(ALPHA) … - Celeste" aparecem limpos. */
   const limpaV = s => String(s || '').replace(/\s*\((alpha|beta)\)\s*/ig, ' ').replace(/\s+-\s+(Celeste|Flower Field)\b/i, '').replace(/\s{2,}/g, ' ').trim();
-  const linhaNotif = n => '<div class="nf-i' + (n.nova ? ' nova' : '') + '" data-nf="' + esc(n.id) + '"><div class="nf-t"><b>' + esc(limpaV(n.titulo)) + '</b><small>' + (n.feito ? 'Atualizado' : n.importante ? 'Importante' : esc(n.itens?.[0] || 'Versão nova disponível')) + ' · ' + esc(new Date(n.em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })) + '</small>' + (n.nova && !n.feito ? '<button type="button" class="nf-a" data-nf-at="' + esc(n.prog) + '">Atualizar</button>' : '') + '</div></div>';
+  const tituloNotif = n => String(n.id || '').startsWith('p:') ? versaoNovaDe(nomeProg(n.prog, n.icone || null)) : limpaV(n.titulo);
+  const linhaNotif = n => '<div class="nf-i' + (n.nova ? ' nova' : '') + '" data-nf="' + esc(n.id) + '"><div class="nf-t"><b>' + esc(tituloNotif(n)) + '</b><small>' + (n.feito ? 'Atualizado' : n.importante ? 'Importante' : esc(n.itens?.[0] || 'Versão nova disponível')) + ' · ' + esc(new Date(n.em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })) + '</small>' + (n.nova && !n.feito ? '<button type="button" class="nf-a" data-nf-at="' + esc(n.prog) + '">Atualizar</button>' : '') + '</div></div>';
   function htmlNotifs() {
     const L = notifs(), mais = L.length - 2;
     const lin = L.length ? L.slice(0, 2).map(linhaNotif).join('') + (mais > 0 ? '<button type="button" class="nf-i nf-mais">Ver mais (' + mais + ')</button>' : '') : '<div class="nf-vz">Nada por enquanto.</div>';
