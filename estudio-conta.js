@@ -2359,10 +2359,51 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     catch { let h = 2166136261; const v = new Uint8Array(b); for (let i = 0; i < v.length; i++) h = Math.imul(h ^ v[i], 16777619); return v.length + ':' + (h >>> 0); }
   }
   const telaDeCarregamento = () => [...document.querySelectorAll('#estudio-porta,#turma-login')].some(e => !e.classList.contains('ep-saindo') && !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).opacity !== '0');
+  /* SÓ O PROGRAMA ABERTO (pedido da dona, 12/11/2026): versão nova de OUTRO programa (ou só do menu) não incomoda: ao abrir aquele
+     programa ele já vem na versão mais nova. Arquivos comuns (/estudio-*.js, .css) contam para todos. */
+  const doAberto = u => { const p = String(u || '').split('?')[0], prog = x => (x.match(/^\/[^/]+\//) || ['/'])[0];
+    if (/^\/estudio-[^/]+\.(js|css)$/.test(p)) return true; return prog(p) === prog(location.pathname); };
   function marcaNova(onde) {
-    if (VERSAO.nova) return; VERSAO.nova = true; VERSAO.onde = onde; if (!marcaNova.deFora) manda({ versaoNova: onde }); // as outras abas acendem junto
+    if (VERSAO.nova || !doAberto(onde)) return; VERSAO.nova = true; VERSAO.onde = onde; if (!marcaNova.deFora) manda({ versaoNova: onde }); // as outras abas acendem junto
     document.querySelectorAll('.ep-conta').forEach(b => b.classList.add('ep-novo'));
     try { dispatchEvent(new CustomEvent('estudio-versao-nova', { detail: { onde } })); } catch { }
+    // ATUALIZAÇÃO NUNCA FORÇADA (pedido da dona, 12/11/2026): "Atualizar sozinho" desligado (o padrão) = só a notificação, com
+    // Atualizar e Fechar; ligado = blur por cima do programa com o anel e a logo, guarda o que está aberto e recarrega.
+    if (sozinho() && autoPode()) atualizaTudoGuardado(true); else avisaPrograma();
+  }
+  const autoPode = () => { const k = 'ep-auto-atz:' + location.pathname; let t0 = 0; try { t0 = +sessionStorage.getItem(k) || 0; sessionStorage.setItem(k, String(Date.now())); } catch { } return Date.now() - t0 > 120000; }; // contra laço
+  function avisaPrograma() {
+    const bruto = (document.title.split('·')[0] || '').trim() || 'Estúdio Problems', nome = bruto.charAt(0).toUpperCase() + bruto.slice(1).toLowerCase().replace(/problems/, 'Problems').replace(/estúdio/, 'Estúdio');
+    const id = 'p:' + location.pathname + ':' + String(VERSAO.onde || '');
+    const n = { id, prog: location.pathname, titulo: 'Versão nova do ' + nome, itens: [], em: Date.now(), nova: true };
+    if (!notifs().some(x => x.id === id)) guardaNotif(n);
+    let fechou = false; try { fechou = localStorage.getItem('ep-notif-fechada:' + id) === '1'; } catch { }
+    if (!fechou) mostraNotifVersao(n);
+  }
+  /* TELA "ATUALIZANDO" (Celeste, 12/11/2026): nada de montanha nem tela cheia. Um blur por cima do programa, com o MESMO anel e a
+     MESMA logo do carregamento (só a logo pulsa, o anel mostra a %), "Atualizando…" e uma linha. Usada pelo Atualizar e pelo automático. */
+  const CLAQ_ATZ = "<svg viewBox=\"0 0 64 64\" aria-hidden=\"true\"><defs><linearGradient id=\"epclq-atz\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5cc4ff\"/><stop offset=\"1\" stop-color=\"#6b5cff\"/></linearGradient></defs><rect width=\"64\" height=\"64\" rx=\"14.5\" fill=\"url(#epclq-atz)\"/><g fill=\"none\" stroke=\"#fff\" stroke-width=\"3.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><rect x=\"15\" y=\"27\" width=\"34\" height=\"22\" rx=\"3\"/><path d=\"M15 27l3-9 31 0-3 9\"/><path d=\"M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9\"/></g><path d=\"M29 33v10l8-5z\" fill=\"#fff\"/></svg>"; // claquete do Estúdio (quando não há ícone do programa, ex.: menu)
+  function telaAtualizando(frase) {
+    document.getElementById('ep-atz')?.remove();
+    if (!document.getElementById('ep-atz-css')) { const s = document.createElement('style'); s.id = 'ep-atz-css'; s.textContent = `
+#ep-atz{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:color-mix(in srgb,#141416 40%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.05);backdrop-filter:blur(18px) saturate(1.05);font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--atz-tx:#f5f5f7;--atz-tx2:rgba(235,235,245,.7);animation:epAtzEntra .25s ease both}
+html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transparent);--atz-tx:#1d1d1f;--atz-tx2:rgba(60,60,67,.7)}
+#ep-atz .atz-c{display:flex;flex-direction:column;align-items:center;transform:translateY(-4vh)}
+#ep-atz .atz-lg{position:relative;width:60px;height:60px;margin:30px}
+#ep-atz .atz-lg::before{content:"";position:absolute;inset:-30px;border-radius:50%;background:conic-gradient(var(--atz-tx) calc(var(--ep-p,0) * 1%),color-mix(in srgb,var(--atz-tx) 15%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px))}
+#ep-atz .atz-lg>:is(img,svg){position:absolute;inset:0;width:60px;height:60px;border-radius:14px;display:block;box-shadow:0 8px 22px rgba(0,0,0,.3);transform-origin:50% 50%;animation:epAtzPulsa 2.6s ease-in-out infinite}
+#ep-atz .atz-t{margin:26px 0 4px;font-weight:600;font-size:20px;line-height:1.25;color:var(--atz-tx)}
+#ep-atz .atz-l{display:flex;gap:5px;font-size:13.5px;color:var(--atz-tx2);white-space:nowrap}
+#ep-atz .atz-p{display:inline-block;min-width:3.4em;text-align:right;font-weight:600;color:var(--atz-tx);font-variant-numeric:tabular-nums}#ep-atz .atz-p::after{content:" ·";font-weight:400;color:var(--atz-tx2)}
+@keyframes epAtzPulsa{50%{transform:scale(1.06)}}@keyframes epAtzEntra{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){#ep-atz,#ep-atz .atz-lg>:is(img,svg){animation:none}}`; document.head.appendChild(s); }
+    let url = ''; try { const EI = window.EstudioIcones, id = EI?.atual?.(); url = id && EI.url?.(id) || ''; } catch { }
+    const el = document.createElement('div'); el.id = 'ep-atz'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<div class="atz-c"><div class="atz-lg">' + (url ? '<img alt="" src="' + esc(url) + '">' : CLAQ_ATZ) + '</div><b class="atz-t">Atualizando…</b><div class="atz-l"><b class="atz-p">0%</b><span></span></div></div>';
+    document.body.appendChild(el); try { document.activeElement?.blur?.(); } catch { }
+    const trava = e => { if (el.isConnected) { e.preventDefault(); e.stopPropagation(); } }; for (const ev of ['keydown', 'wheel', 'contextmenu', 'drop', 'paste']) addEventListener(ev, trava, { capture: true, passive: false });
+    const diz = (txt, pct) => { el.querySelector('.atz-l span').textContent = txt; if (pct != null) { const p = Math.max(0, Math.min(100, Math.round(pct))); el.querySelector('.atz-p').textContent = p + '%'; el.style.setProperty('--ep-p', p); } };
+    diz(frase || 'Guardando o que você fez…', 4); return diz;
   }
   async function recarregaJa() {
     const k = 'ep-recarregou:' + location.pathname; let t = 0; try { t = +sessionStorage.getItem(k) || 0; } catch { }
@@ -2434,10 +2475,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   // Atualizar = apaga as cópias guardadas de TODOS os programas (a versão é uma só) e recarrega esta página
   async function atualizaTudoGuardado(recarregar = true, versao) {
+    const diz = recarregar ? telaAtualizando() : null;
+    if (recarregar) { try { await Promise.race([Promise.allSettled(salvadores().map(f => Promise.resolve().then(f))), new Promise(r => setTimeout(r, 4000))]); } catch { } diz('Baixando a versão nova…', 40); }
     if (versao) { try { localStorage.setItem('ep-versao-vista', versao); } catch { } }
     try { for (const k of await caches.keys()) if (k.startsWith('ep-p:')) await caches.delete(k); } catch { }
     try { const L = notifs().map(x => x.nova ? { ...x, nova: false, feito: Date.now() } : x); localStorage.setItem(NOTIFS_K, JSON.stringify(L)); } catch { }
-    if (recarregar) location.reload();
+    if (recarregar) { try { await fetch(location.pathname + location.search, { cache: 'reload', credentials: 'same-origin', epFundo: 1 }); } catch { } diz('Pronto', 100); setTimeout(() => location.reload(), 350); }
   }
   const atualizaPrograma = () => atualizaTudoGuardado();
   function mostraNotifVersao(n) {
@@ -2475,14 +2518,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       // ANIMADOR: o versao.json muda a cada publicação (Action versao.yml), então basta ele + a página + o estudio-conta.js (economia de pedidos:
       // antes eram até 30 arquivos a cada conferência, por aba; cada um = 1 pedido do porteiro, limite de 100 mil por dia na conta)
       const anim = location.pathname.startsWith('/animador/');
-      const lista = anim ? [location.pathname + location.search, '/estudio-conta.js', '/animador/versao.json'] : primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : [...new Set([...recursosDaPagina(), ...SITES])];
+      const lista = anim ? [location.pathname + location.search, '/estudio-conta.js', '/animador/versao.json'] : primeira ? [location.pathname + location.search, '/estudio-conta.js', '/estudio-carregando.js'] : recursosDaPagina(); // só o programa aberto
       // VERSÕES NUM PEDIDO SÓ (06/11/2026, economia de pedidos): depois da abertura, a lista inteira vai junta para o /versoes do porteiro,
       // que devolve a versão de cada arquivo (a mesma do carimbo _ev). Antes: um pedido por arquivo (6 a 10 a cada 3,5 min).
       // Porteiro antigo (sem /versoes) → como antes, um por um.
       if (!primeira) {
         const doGh = u => { try { const x = new URL(u, location.href); if (!/\.github\.io$/.test(x.hostname)) return null; return x.pathname.replace(/^\/jester-dreams\//, '/jester/'); } catch { return null; } };
         const daPagina = anim ? [] : [...document.querySelectorAll('script[src],link[rel~="stylesheet"][href]')].map(e => { const s = e.src || e.href, m = mesmaOrigem(s); return m ? m.replace(/[?&]_ev=[^&]*/, '') : doGh(s); }).filter(Boolean);
-        const l2 = [...new Set([...lista, ...SITES, ...daPagina])].slice(0, 40);
+        const l2 = [...new Set([...lista, ...daPagina])].slice(0, 40); // só o programa aberto (pedido da dona, 12/11/2026)
         let v = null; try { const r = await fetch('/versoes?u=' + encodeURIComponent(l2.join('|')), { credentials: 'same-origin', cache: 'no-store', epFundo: 1 }); const j = r.ok ? await r.json().catch(() => null) : null; v = j?.v || null; } catch { }
         if (v) { for (const u of l2) { const a = v[u]; if (!a) continue; const k = 'v:' + u;
             if (!VERSAO.base.has(k)) { VERSAO.base.set(k, a); continue; } if (VERSAO.base.get(k) === a) continue;
@@ -2684,7 +2727,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   window.EstudioConta = { relatorio: () => pedeRelatorio(), perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
     calendario: ev => calendario(ev), dock: { atualizar: () => pintaDock() },
     preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas, abrir: abrirAdm }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
-    versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; } },
+    versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; }, programaMudou: onde => marcaNova(onde || location.pathname), tela: f => telaAtualizando(f), atualizar: () => atualizaTudoGuardado(true) },
     nuvem: { atualizar: () => { try { localStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
   if (CFG.autoMontar !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => montar(), { once: true }); else montar(); }
 })();
