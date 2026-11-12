@@ -26,13 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '1.4 - Flower Field', em: '11/11/2026',
+window.EstudioVersao ||= { nome: '(ALPHA) 2.0 - Celeste', em: '12/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
-    ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Uso da nuvem e do computador no cabeçalho de todos os programas.', 'Menu redesenhado em uma coluna, com o mesmo cabeçalho dos programas e uma grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Uma tela só, com a foto da montanha, do clique no menu até o programa aberto.']],
+    ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Uso da nuvem e do computador no cabeçalho de todos os programas.', 'Menu numa tela só, no jeito do iPad e do Mac: relógio, Calendário, Clima e Meus projetos à esquerda, programas à direita e fixados embaixo.', 'Grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Carregamento único do começo ao fim: o ícone do programa dentro de um anel de progresso, e a nuvem aparece quando baixa da nuvem.']],
     ['Cérebro', ['A Montanha: o Cérebro virou um mapa de pontos em forma de montanha. A rodinha do mouse dá zoom e clicar num ponto explica o que é.', 'Busca que acha o trecho certo dentro das páginas.', 'Adicionar ao Cérebro: gera o pedido pronto para a CelestIA e guarda em Pedidos.', 'Telas do Cérebro no visual novo, sem os blocos coloridos.']],
     ['Atualizações', ['Aviso de versão nova em qualquer página, com Atualizar e Fechar. Atualizar é opcional.', 'Histórico de notificações em Sua conta, com a chave Atualizar sozinho (vem desligada).', 'Preparativos e Publicações ficam guardados no computador e abrem na hora.']],
     ['Animador e Ateliê', ['Juntas com trava: cotovelo e joelho só dobram para o lado certo.', 'Andar sem travar e acessórios com atraso suave.', 'Exportar com o volume certo: o som não estoura mais (pico em −1 dB) e fica no volume dos Shorts e do YouTube (−14 LUFS). Dá para desligar o nivelamento na janela Exportar.']],
