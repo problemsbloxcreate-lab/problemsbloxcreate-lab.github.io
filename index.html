@@ -1375,7 +1375,15 @@ html.cel.ip body #menu .ip-wid{order:1}
 /* WIDGETS (à esquerda) */
 html.cel.ip body .ip-wid{display:grid;grid-template-columns:repeat(2,var(--ip-w));grid-template-rows:auto auto minmax(0,1fr);gap:16px;min-height:0;height:100%}
 html.cel.ip body .ip-ola{grid-column:span 2;padding:2px 4px 0;order:0}html.cel.ip body #menu .ip-wid #g-est{order:1!important}
-html.cel body #menu #progs-cab .btn-celestia{margin-left:auto!important;display:inline-flex!important;align-items:center;gap:5px}html.cel body #menu #progs-cab .btn-celestia[hidden],html.cel body #menu #progs-cab:has(#btn-org[aria-pressed=true]) .btn-celestia{display:none!important}html.cel.ip body #menu .ip-wid #recentes{order:2!important}
+html.cel body #menu #progs-cab .btn-celestia{margin-left:auto!important;display:inline-flex!important;align-items:center;gap:5px}html.cel body #menu #progs-cab .btn-celestia[hidden],html.cel body #menu #progs-cab:has(#btn-org[aria-pressed=true]) .btn-celestia{display:none!important}
+/* ADM SEM RESTOS DO METRO (pedido da dona, 12/11/2026): no tema claro os rótulos e textos da ADM tinham cor clara fixa (sumiam no branco);
+   o seletor Com borda / Sem borda tinha canto reto. Agora tudo vem dos tokens do Celeste, nos dois temas. */
+html.cel[data-tema="claro"] body #adm .ic-lista button:not([aria-selected="true"]) span{color:var(--texto)!important}
+html.cel[data-tema="claro"] body #adm :is(.f>span,.ic-f>label,.ic-add,.ac-n small,.ac-em,.ac-orig,.ac-tag,.nvd-t span,.nvd-chip,.rng output,h3){color:var(--texto-2)!important}
+html.cel[data-tema="claro"] body #adm :is(.f b,.nvd-p b,.nvd-l span,.nvd-ck label span){color:var(--texto)!important}
+html.cel body #adm .ic-seg{display:inline-flex!important;gap:2px;padding:2px;border:0!important;border-radius:8px!important;background:var(--fundo-3)!important;overflow:visible!important}
+html.cel body #adm .ic-seg button{height:26px;padding:0 10px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--texto)!important;font:500 12.5px var(--fonte)!important}
+html.cel body #adm .ic-seg button[aria-pressed="true"]{background:var(--acento)!important;color:#fff!important}html.cel.ip body #menu .ip-wid #recentes{order:2!important}
 html.cel.ip body .ip-ola b{display:block;font:700 clamp(40px,4.6vw,58px)/1 var(--fonte);letter-spacing:-.03em;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px rgba(0,0,0,.35)}
 html.cel.ip body .ip-ola span{display:block;margin-top:8px;font:600 16px var(--fonte);color:rgba(255,255,255,.82);text-shadow:0 1px 10px rgba(0,0,0,.45)}
 html.cel.ip body #menu .ip-wid #g-est{grid-column:span 2;margin:0!important;padding:0!important;width:auto!important}

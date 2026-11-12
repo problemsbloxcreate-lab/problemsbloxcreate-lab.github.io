@@ -815,6 +815,29 @@ html[data-tema="claro"] :is(.ep-conta,.ep-conta-pop,.ep-conta-fundo,.ep-esp,.ep-
 :root:root body .ep-conta-fw>i.v{top:-1px!important;right:-1px!important;width:10px!important;height:10px!important;border:0!important;box-sizing:border-box!important;box-shadow:0 1px 3px rgba(0,0,0,.35)!important}
 :root:root body .ep-conta-fw>i.a{border:0!important;box-shadow:0 1px 3px rgba(0,0,0,.35)!important}
 :root:root body .ep-conta .ep-conta-btn{box-shadow:none!important}
+/* ADM POR CIMA DOS PROGRAMAS = CARREGAMENTO C (pedido da dona, 12/11/2026: "o ADM ainda herda coisas do Metro"): fundo liso sem foto, o ícone
+   da ADM no jeito dos ícones dos programas (cantos arredondados, cor e contorno fino) dentro do anel parado, brilho na cor dela piscando
+   leve, o nome e UMA linha "54% · frase"; só a logo pulsa; selo da versão em pílula, só o número. */
+:root:root body .ep-admj .cx{border-radius:14px!important;background:#141416!important}
+html[data-tema="claro"]:root:root body .ep-admj .cx{background:#f2f2f5!important}
+:root:root body .ep-admj .cx::before,:root:root body .ep-admj .cx::after{display:none!important}
+:root:root body .ep-admj .car{--adm-cor:#8fb4ff;--ac-tx:#f5f5f7;--ac-tx2:rgba(235,235,245,.66);background:#141416!important;color:var(--ac-tx)!important;font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+html[data-tema="claro"]:root:root body .ep-admj .car{--adm-cor:#3a6fe0;--ac-tx:#1d1d1f;--ac-tx2:rgba(60,60,67,.66);background:#f2f2f5!important}
+:root:root body .ep-admj .car::before{content:""!important;position:absolute;inset:0;background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--adm-cor) 30%,transparent),transparent 72%)!important;animation:epAdmBrilho 1.8s ease-in-out infinite alternate}
+html[data-tema="claro"]:root:root body .ep-admj .car::before{background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--adm-cor) 22%,transparent),transparent 72%)!important}
+:root:root body .ep-admj .car .ac-c{display:flex!important;flex-direction:column;align-items:center;transform:translateY(-4vh)}
+:root:root body .ep-admj .car .ac-lg{position:relative;width:60px!important;height:60px!important;margin:30px!important;display:block!important;background:none!important;box-shadow:none!important;border-radius:0!important;animation:none!important;transform:none!important}
+:root:root body .ep-admj .car .ac-lg::before{content:"";position:absolute;inset:-30px;border-radius:50%;background:conic-gradient(var(--ac-tx) calc(var(--ep-p,0) * 1%),color-mix(in srgb,var(--ac-tx) 13%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px))}
+:root:root body .ep-admj .car .ac-ic{position:absolute;inset:0;display:grid;place-items:center;border-radius:14px;background:color-mix(in srgb,var(--adm-cor) 14%,#0b1220);box-shadow:inset 0 0 0 1px var(--adm-cor),0 8px 22px rgba(0,0,0,.3);color:var(--adm-cor);transform-origin:50% 50%;animation:epAdmPulsa 2.6s ease-in-out infinite}
+html[data-tema="claro"]:root:root body .ep-admj .car .ac-ic{background:color-mix(in srgb,var(--adm-cor) 10%,#fff);box-shadow:inset 0 0 0 1px var(--adm-cor),0 8px 22px rgba(0,0,0,.12)}
+:root:root body .ep-admj .car .ac-ic svg{width:30px!important;height:30px!important}
+:root:root body .ep-admj .car .ac-nm{margin:26px 0 4px;font-weight:600;font-size:20px;line-height:1.25;color:var(--ac-tx)}
+:root:root body .ep-admj .car .ac-br{display:none!important}
+:root:root body .ep-admj .car .ac-pc{display:flex!important;gap:5px;margin:0!important;font-size:13.5px!important;color:var(--ac-tx2)!important}
+:root:root body .ep-admj .car .ac-pc b{display:inline-block;min-width:3.4em;text-align:right;font-weight:600;color:var(--ac-tx)!important;font-variant-numeric:tabular-nums}:root:root body .ep-admj .car .ac-pc b::after{content:" ·";font-weight:400;color:var(--ac-tx2)}
+:root:root body .ep-admj .car .ac-selo{border:0!important;border-radius:999px!important;background:color-mix(in srgb,var(--ac-tx) 10%,transparent)!important;color:var(--ac-tx2)!important;font:600 11px/1 "Inter","Segoe UI",system-ui,sans-serif!important;letter-spacing:0!important;height:22px;padding:0 10px!important}
+@keyframes epAdmPulsa{50%{transform:scale(1.06)}}@keyframes epAdmBrilho{from{opacity:.6}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){:root:root body .ep-admj .car::before,:root:root body .ep-admj .car .ac-ic{animation:none!important}}
 :root:root body .ep-conta-fw>i.a{display:none!important} /* sem Mensagens (2.0): o @ de menção não leva a lugar nenhum */ /* o contorno escuro só servia para separar a foto do anel, que saiu */
 /* --- véu atrás dos painéis --- */
 :root:root body .ep-conta-fundo{background:var(--ce-veu)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -1011,11 +1034,7 @@ html:not([data-tema="claro"]) body #ep-atualizando :is(.ep-nm,.ep-m,.ep-pc,.ep-a
 :root:root body .ep-cal .seg button{height:28px!important;border-radius:6px!important;background:transparent!important;color:var(--ce-texto-2)!important;font:500 13px var(--ce-fonte)!important}
 :root:root body .ep-cal .seg button.on{background:var(--ce-fundo-4)!important;color:var(--ce-texto)!important}
 :root:root body .ep-cal{animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
-/* --- JANELA DA ADM por cima dos programas: fundo da montanha (não mais as margaridas azuis) --- */
-:root:root body .ep-admj .cx::before{background:#0b1020 url(/fundo-montanha.jpg) center 40%/cover!important;filter:blur(16px)!important}
-:root:root body .ep-admj .cx::after{background:rgba(10,12,18,.55)!important}
-:root:root body .ep-admj .cx{border-radius:14px!important;overflow:hidden}
-:root:root body .ep-admj .car{background:#0b1020 url(/fundo-montanha.jpg) center 40%/cover!important}
+/* --- JANELA DA ADM por cima dos programas: fundo LISO, sem foto (carregamento C, pedido da dona em 12/11/2026; as regras ficam no bloco "ADM POR CIMA DOS PROGRAMAS") --- */
 /* --- NOTIFICAÇÃO DE VERSÃO NOVA (em cima, à direita): Atualizar / Fechar; atualizar é opcional --- */
 .ep-notif-v{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.4);--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-texto:#04223a;
   position:fixed;z-index:2147483004;top:64px;right:16px;width:min(360px,calc(100vw - 32px));box-sizing:border-box;padding:16px;background:var(--ce-elevado);color:var(--ce-texto);border:1px solid var(--ce-linha);border-radius:14px;
@@ -2711,12 +2730,12 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
     if (location.pathname === '/' || /^\/adm\/?$/i.test(location.pathname)) return dispatchEvent(new CustomEvent('estudio-abrir-adm', { detail: { aba: aba || null } }));
     poeCss(); document.querySelector('.ep-admj')?.remove();
     const d = document.createElement('div'); d.className = 'ep-admj'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'ADM');
-    d.innerHTML = `<div class="cx"><iframe src="/adm?embed=1${aba ? '#' + encodeURIComponent(aba) : ''}" title="ADM"></iframe><div class="car" role="status" aria-live="polite"><div class="ac-c"><div class="ac-lg">${ICONES.adm}</div><div class="ac-br"><i></i></div><div class="ac-pc"><b>0%</b><span>Abrindo a ADM…</span></div></div><span class="ac-selo"></span></div></div>`;
+    d.innerHTML = `<div class="cx"><iframe src="/adm?embed=1${aba ? '#' + encodeURIComponent(aba) : ''}" title="ADM"></iframe><div class="car" role="status" aria-live="polite"><div class="ac-c"><div class="ac-lg"><span class="ac-ic">${ICONES.adm}</span></div><div class="ac-nm">Abrindo a ADM</div><div class="ac-br"><i></i></div><div class="ac-pc"><b>0%</b><span>Carregando…</span></div></div><span class="ac-selo"></span></div></div>`;
     d.querySelector('.ac-selo').textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || '';
     document.body.appendChild(d);
     // barrinha que anda sozinha (vai chegando perto de 90%); quando a ADM aparece no quadro, corre até 100% e a tela some
     const car = d.querySelector('.car'), barra = car.querySelector('.ac-br>i'), pct = car.querySelector('.ac-pc b'), t0 = performance.now(); let mostra = 0, pronto = 0, de = 0, acabou = false;
-    const pinta = v => { barra.style.width = v.toFixed(1) + '%'; pct.textContent = Math.round(v) + '%'; };
+    const pinta = v => { barra.style.width = v.toFixed(1) + '%'; pct.textContent = Math.round(v) + '%'; car.style.setProperty('--ep-p', v.toFixed(1)); }; // anel do carregamento C
     const fim = () => { if (acabou) return; acabou = true; clearInterval(vigia); car.classList.add('sai'); setTimeout(() => car.remove(), 320); };
     const anda = () => { if (acabou || !d.isConnected) return; const t = performance.now();
       if (pronto) { const k = Math.min(1, (t - pronto) / 400); mostra = de + (100 - de) * (1 - (1 - k) * (1 - k)); pinta(mostra); if (k >= 1) return setTimeout(fim, 120); }
