@@ -1730,7 +1730,9 @@ async function init() {
   if (!firebase.apps.length) firebase.initializeApp(MENU_CONFIG.firebase);
   fb = firebase.auth();
   await fb.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  try { await fb.getRedirectResult(); } catch { }
+  // getRedirectResult às vezes fica parado para sempre (visto no Chrome em 12/11/2026: o menu não passava do "Carregando…"). Esperamos no máximo 3 s;
+  // a conta continua sendo conferida igual (onAuthStateChanged + /quem no servidor), então o guarda não muda.
+  try { await Promise.race([fb.getRedirectResult(), new Promise(r => setTimeout(r, 3000))]); } catch { }
   return new Promise(r => { const u = fb.onAuthStateChanged(x => { u(); r(x); }); });
 }
 const token = async () => { for (let i = 0; !fb?.currentUser && i < 40; i++) await new Promise(r => setTimeout(r, 250)); if (!fb?.currentUser) throw Object.assign(new Error('O login do Google ainda não terminou de carregar.'), { status: 0 }); return fb.currentUser.getIdToken(); };
