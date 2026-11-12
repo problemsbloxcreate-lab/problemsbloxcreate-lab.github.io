@@ -1353,7 +1353,7 @@ html.cel:not(.x) body .login .gbtn{margin-top:22px!important}
    (fixados | atalhos). O fundo é a foto do menu. Cuidados: nada de sombra cortada, nada de efeito fantasma, nenhum clique perdido. */
 html.cel.ip{--ip-barra:40px;--ip-w:clamp(150px,12.5vw,188px);--ip-ic:clamp(58px,5vw,74px)}
 /* barra de cima */
-html.cel.ip:has(#menu:not([hidden])) body #top{position:fixed!important;left:0;right:0;top:0;height:var(--ip-barra)!important;min-height:0!important;padding:0 14px!important;gap:6px!important;background:rgba(18,18,22,.5)!important;backdrop-filter:blur(24px) saturate(1.5)!important;-webkit-backdrop-filter:blur(24px) saturate(1.5)!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.08)!important;box-shadow:none!important;z-index:30!important;align-items:center!important}
+html.cel.ip:has(#menu:not([hidden])) body #top{position:fixed!important;left:0;right:0;top:0;height:var(--ip-barra)!important;min-height:0!important;padding:0 14px!important;gap:6px!important;background:rgba(18,18,22,.5)!important;backdrop-filter:blur(24px) saturate(1.5)!important;-webkit-backdrop-filter:blur(24px) saturate(1.5)!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.08)!important;box-shadow:none!important;z-index:19!important;align-items:center!important}
 html.cel.ip:has(#menu:not([hidden])) body #top .brand{display:flex!important;align-items:center!important;gap:8px!important;padding:0!important;background:none!important}
 html.cel.ip:has(#menu:not([hidden])) body #top .brand .logo{display:block!important;width:22px!important;height:22px!important;border-radius:6px!important;overflow:hidden;box-shadow:none!important;background:none!important;margin:0!important}
 html.cel.ip:has(#menu:not([hidden])) body #top .brand .logo svg{width:100%!important;height:100%!important}
@@ -1422,7 +1422,7 @@ html.cel.ip body #menu #grid .card .txt small{display:none!important}
 html.cel.ip body #menu #grid .card :is(.tag,[class*=selo]){position:absolute!important;top:-9px!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important;margin:0!important;z-index:2;white-space:nowrap}
 html.cel.ip body #menu #grid .card .fixar{top:-6px!important;right:calc(50% - var(--ip-ic) / 2 - 8px)!important}
 /* DOCK (embaixo): fixados | atalhos; cresce um pouco com o mouse e mostra o nome */
-html.cel.ip body .ip-dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:20;display:flex;align-items:flex-end;gap:10px;padding:10px 12px;border-radius:26px;background:rgba(30,30,34,.5);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6);border:1px solid rgba(255,255,255,.12);max-width:calc(100vw - 32px)}
+html.cel.ip body .ip-dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:18;display:flex;align-items:flex-end;gap:10px;padding:10px 12px;border-radius:26px;background:rgba(30,30,34,.5);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6);border:1px solid rgba(255,255,255,.12);max-width:calc(100vw - 32px)}
 html.cel.ip body .ip-dock .mn-grupo{display:flex!important;align-items:flex-end;gap:10px;margin:0!important;padding:0!important;width:auto!important;background:none!important}
 html.cel.ip body .ip-dock .mn-grupo[hidden]{display:none!important}
 html.cel.ip body .ip-dock .mn-grupo>h2,html.cel.ip body .ip-dock .progs-cab{display:none!important}
@@ -1464,7 +1464,7 @@ html.cel.ip[data-tema="claro"] body .ip-dock{background:rgba(255,255,255,.55);bo
 html.cel.ip[data-tema="claro"] body .ip-dock #atalhos>.et.at-mais{background:rgba(0,0,0,.08)!important}html.cel.ip[data-tema="claro"] body .ip-dock .et.at-mais .gi{color:#1d1d1f}
 html.cel.ip[data-tema="claro"]:has(#menu:not([hidden])) body #top{background:rgba(245,245,247,.6)!important;border-bottom-color:rgba(0,0,0,.08)!important}
 html.cel.ip[data-tema="claro"]:has(#menu:not([hidden])) body #top #top-sub{color:#1d1d1f!important}html.cel.ip[data-tema="claro"]:has(#menu:not([hidden])) body #top .ip-hora{color:rgba(0,0,0,.65)}
-html.cel.ip:not(:has(#menu:not([hidden]))) body #top .versao-site{display:none!important}#top .ip-hora{display:none}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:inline}
+html.cel.ip:not(:has(#menu:not([hidden]))) body #top .versao-site{display:none!important}/* camadas: barra e dock ficam ABAIXO dos painéis e janelas (.modal z 20), senão cobrem o título e o X; o aviso curto sobe para não cair em cima do dock */html.cel.ip:has(#menu:not([hidden])) body .toast{bottom:112px!important}#top .ip-hora{display:none}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:inline}
 /* selinho de "parte de outro programa" (Ateliê e Cenários são do Animador): no canto de baixo do ícone, sem encavalar no "Em teste" */
 html.cel.ip body #menu #grid .card>.parte{position:absolute!important;top:calc(var(--ip-ic) - 16px)!important;left:calc(50% + var(--ip-ic) / 2 - 14px)!important;right:auto!important;bottom:auto!important;width:22px!important;height:22px!important;transform:none!important;margin:0!important;z-index:2;border-radius:6px!important;box-shadow:0 2px 6px rgba(0,0,0,.4)!important}
 html.cel.ip body #menu #grid .card>.parte svg{width:100%!important;height:100%!important;display:block}
