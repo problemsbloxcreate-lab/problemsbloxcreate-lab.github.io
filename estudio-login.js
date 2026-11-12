@@ -122,13 +122,40 @@ html[data-tema="claro"] #estudio-porta::after{background:radial-gradient(40% 32%
 html:not([data-tema="claro"]) #estudio-porta :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){#estudio-porta::before{animation:none}}
-#estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}`;
+#estudio-porta .ep-m .s,#estudio-porta .ep-m .spin{display:none!important}
+/* (a mesma tela do /estudio-carregando.js: quem chegar primeiro cria a porta) */
+/* ===== CARREGAMENTO C (escolha da dona, 12/11/2026): fundo liso; o ícone com um ANEL de progresso em volta e um BRILHO
+   suave na cor do programa atrás; embaixo o nome e uma linha "54% · o que está acontecendo". Sem foto, sem barra, sem lista de passos. ===== */
+#estudio-porta.m2{background:#141416!important;--pt-tx:#f5f5f7!important;--pt-tx2:rgba(235,235,245,.66)!important}
+html[data-tema="claro"] #estudio-porta.m2{background:#f2f2f5!important;--pt-tx:#1d1d1f!important;--pt-tx2:rgba(60,60,67,.66)!important}
+#estudio-porta.m2::before{content:""!important;position:absolute;inset:0;z-index:0;pointer-events:none;filter:none!important;animation:none!important;background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 30%,transparent),transparent 72%)!important}
+html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 22%,transparent),transparent 72%)!important}
+#estudio-porta.m2::after{display:none!important}
+#estudio-porta.m2 .ep-c{display:grid!important;grid-template-columns:auto auto;justify-content:center;align-items:center;column-gap:6px;row-gap:0!important;transform:translateY(-4vh)!important;width:auto!important;text-align:center}
+#estudio-porta.m2 .ep-lg,#estudio-porta.m2 .ep-lg.ep-prog,#estudio-porta.m2.ep-erro .ep-lg{grid-column:1/-1;justify-self:center;position:relative;width:74px!important;height:74px!important;margin:23px!important;border-radius:18px!important;overflow:visible!important;box-shadow:none!important;background:none!important;animation:epRespira2 2.6s ease-in-out infinite}
+@keyframes epRespira2{50%{transform:scale(1.035)}}
+/* o anel: fica 16 px para fora do ícone; a parte cheia segue a porcentagem (--ep-p, posto pelo contador) */
+#estudio-porta.m2 .ep-lg::before{content:"";position:absolute;inset:-23px;border-radius:50%;background:conic-gradient(var(--pt-tx) calc(var(--ep-p,0) * 1%),color-mix(in srgb,var(--pt-tx) 13%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));transition:background .3s}
+#estudio-porta.m2 .ep-lg::after{display:none!important}
+#estudio-porta.m2 .ep-lg :is(.ep-img,.ep-cam),#estudio-porta.m2 .ep-lg.ep-prog .ep-img{width:74px!important;height:74px!important;border-radius:17px!important;display:block;box-shadow:0 10px 26px rgba(0,0,0,.3)}
+#estudio-porta.m2 .ep-lg:not(.ep-prog){background:none!important}
+#estudio-porta.m2 .ep-nm{grid-column:1/-1;display:block!important;margin:26px 0 4px!important;font:600 20px/1.25 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;letter-spacing:-.01em!important;color:var(--pt-tx)!important;text-shadow:none!important}
+#estudio-porta.m2 .ep-sb,#estudio-porta.m2 .ep-br,#estudio-porta.m2 [data-ep-arq]{display:none!important}
+#estudio-porta.m2 .ep-pc{margin:0!important;justify-self:end}
+#estudio-porta.m2 .ep-pc b{font:600 13.5px "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:var(--pt-tx)!important;font-variant-numeric:tabular-nums;text-shadow:none!important}
+#estudio-porta.m2 .ep-pc b::after{content:" ·";color:var(--pt-tx2)}
+#estudio-porta.m2 .ep-m,#estudio-porta.m2:not(.ep-erro) .ep-m{display:block!important;justify-self:start;margin:0!important;font:400 13.5px "Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif!important;color:var(--pt-tx2)!important;text-shadow:none!important;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#estudio-porta.m2.ep-erro .ep-pc{display:none!important}#estudio-porta.m2.ep-erro .ep-m{grid-column:1/-1;justify-self:center;white-space:normal;color:var(--pt-tx)!important}
+#estudio-porta.m2.ep-erro .ep-lg::before{background:color-mix(in srgb,#ff453a 70%,transparent)}
+#estudio-porta.m2 a.ep-bt{grid-column:1/-1;justify-self:center;border-radius:999px!important}
+@media (prefers-reduced-motion:reduce){#estudio-porta.m2 .ep-lg{animation:none}}
+`;
   (document.head || root).appendChild(st);
 
   const menuUrl = volta => { const u = new URL(CFG.menu, location.href); if (volta) u.searchParams.set('volta', location.href); return u.href; };
   const porta = () => {
     let el = document.getElementById('estudio-porta');
-    if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div>${nomeHtml()}<div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m></div></div>`; (document.body || root).appendChild(el); if (!document.body) addEventListener('DOMContentLoaded', () => { if (el.isConnected && el.parentNode !== document.body) document.body.appendChild(el); }, { once: true }); }
+    if (!el) { el = document.createElement('div'); el.id = 'estudio-porta'; el.classList.add('m2'); try { const ic = window.EstudioIcones, id = ic?.atual?.(), cor = id && ic.config?.()?.[id]?.fg; el.style.setProperty('--ep-cor', /^#[0-9a-f]{6}$/i.test(cor || '') ? cor : '#5cc4ff'); } catch { } el.innerHTML = `<div class="ep-c"><div class="ep-lg${LOGO_EP || LOGO_PROG ? ' ep-prog' : ''}">${logoHtml()}</div>${nomeHtml()}<div class="ep-sb">Estúdio Problems</div><div class="ep-br"><i data-ep-barra></i></div><div class="ep-pc"><b data-ep-pct>0%</b><span data-ep-arq></span></div><div class="ep-m" data-m></div></div>`; (document.body || root).appendChild(el); if (!document.body) addEventListener('DOMContentLoaded', () => { if (el.isConnected && el.parentNode !== document.body) document.body.appendChild(el); }, { once: true }); }
     return el;
   };
   let aberto = false; // depois de liberar, nenhuma mensagem atrasada recria a tela de espera por cima da página
