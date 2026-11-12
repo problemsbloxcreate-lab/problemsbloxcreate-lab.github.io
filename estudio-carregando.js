@@ -32,7 +32,7 @@ window.EstudioVersao ||= { nome: '(ALPHA) 2.0.1 - Celeste', em: '12/11/2026',
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
-    ['Correções (2.0.1)', ['Carregamento: a nuvem só aparece enquanto baixa da nuvem e depois volta o ícone do programa.', 'Ícone, nuvem e anel sempre no centro; a porcentagem não empurra mais a frase.', 'Foto da conta: a marca de novidade virou um ponto pequeno, sem anel.']],
+    ['Correções (2.0.1)', ['Carregamento: a nuvem só aparece quando o programa confere ou baixa a versão mais nova na nuvem (Animador e Ateliê ao abrir um projeto); conferência rápida nem mostra a nuvem.', 'Ícone, nuvem e anel sempre no centro; a porcentagem não empurra mais a frase.', 'Foto da conta: a marca de novidade virou um ponto pequeno, sem anel.']],
     ['Visual novo (Celeste)', ['Um visual só em todo o Estúdio, com tema escuro e claro (botão de sol e lua no cabeçalho).', 'Uso da nuvem e do computador no cabeçalho de todos os programas.', 'Menu numa tela só, no jeito do iPad e do Mac: relógio, Calendário, Clima e Meus projetos à esquerda, programas à direita e fixados embaixo.', 'Grade para trocar de programa sem voltar ao menu.', 'Preparativos, Publicações, Cérebro, Animador e Ateliê com o cabeçalho novo.', 'Carregamento único do começo ao fim: o ícone do programa dentro de um anel de progresso, e a nuvem aparece quando baixa da nuvem.']],
     ['Cérebro', ['A Montanha: o Cérebro virou um mapa de pontos em forma de montanha. A rodinha do mouse dá zoom e clicar num ponto explica o que é.', 'Busca que acha o trecho certo dentro das páginas.', 'Adicionar ao Cérebro: gera o pedido pronto para a CelestIA e guarda em Pedidos.', 'Telas do Cérebro no visual novo, sem os blocos coloridos.']],
     ['Atualizações', ['Aviso de versão nova em qualquer página, com Atualizar e Fechar. Atualizar é opcional.', 'Histórico de notificações em Sua conta, com a chave Atualizar sozinho (vem desligada).', 'Preparativos e Publicações ficam guardados no computador e abrem na hora.']],
@@ -295,15 +295,13 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   const NOMES_ARQ = [[/^\/pessoa(\/|$)/, 'nomes e fotos da equipe'], [/^\/conta(\/|$)/, 'a sua conta'], [/^\/personagens/, 'a biblioteca de personagens'], [/^\/nuvem-uso/, 'o espaço na nuvem'], [/^\/cenarios/, 'os cenários da equipe'], [/^\/menu/, 'o menu']];
   const curto = u => { try { const x = new URL(u, location.href); if (/(^|.)(turma-ia|sons-problems|estudio-reserva)./i.test(x.hostname)) return 'da nuvem'; if (x.origin === location.origin) { const n = NOMES_ARQ.find(([re]) => re.test(x.pathname)); if (n) return n[1]; } let p = decodeURIComponent(x.pathname.split('/').filter(Boolean).slice(-2).join('/')) || x.hostname; if (x.hostname !== location.hostname && !/\./.test(p)) p = x.hostname; return p.length > 44 ? '…' + p.slice(-42) : p; } catch { return ''; } };
   const muda = () => { if (ativo) agenda(); };
-  /* A NUVEM NO CARREGAMENTO (pedido da dona, 12/11/2026, vale para TODO programa que carrega da nuvem): enquanto um pedido à nossa
-     nuvem estiver DE FATO esperando a rede (mais de 0,4 s), a logo some devagar e a nuvem com as bolinhas aparece no mesmo lugar,
-     dentro do MESMO anel parado (fade + leve subida, 380 ms). Quando não há mais nada vindo da nuvem (0,5 s sem pedido), volta a logo,
-     também suave. Etapas locais ("Abrindo o menu…", arquivos do site) ficam com a logo. Conferir o acesso não conta.
+  /* A NUVEM NO CARREGAMENTO (pedido da dona, 12/11/2026): a nuvem aparece SÓ quando o programa de fato vai à nuvem conferir ou
+     baixar a última versão dos dados (ex.: Animador e Ateliê ao abrir um projeto ou personagem), nunca em "Abrindo o menu…", nos
+     arquivos do próprio programa nem quando a cópia local já está em dia. Quem sincroniza avisa: EstudioProgresso.sincroniza(promessa, texto).
+     Se a conferência acabar em menos de 0,3 s, a nuvem nem aparece (nada de piscar); quando acaba, volta a logo, suave.
      NADA TORTO: a nuvem é uma camada própria (não é o svg da logo, então as regras da logo não a encolhem nem a fazem pulsar),
-     num quadro de tamanho fixo e pixels inteiros, centrada no mesmo ponto do anel; ela não gira nem pulsa (só as bolinhas giram). */
-  const NUVEM_URL = u => { try { const x = new URL(u, location.href); if (/^\/(quem|conta|pessoa|presenca|sessao|mensagens|menu)(\/|$)/i.test(x.pathname)) return false;
-    return /(^|\.)(turma-ia|sons-problems|estudio-reserva)\./i.test(x.hostname) || (x.origin === location.origin && /^\/(nuvem|personagens|cenarios|animacoes|projetos|roteiros|arquivo)(\/|\?|$)/i.test(x.pathname)); } catch { return false; } };
-  let naNuvem = false, nvSai = 0; const nvPend = new Set();
+     num quadro de tamanho fixo e pixels inteiros, centrada pelo DESENHO no centro do anel; só as bolinhas giram. */
+  let naNuvem = false, nvN = 0;
   const NV_SVG = '<svg class="ep-nv-s" viewBox="0 0 132 92" aria-hidden="true"><path d="M34 82 H100 A26 26 0 0 0 104 30.4 A34 34 0 0 0 40.6 22 A30 30 0 0 0 34 82 Z"/></svg><span class="ep-nv-d"><i></i><i></i><i></i><i></i><i></i></span>';
   const NV_CSS = "\n#estudio-porta{--nv-c:var(--pt-tx,#f5f5f7)}.login{--nv-c:var(--anel-c,#f5f5f7)}\nhtml body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{position:absolute!important;left:50%!important;top:50%!important;width:78px!important;height:54px!important;margin:-25px 0 0 -39px!important;padding:0!important;z-index:2;pointer-events:none;opacity:0;transform:translateY(7px);transform-origin:50% 50%;transition:opacity .38s cubic-bezier(.2,.7,.2,1),transform .38s cubic-bezier(.2,.7,.2,1);animation:none!important}\nhtml body :is(#estudio-porta,.login).ep-nuvem :is(.ep-lg,.lcard .logo)>.ep-nv.on{opacity:1;transform:none}\nhtml body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv>svg.ep-nv-s{position:absolute!important;inset:0!important;display:block!important;width:78px!important;height:54px!important;margin:0!important;overflow:visible;box-shadow:none!important;animation:none!important;transform:none!important;border-radius:0!important;background:none!important}\nhtml body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv path{fill:none;stroke:var(--nv-c);stroke-width:4.2;stroke-linejoin:round}\n.ep-nv-d{position:absolute;left:28px;top:21px;width:22px;height:22px}.ep-nv-d i{position:absolute;inset:0;transform-origin:50% 50%;animation:epNvGira 2.2s infinite}\n.ep-nv-d i::after{content:'';position:absolute;left:9px;top:0;width:4px;height:4px;border-radius:50%;background:var(--nv-c)}\n.ep-nv-d i:nth-child(2){animation-delay:.12s}.ep-nv-d i:nth-child(3){animation-delay:.24s}.ep-nv-d i:nth-child(4){animation-delay:.36s}.ep-nv-d i:nth-child(5){animation-delay:.48s}\n@keyframes epNvGira{0%{transform:rotate(225deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(345deg);animation-timing-function:linear}30%{transform:rotate(455deg);animation-timing-function:ease-in-out}39%{transform:rotate(690deg);animation-timing-function:linear}70%{transform:rotate(815deg);opacity:1;animation-timing-function:ease-out}75%{transform:rotate(945deg);animation-timing-function:ease-out}76%{transform:rotate(945deg);opacity:0}100%{transform:rotate(945deg);opacity:0}}\n:is(#estudio-porta .ep-lg,.login .lcard .logo)>:not(.ep-nv){transition:opacity .32s ease}\n:is(#estudio-porta,.login).ep-nuvem :is(.ep-lg,.lcard .logo)>:not(.ep-nv){opacity:0!important}\n@media (prefers-reduced-motion:reduce){html body :is(#estudio-porta .ep-lg,.login .lcard .logo)>.ep-nv{transform:none!important;transition:opacity .35s ease!important}.ep-nv-d i{animation:none!important}}";
   const pintaNuvem = () => {
@@ -316,11 +314,9 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
       raiz.classList.add('ep-nuvem'); if (!nv.classList.contains('on') && !nv._liga) { nv._liga = 1; requestAnimationFrame(() => requestAnimationFrame(() => { if (naNuvem) nv.classList.add('on'); })); }
     });
   };
-  const nvAcaba = id => { if (!nvPend.delete(id) || nvPend.size) return; clearTimeout(nvSai); nvSai = setTimeout(() => { if (!nvPend.size && naNuvem) { naNuvem = false; pintaNuvem(); } }, 500); };
-  const olhaNuvem = (id, u) => { if (!NUVEM_URL(u)) return; nvPend.add(id); clearTimeout(nvSai); setTimeout(() => { if (pend.has(id) && ativo && !naNuvem) { naNuvem = true; pintaNuvem(); } }, 400); };
   try { new PerformanceObserver(l => { for (const e of l.getEntries()) { if (IGNORA.test(e.name)) continue; feitos.add(abs(e.name)); if (!ultimo || pend.size === 0) ultimo = curto(e.name); } muda(); }).observe({ type: 'resource', buffered: true }); } catch { }
-  const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); olhaNuvem(id, u); muda(); return id; };
-  const acaba = id => { if (id == null) return; const u = pend.get(id); pend.delete(id); nvAcaba(id); if (u) feitos.add(abs(u)); muda(); };
+  const comeca = u => { if (!ativo || IGNORA.test(u)) return null; const id = ++nId; pend.set(id, u); ultimo = curto(u); muda(); return id; };
+  const acaba = id => { if (id == null) return; const u = pend.get(id); pend.delete(id); if (u) feitos.add(abs(u)); muda(); };
   const f0 = window.fetch;
   if (f0) window.fetch = function (i, o) { let u = ''; try { u = abs(typeof i === 'string' ? i : i?.url || String(i)); } catch { } const id = o?.epFundo ? null : comeca(u); const p = f0.apply(this, arguments); if (id != null) p.then(() => acaba(id), () => acaba(id)); return p; };
   try { const X = XMLHttpRequest.prototype, op = X.open, se = X.send;
@@ -378,6 +374,10 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   window.EstudioProgresso = {
     get pct() { return Math.round(mostrado); }, get texto() { return texto(); },
     etapa(t) { etapa = String(t || ''); muda(); },
+    // SINCRONIZAR COM A NUVEM: envolva a chamada real que confere/baixa a última versão; a nuvem só aparece se passar de 0,3 s
+    sincroniza(p, txt) { if (!p?.then) return p; nvN++; let feito = false; const fim = () => { if (feito) return; feito = true; nvN = Math.max(0, nvN - 1); if (!nvN && naNuvem) { naNuvem = false; pintaNuvem(); } };
+      setTimeout(() => { if (!feito && nvN > 0 && !naNuvem) { naNuvem = true; pintaNuvem(); } }, 300); p.then(fim, fim); setTimeout(fim, 60000);
+      return this.tarefa(p, txt || 'Conferindo a versão mais nova na nuvem…'); },
     // a tela de carregamento também espera esta tarefa (ex.: nomes e fotos da equipe) e mostra o texto dela
     tarefa(p, txt, ms) { if (!ativo || !p?.then) return p; const id = ++nId; pend.set(id, '\u0001' + String(txt || 'Preparando…')); muda(); const fim = () => { if (pend.delete(id)) feitos.add('tarefa:' + id); muda(); }; p.then(fim, fim); setTimeout(fim, ms || 15000); return p; },
     // espera os arquivos e imagens que a página ainda está baixando (no máximo ms); termina em 100%
