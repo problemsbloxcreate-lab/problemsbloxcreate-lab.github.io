@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.2.1', apelido: 'Celeste', em: '12/11/2026',
+window.EstudioVersao ||= { nome: '2.3', apelido: 'Celeste', em: '12/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Animador (2.3)', ['Cenário 3D do Blender no fundo: exporte do Blender como .glb (Arquivo › Exportar › glTF) e solte no Animador, ou use o botão de cenário › Cenário 3D do Blender.', 'Câmera 3D com chaves na timeline (posição, para onde olha e zoom), com o mesmo jeito de chegar das outras chaves.', 'Os personagens 2D ficam na frente; a prévia e o MP4 saem iguais.', 'Cenário novo entra atrás dos personagens na timeline.']],
     ['Correções (2.2.1)', ['Menu: o selo ADM fica alinhado com a versão.']],
     ['Animador e Ateliê (2.2)', ['O Ateliê ganhou o mesmo visual do Animador: painéis encaixados, sem Metro.', 'Sliders, caixinhas, listas e números iguais em todo lugar: trilho fino com preenchimento celeste e o "100%" junto.', 'Exportar no painel lateral do Celeste.', 'Animações novas usam sempre a versão mais nova do personagem no Ateliê; se faltar uma pose usada, o Animador avisa e oferece fixar a versão só naquele projeto.']],
     ['Animador (2.1)', ['Editor com painéis encaixados, no jeito do Blender, e as ferramentas do palco numa barra própria em cima dele.', 'Timeline no jeito do Premiere, maior: trilhas mais altas, código de tempo grande e agulha vermelha.', 'Item novo entra na primeira trilha livre, sem criar trilhas a mais. Compactar trilhas no menu da engrenagem da timeline.', 'O modo Vídeo não pula mais para a Câmera.', 'Animações antigas ganham o botão LEGACY: atualiza para a versão nova e guarda a de antes na nuvem como (LEGACY).', 'Animações novas: cotovelo e joelho travados em todas as vistas, em todos os quadros.']],
