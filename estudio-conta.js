@@ -363,6 +363,7 @@ window.EstudioPerm ||= (() => {
 .ep-pg .cx{width:min(400px,100%);box-sizing:border-box;background:#2b2c31;border:1px solid #4a4c55;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:22px 20px 18px;display:grid;justify-items:center;gap:8px;text-align:center;animation:epPgE .18s ease-out both}
 .ep-pg .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(214,58,82,.16);color:#ff8a9a}.ep-pg .ic svg{width:22px;height:22px}
 .ep-pg .t{font-size:17px;font-weight:700}.ep-pg .x{margin:0 0 4px;color:#a9adb7;font-size:13.5px}
+.ep-pg .ls{justify-self:stretch;text-align:left;font-size:13px;line-height:1.45;padding:10px 12px;border-radius:10px;background:rgba(255,69,58,.1)}.ep-pg .ls.bom{background:rgba(48,209,88,.1)}.ep-pg .ls b{display:block;font-weight:600;margin-bottom:2px}.ep-pg .ls ul{margin:0;padding-left:18px}
 .ep-pg .quem{display:flex;align-items:center;gap:10px;text-align:left;padding:8px 12px;border:1px solid #3a3c43;border-radius:12px;width:100%}
 .ep-pg .quem .av{width:36px;height:36px;border-radius:50%;overflow:hidden;flex:none;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,#3d8bff,#19d3f0);color:#fff}.ep-pg .quem .av img{width:100%;height:100%;object-fit:cover}
 .ep-pg .quem b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem small{display:block;color:#a9adb7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep-pg .quem>span:last-child{min-width:0}
@@ -935,6 +936,7 @@ html[data-tema="claro"]:root:root body .ep-admj .car .ac-ic{background:color-mix
 :root:root body .ep-pg .ic{border-radius:12px!important}
 :root:root body .ep-pg .t{font:600 17px var(--ce-fonte)!important}
 :root:root body .ep-pg .x{color:var(--ce-texto-2)!important}
+:root:root body .ep-pg .ls{border-radius:10px!important;background:color-mix(in srgb,var(--ce-perigo) 10%,var(--ce-fundo-2))!important;color:var(--ce-texto)!important}:root:root body .ep-pg .ls.bom{background:var(--ce-fundo-2)!important}:root:root body .ep-pg .ls ul{color:var(--ce-texto-2)}
 :root:root body .ep-pg .quem{border:0!important;border-radius:12px!important;background:var(--ce-fundo-2)!important}
 :root:root body .ep-pg .quem .av{border-radius:50%!important}
 :root:root body .ep-pg button{border-radius:8px!important}
@@ -1123,12 +1125,12 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // trabalho: async () => {...} roda ao confirmar, com o botão em "Salvando…"; se der erro, mostra e oferece seguir mesmo assim
   // RELATÓRIO DE ERRO: a janela antes de baixar (menu da conta e selo da versão no menu)
   async function pedeRelatorio() { return window.EstudioSuporte?.gerar(); } // a janela e o relatório moram no /estudio-carregando.js
-  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim', aviso = false, icone = null, azul = false }) {
+  function pergunta({ titulo, texto, ok = 'Confirmar', perfil: pp = null, trabalho = null, okTrabalho = 'Salvando…', okErro = 'Continuar mesmo assim', aviso = false, icone = null, azul = false, listas = null }) {
     return new Promise(fim => {
       const d = document.createElement('div'); d.className = 'ep-pg';
       d.innerHTML = `<div class="cx" role="alertdialog" aria-modal="true" aria-label="${esc(titulo)}">${azul ? '<button type="button" class="pg-x" data-n title="Fechar (Esc)" aria-label="Fechar">✕</button>' : ''}<div class="ic${aviso || azul ? ' azul' : ''}">${icone || ICONES.sair}</div><div class="t">${esc(titulo)}</div>
         ${pp ? `<div class="quem"><span class="av">${av(pp)}</span><span><b>${esc(pp.nome)}</b><small>${esc(pp.email)}</small></span></div>` : ''}
-        <p class="x">${esc(texto)}</p><div class="acts">${aviso ? '' : '<button type="button" data-n>Cancelar</button>'}<button type="button" class="sim${aviso || azul ? ' azul' : ''}" data-s>${esc(ok)}</button></div></div>`;
+        <p class="x">${esc(texto)}</p>${Array.isArray(listas) ? listas.map(l => `<div class="ls${l.bom ? ' bom' : ''}"><b>${esc(l.titulo)}</b><ul>${l.itens.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('') : ''}<div class="acts">${aviso ? '' : '<button type="button" data-n>Cancelar</button>'}<button type="button" class="sim${aviso || azul ? ' azul' : ''}" data-s>${esc(ok)}</button></div></div>`;
       document.body.appendChild(d);
       const sai = v => { d.remove(); document.removeEventListener('keydown', tecla, true); fim(v); };
       const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); if (!ocupado) sai(false); } };
@@ -1229,7 +1231,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         <button type="button" role="menuitem" data-a="atualizar" class="it${VERSAO.nova ? ' novo' : ''}" title="Baixa de novo a versão mais nova do menu e de todos os projetos (como o Ctrl+F5). Seus projetos salvos no navegador continuam.">${ICONES.atualizar}<span>Atualizar todos os sites${VERSAO.nova ? '<small>Tem versão nova: clique para atualizar</small>' : ''}</span></button>
         ${ex.length ? '<div class="sep"></div>' + ex.map(it).join('') : ''}
         <div class="sep"></div>
-        <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>`;
+        <button class="it sair" type="button" role="menuitem" data-a="sair">${ICONES.sair}Sair da conta</button>
+        <button class="it sair apagar" type="button" role="menuitem" data-a="apagar" title="Para quem ficou preso numa versão velha do site: sai da conta, apaga a memória do site neste navegador e recarrega. Os projetos guardados neste computador continuam.">${ICONES.lixo}<span>Apagar dados do site<small>Se o site ficou preso numa versão velha</small></span></button>`;
       pop.querySelector('[data-a=fechar]').onclick = fecha; ligaNotifs(pop);
       pop.querySelector('[data-a=conta]').onclick = () => { fecha(); if (CFG.conta) CFG.conta(); else abrirMinhaConta(); };
       pop.querySelectorAll('a.it[href="/"]').forEach(a => a.onclick = ev => { fecha(); irAoMenu(ev); });
@@ -1242,6 +1245,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         if (!(await pergunta({ titulo: 'Sair da conta?', texto: 'Você vai sair do Estúdio Problems neste navegador e voltar para o menu.' + (temQueSalvar ? ' O projeto aberto é salvo antes de sair.' : '') + ' Seus projetos salvos aqui continuam.',
           ok: 'Sair', perfil: p, trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Sair sem salvar' }))) return;
         try { localStorage.removeItem('ep-conv-v1'); sessionStorage.removeItem('ep-conta-v1'); } catch { } if (CFG.sair) return CFG.sair(); try { await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); } catch { } location.href = '/?sair=1'; };
+      pop.querySelector('[data-a=apagar]').onclick = () => { fecha(); apagarDadosDoSite(p); };
       pop.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { fecha(); try { ex[+b.dataset.ex].acao(); } catch (e) { console.error(e); } });
       limpa(); pop.hidden = false; fundo.hidden = false; btn.setAttribute('aria-expanded', 'true');
     };
@@ -1380,6 +1384,14 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     try {
       if (navigator.serviceWorker?.getRegistrations) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.update(); } catch { } }
       if (window.caches?.keys) for (const k of await caches.keys()) { try { await caches.delete(k); } catch { } } // só cópias offline de arquivos do site
+      await baixarDeNovo(diz, extras);
+      diz('Pronto, recarregando…', 100);
+    } catch (e) { diz('Não consegui atualizar tudo: ' + e.message); }
+    setTimeout(() => location.reload(), 900);
+  }
+  // baixa de novo (sem a memória do navegador) as páginas do menu e dos programas e os arquivos que elas usam; diz(texto, %) mostra o andamento
+  async function baixarDeNovo(diz, extras = [], de = 0, ate = 100) {
+    {
       const raizes = new Set(['/', '/estudio-login.js', '/estudio-conta.js', '/shorts/', '/shorts/producao/', '/shorts/roteiro/', '/shorts/gravacao/', '/editor/', '/modelador/', '/modelador/blockbench/app/', '/animador/', location.pathname, ...extras]);
       if (P?.foto?.startsWith('/')) raizes.add(P.foto);
       const feitos = new Set(), fila = [...raizes];
@@ -1394,10 +1406,47 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
         }
       };
       // contagem real: quantos já baixou de quantos achou até agora (as páginas vêm primeiro e dizem quais arquivos usam, então o total para de crescer logo)
-      while (fila.length) { await Promise.all(fila.splice(0, 6).map(pega)); const total = feitos.size + new Set(fila.filter(c => !feitos.has(c))).size; diz(`${feitos.size} de ${total} arquivos`, feitos.size / Math.max(1, total) * 100); }
-      diz('Pronto, recarregando…', 100);
-    } catch (e) { diz('Não consegui atualizar tudo: ' + e.message); }
-    setTimeout(() => location.reload(), 900);
+      while (fila.length) { await Promise.all(fila.splice(0, 6).map(pega)); const total = feitos.size + new Set(fila.filter(c => !feitos.has(c))).size; diz(`${feitos.size} de ${total} arquivos`, de + feitos.size / Math.max(1, total) * (ate - de)); }
+    }
+  }
+
+  /* APAGAR DADOS DO SITE (botão de emergência, pedido da dona em 13/11/2026): para quem ficou preso numa versão velha (nem Ctrl+F5 resolve
+     e as mudanças não sobem para a nuvem). Pergunta DUAS vezes; salva o que está aberto; baixa de novo os arquivos do site; sai da conta
+     (POST /sair: o porteiro devolve o cookie HttpOnly da sessão com Max-Age=0, e o menu desliga o login do Google em /?sair=1); apaga
+     service workers, Cache Storage, sessionStorage, cookies que o JS alcança, o localStorage e os bancos do login (firebase*).
+     NUNCA apaga projetos: os bancos IndexedDB dos programas ficam TODOS (só os do login saem; banco desconhecido também fica, por segurança)
+     e as chaves do localStorage que guardam trabalho (GUARDA_LS) ficam. Programa que passar a guardar trabalho no localStorage: ponha a chave em GUARDA_LS. */
+  const APAGA_BANCO = n => /^firebase/i.test(n); // login do Google e afins: o resto (projetos, cenas, gravações, modelos…) fica
+  const GUARDA_LS = ['estdb:', 'ep:prep:', 'ep:roteiros:', 'mapaEd:', 'estudio.edicao', 'estudio.dubcuts', 'estudio.vozes', 'estudio.faixas', 'estudio.ouvido', 'estudio.gravAssin',
+    'epSombra:', 'ep:dcp', 'dcpOk:', 'fab:', 'animador-poses-v1', 'animador-ideias-pers', 'animador-cenario-ultimo-v2', 'animador-midia', 'itens-cena', 'aovivo-teste:',
+    'prep-ideias-pendentes', 'jd-pastas-pc', 'ep-fundo-local', 'ep-tema'];
+  async function apagarDadosDoSite(pp) {
+    const temQueSalvar = salvadores().length > 0;
+    if (!(await pergunta({ titulo: 'Apagar os dados do site?', icone: ICONES.lixo, ok: 'Continuar',
+      texto: 'Use só se o site ficou preso numa versão velha: não atualiza nem com Ctrl+F5 e as mudanças não vão para a nuvem. Na próxima tela você confere o que sai e o que fica.' }))) return;
+    if (!(await pergunta({ titulo: 'Tem certeza? Esta é a última confirmação', icone: ICONES.lixo, perfil: pp, ok: 'Apagar e recarregar',
+      texto: 'Isto vale só para este navegador, neste computador.',
+      listas: [{ titulo: 'Sai deste navegador', itens: ['O login: você sai da conta e entra de novo com o Google', 'As cópias guardadas do site (cache e service workers)', 'Cookies e preferências do site (painéis, filtros, avisos já vistos)'] },
+        { titulo: 'Fica guardado', bom: true, itens: ['Os projetos e as animações guardados neste computador, em todos os programas', 'Tudo o que já está na nuvem da equipe'] }],
+      trabalho: temQueSalvar ? salvarAntesDeSair : null, okErro: 'Apagar sem salvar' }))) return;
+    const diz = telaAtualizando('Baixando a versão nova…');
+    const passo = async (txt, pct, fn) => { diz(txt, pct); try { await fn(); } catch (e) { console.warn('apagar dados:', e); } };
+    await passo('Baixando a versão nova…', 5, () => baixarDeNovo(diz, [], 5, 55)); // antes de sair: as páginas dos programas só abrem com login
+    await passo('Saindo da conta…', 60, async () => { try { await window.firebase?.auth?.().signOut(); } catch { } await fetch('/sair', { method: 'POST', credentials: 'same-origin' }); });
+    await passo('Apagando as cópias guardadas…', 70, async () => {
+      for (const r of await navigator.serviceWorker?.getRegistrations?.() || []) { try { await r.unregister(); } catch { } }
+      if (window.caches?.keys) for (const k of await caches.keys()) { try { await caches.delete(k); } catch { } } });
+    await passo('Apagando cookies e preferências…', 80, () => {
+      for (const k of Object.keys(localStorage)) if (!GUARDA_LS.some(g => k.startsWith(g))) localStorage.removeItem(k);
+      sessionStorage.clear();
+      const dominios = ['', location.hostname, '.' + location.hostname], caminhos = ['/', location.pathname, location.pathname.replace(/[^/]*$/, '')];
+      for (const c of document.cookie.split(';')) { const n = c.split('=')[0].trim(); if (!n) continue;
+        for (const d of dominios) for (const pa of caminhos) document.cookie = `${n}=; Max-Age=0; Path=${pa}${d ? '; Domain=' + d : ''}`; } });
+    await passo('Apagando o login guardado…', 90, async () => {
+      const nomes = (await indexedDB.databases?.() || []).map(x => x.name).filter(Boolean);
+      for (const n of new Set([...nomes, 'firebaseLocalStorageDb'])) if (APAGA_BANCO(n)) await new Promise(ok => { const q = indexedDB.deleteDatabase(n); q.onsuccess = q.onerror = q.onblocked = () => ok(); setTimeout(ok, 1500); }); });
+    diz('Pronto, recarregando…', 100);
+    setTimeout(() => location.replace('/?sair=1'), 500); // o menu termina de desligar o login do Google e abre já na versão nova
   }
 
   /* ---------------- espaço no navegador (o mesmo para todos os programas do endereço único) ---------------- */
