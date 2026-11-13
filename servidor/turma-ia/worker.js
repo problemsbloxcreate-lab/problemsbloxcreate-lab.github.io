@@ -1881,6 +1881,59 @@ export default {
       return json({ error: { message: 'Método não aceito.' } }, 405, cors);
     }
     // ===================== fim do bloco PREPARATIVOS =====================
+    // CENÁRIOS EM CAMADAS DA EQUIPE (pedido da dona, 13/11/2026: "o cenário pode ser salvo na nuvem para todos acessarem").
+    // Cada cenário da janela Cenários (js/cenlib.js + js/cennuvem.js do Animador) é uma pasta "cenlib/<id>/":
+    //   cenario.json (o item inteiro da biblioteca: nome, tags, cat, mini, def com as camadas) + arq/<arquivo> (imagens das camadas
+    //   que não são do site). Mesmas regras dos personagens: toda a equipe com acesso ao Animador abre e salva; apagar só ADM.
+    //   GET    /cenlib                         → { itens: [{ id, k, nome, mod, por, em, tam }] } (só os cenario.json)
+    //   GET    /cenlib/arquivo?k=…[&so=mod]    → o arquivo (cenario.json leva x-mod)
+    //   POST   /cenlib/arquivo?k=…/cenario.json&base=<mod>[&forcar=1] → salva (409 conflito se a nuvem tem outro mod)
+    //   DELETE /cenlib/arquivo?k=cenlib/<id>/  → apaga o cenário inteiro (só ADM)
+    if (p0 === '/cenlib' || p0 === '/cenlib/arquivo') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
+      if (!(await pode(env, login.email, 'animador'))) return p0 === '/cenlib' && req.method === 'GET' ? json({ itens: [] }, 200, { ...cors, 'cache-control': 'no-store' }) : json({ error: { type: 'permissao', message: 'O seu cargo não tem acesso a este programa.' } }, 403, cors);
+      const q = new URL(req.url).searchParams, k = q.get('k') || '';
+      const KL = /^cenlib\/[A-Za-z0-9_-]{2,40}\/(cenario\.json|arq\/[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(png|webp|gif|jpg|jpeg|svg))$/, KLD = /^cenlib\/[A-Za-z0-9_-]{2,40}\/$/;
+      const itemDe = async kk => { // versão atual (como em /personagens): do D1 quando dá, senão pela lista
+        if (env._d1 && env.EQUIPE_DB && !emLimite()) { try { const a = await env.EQUIPE_DB.prepare('SELECT meta FROM arq WHERE k = ?').bind(kk).first(); if (!a) return null; let m = {}; try { m = JSON.parse(a.meta || '{}') || {}; } catch { } return { mod: 0, ...m }; } catch { } }
+        const r = await env.EQUIPE.list({ prefix: kk }); const x = r.keys.find(y => y.name === kk); return x ? { mod: 0, ...(x.metadata || {}) } : null; };
+      const listar = async prefix => { const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix, cursor: cur }); for (const x of r.keys) out.push({ k: x.name, ...(x.metadata || {}) }); cur = r.list_complete ? null : r.cursor; } while (cur); return out; };
+      if (p0 === '/cenlib') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
+        const out = []; for (const x of await listar('cenlib/')) { const m = x.k.match(/^cenlib\/([^/]+)\/cenario\.json$/); if (m) out.push(await semEmail({ id: m[1], k: x.k, nome: x.nome || '', mod: +x.mod || 0, por: x.por, em: x.em, tam: +x.tam || 0 })); }
+        return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
+      if (req.method === 'GET') {
+        if (!KL.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        if (q.get('so') === 'mod') return json({ mod: +((await itemDe(k))?.mod || 0) }, 200, { ...cors, 'cache-control': 'no-store' });
+        const r = await env.EQUIPE.getWithMetadata(k, { type: k.endsWith('.json') ? 'arrayBuffer' : 'stream' }); if (!r.value) return json({ error: { message: 'Arquivo não encontrado' } }, 404, cors);
+        const mod = +(r.metadata?.mod || 0);
+        if (k.endsWith('.json')) { const ml = +((await itemDe(k))?.mod || 0); if (ml && mod && mod < ml) return json({ error: { type: 'instavel', message: 'A nuvem entregou uma versão antiga deste cenário. Tente de novo em alguns segundos. Nada foi perdido.' } }, 503, { ...cors, 'cache-control': 'no-store' }); }
+        return new Response(r.value, { status: 200, headers: { ...cors, 'x-mod': String(mod), 'access-control-expose-headers': 'x-mod, x-nuvem, x-nuvem-volta', 'content-type': r.metadata?.tipo || 'application/octet-stream', 'cache-control': k.endsWith('.json') ? 'no-store' : 'private, max-age=31536000, immutable', 'x-content-type-options': 'nosniff', ...(k.endsWith('.svg') ? { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" } : {}) } });
+      }
+      if (req.method === 'PUT' || req.method === 'POST') {
+        if (!KL.test(k)) return json({ error: { message: 'Arquivo inválido' } }, 400, cors);
+        const json1 = k.endsWith('.json'), tipo = json1 ? 'application/json' : { png: 'image/png', webp: 'image/webp', gif: 'image/gif', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml' }[k.split('.').pop()];
+        const buf = await req.arrayBuffer(); if (!buf.byteLength) return json({ error: { message: 'Arquivo vazio' } }, 400, cors);
+        if (buf.byteLength > 10 * 1048576) return json({ error: { message: 'Arquivo maior que 10 MB.' } }, 413, cors);
+        if ((await usadoEquipe(env, buf.byteLength)) + buf.byteLength > limiteEquipe(env)) return json({ error: { message: 'O espaço da equipe está cheio.' } }, 507, cors);
+        const atual = await itemDe(k);
+        if (json1) { try { const o = JSON.parse(new TextDecoder().decode(buf)); if (!o || o.id !== k.split('/')[1] || !o.def || !Array.isArray(o.def.camadas)) throw 0; } catch { return json({ error: { message: 'Cenário inválido.' } }, 400, cors); }
+          // VERSÃO-BASE: quem salva manda ?base=<mod da versão que abriu> (0 = cenário novo); se a nuvem já tem outra, recusa (409)
+          if (q.get('forcar') !== '1' && atual && +(atual.mod || 0) !== (+q.get('base') || 0)) { const p = await semEmail({ por: atual.por }); return json({ error: { type: 'conflito', message: 'Há uma versão mais nova deste cenário na nuvem.', mod: +atual.mod || 0, por: p.por || null } }, 409, cors); } }
+        else if (atual) return json({ ok: true, k, ja: true }, 200, cors); // imagem já está lá (o nome não muda quando o conteúdo muda: cada imagem nova ganha nome novo)
+        const mod = Date.now();
+        await env.EQUIPE.put(k, buf, { metadata: { tipo, ...(json1 && q.get('nome') ? { nome: String(q.get('nome')).slice(0, 80) } : {}), tam: buf.byteLength, mod, por: atual?.por && !json1 ? atual.por : login.email, em: new Date().toISOString() } });
+        return json({ ok: true, k, mod }, 200, cors);
+      }
+      if (req.method === 'DELETE') {
+        if (!ehAdmin(env, login.email)) return json({ error: { type: 'adm', message: 'Só um ADM pode apagar da nuvem. Peça para um ADM apagar.' } }, 403, cors);
+        if (!KLD.test(k)) return json({ error: { message: 'Só dá para apagar o cenário inteiro.' } }, 400, cors);
+        const todos = await listar(k), ks = todos.map(x => x.k);
+        if (env.EQUIPE.deleteMuitos) await env.EQUIPE.deleteMuitos(ks, k); else for (const x of ks) await env.EQUIPE.delete(x);
+        return json({ ok: true, apagados: ks.length }, 200, cors);
+      }
+      return json({ error: { message: 'Método não aceito.' } }, 405, cors);
+    }
     if (p0 === '/cenarios' || p0 === '/cenarios/arquivo') {
       if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
       if (!env.EQUIPE) return json({ error: { type: 'sem_kv', message: 'Falta o KV da equipe (binding EQUIPE) no worker.' } }, 501, cors);
