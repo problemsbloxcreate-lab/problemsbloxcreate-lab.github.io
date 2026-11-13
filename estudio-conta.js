@@ -2568,6 +2568,9 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   }
   const atualizaPrograma = () => atualizaTudoGuardado();
   function mostraNotifVersao(n) {
+    /* SEM POP-UP COM "ATUALIZAR SOZINHO" LIGADO (pedido da dona, 13/11/2026): quem tem a atualização automática não vê o pop-up de
+       versão (nem o "já está nesta versão"); a novidade fica só na lista de notificações de Sua conta. Desligado: pop-up como antes. */
+    if (sozinho()) return;
     document.querySelector('.ep-notif-v')?.remove();
     const d = document.createElement('div'); d.className = 'ep-notif-v'; d.setAttribute('role', 'status');
     let svgP = ''; try { if (n.icone && window.EstudioIcones?.svg) svgP = window.EstudioIcones.svg(n.icone, 28); } catch { } const ic = '<span class="nv-ep">' + (svgP || ICONES.estudio || ICONES.atualizar) + '</span>'; // ícone do programa quando o aviso é dele
