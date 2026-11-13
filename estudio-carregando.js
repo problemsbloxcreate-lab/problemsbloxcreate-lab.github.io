@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.7', apelido: 'Celeste', em: '13/11/2026',
+window.EstudioVersao ||= { nome: '2.8', apelido: 'Celeste', em: '13/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Animador (2.8)', ['Cenário 3D que acompanha a câmera da cena: a câmera 3D anda junto com a câmera do Animador, quadro a quadro, e mantém o enquadramento e o tempo de cada cena. Já está em uso no "Série EP1 (3D)".', 'Vista 3D: mover o personagem no 3D agora move ele no vídeo também.']],
     ['Animador (2.7)', ['Ajudante do Blender: você instala uma vez (botão "Baixar o instalador" na janela "Ligar o Blender") e o Estúdio liga o Blender deste computador sozinho quando precisa (ao soltar um .blend ou renderizar o cenário). Não fica ligado com o Windows e se desliga sozinho.', 'Cenário 3D da rua com as cores do Blender: árvores com sombra e a casa na árvore com cor.']],
     ['Animador (2.6)', ['Vista 3D com os atalhos e a movimentação do Blender: botão do meio gira e Shift+meio anda; o teclado numérico muda a vista; G move, R gira e S muda o tamanho, com X/Y/Z e número exato; Alt+G/R/S zera; Shift+D duplica; X apaga; H esconde. A lista de atalhos fica no botão "?".', 'Na vista 3D, o personagem continua 2D: R gira no plano dele e S muda o tamanho, no vídeo também.', 'A câmera aparece pequena na vista 3D, como no Blender.']],
     ['Correções (2.5.1)', ['Com "Atualizar sozinho" ligado, o pop-up de versão nova não aparece mais: a novidade fica só nas notificações de Sua conta.']],
