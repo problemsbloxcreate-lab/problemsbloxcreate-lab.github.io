@@ -66,9 +66,17 @@ Roda `node cerebro.mjs instalar`. Ele: (1) abre o navegador para o seu **Permiti
 | "O conector do Cérebro está desligado" (erro 503) | Aviso temporário de um ADM. O jeito antigo (`cerebro.mjs`) continua funcionando. |
 | O navegador não abriu | O `claude mcp login` mostra um endereço: copie e abra no navegador. |
 
-## O aplicativo do Claude e o claude.ai (testado em 16/11/2026: ainda NÃO funciona)
+## O aplicativo do Claude e o claude.ai (testado em 16/11/2026: FUNCIONA)
 
-O caminho é **Personalização › Conectores › Adicionar › conector personalizado** (a conta Ultra da dona permite). Foi testado, com o endereço `https://turma-ia.problemsraiz.workers.dev/cerebro/mcp`: a verificação do claude.ai recebe **403** ("não foi possível verificar o servidor") e, mesmo escolhendo "Registrar automaticamente (DCR)" e "Continuar mesmo assim", o conector **não chegou a ser adicionado**. Por isso, por enquanto, **não use o claude.ai/aplicativo para ligar o Cérebro**: use o Claude Code (que funciona). A causa do 403 não foi achada: o servidor responde 401 (certo) a tudo que consegui reproduzir, então pode ser um bloqueio da Cloudflare à verificação do claude.ai ou um pedido que só ele faz; falta ver os registros da Cloudflare. Detalhes no `CONECTOR-PLANO.md`.
+O conector vale para a **conta** do Claude, então o que você liga no claude.ai aparece também no aplicativo. Passo a passo:
+
+1. Abra **Personalização › Conectores › Adicionar › conector personalizado** (planos que permitem conector personalizado).
+2. Nome: `Cérebro do Estúdio Problems`. Endereço: `https://turma-ia.problemsraiz.workers.dev/cerebro/mcp` (**copie e cole**; um `c` faltando em `cerebro` dá erro 403 e foi exatamente isso que enganou o primeiro teste).
+3. Deixe o registro automático (DCR) escolhido e toque em **Adicionar**. O conector aparece com o botão **Vincular**.
+4. Toque em **Vincular**: abre a tela do Cérebro; entre com o Google e toque em **Permitir** (uma vez).
+5. Pronto: aparecem as 9 ferramentas (5 de leitura, 4 de gravação). Em cada conversa nova o conector já vem ligado (menu **+ › Conectores**). O Claude pergunta antes de usar cada ferramenta (**Permitir uma vez** ou **Sempre permitir**); isso é do próprio claude.ai.
+
+**Prova (16/11/2026, conta da dona, navegador de Miriam):** numa conversa nova o claude.ai usou **Começar** (vieram 13 pastas), **Gravar** (página de teste criada, versão 1, em nome de Miriam) e **Ler** (devolveu o texto exato). A página de teste foi depois mandada para a lixeira (versão 2).
 
 ## E as skills e os agentes (CelestIA, Walt Disney, design)?
 
