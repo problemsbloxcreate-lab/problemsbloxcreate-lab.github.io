@@ -28,6 +28,7 @@
    KV da equipe (Bindings → KV namespace): nome da variável EQUIPE  ← mídia compartilhada da equipe (grátis, 1 GB)
    Workers AI (Bindings → Workers AI): nome da variável AI  ← para a transcrição automática dos áudios
 */
+import { conector, cnListar, cnRevogar } from './conector.js'; // o Cérebro como conector (servidor MCP + login do Google): veja conector.js
 const PRECOS = { 'claude-haiku-5-5': [0.10, 0.50], 'claude-sonnet-5-5': [2, 10], 'claude-opus-5-5': [4, 20] }; // US$ por milhão de tokens (entrada, saída)
 
 const json = (o, status, cors) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', ...cors } });
@@ -1017,7 +1018,7 @@ async function dublar(req, env, p) {
    a lixeira. A chave primária (id, ver) impede duas gravações em cima da mesma versão. Segredos são recusados e e-mails viram mascarados antes de gravar. */
 const CB = { prep: false }, CB_MARCAS = new Set(['', 'guia', 'biblia', 'skill', 'memoria', 'regra', 'decisao', 'evitar', 'referencia', 'aprendizado']), CB_TIPOS = new Set(['pasta', 'texto', 'imagem', 'referencia']), CB_MAX = 800 * 1024, CB_IMG_MAX = 1900000;
 const CB_EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.[a-zA-Z]{2,24}\b/g;
-const CB_SEGREDOS = [[/sk-ant-[\w-]{20,}/, 'chave da Anthropic'], [/\bsk-[A-Za-z0-9_-]{32,}/, 'chave de API'], [/AIza[\w-]{30,}/, 'chave do Google'], [/\bgh[pousr]_[A-Za-z0-9]{30,}/, 'token do GitHub'], [/github_pat_\w{20,}/, 'token do GitHub'], [/eyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{5,}/, 'token de login'], [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'chave privada'], [/\bBearer\s+[\w.-]{40,}/, 'token de login'], [/\bAKIA[0-9A-Z]{16}\b/, 'chave da AWS']];
+const CB_SEGREDOS = [[/sk-ant-[\w-]{20,}/, 'chave da Anthropic'], [/\bsk-[A-Za-z0-9_-]{32,}/, 'chave de API'], [/AIza[\w-]{30,}/, 'chave do Google'], [/\bgh[pousr]_[A-Za-z0-9]{30,}/, 'token do GitHub'], [/github_pat_\w{20,}/, 'token do GitHub'], [/eyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{5,}/, 'token de login'], [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'chave privada'], [/\bBearer\s+[\w.-]{40,}/, 'token de login'], [/\bAKIA[0-9A-Z]{16}\b/, 'chave da AWS'], [/\bcb[trk]_[A-Za-z0-9_-]{30,}/, 'token do conector do Cérebro']];
 const cbSegredo = t => CB_SEGREDOS.find(([re]) => re.test(String(t || '')))?.[1] || null;
 const cbMascara = e => { const [u, d = ''] = e.split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; };
 const cbLimpa = (s, n) => String(s ?? '').replace(CB_EMAIL, m => /^(no-?reply|git)@/i.test(m) ? m : cbMascara(m)).slice(0, n);
@@ -1120,7 +1121,7 @@ async function cerebro(req, env, login, path, cors) {
     if (rota === '/inicio') { const n = await peloCaminho('00 Comece aqui/Leia primeiro'), { results } = await db.prepare('SELECT id, pai, tipo, nome, marca, resumo, apagado FROM cerebro_no').all(), t = results || [], m = new Map(t.map(x => [x.id, x])), cam = x => { const o = []; for (let y = x, i = 0; y && i < 20; y = m.get(y.pai), i++) { if (y.apagado) return null; o.unshift(y.nome); } return o[0] === CB_FRIO ? null : o.join('/'); }, novos = await db.prepare("SELECT count(*) AS n FROM cerebro_ped WHERE estado = 'novo'").first();
       const lin = t.filter(x => x.tipo !== 'pasta').map(x => [cam(x), x]).filter(([c]) => c).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true })).map(([c, x]) => `- ${c}${x.marca ? ' (' + x.marca + ')' : ''}${x.resumo ? ': ' + x.resumo : ''}`);
       return new Response(`${n?.corpo || ''}\n\n# Índice (${lin.length} arquivos, ${novos?.n || 0} pedido(s) esperando)\n\nPara abrir: GET /cerebro/item?caminho=<Pasta/Arquivo>\n\n${lin.join('\n')}\n`, { headers: { ...nc, 'content-type': 'text/plain; charset=utf-8' } }); }
-    if (rota === '/chaves') { if (ia) return erro('Uma IA não vê os acessos: isso é pelo site.', 403, 'adm'); const { results } = adm ? await db.prepare('SELECT h, nome, em, por, revogada, adm FROM cerebro_chave ORDER BY em DESC LIMIT 100').all() : await db.prepare('SELECT h, nome, em, por, revogada, adm FROM cerebro_chave WHERE dono = ? ORDER BY em DESC LIMIT 50').bind(await meuCod()).all(); return ok({ itens: results || [], adm }); }
+    if (rota === '/chaves') { if (ia) return erro('Uma IA não vê os acessos: isso é pelo site.', 403, 'adm'); const { results } = adm ? await db.prepare('SELECT h, nome, em, por, revogada, adm FROM cerebro_chave ORDER BY em DESC LIMIT 100').all() : await db.prepare('SELECT h, nome, em, por, revogada, adm FROM cerebro_chave WHERE dono = ? ORDER BY em DESC LIMIT 50').bind(await meuCod()).all(); const co = await cnListar(db, { adm, dono: await meuCod() }).catch(() => []); return ok({ itens: [...(results || []), ...co].sort((x, y) => (y.em || 0) - (x.em || 0)), adm }); }
     // a pessoa já tem a CelestIA (alguma chave dela ativa)? Usado pelo aviso discreto nos programas
     if (rota === '/minha-celestia') { if (ia) return ok({ tem: true }); const r = await db.prepare('SELECT 1 AS x FROM cerebro_chave WHERE revogada = 0 AND (dono = ?' + (adm ? ' OR dono IS NULL' : '') + ') LIMIT 1').bind(await meuCod()).first(); return ok({ tem: !!r }); }
     // revisão dos ADMs: o que as IAs de quem não é ADM mudaram
@@ -1195,7 +1196,7 @@ async function cerebro(req, env, login, path, cors) {
       if (ja && !adm && ja.revogada) return erro('Esse acesso foi revogado. Crie um código novo: apague ~/.claude/cerebro-chave.txt e rode de novo node ~/.claude/cerebro.mjs instalar.', 403, 'adm');
       if (ja && !adm && ja.dono !== meu) return erro('Esse código já foi autorizado por outra pessoa.', 403, 'adm');
       await db.prepare('INSERT OR REPLACE INTO cerebro_chave (h, nome, em, por, revogada, adm, dono) VALUES (?, ?, ?, ?, 0, ?, ?)').bind(h, nome, Date.now(), eu, adm ? 1 : 0, ja?.dono ?? meu).run(); return ok({ ok: true, adm }); }
-    if (b.acao === 'revogar') { const ja = await db.prepare('SELECT dono FROM cerebro_chave WHERE h = ?').bind(String(b.h || '')).first(); if (!ja) return erro('Acesso não encontrado.', 404, 'nao_achei'); if (!adm && ja.dono !== meu) return erro('Só quem autorizou (ou um ADM) revoga esse acesso.', 403, 'adm');
+    if (b.acao === 'revogar') { const ja = await db.prepare('SELECT dono FROM cerebro_chave WHERE h = ?').bind(String(b.h || '')).first(); if (!ja) { const rc = await cnRevogar(db, b.h, { adm, dono: meu }).catch(() => 'nao_achei'); if (rc === 'ok') return ok({ ok: true }); return rc === 'adm' ? erro('Só quem autorizou (ou um ADM) revoga esse acesso.', 403, 'adm') : erro('Acesso não encontrado.', 404, 'nao_achei'); } if (!adm && ja.dono !== meu) return erro('Só quem autorizou (ou um ADM) revoga esse acesso.', 403, 'adm');
       await db.prepare('UPDATE cerebro_chave SET revogada = 1 WHERE h = ?').bind(String(b.h || '')).run(); return ok({ ok: true }); }
     return erro('Ação desconhecida.'); }
   const a = ia ? { por: cbLimpa(b.ia, 80) + (iaAdm ? '' : ' · ' + cbLimpa(login.iaNome, 60)), ia: cbLimpa(b.ia, 80), pedido: cbLimpa(b.pedidoPor, 80) } : { por: eu, ia: null, pedido: cbLimpa(b.pedidoPor, 80) || eu };
@@ -1284,6 +1285,10 @@ async function cerebro(req, env, login, path, cors) {
     const g = cbGrava(db, novo, n, acao, a, motivo || (acao === 'restaurar' ? (b.ver != null ? 'Voltou para a versão ' + b.ver : 'Tirou da lixeira') : 'Mandou para a lixeira')); const e0 = await roda(g.st); if (e0) return e0; await reindexa(n.id, true); await revisa('no', n.id, g.ver, acao === 'lixeira' ? 'mandou para a lixeira' : 'restaurou'); return ok({ ok: true, ver: g.ver }); }
   return erro('Pedido desconhecido.', 404);
 }
+// o que o conector.js precisa daqui (ele não importa o worker.js: recebe tudo por esta lista). O CORS é o mesmo das outras rotas.
+const DEPS_CONECTOR = { cerebro, confereLogin, pode, semEmail, permId, permModelo, permSem, permBloq, extrasAcesso, baseFixa, ehAdmin, planoEstado, planoPausado,
+  cors: (req, env) => { const origin = req.headers.get('origin') || '', origens = (env.ORIGENS || '*').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean), liberado = origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    return { 'access-control-allow-origin': liberado ? (origin || '*') : 'null', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS', 'access-control-max-age': '86400', vary: 'origin' }; } };
 const LISTA_ANIM = new Map(); // 'animacoes' | 'jester' → { t, j }
 export default {
   async fetch(req, env, ctx) {
@@ -1313,6 +1318,8 @@ export default {
     return r;
   },
   async atende(req, env, ctx, flag = {}) {
+    // CONECTOR (MCP + OAuth): ANTES de tudo. O token do conector nunca pode passar pelo código da nuvem reserva abaixo, que repassa o Authorization a outro servidor.
+    const rConector = await conector(req, env, DEPS_CONECTOR); if (rConector) return rConector;
     const auth0 = req.headers.get('authorization') || '', p00 = new URL(req.url).pathname;
     const R = env.EQUIPE && p00 !== '/confere' && /^Bearer \S{20,}$/.test(auth0) ? reservaDe(env, auth0) : null, bg = pr => ctx?.waitUntil ? ctx.waitUntil(pr) : null;
     if (env.EQUIPE && !env._kvLista) env = { ...env, EQUIPE: kvComLista(env.EQUIPE, new URL(req.url).searchParams.get('novo') === '1', R, flag, bg), _kvLista: true, _base: env.EQUIPE };
