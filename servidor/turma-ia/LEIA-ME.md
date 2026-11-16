@@ -1,5 +1,7 @@
 # Servidor da IA da turma (Cloudflare, grátis)
 
+> **Conector do Cérebro (16/11/2026):** o arquivo `conector.js` (ao lado do `worker.js`) é o servidor MCP remoto com login do Google. O `worker.js` o importa (o wrangler junta os dois ao publicar) e só chama ele na porta de entrada. **Não precisa de segredo nem de ligação nova**: usa o D1 `EQUIPE_DB` de sempre e cria as tabelas `cerebro_oauth_*` e `cerebro_conexao` na primeira chamada. Variáveis opcionais (todas texto, só a dona põe): `CONECTOR_DESLIGADO=1` (interruptor de emergência), `CONECTAR_URL` (tela de permissão do site), `CONECTOR_URL_BASE` (endereço público do servidor), `CONECTOR_REDIRECTS` (endereços de retorno extras, separados por vírgula) e `CONECTOR_REGISTROS_POR_MIN`. Testes: `node --test teste/conector.test.mjs`. Servidor local de teste: `node teste/servidor-local.mjs`. Plano: `cerebro/CONECTOR-PLANO.md` no repositório. A cópia manual no editor da Cloudflare (parte 2, passo 4, abaixo) não vale mais: o código tem dois arquivos e quem publica é a Action.
+
 Tudo da IA (chave, modelo, limite de gasto) fica **só aqui na Cloudflare**. O editor não tem nenhuma configuração de IA: ele só sabe o endereço deste servidor (em `js/config.js`).
 Depois de feito uma vez, fica ligado sempre (24 h) para todos os colegas.
 

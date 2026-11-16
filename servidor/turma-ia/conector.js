@@ -414,7 +414,8 @@ async function mcp(req, env, d, base) {
   if (req.method === 'GET' || req.method === 'DELETE') return new Response(null, { status: 405, headers: { allow: 'POST, OPTIONS', ...NS, ...cors } }); // sem fluxo de servidor→cliente e sem sessão
   if (req.method !== 'POST') return new Response(null, { status: 405, headers: { allow: 'POST, OPTIONS', ...cors } });
   if (+(req.headers.get('content-length') || 0) > MAX_CORPO) return resp(rpcErro(null, -32600, 'Grande demais.'), 413, cors);
-  let b; try { b = JSON.parse(await req.text()); } catch { return resp(rpcErro(null, -32700, 'JSON ilegível.'), 400, cors); }
+  const corpoTxt = await req.text(); if (corpoTxt.length > MAX_CORPO) return resp(rpcErro(null, -32600, 'Grande demais.'), 413, cors);
+  let b; try { b = JSON.parse(corpoTxt); } catch { return resp(rpcErro(null, -32700, 'JSON ilegível.'), 400, cors); }
   const lote = Array.isArray(b), msgs = lote ? b : [b]; if (!msgs.length || msgs.length > 20) return resp(rpcErro(null, -32600, 'Lote vazio ou grande demais.'), 400, cors);
   const out = []; for (const m of msgs) { const r = await rpc(m, env, d, quem); if (r) out.push(r); }
   if (!out.length) return new Response(null, { status: 202, headers: { ...NS, ...cors } });
@@ -426,6 +427,7 @@ export async function conector(req, env, d) {
   const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
   const meu = p === '/cerebro/mcp' || p.startsWith('/cerebro/oauth/') || p.startsWith('/.well-known/oauth-') || p === '/.well-known/openid-configuration' || p.startsWith('/.well-known/openid-configuration/');
   if (!meu) return null;
+  if (String(env.CONECTOR_DESLIGADO || '') === '1') return resp({ error: 'conector_desligado', error_description: 'O conector do Cérebro está desligado no momento. A chave antiga (cerebro.mjs) continua funcionando.' }, 503, CORS_PUBLICO); // interruptor de emergência: variável da Cloudflare, sem novo deploy
   const base = semBarra(env.CONECTOR_URL_BASE || url.origin);
   if (p === '/cerebro/mcp') return mcp(req, env, d, base);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: p === '/cerebro/oauth/aprovar' ? d.cors(req, env) : CORS_PUBLICO });

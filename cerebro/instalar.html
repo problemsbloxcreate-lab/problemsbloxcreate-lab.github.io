@@ -26,7 +26,7 @@
 <body>
 <main>
   <h1>Cérebro e CelestIA</h1>
-  <p class="sub">Esta página é para a IA. As pessoas da equipe não instalam nada à mão: quando pedem ao Claude algo do Estúdio Problems, ele liga o Cérebro e a CelestIA sozinho, e a pessoa só autoriza um código.</p>
+  <p class="sub">Esta página é para a IA. As pessoas da equipe não instalam nada à mão: quando pedem ao Claude algo do Estúdio Problems, ele liga o Cérebro sozinho pelo <b>conector</b> (a pessoa só entra com o login do Google dela) e, se precisar da CelestIA, instala as skills.</p>
 
   <h2>Quando usar o Cérebro</h2>
   <div class="caixa">
@@ -34,8 +34,22 @@
     <p><b>Fora disso</b> (outro site, Minecraft direto, como mods ou mundo, ou qualquer outro assunto), não leia, não grave e não cite o Cérebro. Na dúvida, pergunte.</p>
   </div>
 
-  <h2>Ao começar uma tarefa do Estúdio</h2>
+  <h2>Primeiro: o conector do Cérebro (jeito novo, sem baixar nada)</h2>
   <div class="caixa">
+    <p><b>Se você já tem as ferramentas <code>comece</code>, <code>indice</code>, <code>buscar</code>, <code>ler</code>, <code>salvar</code>, <code>aprender</code>, <code>renomear</code>, <code>pedidos</code> e <code>feito</code> do servidor <code>cerebro</code></b> (aparecem como <code>mcp__cerebro__…</code>), o Cérebro já está ligado: use elas e <b>não instale o <code>cerebro.mjs</code></b>. As regras vêm junto com a conexão.</p>
+    <p>Se não tem, e a tarefa é do Estúdio:</p>
+    <ol>
+      <li>Pergunte uma vez: "Posso ligar o Cérebro do Estúdio neste computador? Você só precisa entrar com o seu login do Google."</li>
+      <li>Com o sim, rode no terminal:<br><code>claude mcp add --transport http --scope user cerebro https://turma-ia.problemsraiz.workers.dev/cerebro/mcp</code></li>
+      <li>Peça para a pessoa rodar <code>claude mcp login cerebro</code> (ou, dentro do Claude Code, <code>/mcp</code> e escolher <b>cerebro</b>). O navegador abre: ela entra com a conta do Google que usa no Estúdio e toca em <b>Permitir</b>. Não há código para colar nem arquivo de chave.</li>
+      <li>Quando aparecer <code>Authenticated with "cerebro"</code>, abra uma conversa nova (as ferramentas aparecem lá) e chame <code>comece</code>.</li>
+    </ol>
+    <p>Quem não é ADM grava direto e os ADMs revisam; segredos são recusados e e-mails mascarados, igual ao jeito antigo. Guia para a pessoa: <code>cerebro/CONECTOR.md</code> no repositório do site. Se o conector responder "desligado" (503), use o jeito antigo abaixo.</p>
+  </div>
+
+  <h2>Skills e agentes (CelestIA, walt-disney, design-problems…) e o jeito antigo</h2>
+  <div class="caixa">
+    <p>O conector dá o Cérebro. As <b>skills e os agentes</b> ainda vêm pelo <code>cerebro.mjs instalar</code> (precisa da chave do computador). Use esta parte também se o programa de IA não aceita conectores.</p>
     <p>Se este computador ainda não tiver o Cérebro e a CelestIA (sem <code>~/.claude/cerebro.mjs</code>, sem a skill celestia ou sem a chave):</p>
     <ol>
       <li>Pergunte uma vez: "Posso instalar o Cérebro e a CelestIA neste computador?" e espere o sim.</li>

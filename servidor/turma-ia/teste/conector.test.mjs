@@ -266,6 +266,25 @@ test('18. revogação pelo próprio programa (RFC 7009) e limite de conexões po
   let bloqueou = false; for (let i = 0; i < 200 && !bloqueou; i++) { const r = await W.fetch(new Request(BASE + '/cerebro/oauth/registrar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ client_name: 'z', redirect_uris: ['http://localhost:7001/callback'] }) }), e2, ctx); bloqueou = r.status === 429; } assert.ok(bloqueou, 'registros demais por minuto são recusados');
 });
 
+test('19b. tela de permissão: /cerebro/oauth/cliente devolve nome e destino do registro e recusa pedido trocado', async () => {
+  const reg = (await chamar('/cerebro/oauth/registrar', { corpo: { client_name: 'Claude Code (x)', redirect_uris: ['http://localhost:4100/callback'] } })).j;
+  const q = (extra = {}) => '/cerebro/oauth/cliente?' + new URLSearchParams({ client_id: reg.client_id, redirect_uri: 'http://localhost:4100/callback', ...extra });
+  const ok = await chamar(q()); assert.equal(ok.status, 200); assert.equal(ok.j.nome, 'Claude Code (x)'); assert.equal(ok.j.destino, 'este computador (localhost)');
+  assert.equal((await chamar(q({ redirect_uri: 'http://127.0.0.1:61000/callback' }))).status, 200, 'outra porta no próprio computador vale');
+  for (const ruim of [{ redirect_uri: 'https://evil.example/callback' }, { redirect_uri: 'http://localhost:4100/outro' }, { client_id: 'cbc_naoexiste_naoexiste' }]) assert.equal((await chamar(q(ruim))).status, 404, JSON.stringify(ruim));
+  const claude = (await chamar('/cerebro/oauth/registrar', { corpo: { client_name: 'claude.ai', redirect_uris: ['https://claude.ai/api/mcp/auth_callback'] } })).j;
+  assert.equal((await chamar('/cerebro/oauth/cliente?' + new URLSearchParams({ client_id: claude.client_id, redirect_uri: 'https://claude.ai/api/mcp/auth_callback' }))).j.destino, 'claude.ai');
+});
+
+test('19c. interruptor de emergência (CONECTOR_DESLIGADO=1): o conector sai do ar na hora e o fluxo antigo da chave segue', async () => {
+  const c = await conectar('dona', { porta: 52050 }); assert.equal((await rpc(c.access_token, 'ping')).status, 200);
+  env.CONECTOR_DESLIGADO = '1';
+  try { for (const p of ['/cerebro/mcp', '/.well-known/oauth-authorization-server', '/cerebro/oauth/token']) { const r = await chamar(p, { metodo: p === '/.well-known/oauth-authorization-server' ? 'GET' : 'POST', corpo: p === '/cerebro/mcp' ? { jsonrpc: '2.0', id: 1, method: 'ping' } : undefined, cab: { authorization: 'Bearer ' + c.access_token } }); assert.equal(r.status, 503, p); }
+    assert.equal((await chamar('/cerebro/comece', { cab: { 'x-cerebro-chave': env.CEREBRO_CHAVE } })).status, 200, 'a chave antiga continua'); }
+  finally { delete env.CONECTOR_DESLIGADO; }
+  assert.equal((await rpc(c.access_token, 'ping')).status, 200, 'religado: as conexões voltam a valer');
+});
+
 test('19. rotas internas não vazam: o /cerebro/revisao e outras rotas de gente seguem fechadas para o conector', async () => {
   const c = await conectar('dona', { porta: 52040 }); // até a conexão de um ADM é "IA": não revisa, não mexe em chaves
   const rr = await chamar('/cerebro/revisao', { cab: { origin: ORIGEM_SITE, authorization: 'Bearer ' + c.access_token } }); assert.equal(rr.status, 401, 'o token do conector não vale fora do /cerebro/mcp');

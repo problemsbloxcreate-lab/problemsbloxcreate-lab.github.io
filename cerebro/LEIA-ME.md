@@ -4,6 +4,19 @@ O Cérebro é a memória compartilhada da equipe e das IAs. Antes de qualquer ta
 
 Este arquivo é público e não tem chave nenhuma. O conteúdo do Cérebro só abre com autorização.
 
+## Jeito novo: o conector (sem baixar nada, sem chave, sem colar código)
+
+Qualquer pessoa da equipe, uma vez por computador, com o login do Google do Estúdio:
+
+```
+claude mcp add --transport http --scope user cerebro https://turma-ia.problemsraiz.workers.dev/cerebro/mcp
+claude mcp login cerebro
+```
+
+O navegador abre, a pessoa entra e toca em **Permitir**. O Claude recebe as regras do Cérebro e as ferramentas de ler, buscar e gravar. Passo a passo e o que deve aparecer: `CONECTOR.md`. Plano de segurança e como publicar: `CONECTOR-PLANO.md`. Skills e agentes: `CONECTOR-SKILLS.md`.
+
+Os jeitos abaixo (`cerebro.mjs` com chave) continuam funcionando.
+
 ## Neste computador, com outra conta do Claude
 
 Não precisa fazer nada. A chave fica em `~/.claude/cerebro-chave.txt` e vale para qualquer conta.
