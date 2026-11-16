@@ -239,7 +239,7 @@ test('15. renovação estrita: acesso novo funciona; só um ramo vivo; repetir t
     const velho = await renova(dono.j.refresh_token); assert.equal(velho.status, 400, 'o ramo do primeiro pedido foi gasto: só um ramo vivo'); assert.match(velho.j.error_description, /conexão foi encerrada/);
     assert.equal((await rpc(ladrao.j.access_token, 'ping')).status, 401, 'e a conexão inteira caiu, com os dois ramos'); assert.equal((await renova(ladrao.j.refresh_token)).status, 400); }
   { const { c, renova } = await novoPar(52003); // repetir o token depois da folga
-    const r1 = await renova(c.refresh_token); assert.equal(r1.status, 200); env.EQUIPE_DB._bruto.exec('UPDATE cerebro_oauth_tok SET usado = usado - 60000 WHERE usado > 1');
+    const r1 = await renova(c.refresh_token); assert.equal(r1.status, 200); env.EQUIPE_DB._bruto.exec('UPDATE cerebro_oauth_tok SET usado = usado - 120000 WHERE usado > 1');
     const tarde = await renova(c.refresh_token); assert.equal(tarde.status, 400); assert.match(tarde.j.error_description, /conexão foi encerrada/); assert.equal((await rpc(r1.j.access_token, 'ping')).status, 401); }
   { const { c, renova } = await novoPar(52004); // dois pedidos ao mesmo tempo com o mesmo token
     const [x, y] = await Promise.all([renova(c.refresh_token), renova(c.refresh_token)]); assert.ok([x.status, y.status].every(s => s === 200 || s === 400), 'sem erro de servidor');

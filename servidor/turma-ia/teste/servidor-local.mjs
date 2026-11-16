@@ -11,7 +11,7 @@ import { novoAmbiente, loginDe, ctx, PESSOAS } from './ambiente.mjs';
 import worker from '../worker.js';
 
 const PORTA = +process.argv[2] || 8787, RAIZ = fileURLToPath(new URL('../../../', import.meta.url)); // a raiz do repositório do site
-const env = novoAmbiente({ CONECTAR_URL: `http://localhost:${PORTA}/cerebro/conectar.html`, ORIGENS: `http://localhost:${PORTA}`, CONECTOR_REGISTROS_POR_MIN: '1000' });
+const env = novoAmbiente({ CONECTAR_URL: `http://localhost:${PORTA}/cerebro/conectar.html`, ORIGENS: `http://localhost:${PORTA}`, CONECTOR_REGISTROS_POR_MIN: '1000', ...(process.env.CONECTOR_DESLIGADO ? { CONECTOR_DESLIGADO: process.env.CONECTOR_DESLIGADO } : {}) });
 
 // o Cérebro de exemplo (pela chave principal de teste, como as IAs fazem)
 const grava = (caminho, corpo, resumo, marca) => worker.fetch(new Request(`http://localhost:${PORTA}/cerebro/salvar`, { method: 'POST', headers: { 'x-cerebro-chave': env.CEREBRO_CHAVE, 'content-type': 'application/json' }, body: JSON.stringify({ caminho, corpo, resumo, marca, ia: 'seed', pedidoPor: 'seed', motivo: 'página de exemplo do servidor local' }) }), env, ctx);

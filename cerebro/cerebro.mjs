@@ -15,31 +15,39 @@
    node cerebro.mjs renomear "<Pasta/Arquivo>" "<nome novo>" --ia "..." --pedido "..." --motivo "..."   muda só o nome (o conteúdo e o histórico ficam)
    node cerebro.mjs feito <id do pedido> --nota "..."
 */
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'; import { homedir, hostname } from 'node:os'; import http from 'node:http'; import { spawn, spawnSync } from 'node:child_process'; import { join } from 'node:path'; import { randomBytes, createHash } from 'node:crypto';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, renameSync } from 'node:fs'; import { homedir, hostname } from 'node:os'; import http from 'node:http'; import { spawn, spawnSync } from 'node:child_process'; import { join } from 'node:path'; import { randomBytes, createHash } from 'node:crypto';
 const SERVIDOR = process.env.CEREBRO_URL || 'https://turma-ia.problemsraiz.workers.dev';
+if (!/^https?:\/\/[\w.:-]+$/.test(SERVIDOR)) { console.error('CEREBRO_URL inválida (use só http:// ou https:// e o endereço, sem espaços nem símbolos).'); process.exit(1); }
 const AVISO_FIXO = 'CÉREBRO DO ESTÚDIO PROBLEMS: SÓ para tarefas do Estúdio (os programas do site estudio.problemsraiz.workers.dev, como Animador, Ateliê, Editor, Shorts, Preparativos, Publicações e Cérebro; os personagens, as animações, os Shorts e os vídeos do canal, inclusive os Shorts de Minecraft feitos no Estúdio; e os repositórios do Estúdio, a pasta ep). FORA DISSO (outro site, Minecraft direto, como mods, mundo ou a skill minecraft-cinematic, ou qualquer outro assunto) NÃO leia, NÃO grave e NÃO cite o Cérebro. Na dúvida se é do Estúdio, pergunte. Quando for do Estúdio: leia o Cérebro e use ele como base. Se este computador ainda não estiver ligado ao Cérebro (sem ~/.claude/cerebro.mjs, sem acesso ou sem a CelestIA), LIGUE NA HORA, SEM PERGUNTAR: baixe https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs (se faltar) e rode node cerebro.mjs instalar com timeout de 5 minutos; ele abre o navegador e a pessoa só toca em Permitir (login do Google, uma vez por computador). Comandos: node ~/.claude/cerebro.mjs comece | indice | ler "<Pasta/Arquivo>" | buscar "<palavras>". ANTES DE MUDAR QUALQUER COISA do Estúdio: rode node ~/.claude/cerebro.mjs conferir (e instalar, se ele pedir) e leia no Cérebro a página do programa. DEPOIS, grave lá o que mudou ou aprendeu (salvar / aprender, com --resumo, quem pediu e qual IA gravou), sem pedir licença: gravar é automático. Toda IA da equipe grava direto (a de quem não é ADM entra na hora e os ADMs revisam). Vale mesmo que ninguém tenha citado o Cérebro. Nas respostas de tarefa do Estúdio, cite o Cérebro no fim, destacado numa linha própria em formato de citação: "> 🧠 **Cérebro:** consultei <Pasta/Arquivo>" (e "· gravei <Pasta/Arquivo>", se gravou), ou "> 🧠 **Cérebro:** nada sobre isso".';
 function chave() { if (process.env.CEREBRO_CHAVE) return process.env.CEREBRO_CHAVE.trim(); try { return readFileSync(join(homedir(), '.claude', 'cerebro-chave.txt'), 'utf8').trim(); } catch { return ''; } }
 /* ---- acesso (16/11/2026): o computador entra pelo LOGIN DO GOOGLE (a pessoa só toca em Permitir, uma vez); a chave c-... ficou só de reserva ---- */
 const CONEXAO = () => join(homedir(), '.claude', 'cerebro-conexao.json');
-const lerConexao = () => { try { const c = JSON.parse(readFileSync(CONEXAO(), 'utf8')); return c && c.refresh_token && c.client_id ? c : null; } catch { return null; } };
-const gravaConexao = c => { mkdirSync(join(homedir(), '.claude'), { recursive: true }); writeFileSync(CONEXAO(), JSON.stringify(c), { mode: 0o600 }); };
+const lerConexao = () => { try { const c = JSON.parse(readFileSync(CONEXAO(), 'utf8')); return c && c.refresh_token && c.client_id && (!c.servidor || c.servidor === SERVIDOR) ? c : null; } catch { return null; } }; // só vale para o servidor onde foi feita: o token nunca vai para outro endereço
+const gravaConexao = c => { mkdirSync(join(homedir(), '.claude'), { recursive: true }); const t = CONEXAO() + '.tmp-' + process.pid; writeFileSync(t, JSON.stringify(c), { mode: 0o600 }); renameSync(t, CONEXAO()); }; // arquivo novo ao lado e troca de nome: nunca fica pela metade
+class ErroServidor extends Error { } // o servidor não respondeu ou deu erro 5xx: NÃO é falta de ligação (não manda reinstalar)
 const dorme = ms => new Promise(r => setTimeout(r, ms));
 // token de acesso (1 h). Renovar troca o token de renovação, então só UM programa renova por vez (trava em pasta); quem esperou lê o que o outro já renovou.
 async function tokenValido() {
   let c = lerConexao(); if (!c) return null; if (c.exp > Date.now() + 120e3) return c.access_token;
   const trava = join(homedir(), '.claude', 'cerebro-conexao.trava'), t0 = Date.now(); let tenho = false;
-  while (Date.now() - t0 < 20000) { try { mkdirSync(trava); tenho = true; break; } catch { try { if (Date.now() - statSync(trava).mtimeMs > 60000) rmSync(trava, { recursive: true }); } catch { } await dorme(250); } }
+  while (Date.now() - t0 < 8000) { try { mkdirSync(trava); tenho = true; break; } catch { try { if (Date.now() - statSync(trava).mtimeMs > 30000) rmSync(trava, { recursive: true }); } catch { } await dorme(250); } }
+  if (!tenho) { c = lerConexao() || c; if (c.exp > Date.now() + 120e3) return c.access_token; throw new ErroServidor('Outro programa do Cérebro está renovando a ligação agora. Tente de novo em instantes.'); } // sem a trava NUNCA renova: dois programas renovando com o mesmo token derrubam a ligação
   try { c = lerConexao() || c; if (c.exp > Date.now() + 120e3) return c.access_token;
-    const r = await fetch(SERVIDOR + '/cerebro/oauth/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: c.refresh_token, client_id: c.client_id, resource: SERVIDOR + '/cerebro/mcp' }), signal: AbortSignal.timeout(20000) }), j = await r.json().catch(() => ({}));
+    let r = null, j = {}; for (let i = 0; i < 2 && !r; i++) { try { r = await fetch(SERVIDOR + '/cerebro/oauth/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: c.refresh_token, client_id: c.client_id, resource: SERVIDOR + '/cerebro/mcp' }), signal: AbortSignal.timeout(7000) }); j = await r.json().catch(() => ({})); } catch { r = null; await dorme(500); } } // rede falhou: tenta de novo na hora (o servidor aceita repetir o mesmo token por 60 s)
+    if (!r) throw new ErroServidor('Não consegui falar com o servidor do Cérebro agora (sem resposta). Tente de novo mais tarde; nada foi perdido.');
+    if (r.status >= 500) throw new ErroServidor('O servidor do Cérebro está com problema agora (erro ' + r.status + '). Tente de novo mais tarde; nada foi perdido.');
     if (!r.ok || !j.access_token) throw new Error('A ligação deste computador com o Cérebro venceu ou foi revogada (' + (j.error_description || r.status) + '). Rode: node ~/.claude/cerebro.mjs entrar');
     c = { ...c, access_token: j.access_token, refresh_token: j.refresh_token || c.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000 }; gravaConexao(c); return c.access_token;
   } finally { if (tenho) try { rmSync(trava, { recursive: true }); } catch { } } }
-async function cabecalhos() { if (lerConexao()) return { authorization: 'Bearer ' + await tokenValido() }; const k = chave(); return k ? { 'x-cerebro-chave': k } : null; }
+async function cabecalhos() { if (lerConexao()) { try { return { authorization: 'Bearer ' + await tokenValido() }; } catch (e) { const k = chave(); if (k) return { 'x-cerebro-chave': k }; throw e; } } const k = chave(); return k ? { 'x-cerebro-chave': k } : null; }
 const SEM_ACESSO = 'Este computador ainda não está ligado ao Cérebro. Rode: node ~/.claude/cerebro.mjs instalar (abre o navegador: a pessoa só toca em Permitir, com o login do Google).';
 async function pede(rota, corpo, texto) { const h = await cabecalhos(); if (!h) throw new Error(SEM_ACESSO);
-  const r = await fetch(SERVIDOR + '/cerebro' + rota, { method: corpo ? 'POST' : 'GET', headers: { ...h, ...(corpo ? { 'content-type': 'application/json' } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined, signal: AbortSignal.timeout(20000) });
+  const chama = hh => fetch(SERVIDOR + '/cerebro' + rota, { method: corpo ? 'POST' : 'GET', headers: { ...hh, ...(corpo ? { 'content-type': 'application/json' } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined, signal: AbortSignal.timeout(20000) });
+  let r; try { r = await chama(h); } catch { throw new ErroServidor('Não consegui falar com o servidor do Cérebro agora (sem resposta). Tente de novo mais tarde.'); }
+  if (r.status === 503 && h.authorization && chave()) r = await chama({ 'x-cerebro-chave': chave() }).catch(() => r); // conector desligado por um ADM: a chave antiga (reserva) continua
   if (texto && r.ok) return r.text();
-  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error?.message || 'O servidor respondeu ' + r.status) + (r.status === 409 ? '\nNADA FOI GRAVADO. Rode: node cerebro.mjs ler "<Pasta/Arquivo>", veja a versão e grave de novo com --base <versão>.' : r.status === 401 || r.status === 403 ? '\nSem permissão. Rode: node ~/.claude/cerebro.mjs entrar (abre o navegador: só toque em Permitir).' : '')); return j; }
+  const j = await r.json().catch(() => ({})); if (r.status >= 500) throw new ErroServidor('O servidor do Cérebro está com problema agora (erro ' + r.status + '). Tente de novo mais tarde; nada foi perdido.');
+  if (!r.ok) throw new Error((j.error?.message || 'O servidor respondeu ' + r.status) + (r.status === 409 ? '\nNADA FOI GRAVADO. Rode: node cerebro.mjs ler "<Pasta/Arquivo>", veja a versão e grave de novo com --base <versão>.' : r.status === 401 || r.status === 403 ? '\nSem permissão. Rode: node ~/.claude/cerebro.mjs entrar (abre o navegador: só toque em Permitir).' : '')); return j; }
 const pedeTexto = rota => pede(rota, null, true);
 async function comeceEmCache() { const f = join(homedir(), '.claude', 'cerebro-aviso-cache.json'); try { const c = JSON.parse(readFileSync(f, 'utf8')); if (Date.now() - c.t < 600000) return c.j; } catch {} const j = await pede('/comece'); try { writeFileSync(f, JSON.stringify({ t: Date.now(), j })); } catch {} return j; }
 const [cmd, ...resto] = process.argv.slice(2), pos = [], op = {};
@@ -51,15 +59,17 @@ const mostra = o => console.log(JSON.stringify(o, null, 1));
 const hoje = () => new Date().toISOString().slice(0, 10);
 async function entrarComChave() { if (chave()) { console.log('Este computador já tem a chave do Cérebro.'); } else { const d = join(homedir(), '.claude'), k = randomBytes(32).toString('base64url'); mkdirSync(d, { recursive: true }); writeFileSync(join(d, 'cerebro-chave.txt'), k, { mode: 0o600 }); console.log('Chave criada e guardada só neste computador.\n\nCole este código no site, logado na SUA conta (não é segredo e não precisa de ADM):\n\nc-' + createHash('sha256').update(k).digest('hex') + '\n\nOnde colar: https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves\n(Cérebro › Acesso das IAs › "Autorize o código"). Depois rode: node ~/.claude/cerebro.mjs instalar'); } }
 // ---- login do Google (16/11/2026): o programa se registra, abre o navegador na tela de permissão do Estúdio e recebe a resposta num endereço do PRÓPRIO computador (127.0.0.1) ----
-function abreNavegador(url) { try { const c = process.env.CEREBRO_ABRIR; // para teste ou computador sem navegador: um comando que recebe o endereço
-    if (c) spawn(c + ' "' + url + '"', { shell: true, detached: true, stdio: 'ignore' }).unref();
-    else if (process.platform === 'win32') spawn('rundll32', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
-    else spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { detached: true, stdio: 'ignore' }).unref(); } catch { } }
+function abreNavegador(url) { const mostra = () => console.log('Não consegui abrir o navegador. Abra este endereço (e toque em Permitir):\n  ' + url);
+  try { const c = process.env.CEREBRO_ABRIR, base = { detached: true, stdio: 'ignore', cwd: homedir() }; let p; // CEREBRO_ABRIR: para teste ou computador sem navegador, um comando que recebe o endereço
+    if (c) p = spawn(c + ' "' + url + '"', { ...base, shell: true });
+    else if (process.platform === 'win32') p = spawn(join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'rundll32.exe'), ['url.dll,FileProtocolHandler', url], base);
+    else p = spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], base);
+    p.on('error', mostra); p.on('exit', code => { if (code) mostra(); }); p.unref(); } catch { mostra(); } }
 async function entrarPeloGoogle() {
   let esperado = null, ok, no; const espera = new Promise((a, b) => { ok = a; no = b; });
   const pagina = (rs, t, m) => { rs.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }); rs.end('<!doctype html><meta charset="utf-8"><title>Cérebro</title><body style="font:16px/1.5 system-ui,sans-serif;max-width:460px;margin:15vh auto;padding:0 20px"><h1 style="font-size:22px">' + t + '</h1><p>' + m + '</p>'); };
   const sv = http.createServer((rq, rs) => { const u = new URL(rq.url, 'http://127.0.0.1'); if (u.pathname !== '/callback') { rs.writeHead(404); return rs.end(); }
-    const q = u.searchParams; if (!esperado || q.get('state') !== esperado || (q.get('iss') && q.get('iss') !== SERVIDOR)) return pagina(rs, 'Pedido inesperado', 'Esta conexão não foi pedida por este computador. Pode fechar esta janela.');
+    const q = u.searchParams; if (!esperado || q.get('state') !== esperado || q.get('iss') !== SERVIDOR) return pagina(rs, 'Pedido inesperado', 'Esta conexão não foi pedida por este computador. Pode fechar esta janela.');
     if (q.get('error')) { pagina(rs, 'Conexão cancelada', 'Nada foi ligado. Pode fechar esta janela.'); return no(new Error('A pessoa cancelou o login (tocou em Cancelar).')); }
     pagina(rs, 'Pronto, conectado', 'Pode fechar esta janela e voltar ao Claude.'); ok(q.get('code')); });
   await new Promise((a, b) => { sv.once('error', b); sv.listen(0, '127.0.0.1', a); }); const porta = sv.address().port, redirect = 'http://127.0.0.1:' + porta + '/callback';
@@ -68,17 +78,19 @@ async function entrarPeloGoogle() {
     if (!reg.client_id) throw new Error('O servidor não aceitou o registro (' + (reg.error_description || reg.error || 'sem resposta') + ').');
     const verifier = randomBytes(32).toString('base64url'), challenge = createHash('sha256').update(verifier).digest('base64url'); esperado = randomBytes(16).toString('base64url');
     const url = SERVIDOR + '/cerebro/oauth/autorizar?' + new URLSearchParams({ response_type: 'code', client_id: reg.client_id, redirect_uri: redirect, code_challenge: challenge, code_challenge_method: 'S256', state: esperado, resource: SERVIDOR + '/cerebro/mcp', scope: 'cerebro' });
-    abreNavegador(url); console.log('Abri o navegador para entrar com o login do Google do Estúdio: toque em Permitir (uma vez por computador).\nSe o navegador não abrir, abra este endereço:\n  ' + url + '\nEsperando você tocar em Permitir (até 3 minutos)...');
+    abreNavegador(url); console.log('Abri o navegador para entrar com o login do Google do Estúdio: toque em Permitir (uma vez por computador).' + (process.env.CEREBRO_MOSTRAR_URL === '1' ? '\nEndereço: ' + url : '') + '\nEsperando você tocar em Permitir (até 3 minutos)...');
     let cronometro; const limite = new Promise((_, no) => { cronometro = setTimeout(() => no(new Error('Tempo esgotado: ninguém tocou em Permitir em 3 minutos.')), 180e3); });
     const code = await Promise.race([espera, limite]).finally(() => clearTimeout(cronometro)); // sem isto o programa só sairia depois dos 3 minutos
     const r = await fetch(SERVIDOR + '/cerebro/oauth/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: redirect, client_id: reg.client_id, code_verifier: verifier, resource: SERVIDOR + '/cerebro/mcp' }), signal: AbortSignal.timeout(20000) }), j = await r.json().catch(() => ({}));
     if (!r.ok || !j.access_token) throw new Error('O servidor não entregou a ligação (' + (j.error_description || r.status) + ').');
+    const velha = lerConexao();
     gravaConexao({ client_id: reg.client_id, refresh_token: j.refresh_token, access_token: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, servidor: SERVIDOR, em: new Date().toISOString() });
+    if (velha?.refresh_token) await fetch(SERVIDOR + '/cerebro/oauth/revogar', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ token: velha.refresh_token, client_id: velha.client_id }), signal: AbortSignal.timeout(10000) }).catch(() => { });
     console.log('Pronto: este computador está ligado ao Cérebro pelo login do Google (nenhuma chave foi criada).');
   } finally { sv.close(); sv.closeAllConnections?.(); } }
 // tenta o login do Google; se não der (sem navegador, cancelou, tempo), cai no jeito antigo só como RESERVA (a chave e o código c-...)
 async function ligaComGoogle() { try { await entrarPeloGoogle(); return true; } catch (e) { console.log('Não consegui ligar pelo login do Google: ' + e.message + '\nPlano reserva (jeito antigo):'); await entrarComChave(); console.log('\nDepois de a pessoa colar o código no site, rode de novo: node ~/.claude/cerebro.mjs instalar. Ou rode "node ~/.claude/cerebro.mjs entrar" para tentar o login do Google de novo.'); return false; } }
-async function acessoPronto() { if (!lerConexao() && !chave()) return false; try { await pede('/comece'); return true; } catch { return false; } }
+async function acessoPronto() { if (!lerConexao() && !chave()) return false; try { await pede('/comece'); return true; } catch (e) { if (e instanceof ErroServidor) throw e; return false; } }
 
 // ---- instalar / conferir (12/11/2026): põe as skills e os agentes do Cérebro neste computador e liga o gancho do começo da sessão ----
 import { existsSync, copyFileSync, readdirSync, chmodSync, statSync } from 'node:fs'; import { dirname, resolve } from 'node:path'; import { fileURLToPath } from 'node:url';
@@ -159,17 +171,18 @@ if (mudou && !gravou) {
 }
 process.exit(0);
 `; // gancho Stop da dona (16/11/2026): se a IA mudou algo do Estúdio e não gravou no Cérebro, ela volta e grava. Nunca prende em laço (stop_hook_active).
-function poeGancho() { const f = join(CL(), 'settings.json'); let s = {}, msg = [], mudou = false;
+function poeGancho() { const f = join(CL(), 'settings.json'); let s = {}, msg = [], mudou = false; const carimbo = new Date().toISOString().replace(/[:.]/g, '-');
   if (existsSync(f)) { try { s = JSON.parse(readFileSync(f, 'utf8')); } catch { return 'settings.json com erro de formato: NÃO mexi. Conserte e rode de novo.'; } }
   s.hooks = s.hooks || {}; s.hooks.SessionStart = s.hooks.SessionStart || []; s.hooks.Stop = s.hooks.Stop || []; const tem = (a, t) => JSON.stringify(a).includes(t);
-  if (!tem(s.hooks.SessionStart, 'cerebro.mjs aviso')) { s.hooks.SessionStart.push({ hooks: [{ type: 'command', command: 'node ' + join(CL(), 'cerebro.mjs').replace(/\\/g, '/') + ' aviso', timeout: 25, statusMessage: 'Abrindo o Cérebro' }] }); mudou = true; msg.push('gancho do começo da sessão adicionado'); } else msg.push('o gancho do começo da sessão já estava');
+  if (!tem(s.hooks.SessionStart, 'cerebro.mjs aviso')) { s.hooks.SessionStart.push({ hooks: [{ type: 'command', command: 'node ' + join(CL(), 'cerebro.mjs').replace(/\\/g, '/') + ' aviso', timeout: 60, statusMessage: 'Abrindo o Cérebro' }] }); mudou = true; msg.push('gancho do começo da sessão adicionado'); }
+  else { let subiu = false; for (const e of s.hooks.SessionStart) for (const h of e.hooks || []) if (String(h.command || '').includes('cerebro.mjs aviso') && !(h.timeout >= 60)) { h.timeout = 60; subiu = true; } if (subiu) { mudou = true; msg.push('gancho do começo da sessão: tempo máximo subiu para 60 s (a renovação da ligação precisa)'); } else msg.push('o gancho do começo da sessão já estava'); }
   const sf = join(CL(), 'hooks', 'cerebro-gravou.mjs'), atual = existsSync(sf) ? readFileSync(sf, 'utf8').replace(/\r\n/g, '\n') : null;
-  if (atual !== GANCHO_STOP) { mkdirSync(dirname(sf), { recursive: true }); if (atual !== null) copyFileSync(sf, sf + '.antes'); writeFileSync(sf, GANCHO_STOP); msg.push(atual === null ? 'script do gancho Stop gravado' : 'script do gancho Stop atualizado (cópia em cerebro-gravou.mjs.antes)'); }
+  if (atual !== GANCHO_STOP) { mkdirSync(dirname(sf), { recursive: true }); if (atual !== null) copyFileSync(sf, existsSync(sf + '.antes') ? sf + '.antes-' + carimbo : sf + '.antes'); writeFileSync(sf, GANCHO_STOP); msg.push(atual === null ? 'script do gancho Stop gravado' : 'script do gancho Stop atualizado (o anterior ficou guardado ao lado)'); }
   if (!tem(s.hooks.Stop, 'cerebro-gravou.mjs')) { s.hooks.Stop.push({ hooks: [{ type: 'command', command: 'node ' + sf.replace(/\\/g, '/'), timeout: 20, statusMessage: 'Conferindo se gravou no Cérebro' }] }); mudou = true; msg.push('gancho Stop adicionado'); } else msg.push('o gancho Stop já estava');
-  if (mudou) { if (existsSync(f)) copyFileSync(f, f + '.antes-do-cerebro'); writeFileSync(f, JSON.stringify(s, null, 2)); }
-  return msg.join('; ') + (mudou ? ' (o resto do settings.json foi mantido; cópia em settings.json.antes-do-cerebro).' : '.'); }
+  if (mudou) { if (existsSync(f)) copyFileSync(f, existsSync(f + '.antes-do-cerebro') ? f + '.antes-do-cerebro-' + carimbo : f + '.antes-do-cerebro'); const t = f + '.tmp-' + process.pid; writeFileSync(t, JSON.stringify(s, null, 2)); renameSync(t, f); } // arquivo novo ao lado e troca de nome; a primeira cópia nunca é sobrescrita
+  return msg.join('; ') + (mudou ? ' (o resto do settings.json foi mantido; cópia de segurança ao lado, settings.json.antes-do-cerebro).' : '.'); }
 // cadastra o conector no Claude Code (opcional: este programa já lê e grava pelo login do Google; o conector dá as ferramentas nas conversas novas)
-function ligaConector() { if (process.env.CEREBRO_SEM_CONECTOR === '1') return 'conector: pulado (CEREBRO_SEM_CONECTOR=1).'; const w = process.platform === 'win32', roda = a => spawnSync('claude', a, { encoding: 'utf8', shell: w, timeout: 25000, stdio: ['ignore', 'pipe', 'pipe'] });
+function ligaConector() { if (process.env.CEREBRO_SEM_CONECTOR === '1') return 'conector: pulado (CEREBRO_SEM_CONECTOR=1).'; const w = process.platform === 'win32', roda = a => spawnSync('claude', a, { encoding: 'utf8', shell: w, timeout: 25000, stdio: ['ignore', 'pipe', 'pipe'], cwd: homedir() }); // cwd = a pasta do usuário: nunca roda um claude.cmd de dentro de um projeto baixado
   try { if (roda(['mcp', 'get', 'cerebro']).status === 0) return 'Conector do Cérebro já cadastrado no Claude Code.';
     const a = roda(['mcp', 'add', '--transport', 'http', '--scope', 'user', 'cerebro', SERVIDOR + '/cerebro/mcp']);
     return a.status === 0 ? 'Conector cadastrado no Claude Code (servidor "cerebro"). Nas conversas novas as ferramentas aparecem depois de /mcp > cerebro > Authenticate (opcional: este programa já funciona).' : 'Não consegui cadastrar o conector (claude mcp add falhou). Sem problema: o Cérebro funciona por este programa.'; }

@@ -34,7 +34,7 @@ test('1. computador sem ligação: o aviso manda LIGAR NA HORA, sem perguntar; c
 
 test('2. instalar num computador novo: um clique no Permitir liga tudo (login do Google, skills, agentes e os dois ganchos), sem chave e sem código para colar', async () => {
   const r = await rodaAsync(PC1, ['instalar']); assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /Abri o navegador/); assert.match(r.stdout, /Pronto: este computador está ligado ao Cérebro pelo login do Google/); assert.ok(!/c-[0-9a-f]{64}/.test(r.stdout), 'nenhum código c-… para colar');
+  assert.match(r.stdout, /Abri o navegador/); assert.ok(!r.stdout.includes('oauth/autorizar'), 'a URL de login não é impressa quando o navegador abriu'); assert.match(r.stdout, /Pronto: este computador está ligado ao Cérebro pelo login do Google/); assert.ok(!/c-[0-9a-f]{64}/.test(r.stdout), 'nenhum código c-… para colar');
   const cl = join(PC1, '.claude'); assert.ok(existsSync(join(cl, 'cerebro-conexao.json'))); assert.ok(!existsSync(join(cl, 'cerebro-chave.txt')), 'nenhuma chave criada');
   const c = lerJson(join(cl, 'cerebro-conexao.json')); assert.match(c.client_id, /^cbc_/); assert.match(c.refresh_token, /^cbr_/); assert.match(c.access_token, /^cbt_/); if (process.platform !== 'win32') assert.equal(statSync(join(cl, 'cerebro-conexao.json')).mode & 0o777, 0o600, 'só a pessoa lê');
   assert.ok(existsSync(join(cl, 'skills', 'celestia', 'SKILL.md')) && existsSync(join(cl, 'agents', 'celestia.md')) && existsSync(join(cl, 'skills', 'ouvir', 'SKILL.md')), 'skills e agentes instalados');
@@ -92,3 +92,53 @@ test('8. o jeito antigo (chave) continua: entrar --chave cria a chave e mostra o
 });
 
 test('9. entrar de novo, já ligado, não abre o navegador', () => { const r = roda(PC1, ['entrar']); assert.equal(r.status, 0); assert.match(r.stdout, /já está ligado ao Cérebro pelo login do Google/); });
+
+const conexaoFalsa = (home, servidor, extra = {}) => { mkdirSync(join(home, '.claude'), { recursive: true }); writeFileSync(join(home, '.claude', 'cerebro-conexao.json'), JSON.stringify({ client_id: 'cbc_' + 'y'.repeat(20), refresh_token: 'cbr_' + 'x'.repeat(43), access_token: 'cbt_' + 'z'.repeat(43), exp: 1, servidor, ...extra })); };
+
+test('10. servidor fora do ar: erro claro, NÃO manda reinstalar, não abre login novo e não cria chave', async () => {
+  const PC = novoHome(), morto = 'http://localhost:1'; conexaoFalsa(PC, morto); const ex = { CEREBRO_URL: morto };
+  const c = roda(PC, ['comece'], ex); assert.equal(c.status, 1); assert.match(c.stderr, /Não consegui falar com o servidor do Cérebro/); assert.ok(!/venceu|revogada|Rode: node/.test(c.stderr), 'não é falta de ligação');
+  const a = roda(PC, ['aviso'], ex); assert.equal(a.status, 0); assert.ok(!/LIGUE AGORA/.test(a.stdout), 'o aviso não manda reinstalar por causa de uma queda do servidor'); assert.match(a.stdout, /Não consegui abrir o Cérebro agora/);
+  const i = await rodaAsync(PC, ['instalar'], ex); assert.equal(i.status, 1); assert.ok(!/Abri o navegador/.test(i.stdout), 'queda de servidor não abre login'); assert.ok(!existsSync(join(PC, '.claude', 'cerebro-chave.txt')), 'nenhuma chave criada');
+  assert.equal(lerJson(join(PC, '.claude', 'cerebro-conexao.json')).refresh_token, 'cbr_' + 'x'.repeat(43), 'a ligação não foi tocada');
+});
+
+test('11. trava de renovação: ocupada, nunca renova sem ela; presa há muito tempo, é derrubada', async () => {
+  const PC = novoHome(), f = join(PC, '.claude', 'cerebro-conexao.json'), trava = join(PC, '.claude', 'cerebro-conexao.trava');
+  writeFileSync; mkdirSync(join(PC, '.claude'), { recursive: true }); writeFileSync(f, readFileSync(join(PC1, '.claude', 'cerebro-conexao.json'))); const c0 = lerJson(f); writeFileSync(f, JSON.stringify({ ...c0, exp: 1 }));
+  mkdirSync(trava); const ocupada = roda(PC, ['comece']); assert.equal(ocupada.status, 1); assert.match(ocupada.stderr, /renovando a ligação agora/); assert.equal(lerJson(f).refresh_token, c0.refresh_token, 'sem a trava o token de renovação NÃO foi gasto');
+  const { utimesSync, rmSync: rm } = await import('node:fs'); const velho = new Date(Date.now() - 120e3); utimesSync(trava, velho, velho); const presa = roda(PC, ['comece']); assert.equal(presa.status, 0, presa.stderr); assert.notEqual(lerJson(f).refresh_token, c0.refresh_token, 'a trava velha foi derrubada e a renovação aconteceu'); assert.ok(!existsSync(trava));
+  assert.equal(roda(PC, ['comece']).status, 0, 'a ligação segue viva');
+  assert.ok(!existsSync(f + '.tmp-' + 1), 'sem restos de arquivo temporário');
+});
+
+test('12. a ligação só vale para o servidor em que foi feita (o token nunca vai para outro endereço)', () => {
+  const PC = novoHome(); conexaoFalsa(PC, 'http://localhost:9999'); const c = roda(PC, ['comece']); assert.equal(c.status, 1); assert.match(c.stderr, /ainda não está ligado ao Cérebro/);
+  const ruim = roda(PC, ['comece'], { CEREBRO_URL: 'http://localhost:1/ x' }); assert.equal(ruim.status, 1); assert.match(ruim.stderr, /CEREBRO_URL inválida/);
+  const ruim2 = roda(PC, ['comece'], { CEREBRO_URL: 'http://a.com&calc' }); assert.match(ruim2.stderr, /CEREBRO_URL inválida/);
+});
+
+test('13. conector desligado por um ADM (503): a chave de reserva continua; sem chave, erro claro (nada de reinstalar)', async () => {
+  const P2 = PORTA + 100, URL2 = 'http://localhost:' + P2; const s2 = spawn(process.execPath, [join(AQUI, 'servidor-local.mjs'), String(P2)], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...semTeste(), CONECTOR_DESLIGADO: '1' } });
+  try { await new Promise((ok, no) => { const t = setTimeout(() => no(new Error('servidor 2 não subiu')), 20000); s2.stdout.on('data', d => { if (String(d).includes('Servidor local')) { clearTimeout(t); ok(); } }); });
+    const PC = novoHome(); conexaoFalsa(PC, URL2);
+    const comChave = roda(PC, ['comece'], { CEREBRO_URL: URL2, CEREBRO_CHAVE: 'chave-principal-so-de-teste-0123456789' }); assert.equal(comChave.status, 0, comChave.stderr);
+    const semChave = roda(PC, ['comece'], { CEREBRO_URL: URL2 }); assert.equal(semChave.status, 1); assert.match(semChave.stderr, /problema agora \(erro 503\)/); assert.ok(!/venceu|revogada/.test(semChave.stderr));
+    assert.ok(!/LIGUE AGORA/.test(roda(PC, ['aviso'], { CEREBRO_URL: URL2 }).stdout)); }
+  finally { s2.kill(); }
+});
+
+test('14. settings.json: a primeira cópia de segurança nunca é sobrescrita (as seguintes levam data) e o tempo do gancho antigo sobe para 60 s', async () => {
+  const PC = novoHome(), cl = join(PC, '.claude'); mkdirSync(join(cl, 'hooks'), { recursive: true }); writeFileSync(join(cl, 'cerebro-conexao.json'), readFileSync(join(PC1, '.claude', 'cerebro-conexao.json')));
+  const original = { theme: 'dark', hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'node ' + join(cl, 'cerebro.mjs').split('\\').join('/') + ' aviso', timeout: 25 }] }] } }; writeFileSync(join(cl, 'settings.json'), JSON.stringify(original, null, 2));
+  let r = await rodaAsync(PC, ['instalar']); assert.equal(r.status, 0, r.stdout + r.stderr); assert.match(r.stdout, /tempo máximo subiu para 60 s/); assert.deepEqual(lerJson(join(cl, 'settings.json.antes-do-cerebro')), original);
+  let s = lerJson(join(cl, 'settings.json')); assert.equal(s.hooks.SessionStart[0].hooks[0].timeout, 60); delete s.hooks.Stop; writeFileSync(join(cl, 'settings.json'), JSON.stringify(s, null, 2));
+  r = await rodaAsync(PC, ['instalar']); assert.equal(r.status, 0); assert.deepEqual(lerJson(join(cl, 'settings.json.antes-do-cerebro')), original, 'a primeira cópia ficou intacta');
+  const datadas = (await import('node:fs')).readdirSync(cl).filter(x => x.startsWith('settings.json.antes-do-cerebro-')); assert.equal(datadas.length, 1, 'a cópia seguinte levou data'); assert.equal((await import('node:fs')).readdirSync(cl).filter(x => x.includes('.tmp-')).length, 0, 'sem restos temporários');
+});
+
+test('15. ligação vencida de verdade (renovação recusada): faz login novo e encerra a antiga no servidor', async () => {
+  const PC = novoHome(); conexaoFalsa(PC, URL_SERVIDOR); const antes = lerJson(join(PC, '.claude', 'cerebro-conexao.json'));
+  const r = await rodaAsync(PC, ['instalar']); assert.equal(r.status, 0, r.stdout + r.stderr); assert.match(r.stdout, /Abri o navegador/); const depois = lerJson(join(PC, '.claude', 'cerebro-conexao.json')); assert.notEqual(depois.client_id, antes.client_id); assert.match(depois.refresh_token, /^cbr_/);
+  assert.equal(roda(PC, ['comece']).status, 0);
+});

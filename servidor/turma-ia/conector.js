@@ -26,7 +26,7 @@
    (redirectOk) nem a regra de guardar só o resumo do token. Só a dona muda a segurança. */
 
 const PROTOCOLOS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']; // versões do MCP que sabemos falar (a primeira é a mais nova)
-const ESCOPO = 'cerebro', TOKEN_ACESSO_S = 3600, TOKEN_RENOVA_S = 30 * 86400, CODIGO_S = 120, GRACA_REPETE_MS = 20e3;
+const ESCOPO = 'cerebro', TOKEN_ACESSO_S = 3600, TOKEN_RENOVA_S = 30 * 86400, CODIGO_S = 120, GRACA_REPETE_MS = 60e3;
 const PREFIXO = { acesso: 'cbt_', renova: 'cbr_', codigo: 'cbk_' };
 const MAX_CLIENTES = 400, MAX_CONEXOES_PESSOA = 20, MAX_CORPO = 4 * 1048576;
 const SERVIDOR_INFO = { name: 'cerebro-estudio-problems', title: 'Cérebro do Estúdio Problems', version: '1.0.0' };
