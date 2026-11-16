@@ -1,10 +1,14 @@
-# Conectar o Claude ao Cérebro (o conector)
+# Conectar o Claude ao Cérebro
 
-Para qualquer pessoa da equipe que tem conta no Estúdio Problems. Você faz **uma vez por computador**, com o login do Google que já usa no Estúdio.
+Para qualquer pessoa da equipe que tem conta no Estúdio Problems.
 
-**Não precisa** baixar o `cerebro.mjs`, criar arquivo de chave nem colar código no site.
+## O normal: você não faz nada, só toca em Permitir
 
-## Passo a passo (Claude Code)
+Quando você pede ao Claude qualquer coisa do Estúdio, em qualquer computador e em qualquer conta do Claude, **ele liga o Cérebro e a CelestIA sozinho, na hora**: baixa o programa, instala as skills e os agentes e liga os avisos. O navegador abre na tela **"Conectar o Claude ao Cérebro"**: você confere e toca em **Permitir**, com a conta do Google que já usa no Estúdio. **É só isso, uma vez por computador.** (O Claude não pode tocar nesse botão por você: ninguém pode entrar com o Google por outra pessoa.) Não precisa baixar nada, criar arquivo de chave nem colar código.
+
+Quem não é ADM também grava no Cérebro, direto; os ADMs revisam. O Cérebro continua só para tarefas do Estúdio.
+
+## Se você quiser ligar à mão (Claude Code), em vez de esperar o Claude
 
 1. Abra o terminal do computador (no Windows, o PowerShell).
 2. Rode este comando, que ensina o endereço do Cérebro ao Claude Code:
@@ -47,6 +51,10 @@ Pronto. Isso vale para todas as pastas e todas as contas do Claude daquele compu
 - Na hora, de qualquer lugar: **Cérebro › Acesso das IAs › Revogar** na linha do conector. O Claude desse computador deixa de entrar no mesmo instante. (Os ADMs veem e revogam todas as conexões.)
 - Se você sair da equipe ou perder o cargo do Cérebro, o conector para sozinho.
 
+## O que o Claude faz sozinho ao ligar
+
+Roda `node cerebro.mjs instalar`. Ele: (1) abre o navegador para o seu **Permitir**; (2) guarda a ligação só no seu computador (`~/.claude/cerebro-conexao.json`; nenhuma chave é criada); (3) baixa as skills e os agentes (CelestIA, Walt Disney, design…) para `~/.claude`; (4) liga o aviso do começo da sessão e o gancho **Stop**, que faz a IA voltar e gravar no Cérebro quando mudou algo do Estúdio sem gravar (sem apagar nada do seu `settings.json`; fica uma cópia ao lado); (5) cadastra o conector no Claude Code. O jeito antigo da chave (`node ~/.claude/cerebro.mjs entrar --chave`, com o código `c-…`) só existe de **reserva**.
+
 ## Se der problema
 
 | O que aparece | O que fazer |
@@ -64,7 +72,7 @@ No aplicativo do Claude e no claude.ai: **Customize › Connectors › adicionar
 
 ## E as skills e os agentes (CelestIA, Walt Disney, design)?
 
-O conector dá o **Cérebro** (regras, ler, buscar, gravar). As **skills e agentes** ainda vêm pelo `cerebro.mjs instalar`, que precisa da chave. Como entregar eles também sem baixar nada está estudado em `CONECTOR-SKILLS.md`.
+O conector dá o **Cérebro** (regras, ler, buscar, gravar) e o `cerebro.mjs instalar` baixa as **skills e agentes** com o mesmo login do Google (sem chave). Como entregar eles sem baixar nada está estudado em `CONECTOR-SKILLS.md`.
 
 ## Para os repositórios do Estúdio (opcional)
 
