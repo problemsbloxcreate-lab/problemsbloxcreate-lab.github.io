@@ -66,9 +66,9 @@ Roda `node cerebro.mjs instalar`. Ele: (1) abre o navegador para o seu **Permiti
 | "O conector do Cérebro está desligado" (erro 503) | Aviso temporário de um ADM. O jeito antigo (`cerebro.mjs`) continua funcionando. |
 | O navegador não abriu | O `claude mcp login` mostra um endereço: copie e abra no navegador. |
 
-## Outros programas do Claude (ainda não testados)
+## O aplicativo do Claude e o claude.ai (testado em 16/11/2026: ainda NÃO funciona)
 
-No aplicativo do Claude e no claude.ai: **Customize › Connectors › adicionar conector personalizado**, com o endereço `https://turma-ia.problemsraiz.workers.dev/cerebro/mcp`, e depois o mesmo login do Google. Não foi testado ainda; se funcionar, avise para a gente anotar aqui.
+O caminho é **Personalização › Conectores › Adicionar › conector personalizado** (a conta Ultra da dona permite). Foi testado, com o endereço `https://turma-ia.problemsraiz.workers.dev/cerebro/mcp`: a verificação do claude.ai recebe **403** ("não foi possível verificar o servidor") e, mesmo escolhendo "Registrar automaticamente (DCR)" e "Continuar mesmo assim", o conector **não chegou a ser adicionado**. Por isso, por enquanto, **não use o claude.ai/aplicativo para ligar o Cérebro**: use o Claude Code (que funciona). A causa do 403 não foi achada: o servidor responde 401 (certo) a tudo que consegui reproduzir, então pode ser um bloqueio da Cloudflare à verificação do claude.ai ou um pedido que só ele faz; falta ver os registros da Cloudflare. Detalhes no `CONECTOR-PLANO.md`.
 
 ## E as skills e os agentes (CelestIA, Walt Disney, design)?
 
