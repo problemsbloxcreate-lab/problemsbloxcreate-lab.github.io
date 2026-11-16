@@ -19,7 +19,7 @@ claude mcp add --transport http --scope user cerebro https://turma-ia.problemsra
 claude mcp login cerebro
 ```
 
-4. O navegador abre sozinho. Entre com a **mesma conta do Google** que você usa no Estúdio. Você vai ver a tela **"Conectar o Claude ao Cérebro"**: confira o nome do programa (Claude Code), o destino ("este computador") e a sua conta. Se quiser, dê um nome ao computador (ex.: "notebook de casa") e toque em **Permitir**.
+4. O navegador abre sozinho. Entre com a **mesma conta do Google** que você usa no Estúdio. Você vai ver a tela **"Conectar o Claude ao Cérebro"**: confira o nome do programa (Claude Code), o destino ("este computador") e a sua conta. O **nome do computador** já vem sugerido (sistema e navegador, ex.: "Windows (Chrome)"): se quiser, troque por algo que você reconheça, como "notebook de casa". Leia o aviso em destaque (só permita se foi você que pediu) e toque em **Permitir**.
 5. Volte ao terminal. Deve aparecer: `Authenticated with "cerebro". Its tools are now available in Claude Code.`
 
 Pronto. Isso vale para todas as pastas e todas as contas do Claude daquele computador.
