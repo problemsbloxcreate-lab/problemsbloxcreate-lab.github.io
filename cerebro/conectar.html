@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR" class="cel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
+<title>Conectar o Claude ao Cérebro · Estúdio Problems</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>
+// a tela de permissão mora no endereço único do Estúdio (é lá que está o login); quem abrir a cópia do GitHub Pages vai para lá
+if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/cerebro/conectar.html' + location.search);
+// ninguém pode pôr esta tela dentro de outra página (o clique em "Permitir" tem que ser de verdade)
+if (window.top !== window.self) { document.documentElement.innerHTML = ''; }
+</script>
+<!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar (com o pedido do Claude ainda na barra) -->
+<script src="/estudio-login.js"></script>
+<link rel="stylesheet" href="/estudio-visual.css">
+<style>
+  body{margin:0;background:var(--fundo);color:var(--texto);font:400 15px/1.55 var(--fonte);min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box}
+  main{width:min(520px,100%)}
+  .cartao{background:var(--fundo-2);border:1px solid var(--linha);border-radius:var(--raio-janela);padding:26px 26px 22px;box-shadow:var(--sombra-2,0 10px 40px rgba(0,0,0,.25))}
+  .marca{display:flex;align-items:center;gap:10px;margin-bottom:14px;color:var(--texto-2);font:600 12px/1 var(--fonte);letter-spacing:.14em}
+  .marca i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#3d8bff,#19d3f0);display:inline-block}
+  h1{font:700 22px/1.2 var(--fonte);margin:0 0 10px;letter-spacing:-.01em}
+  p{margin:8px 0;color:var(--texto-2)} b{color:var(--texto)}
+  ul{margin:10px 0 4px;padding-left:20px;color:var(--texto-2)} li{margin:6px 0}
+  .quem{background:var(--fundo-3);border-radius:var(--raio-cartao);padding:12px 14px;margin:14px 0;display:grid;gap:4px}
+  .quem div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+  .quem span{color:var(--texto-3)} .quem b{text-align:right;overflow-wrap:anywhere}
+  label{display:block;margin:14px 0 6px;font:500 13px/1.3 var(--fonte);color:var(--texto-2)}
+  input{width:100%;box-sizing:border-box;height:36px;padding:0 12px;border:1px solid transparent;border-radius:var(--raio-controle);background:var(--fundo-3);color:var(--texto);font:400 15px var(--fonte)}
+  input:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-suave)}
+  .acoes{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .c-bt{height:38px;padding:0 18px}
+  .erro{background:rgba(255,69,58,.12);color:var(--perigo);border-radius:var(--raio-controle);padding:10px 12px;margin:14px 0 0;font-size:14px}
+  .ok{color:var(--sucesso)}
+  .rodape{margin-top:16px;font-size:13px;color:var(--texto-3);text-align:center}
+  .rodape a{color:var(--acento-link);cursor:pointer;text-decoration:underline}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="cartao">
+    <div class="marca"><i aria-hidden="true"></i> CÉREBRO · ESTÚDIO PROBLEMS</div>
+    <div id="carregando"><p>Conferindo o pedido…</p></div>
+    <div id="pedido" hidden>
+      <h1>Conectar o Claude ao Cérebro</h1>
+      <p>Um programa quer usar o Cérebro do Estúdio com a sua conta. Confira se foi você que pediu.</p>
+      <div class="quem">
+        <div><span>Programa</span><b id="programa"></b></div>
+        <div><span>Volta para</span><b id="destino"></b></div>
+        <div><span>Sua conta</span><b id="conta"></b></div>
+      </div>
+      <p><b>Se você permitir, ele poderá:</b></p>
+      <ul>
+        <li>ler e buscar no Cérebro (as regras, os programas, as bíblias e as skills);</li>
+        <li>gravar páginas, regras e aprendizados, dizendo qual IA gravou e quem pediu (se você não for ADM, o que ele gravar entra na hora e os ADMs revisam);</li>
+        <li>nunca gravar senhas ou chaves: o servidor recusa.</li>
+      </ul>
+      <p>Você desconecta quando quiser em <b>Cérebro › Acesso das IAs</b>.</p>
+      <label for="rotulo">Nome deste computador (opcional)</label>
+      <input id="rotulo" maxlength="60" placeholder="Ex.: notebook de casa" autocomplete="off">
+      <div id="erro" class="erro" hidden role="alert"></div>
+      <div class="acoes">
+        <button class="c-bt" id="cancelar" type="button">Cancelar</button>
+        <button class="c-bt pri" id="permitir" type="button">Permitir</button>
+      </div>
+      <div class="rodape">Não é a sua conta? <a id="sair">Sair e entrar com outra</a></div>
+    </div>
+    <div id="fim" hidden><h1 id="fim-t"></h1><p id="fim-p"></p></div>
+  </div>
+</main>
+<script src="conectar.js"></script>
+</body>
+</html>

@@ -178,6 +178,12 @@ async function autorizar(req, env, base) { // GET: confere e manda para a tela d
   return new Response(null, { status: 302, headers: { location: pagina.toString(), ...NS } });
 }
 
+async function infoCliente(req, env) { // a tela de permissão pergunta aqui quem está pedindo (nome e destino vêm do registro, nunca da barra de endereço)
+  const db = env.EQUIPE_DB; await cnPrepara(db); const q = new URL(req.url).searchParams, c = await cliente(db, q.get('client_id')), ru = q.get('redirect_uri');
+  if (!c || !ru || !c.redirects.some(r => mesmoRetorno(r, ru)) || !redirectOk(ru, env)) return erroOauth('invalid_request', 'Pedido de conexão inválido ou de um programa desconhecido. Volte ao Claude e conecte de novo.', 404);
+  const x = loop(ru); return resp({ nome: c.nome, destino: x ? 'este computador (' + x.hostname + ')' : new URL(ru).hostname }, 200, CORS_PUBLICO);
+}
+
 async function aprovar(req, env, d, base, cors) { // POST da tela do site: login do Google conferido pelo servidor → código de autorização
   const db = env.EQUIPE_DB; await cnPrepara(db);
   const origin = req.headers.get('origin') || '', origens = String(env.ORIGENS || '*').split(',').map(s => semBarra(s.trim())).filter(Boolean);
@@ -430,6 +436,7 @@ export async function conector(req, env, d) {
   const cors = d.cors(req, env);
   if (p === '/cerebro/oauth/registrar' && req.method === 'POST') return registrar(req, env);
   if (p === '/cerebro/oauth/autorizar' && req.method === 'GET') return autorizar(req, env, base);
+  if (p === '/cerebro/oauth/cliente' && req.method === 'GET') return infoCliente(req, env);
   if (p === '/cerebro/oauth/aprovar' && req.method === 'POST') return aprovar(req, env, d, base, cors);
   if (p === '/cerebro/oauth/token' && req.method === 'POST') return token(req, env, d, base);
   if (p === '/cerebro/oauth/revogar' && req.method === 'POST') return revogarPeloPrograma(req, env);
