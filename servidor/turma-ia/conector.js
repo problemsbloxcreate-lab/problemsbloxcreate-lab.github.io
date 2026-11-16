@@ -13,7 +13,8 @@
 
    SEGURANÇA (resumo; o plano completo está em cerebro/CONECTOR.md):
    - Quem entra = quem já entra no Estúdio (EMAILS_PERMITIDOS + ADM › Acesso) E tem o Cérebro no cargo. Nada de lista nova. A lista é
-     conferida de novo a cada pedido (cache de 60 s): quem sai da lista perde o conector na hora.
+     conferida de novo a cada pedido (memória de 60 s, somada à do modelo de cargos e à do KV): quem sai da lista perde o conector em até cerca de 2 minutos;
+     para cortar na hora, revogue a conexão em Cérebro › Acesso das IAs.
    - Cada ferramenta chama a MESMA função cerebro() do servidor, como uma IA de chave (login.ia): as permissões são as de sempre. ADM grava
      direto; quem não é ADM grava direto também, mas entra na aba Revisar, e skill dele só chega aos outros depois do ok de um ADM.
    - Os tokens são aleatórios (256 bits) e só o resumo SHA-256 (com o prefixo "conector:") fica no banco: um token nunca serve como a chave
@@ -25,7 +26,7 @@
    (redirectOk) nem a regra de guardar só o resumo do token. Só a dona muda a segurança. */
 
 const PROTOCOLOS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']; // versões do MCP que sabemos falar (a primeira é a mais nova)
-const ESCOPO = 'cerebro', TOKEN_ACESSO_S = 3600, TOKEN_RENOVA_S = 30 * 86400, CODIGO_S = 120;
+const ESCOPO = 'cerebro', TOKEN_ACESSO_S = 3600, TOKEN_RENOVA_S = 30 * 86400, CODIGO_S = 120, GRACA_REPETE_MS = 20e3;
 const PREFIXO = { acesso: 'cbt_', renova: 'cbr_', codigo: 'cbk_' };
 const MAX_CLIENTES = 400, MAX_CONEXOES_PESSOA = 20, MAX_CORPO = 4 * 1048576;
 const SERVIDOR_INFO = { name: 'cerebro-estudio-problems', title: 'Cérebro do Estúdio Problems', version: '1.0.0' };
@@ -38,7 +39,9 @@ const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, 
 const hash = async s => hex(await crypto.subtle.digest('SHA-256', enc.encode(s)));
 const hTok = t => hash('conector:' + t); // o resumo guardado: com prefixo, para um token nunca valer como chave antiga
 const pkce = async verifier => b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(verifier))));
-const limpa = (s, n) => String(s ?? '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.[a-zA-Z]{2,24}\b/g; // e-mails viram "ma••••@dominio" (igual ao Cérebro): nem o rótulo digitado nem o nome vão ao banco com e-mail
+const mascara = e => { const [u, d = ''] = e.split('@'); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•'.repeat(Math.min(6, Math.max(3, u.length - 2)))) + '@' + d; };
+const limpa = (s, n) => String(s ?? '').replace(EMAIL, mascara).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 const trocaTempoFixo = (a, b) => { a = String(a); b = String(b); if (a.length !== b.length) return false; let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; };
 const semBarra = u => String(u || '').replace(/\/+$/, '');
 const hoje = () => new Date().toISOString().slice(0, 10);
@@ -74,8 +77,8 @@ const CN = { prep: false };
 async function cnPrepara(db) {
   if (CN.prep) return;
   await db.batch([
-    db.prepare('CREATE TABLE IF NOT EXISTS cerebro_oauth_cliente (id TEXT PRIMARY KEY, nome TEXT, redirects TEXT NOT NULL, em INTEGER NOT NULL)'),
-    db.prepare('CREATE TABLE IF NOT EXISTS cerebro_oauth_cod (h TEXT PRIMARY KEY, cliente TEXT NOT NULL, redirect TEXT NOT NULL, challenge TEXT NOT NULL, dono TEXT NOT NULL, pid TEXT NOT NULL, pessoa TEXT, rotulo TEXT, adm INTEGER NOT NULL DEFAULT 0, exp INTEGER NOT NULL, usado INTEGER NOT NULL DEFAULT 0)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS cerebro_oauth_cliente (id TEXT PRIMARY KEY, nome TEXT, redirects TEXT NOT NULL, em INTEGER NOT NULL, ip TEXT)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS cerebro_oauth_cod (h TEXT PRIMARY KEY, cliente TEXT NOT NULL, redirect TEXT NOT NULL, challenge TEXT NOT NULL, dono TEXT NOT NULL, pid TEXT NOT NULL, pessoa TEXT, rotulo TEXT, adm INTEGER NOT NULL DEFAULT 0, exp INTEGER NOT NULL, usado INTEGER NOT NULL DEFAULT 0, conexao TEXT)'),
     db.prepare('CREATE TABLE IF NOT EXISTS cerebro_conexao (h TEXT PRIMARY KEY, cliente TEXT, cliente_nome TEXT, rotulo TEXT, pessoa TEXT, dono TEXT NOT NULL, pid TEXT NOT NULL, adm INTEGER NOT NULL DEFAULT 0, em INTEGER NOT NULL, ultimo INTEGER, revogada INTEGER NOT NULL DEFAULT 0)'),
     db.prepare('CREATE INDEX IF NOT EXISTS cerebro_conexao_dono ON cerebro_conexao (dono, em)'),
     db.prepare('CREATE TABLE IF NOT EXISTS cerebro_oauth_tok (h TEXT PRIMARY KEY, tipo TEXT NOT NULL, conexao TEXT NOT NULL, exp INTEGER NOT NULL, usado INTEGER NOT NULL DEFAULT 0, pai TEXT)'),
@@ -119,7 +122,7 @@ async function emiteTokens(db, conexao, pai = null) {
     db.prepare("INSERT INTO cerebro_oauth_tok (h, tipo, conexao, exp, usado, pai) VALUES (?, 'r', ?, ?, 0, ?)").bind(await hTok(r), conexao, agora + TOKEN_RENOVA_S * 1000, pai),
     db.prepare('UPDATE cerebro_conexao SET ultimo = ? WHERE h = ?').bind(agora, conexao),
   ]);
-  return { access_token: a, token_type: 'Bearer', expires_in: TOKEN_ACESSO_S, refresh_token: r, scope: ESCOPO };
+  return { corpo: { access_token: a, token_type: 'Bearer', expires_in: TOKEN_ACESSO_S, refresh_token: r, scope: ESCOPO }, rh: await hTok(r) };
 }
 
 /* ======================= OAuth ======================= */
@@ -134,25 +137,28 @@ function metadados(base) {
     },
   };
 }
+const lerTexto = async (req, max = 20000) => { if (+(req.headers.get('content-length') || 0) > max) return null; const t = await req.text(); return t.length > max ? null : t; }; // recusa pelo tamanho ANTES de ler, e confere de novo depois
 async function lerCorpoOauth(req) { // aceita formulário (padrão do OAuth) ou JSON
-  const t = await req.text(); if (t.length > 20000) return null;
+  const t = await lerTexto(req); if (t == null) return null;
   if (/json/i.test(req.headers.get('content-type') || '')) { try { const j = JSON.parse(t); return j && typeof j === 'object' ? j : null; } catch { return null; } }
   return Object.fromEntries(new URLSearchParams(t));
 }
 
 async function registrar(req, env) {
   const db = env.EQUIPE_DB; await cnPrepara(db);
-  let b; try { b = await req.json(); } catch { return erroOauth('invalid_client_metadata', 'O pedido de registro veio com defeito.'); }
+  let b; try { b = JSON.parse(await lerTexto(req)); } catch { return erroOauth('invalid_client_metadata', 'O pedido de registro veio com defeito ou é grande demais.'); }
   const uris = Array.isArray(b?.redirect_uris) ? b.redirect_uris.map(String) : [];
   if (!uris.length || uris.length > 8) return erroOauth('invalid_redirect_uri', 'Mande de 1 a 8 redirect_uris.');
   const ruim = uris.find(u => !redirectOk(u, env)); if (ruim) return erroOauth('invalid_redirect_uri', 'Endereço de retorno não permitido neste servidor (só o próprio computador, claude.ai e claude.com).');
   const met = b.token_endpoint_auth_method; if (met && met !== 'none') return erroOauth('invalid_client_metadata', 'Só clientes públicos (token_endpoint_auth_method = none).');
   const gt = Array.isArray(b.grant_types) ? b.grant_types : ['authorization_code']; if (gt.some(g => !['authorization_code', 'refresh_token'].includes(g))) return erroOauth('invalid_client_metadata', 'Tipo de concessão não aceito.');
-  const total = (await db.prepare('SELECT count(*) AS n, sum(em > ?) AS rec FROM cerebro_oauth_cliente').bind(Date.now() - 60e3).first()) || {};
-  if ((total.rec || 0) >= (+env.CONECTOR_REGISTROS_POR_MIN || 30)) return erroOauth('temporarily_unavailable', 'Registros demais agora. Tente de novo em um minuto.', 429);
-  if ((total.n || 0) >= MAX_CLIENTES) await db.prepare('DELETE FROM cerebro_oauth_cliente WHERE id IN (SELECT id FROM cerebro_oauth_cliente WHERE id NOT IN (SELECT DISTINCT cliente FROM cerebro_conexao WHERE cliente IS NOT NULL) ORDER BY em LIMIT 100)').run();
+  // limite por IP (cf-connecting-ip, guardado só como resumo) e um limite geral mais folgado; o registro não dá acesso a nada, mas gasta o banco
+  const ip = (await hash('ip:' + (req.headers.get('cf-connecting-ip') || 'sem-ip'))).slice(0, 16), agora = Date.now(), porMin = +env.CONECTOR_REGISTROS_POR_MIN || 10;
+  const total = (await db.prepare('SELECT count(*) AS n, sum(em > ?) AS rec, sum(em > ? AND ip = ?) AS meu FROM cerebro_oauth_cliente').bind(agora - 60e3, agora - 60e3, ip).first()) || {};
+  if ((total.meu || 0) >= porMin || (total.rec || 0) >= porMin * 12) return erroOauth('temporarily_unavailable', 'Registros demais agora. Tente de novo em um minuto.', 429);
+  if ((total.n || 0) >= MAX_CLIENTES) await db.prepare('DELETE FROM cerebro_oauth_cliente WHERE id IN (SELECT id FROM cerebro_oauth_cliente WHERE em < ? AND id NOT IN (SELECT DISTINCT cliente FROM cerebro_conexao WHERE cliente IS NOT NULL) ORDER BY em LIMIT 100)').bind(agora - 3600e3).run(); // só os de mais de 1 hora (quem está no meio do login não perde o registro)
   const id = 'cbc_' + alea(18), nome = limpa(b.client_name, 60) || 'Programa sem nome', em = Math.floor(Date.now() / 1000);
-  await db.prepare('INSERT INTO cerebro_oauth_cliente (id, nome, redirects, em) VALUES (?, ?, ?, ?)').bind(id, nome, JSON.stringify(uris), Date.now()).run();
+  await db.prepare('INSERT INTO cerebro_oauth_cliente (id, nome, redirects, em, ip) VALUES (?, ?, ?, ?, ?)').bind(id, nome, JSON.stringify(uris), agora, ip).run();
   return resp({ client_id: id, client_id_issued_at: em, client_name: nome, redirect_uris: uris, grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], token_endpoint_auth_method: 'none', scope: ESCOPO }, 201, CORS_PUBLICO);
 }
 const cliente = async (db, id) => { if (!/^cbc_[A-Za-z0-9_-]{10,40}$/.test(id || '')) return null; const r = await db.prepare('SELECT id, nome, redirects FROM cerebro_oauth_cliente WHERE id = ?').bind(id).first(); return r ? { id: r.id, nome: r.nome, redirects: JSON.parse(r.redirects) } : null; };
@@ -188,7 +194,7 @@ async function aprovar(req, env, d, base, cors) { // POST da tela do site: login
   const db = env.EQUIPE_DB; await cnPrepara(db);
   const origin = req.headers.get('origin') || '', origens = String(env.ORIGENS || '*').split(',').map(s => semBarra(s.trim())).filter(Boolean);
   if (!origin || !(origens.includes('*') || origens.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))) return resp({ error: { type: 'origem', message: 'Esta tela não está liberada para conectar.' } }, 403, cors);
-  let b; try { b = await req.json(); } catch { return resp({ error: { type: 'pedido', message: 'O pedido veio com defeito.' } }, 400, cors); }
+  let b; try { b = JSON.parse(await lerTexto(req)); } catch { return resp({ error: { type: 'pedido', message: 'O pedido veio com defeito.' } }, 400, cors); }
   const r = await confereAutorizacao(db, env, base, b); if (r.erro && !(r.c && b.negar)) return resp({ error: { type: 'pedido', message: r.erro } }, 400, cors);
   if (b.negar) return resp({ redirect: voltaPara(b.redirect_uri, base, { error: 'access_denied', error_description: 'A pessoa não permitiu.', state: b.state }) }, 200, cors);
   const login = await d.confereLogin(req, env); // o MESMO login do menu: token do Google conferido no servidor + lista de e-mails
@@ -211,25 +217,33 @@ async function token(req, env, d, base) {
     if (!/^cbk_[A-Za-z0-9_-]{30,80}$/.test(p.code || '') || !p.code_verifier || !/^[A-Za-z0-9\-._~]{43,128}$/.test(p.code_verifier)) return erroOauth('invalid_grant', 'Código ou code_verifier inválido.');
     // atômico: marca como usado e devolve a linha; um código só vale uma vez
     const k = await db.prepare('UPDATE cerebro_oauth_cod SET usado = 1 WHERE h = ? AND usado = 0 AND exp > ? RETURNING cliente, redirect, challenge, dono, pid, pessoa, rotulo, adm').bind(await hTok(p.code), Date.now()).first();
-    if (!k || k.cliente !== c.id) return erroOauth('invalid_grant', 'Código inválido, vencido ou já usado. Conecte de novo.');
+    if (!k) { const v = await db.prepare('SELECT conexao FROM cerebro_oauth_cod WHERE h = ? AND usado = 1').bind(await hTok(p.code)).first(); // código que já foi trocado voltou: derruba o que nasceu dele (RFC 6749 4.1.2)
+      if (v?.conexao) await db.prepare('UPDATE cerebro_conexao SET revogada = 1 WHERE h = ?').bind(v.conexao).run(); return erroOauth('invalid_grant', 'Código inválido, vencido ou já usado. Conecte de novo.'); }
+    if (k.cliente !== c.id) return erroOauth('invalid_grant', 'Código inválido, vencido ou já usado. Conecte de novo.');
     if (!p.redirect_uri || p.redirect_uri !== k.redirect) return erroOauth('invalid_grant', 'redirect_uri diferente do pedido de autorização.');
     if (!trocaTempoFixo(await pkce(p.code_verifier), k.challenge)) return erroOauth('invalid_grant', 'PKCE não confere.');
     if (!(await cnPessoa(env, d, k.pid))) return erroOauth('invalid_grant', 'Esta conta não pode mais usar o Cérebro.');
     const conexao = await hash('conexao:' + alea(24));
     await db.prepare('INSERT INTO cerebro_conexao (h, cliente, cliente_nome, rotulo, pessoa, dono, pid, adm, em, ultimo, revogada) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)').bind(conexao, c.id, c.nome, k.rotulo, k.pessoa, k.dono, k.pid, k.adm, Date.now(), Date.now()).run();
-    await limpaVelhos(db); return resp(await emiteTokens(db, conexao), 200, { ...CORS_PUBLICO });
+    await db.prepare('UPDATE cerebro_oauth_cod SET conexao = ? WHERE h = ?').bind(conexao, await hTok(p.code)).run();
+    await limpaVelhos(db); return resp((await emiteTokens(db, conexao)).corpo, 200, { ...CORS_PUBLICO });
   }
   if (p.grant_type === 'refresh_token') {
     if (!/^cbr_[A-Za-z0-9_-]{30,80}$/.test(p.refresh_token || '')) return erroOauth('invalid_grant', 'Token de renovação inválido.');
     const h = await hTok(p.refresh_token), agora = Date.now();
     const t = await db.prepare("SELECT t.conexao, t.exp, t.usado, t.pai, c.cliente, c.pid, c.revogada FROM cerebro_oauth_tok t JOIN cerebro_conexao c ON c.h = t.conexao WHERE t.h = ? AND t.tipo = 'r'").bind(h).first();
     if (!t || t.cliente !== c.id || t.revogada || t.exp < agora) return erroOauth('invalid_grant', 'Token de renovação inválido ou vencido. Conecte de novo.');
-    if (t.usado) { // um token já gasto voltou: pode ter sido copiado. Derruba a conexão inteira.
-      await db.prepare('UPDATE cerebro_conexao SET revogada = 1 WHERE h = ?').bind(t.conexao).run(); return erroOauth('invalid_grant', 'Este token de renovação já foi usado. Por segurança a conexão foi encerrada: conecte de novo.'); }
     if (!(await cnPessoa(env, d, t.pid))) return erroOauth('invalid_grant', 'Esta conta não pode mais usar o Cérebro.');
-    // este token continua valendo até o NOVO ser usado (se a resposta se perder no caminho, dá para tentar de novo); quando um filho é usado, o pai é gasto
-    const novo = await emiteTokens(db, t.conexao, h); if (t.pai) await db.prepare('UPDATE cerebro_oauth_tok SET usado = ? WHERE h = ? AND usado = 0').bind(agora, t.pai).run();
-    await limpaVelhos(db); return resp(novo, 200, { ...CORS_PUBLICO });
+    // gasta o token NA HORA e de forma atômica: só um pedido consegue (a conferência de t.usado acima da conta é só leitura e pode estar velha)
+    const gasto = await db.prepare("UPDATE cerebro_oauth_tok SET usado = ? WHERE h = ? AND tipo = 'r' AND usado = 0 RETURNING h").bind(agora, h).first();
+    if (!gasto) { const quando = (await db.prepare("SELECT usado FROM cerebro_oauth_tok WHERE h = ?").bind(h).first())?.usado || 0;
+      if (agora - quando > GRACA_REPETE_MS) { // um token já gasto voltou depois da folga: pode ter sido copiado. Derruba a conexão inteira (e com ela os dois ramos).
+        await db.prepare('UPDATE cerebro_conexao SET revogada = 1 WHERE h = ?').bind(t.conexao).run(); return erroOauth('invalid_grant', 'Este token de renovação já foi usado. Por segurança a conexão foi encerrada: conecte de novo.'); }
+      /* repetição logo depois (a resposta do primeiro pedido pode ter se perdido): vale */ }
+    const novo = await emiteTokens(db, t.conexao, h);
+    // só UM ramo fica vivo: depois de criar o seu filho, cada pedido gasta DE VEZ (usado = 1) os outros filhos do mesmo pai; usar um deles depois derruba a conexão
+    await db.prepare("UPDATE cerebro_oauth_tok SET usado = 1 WHERE pai = ? AND tipo = 'r' AND usado = 0 AND h != ?").bind(h, novo.rh).run();
+    await limpaVelhos(db); return resp(novo.corpo, 200, { ...CORS_PUBLICO });
   }
   return erroOauth('unsupported_grant_type', 'Use authorization_code ou refresh_token.');
 }

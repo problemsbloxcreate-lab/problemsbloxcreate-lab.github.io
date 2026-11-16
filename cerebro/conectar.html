@@ -7,11 +7,12 @@
 <script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
 <title>Conectar o Claude ao Cérebro · Estúdio Problems</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style id="antiquadro">html{display:none!important}</style>
 <script>
 // a tela de permissão mora no endereço único do Estúdio (é lá que está o login); quem abrir a cópia do GitHub Pages vai para lá
 if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/cerebro/conectar.html' + location.search);
-// ninguém pode pôr esta tela dentro de outra página (o clique em "Permitir" tem que ser de verdade)
-if (window.top !== window.self) { document.documentElement.innerHTML = ''; }
+// ninguém pode pôr esta tela dentro de outra página (o clique em "Permitir" tem que ser de verdade): a página nasce escondida e só aparece se for a janela de cima
+if (window.top === window.self) document.getElementById('antiquadro').remove(); else { try { window.top.location = window.self.location; } catch { } }
 </script>
 <!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar (com o pedido do Claude ainda na barra) -->
 <script src="/estudio-login.js"></script>
@@ -60,6 +61,7 @@ if (window.top !== window.self) { document.documentElement.innerHTML = ''; }
         <li>nunca gravar senhas ou chaves: o servidor recusa.</li>
       </ul>
       <p>Você desconecta quando quiser em <b>Cérebro › Acesso das IAs</b>.</p>
+      <p><b>Só toque em Permitir se foi você que acabou de pedir esta conexão</b> (rodando o comando no Claude). Se alguém mandou este link para você, toque em Cancelar.</p>
       <label for="rotulo">Nome deste computador (opcional)</label>
       <input id="rotulo" maxlength="60" placeholder="Ex.: notebook de casa" autocomplete="off">
       <div id="erro" class="erro" hidden role="alert"></div>

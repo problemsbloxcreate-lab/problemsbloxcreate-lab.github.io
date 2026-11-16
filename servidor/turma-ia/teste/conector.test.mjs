@@ -139,6 +139,18 @@ test('8. o fluxo ANTIGO da chave continua igual (principal, chave autorizada pel
   const viaMcp = await chamar('/cerebro/mcp', { corpo: { jsonrpc: '2.0', id: 1, method: 'ping' }, cab: { 'x-cerebro-chave': env.CEREBRO_CHAVE } }); assert.equal(viaMcp.status, 401, 'a chave antiga não vale como token do conector');
 });
 
+test('8b. revogar chave ANTIGA continua igual: o dono revoga, outra pessoa não, ADM revoga qualquer uma, e a chave revogada para de valer', async () => {
+  const { createHash } = await import('node:crypto'); const nova = async (quem, nome) => { const chave = 'chave-' + nome.replace(/ /g, '-') + '-' + 'y'.repeat(30), h = createHash('sha256').update(chave).digest('hex'); const r = await chamar('/cerebro/chaves', { corpo: { acao: 'autorizar', codigo: 'c-' + h, nome }, cab: { origin: ORIGEM_SITE, authorization: await loginDe(quem) } }); assert.equal(r.status, 200, r.t); return { chave, h }; };
+  const doMaria = await nova('maria', 'PC antigo da Maria'), doJoao = await nova('joao', 'PC antigo do Joao');
+  const usa = k => chamar('/cerebro/comece', { cab: { 'x-cerebro-chave': k.chave } });
+  assert.equal((await usa(doMaria)).status, 200);
+  assert.equal((await chamar('/cerebro/chaves', { corpo: { acao: 'revogar', h: doMaria.h }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('joao') } })).status, 403, 'Joao não revoga a chave da Maria');
+  assert.equal((await chamar('/cerebro/chaves', { corpo: { acao: 'revogar', h: 'nao-existe' }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('joao') } })).status, 404);
+  assert.equal((await chamar('/cerebro/chaves', { corpo: { acao: 'revogar', h: doMaria.h }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('maria') } })).status, 200); assert.equal((await usa(doMaria)).status, 401, 'chave revogada');
+  assert.equal((await usa(doJoao)).status, 200); assert.equal((await chamar('/cerebro/chaves', { corpo: { acao: 'revogar', h: doJoao.h }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('dona') } })).status, 200, 'ADM revoga qualquer uma'); assert.equal((await usa(doJoao)).status, 401);
+  const lista = await chamar('/cerebro/chaves', { cab: { origin: ORIGEM_SITE, authorization: await loginDe('maria') } }); assert.ok(lista.j.itens.some(x => x.nome === 'PC antigo da Maria' && x.revogada === 1) && !lista.j.itens.some(x => x.nome === 'PC antigo do Joao'), 'a lista antiga segue igual');
+});
+
 test('9. ferramentas de leitura: comece, indice, buscar, ler (e ler por partes)', async () => {
   const c = texto(await ferramenta(maria.access_token, 'comece')); assert.ok(c.startsWith(CB_ESCOPO)); assert.match(c, /Memórias rápidas/); assert.match(c, /Só tarefas do Estúdio\. → Regras\/Regras da dona/); assert.match(c, /pedido\(s\) esperando/); assert.match(c, /Pastas: .*Programas/); assert.match(c, /Texto base do Cérebro/);
   const topo = texto(await ferramenta(maria.access_token, 'indice')); assert.match(topo, /- Programas \(1\)/); assert.match(topo, /- Skills \(1\)/);
@@ -217,16 +229,31 @@ test('14. a aba Acesso das IAs lista as conexões; cada pessoa revoga só as sua
   assert.equal((await chamar('/cerebro/chaves', { corpo: { acao: 'revogar', h: hDona }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('dona') } })).status, 200); assert.equal((await rpc(dona.access_token, 'ping')).status, 401, 'ADM revoga a própria');
 });
 
-test('15. renovação: o token novo funciona, o antigo vale até o novo ser usado; um token já gasto derruba a conexão', async () => {
-  const c = await conectar('maria', { porta: 52001, rotulo: 'renovação' });
-  const renova = rt => chamar('/cerebro/oauth/token', { form: { grant_type: 'refresh_token', refresh_token: rt, client_id: c.clientId, resource: BASE + '/cerebro/mcp' } });
-  const r1 = await renova(c.refresh_token); assert.equal(r1.status, 200, r1.t); assert.notEqual(r1.j.refresh_token, c.refresh_token); assert.equal((await rpc(r1.j.access_token, 'ping')).status, 200); assert.equal((await rpc(c.access_token, 'ping')).status, 200, 'o acesso antigo vale até vencer');
-  const r1b = await renova(c.refresh_token); assert.equal(r1b.status, 200, 'o antigo ainda vale: a resposta pode ter se perdido no caminho'); // dois irmãos
-  const r2 = await renova(r1.j.refresh_token); assert.equal(r2.status, 200, r2.t); // usar o filho gasta o pai
-  const r3 = await renova(c.refresh_token); assert.equal(r3.status, 400); assert.match(r3.j.error_description, /conexão foi encerrada/);
-  assert.equal((await rpc(r2.j.access_token, 'ping')).status, 401, 'a conexão inteira caiu');
-  const outroCliente = await conectar('maria', { porta: 52002 }); const cruz = await chamar('/cerebro/oauth/token', { form: { grant_type: 'refresh_token', refresh_token: outroCliente.refresh_token, client_id: c.clientId } }); assert.equal(cruz.status, 400, 'o token de um programa não renova no outro');
-  const venc = await conectar('maria', { porta: 52003 }); env.EQUIPE_DB._bruto.exec("UPDATE cerebro_oauth_tok SET exp = 1 WHERE tipo = 'a'"); assert.equal((await rpc(venc.access_token, 'ping')).status, 401, 'acesso vencido'); const ren = await chamar('/cerebro/oauth/token', { form: { grant_type: 'refresh_token', refresh_token: venc.refresh_token, client_id: venc.clientId } }); assert.equal(ren.status, 200, 'mas a renovação funciona'); assert.equal((await rpc(ren.j.access_token, 'ping')).status, 200);
+test('15. renovação estrita: acesso novo funciona; só um ramo vivo; repetir tarde ou usar o ramo gasto derruba a conexão; acesso vencido renova', async () => {
+  const novoPar = async porta => { const c = await conectar('maria', { porta, rotulo: 'renovação ' + porta }); return { c, renova: rt => chamar('/cerebro/oauth/token', { form: { grant_type: 'refresh_token', refresh_token: rt, client_id: c.clientId, resource: BASE + '/cerebro/mcp' } }) }; };
+  { const { c, renova } = await novoPar(52001); // o caso normal
+    const r1 = await renova(c.refresh_token); assert.equal(r1.status, 200, r1.t); assert.notEqual(r1.j.refresh_token, c.refresh_token); assert.equal((await rpc(r1.j.access_token, 'ping')).status, 200); assert.equal((await rpc(c.access_token, 'ping')).status, 200, 'o acesso antigo vale até vencer');
+    const r2 = await renova(r1.j.refresh_token); assert.equal(r2.status, 200, 'a cadeia normal segue'); const r3 = await renova(r2.j.refresh_token); assert.equal(r3.status, 200); assert.equal((await rpc(r3.j.access_token, 'ping')).status, 200); }
+  { const { c, renova } = await novoPar(52002); // o cenário da revisão: o dono e quem roubou o token usam o MESMO token de renovação
+    const dono = await renova(c.refresh_token); assert.equal(dono.status, 200); const ladrao = await renova(c.refresh_token); assert.equal(ladrao.status, 200, 'dentro da folga (resposta perdida) o segundo pedido vale');
+    const velho = await renova(dono.j.refresh_token); assert.equal(velho.status, 400, 'o ramo do primeiro pedido foi gasto: só um ramo vivo'); assert.match(velho.j.error_description, /conexão foi encerrada/);
+    assert.equal((await rpc(ladrao.j.access_token, 'ping')).status, 401, 'e a conexão inteira caiu, com os dois ramos'); assert.equal((await renova(ladrao.j.refresh_token)).status, 400); }
+  { const { c, renova } = await novoPar(52003); // repetir o token depois da folga
+    const r1 = await renova(c.refresh_token); assert.equal(r1.status, 200); env.EQUIPE_DB._bruto.exec('UPDATE cerebro_oauth_tok SET usado = usado - 60000 WHERE usado > 1');
+    const tarde = await renova(c.refresh_token); assert.equal(tarde.status, 400); assert.match(tarde.j.error_description, /conexão foi encerrada/); assert.equal((await rpc(r1.j.access_token, 'ping')).status, 401); }
+  { const { c, renova } = await novoPar(52004); // dois pedidos ao mesmo tempo com o mesmo token
+    const [x, y] = await Promise.all([renova(c.refresh_token), renova(c.refresh_token)]); assert.ok([x.status, y.status].every(s => s === 200 || s === 400), 'sem erro de servidor');
+    const vivos = (await Promise.all([x, y].filter(r => r.status === 200).map(r => renova(r.j.refresh_token)))).filter(r => r.status === 200).length; assert.ok(vivos <= 1, 'no máximo um ramo continua vivo: ' + vivos); }
+  const outro = await novoPar(52005), cruz = await chamar('/cerebro/oauth/token', { form: { grant_type: 'refresh_token', refresh_token: outro.c.refresh_token, client_id: (await novoPar(52006)).c.clientId } }); assert.equal(cruz.status, 400, 'o token de um programa não renova no outro');
+  const { c: venc, renova: rv } = await novoPar(52007); env.EQUIPE_DB._bruto.exec("UPDATE cerebro_oauth_tok SET exp = 1 WHERE tipo = 'a'"); assert.equal((await rpc(venc.access_token, 'ping')).status, 401, 'acesso vencido'); const ren = await rv(venc.refresh_token); assert.equal(ren.status, 200, 'mas a renovação funciona'); assert.equal((await rpc(ren.j.access_token, 'ping')).status, 200);
+});
+
+test('15b. código de login usado de novo derruba a conexão que nasceu dele (RFC 6749 4.1.2)', async () => {
+  const redirect = 'http://localhost:52010/callback', cli = (await chamar('/cerebro/oauth/registrar', { corpo: { client_name: 'R', redirect_uris: [redirect] } })).j.client_id, pk = await novoPkce();
+  const ap = await chamar('/cerebro/oauth/aprovar', { corpo: { client_id: cli, redirect_uri: redirect, code_challenge: pk.challenge, code_challenge_method: 'S256' }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('maria') } }), code = new URL(ap.j.redirect).searchParams.get('code');
+  const troca = () => chamar('/cerebro/oauth/token', { form: { grant_type: 'authorization_code', client_id: cli, redirect_uri: redirect, code, code_verifier: pk.verifier } });
+  const t1 = await troca(); assert.equal(t1.status, 200); assert.equal((await rpc(t1.j.access_token, 'ping')).status, 200);
+  assert.equal((await troca()).status, 400, 'segunda troca'); assert.equal((await rpc(t1.j.access_token, 'ping')).status, 401, 'o que nasceu do código foi derrubado');
 });
 
 test('16. quem sai da lista do Estúdio (ou perde o cargo do Cérebro) perde o conector na hora', async () => {
@@ -262,7 +289,10 @@ test('18. revogação pelo próprio programa (RFC 7009) e limite de conexões po
   for (let i = 0; i < 30; i++) { const pk = await novoPkce(); ultimo = await chamar('/cerebro/oauth/aprovar', { corpo: { client_id: reg.client_id, redirect_uri: 'http://localhost:7000/callback', code_challenge: pk.challenge, code_challenge_method: 'S256' }, cab: { origin: ORIGEM_SITE, authorization: await loginDe('joao') } });
     if (ultimo.status !== 200) break; const t = await chamar('/cerebro/oauth/token', { form: { grant_type: 'authorization_code', client_id: reg.client_id, redirect_uri: 'http://localhost:7000/callback', code: new URL(ultimo.j.redirect).searchParams.get('code'), code_verifier: pk.verifier } }); assert.equal(t.status, 200); feitas++; }
   assert.equal(ultimo.status, 429, 'passou de 20 conexões ativas da mesma pessoa'); assert.ok(feitas <= 20 && feitas >= 15, 'conexões criadas: ' + feitas); assert.match(ultimo.j.error.message, /20 conexões ativas/);
-  const e2 = { ...env, CONECTOR_REGISTROS_POR_MIN: '3' }; const antes = env.EQUIPE_DB._bruto.prepare('SELECT count(*) AS n FROM cerebro_oauth_cliente WHERE em > ?').get(Date.now() - 60e3).n; void antes;
+  const e2 = { ...env, CONECTOR_REGISTROS_POR_MIN: '3' }; const regDe = (ip, e = e2) => W.fetch(new Request(BASE + '/cerebro/oauth/registrar', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip }, body: JSON.stringify({ client_name: 'ip', redirect_uris: ['http://localhost:7002/callback'] }) }), e, ctx);
+  for (let i = 0; i < 3; i++) assert.equal((await regDe('203.0.113.7')).status, 201); assert.equal((await regDe('203.0.113.7')).status, 429, 'o 4º do mesmo IP no minuto é recusado'); assert.equal((await regDe('203.0.113.8')).status, 201, 'outro IP não é afetado pelo primeiro');
+  const grande = await W.fetch(new Request(BASE + '/cerebro/oauth/registrar', { method: 'POST', headers: { 'content-type': 'application/json', 'content-length': '5000000' }, body: JSON.stringify({ client_name: 'x', redirect_uris: ['http://localhost:1/cb'] }) }), env, ctx); assert.equal(grande.status, 400, 'corpo declarado grande demais é recusado antes de ler');
+  const mail = await chamar('/cerebro/oauth/registrar', { corpo: { client_name: 'fulana@gmail.com usa isto', redirect_uris: ['http://localhost:7003/callback'] } }); assert.ok(!JSON.stringify(mail.j).includes('fulana@gmail.com'), 'e-mail no nome do programa vira máscara'); const antes = env.EQUIPE_DB._bruto.prepare('SELECT count(*) AS n FROM cerebro_oauth_cliente WHERE em > ?').get(Date.now() - 60e3).n; void antes;
   let bloqueou = false; for (let i = 0; i < 200 && !bloqueou; i++) { const r = await W.fetch(new Request(BASE + '/cerebro/oauth/registrar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ client_name: 'z', redirect_uris: ['http://localhost:7001/callback'] }) }), e2, ctx); bloqueou = r.status === 429; } assert.ok(bloqueou, 'registros demais por minuto são recusados');
 });
 
