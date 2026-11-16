@@ -455,7 +455,10 @@ async function restComToken(req, env, d, p) {
 /* ======================= a porta de entrada: o worker.js chama isto primeiro ======================= */
 export async function conector(req, env, d) {
   const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
-  const meu = p === '/cerebro/mcp' || p.startsWith('/cerebro/oauth/') || p.startsWith('/.well-known/oauth-') || p === '/.well-known/openid-configuration' || p.startsWith('/.well-known/openid-configuration/');
+  // Endereços que um verificador de servidor MCP costuma consultar (metadados com sufixo, /mcp, /sse...): respondem aqui, com 404 neutro quando não existem.
+  // Antes caíam na regra antiga do servidor ("este site não está liberado", 403), e o 403 fazia o claude.ai achar que o servidor bloqueia.
+  const wk = /^(?:\/cerebro\/mcp)?\/\.well-known\/([\w-]+)/.exec(p)?.[1] || null;
+  const meu = p === '/cerebro/mcp' || p.startsWith('/cerebro/mcp/') || p.startsWith('/cerebro/oauth/') || p.startsWith('/.well-known/') || p === '/mcp' || p === '/sse' || p === '/messages';
   const restToken = !meu && (p === '/cerebro' || p.startsWith('/cerebro/')) && /^Bearer\s+cbt_/i.test(req.headers.get('authorization') || ''); // token do Google nas rotas do programa de linha de comando
   if (!meu && !restToken) return null;
   if (String(env.CONECTOR_DESLIGADO || '') === '1') return resp({ error: 'conector_desligado', error_description: 'O conector do Cérebro está desligado no momento. A chave antiga (cerebro.mjs) continua funcionando.' }, 503, CORS_PUBLICO); // interruptor de emergência: variável da Cloudflare, sem novo deploy
@@ -463,9 +466,11 @@ export async function conector(req, env, d) {
   const base = semBarra(env.CONECTOR_URL_BASE || url.origin);
   if (p === '/cerebro/mcp') return mcp(req, env, d, base);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: p === '/cerebro/oauth/aprovar' ? d.cors(req, env) : CORS_PUBLICO });
-  if (p.startsWith('/.well-known/')) { if (req.method !== 'GET') return resp({ error: 'metodo' }, 405, CORS_PUBLICO); const m = metadados(base);
-    if (p.startsWith('/.well-known/oauth-protected-resource')) return resp(m.recurso, 200, { ...CORS_PUBLICO, 'cache-control': 'public, max-age=300' });
-    return resp(m.servidor, 200, { ...CORS_PUBLICO, 'cache-control': 'public, max-age=300' }); } // oauth-authorization-server e openid-configuration (com ou sem sufixo de caminho)
+  if (wk) { if (req.method !== 'GET' && req.method !== 'HEAD') return resp({ error: 'metodo' }, 405, CORS_PUBLICO); const m = metadados(base), cab = { ...CORS_PUBLICO, 'cache-control': 'public, max-age=300' };
+    if (wk.startsWith('oauth-protected-resource')) return resp(m.recurso, 200, cab);
+    if (wk.startsWith('oauth-') || wk === 'openid-configuration') return resp(m.servidor, 200, cab); // oauth-authorization-server e openid-configuration, com o sufixo de caminho antes ou depois
+    return resp({ error: 'nao_achei' }, 404, CORS_PUBLICO); }
+  if (p === '/mcp' || p === '/sse' || p === '/messages' || p.startsWith('/cerebro/mcp/')) return resp({ error: 'nao_achei', error_description: 'O endereço do conector do Cérebro é ' + base + '/cerebro/mcp' }, 404, CORS_PUBLICO);
   if (!env.EQUIPE_DB) return erroOauth('server_error', 'O banco do Cérebro não está ligado neste servidor.', 503);
   const cors = d.cors(req, env);
   if (p === '/cerebro/oauth/registrar' && req.method === 'POST') return registrar(req, env);

@@ -45,6 +45,13 @@ test('1. metadados OAuth no lugar certo (recurso com sufixo e sem sufixo, servid
   for (const p of ['/.well-known/oauth-authorization-server', '/.well-known/openid-configuration', '/.well-known/oauth-authorization-server/cerebro/mcp']) { const r = await chamar(p); assert.equal(r.status, 200); assert.equal(r.j.issuer, BASE); assert.deepEqual(r.j.code_challenge_methods_supported, ['S256']); assert.ok(r.j.registration_endpoint && r.j.token_endpoint && r.j.authorization_endpoint); assert.equal(r.j.authorization_response_iss_parameter_supported, true); }
 });
 
+test('1b. endereços que um verificador consulta: metadados com sufixo antes e depois, e 404 neutro (nunca 403) no que não existe', async () => {
+  for (const p of ['/.well-known/oauth-protected-resource/cerebro/mcp', '/cerebro/mcp/.well-known/oauth-protected-resource', '/.well-known/oauth-authorization-server/cerebro/mcp', '/cerebro/mcp/.well-known/oauth-authorization-server', '/cerebro/mcp/.well-known/openid-configuration', '/.well-known/openid-configuration/cerebro/mcp']) { const r = await chamar(p); assert.equal(r.status, 200, p); }
+  assert.equal((await chamar('/cerebro/mcp/.well-known/oauth-protected-resource')).j.resource, BASE + '/cerebro/mcp'); assert.equal((await chamar('/cerebro/mcp/.well-known/openid-configuration')).j.issuer, BASE);
+  for (const p of ['/mcp', '/sse', '/messages', '/.well-known/mcp', '/.well-known/mcp.json', '/.well-known/mcp/server-card.json', '/.well-known/ai-plugin.json', '/cerebro/mcp/qualquer-coisa']) { const r = await chamar(p, { cab: { origin: ORIGEM_SITE } }); assert.equal(r.status, 404, p + ' → ' + r.status); assert.equal(r.j.error, 'nao_achei'); }
+  assert.equal((await chamar('/cerebro/comece')).status, 403, 'o resto do servidor segue como sempre (sem origem e sem chave: 403)');
+});
+
 test('2. sem token, o MCP responde 401 com o desafio (resource_metadata e scope); GET e token falso também', async () => {
   const r = await chamar('/cerebro/mcp', { corpo: { jsonrpc: '2.0', id: 1, method: 'initialize', params: {} } }); assert.equal(r.status, 401);
   const w = r.h.get('www-authenticate'); assert.match(w, /^Bearer /); assert.match(w, /resource_metadata="http:\/\/localhost:8787\/\.well-known\/oauth-protected-resource\/cerebro\/mcp"/); assert.match(w, /scope="cerebro"/);
