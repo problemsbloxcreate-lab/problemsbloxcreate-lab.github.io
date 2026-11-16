@@ -276,7 +276,8 @@ test('16. quem sai da lista do Estúdio (ou perde o cargo do Cérebro) perde o c
 test('17. origem do navegador: claude.ai e o computador passam; sites desconhecidos não; CORS do MCP', async () => {
   const c = await conectar('dona', { porta: 52020 });
   for (const o of ['https://claude.ai', 'http://localhost:6274', ORIGEM_SITE]) { const r = await rpc(c.access_token, 'ping', undefined, 1, { origin: o }); assert.equal(r.status, 200, o); assert.equal(r.h.get('access-control-allow-origin'), o); assert.match(r.h.get('access-control-expose-headers'), /www-authenticate/); }
-  assert.equal((await rpc(c.access_token, 'ping', undefined, 1, { origin: 'https://evil.example' })).status, 403);
+  const estranha = await rpc(c.access_token, 'ping', undefined, 1, { origin: 'https://evil.example' }); assert.equal(estranha.status, 200, 'origem desconhecida não é recusada (o servidor só usa token)'); assert.equal(estranha.h.get('access-control-allow-origin'), null, 'mas não recebe CORS: o navegador de um site estranho não lê a resposta');
+  for (const o2 of ['null', 'https://claudeusercontent.com', 'https://qualquer.example']) { const sem = await chamar('/cerebro/mcp', { corpo: { jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }, cab: { origin: o2 } }); assert.equal(sem.status, 401, 'Origin ' + o2 + ' sem token: 401 com o desafio, nunca 403'); assert.match(sem.h.get('www-authenticate'), /resource_metadata=/); assert.equal(sem.h.get('access-control-allow-origin'), null); }
   const pre = await chamar('/cerebro/mcp', { metodo: 'OPTIONS', cab: { origin: 'https://claude.ai', 'access-control-request-method': 'POST' } }); assert.equal(pre.status, 204); assert.match(pre.h.get('access-control-allow-headers'), /mcp-protocol-version/);
   const wk = await chamar('/.well-known/oauth-authorization-server', { cab: { origin: 'https://qualquer.example' } }); assert.equal(wk.h.get('access-control-allow-origin'), '*');
 });

@@ -416,8 +416,8 @@ async function rpc(m, env, d, quem) {
 
 async function mcp(req, env, d, base) {
   const origin = req.headers.get('origin') || '';
-  if (!origemMcpOk(origin, env)) return resp({ error: 'origem_nao_liberada' }, 403);
-  const cors = origin ? { 'access-control-allow-origin': origin, vary: 'origin', 'access-control-allow-headers': 'content-type, authorization, accept, mcp-protocol-version, mcp-session-id, last-event-id', 'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS', 'access-control-expose-headers': 'www-authenticate, mcp-session-id, mcp-protocol-version', 'access-control-max-age': '86400' } : {};
+  // Origin: este servidor não usa cookies (só o token no cabeçalho), então uma origem desconhecida não ganha nada. Ela só NÃO recebe os cabeçalhos CORS (o navegador não deixa um site estranho ler a resposta). Recusar com 403 quebrava a verificação do claude.ai.
+  const cors = origin && origemMcpOk(origin, env) ? { 'access-control-allow-origin': origin, vary: 'origin', 'access-control-allow-headers': 'content-type, authorization, accept, mcp-protocol-version, mcp-session-id, last-event-id', 'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS', 'access-control-expose-headers': 'www-authenticate, mcp-session-id, mcp-protocol-version', 'access-control-max-age': '86400' } : {};
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   const desafio = (erro, desc) => new Response(JSON.stringify({ error: erro || 'unauthorized', error_description: desc || 'Faça o login do Google para conectar o Cérebro.' }), { status: 401, headers: { 'content-type': 'application/json', ...NS, ...cors, 'www-authenticate': `Bearer realm="cerebro", resource_metadata="${base}/.well-known/oauth-protected-resource/cerebro/mcp", scope="${ESCOPO}"${erro ? `, error="${erro}", error_description="${desc}"` : ''}` } });
   if (!env.EQUIPE_DB) return resp({ error: 'O banco do Cérebro não está ligado neste servidor.' }, 503, cors);
