@@ -436,12 +436,30 @@ async function mcp(req, env, d, base) {
   return resp(lote ? out : out[0], 200, cors);
 }
 
+/* ======================= o cerebro.mjs também entra pelo login do Google =======================
+   O programa de linha de comando (node ~/.claude/cerebro.mjs) faz o mesmo login (registro, PKCE, retorno no próprio computador) e recebe um token cbt_.
+   Esse token vale em POUCAS rotas /cerebro/* (lista fechada, só o que o programa usa e que uma IA de chave já podia fazer), como uma IA (login.ia):
+   as permissões são as mesmas do MCP e da chave (ADM grava direto; quem não é ADM grava direto, mas entra na Revisar; skill espera o ok). */
+const REST_GET = new Set(['/', '/comece', '/inicio', '/item', '/versao', '/skills', '/buscar', '/trechos', '/pedidos']), REST_POST = new Set(['/salvar', '/pedido']);
+async function restComToken(req, env, d, p) {
+  const origin = req.headers.get('origin'); if (origin && !origemMcpOk(origin, env)) return resp({ error: { type: 'origem', message: 'Origem não liberada.' } }, 403);
+  if (!env.EQUIPE_DB) return resp({ error: { type: 'cerebro', message: 'O banco do Cérebro não está ligado neste servidor.' } }, 503);
+  const tk = /^Bearer\s+(\S+)$/i.exec(req.headers.get('authorization') || '')?.[1], quem = await cnAcesso(env, d, tk);
+  if (!quem) return resp({ error: { type: 'chave', message: 'A conexão do Cérebro está inválida, vencida ou foi revogada. Rode de novo: node ~/.claude/cerebro.mjs entrar' } }, 401);
+  const rota = p.slice('/cerebro'.length) || '/';
+  if (!(req.method === 'GET' ? REST_GET.has(rota) : req.method === 'POST' ? REST_POST.has(rota) : false)) return resp({ error: { type: 'rota', message: 'Esta rota não está liberada para o login do Google do computador (ela é pelo site).' } }, 403);
+  await d.planoEstado(env); if (d.planoPausado()) return resp({ error: { type: 'plano_pausado', message: 'O Estúdio está pausado: o uso incluído no plano deste mês chegou ao fim. Um ADM precisa confirmar para continuar.' } }, 423);
+  return d.cerebro(req, env, { ok: true, ia: true, iaAdm: !!quem.adm, iaNome: quem.iaNome, conector: true }, p, {});
+}
+
 /* ======================= a porta de entrada: o worker.js chama isto primeiro ======================= */
 export async function conector(req, env, d) {
   const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
   const meu = p === '/cerebro/mcp' || p.startsWith('/cerebro/oauth/') || p.startsWith('/.well-known/oauth-') || p === '/.well-known/openid-configuration' || p.startsWith('/.well-known/openid-configuration/');
-  if (!meu) return null;
+  const restToken = !meu && (p === '/cerebro' || p.startsWith('/cerebro/')) && /^Bearer\s+cbt_/i.test(req.headers.get('authorization') || ''); // token do Google nas rotas do programa de linha de comando
+  if (!meu && !restToken) return null;
   if (String(env.CONECTOR_DESLIGADO || '') === '1') return resp({ error: 'conector_desligado', error_description: 'O conector do Cérebro está desligado no momento. A chave antiga (cerebro.mjs) continua funcionando.' }, 503, CORS_PUBLICO); // interruptor de emergência: variável da Cloudflare, sem novo deploy
+  if (restToken) return restComToken(req, env, d, p);
   const base = semBarra(env.CONECTOR_URL_BASE || url.origin);
   if (p === '/cerebro/mcp') return mcp(req, env, d, base);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: p === '/cerebro/oauth/aprovar' ? d.cors(req, env) : CORS_PUBLICO });

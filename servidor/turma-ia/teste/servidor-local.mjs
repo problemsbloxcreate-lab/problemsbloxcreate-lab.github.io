@@ -17,6 +17,9 @@ const env = novoAmbiente({ CONECTAR_URL: `http://localhost:${PORTA}/cerebro/cone
 const grava = (caminho, corpo, resumo, marca) => worker.fetch(new Request(`http://localhost:${PORTA}/cerebro/salvar`, { method: 'POST', headers: { 'x-cerebro-chave': env.CEREBRO_CHAVE, 'content-type': 'application/json' }, body: JSON.stringify({ caminho, corpo, resumo, marca, ia: 'seed', pedidoPor: 'seed', motivo: 'página de exemplo do servidor local' }) }), env, ctx);
 await grava('00 Comece aqui/Leia primeiro', '# Leia primeiro\n\nO Cérebro é a memória do Estúdio Problems (texto de exemplo do servidor local).', 'Guia inicial.', 'guia');
 await grava('Programas/Animador', '# Animador\n\nFaz as animações da equipe. Exportar legendas em SRT fica na janela Exportar.', 'Fazer as animações da equipe.', 'guia');
+await grava('Skills/celestia/Skill principal', '---\nname: celestia\ndescription: CelestIA de teste\n---\n# celestia\n\nSkill de exemplo do servidor local.', 'A auxiliar do Estúdio (exemplo).', 'skill');
+await grava('Skills/celestia/Agente celestia', '---\nname: celestia\ndescription: Agente de teste\n---\nAgente de exemplo.', 'Agente celestia (exemplo).', 'skill');
+await grava('Skills/ouvir/Skill principal', '---\nname: ouvir\ndescription: ouvir de teste\n---\n# ouvir\n\nExemplo.', 'Ouvir áudio (exemplo).', 'skill');
 await grava('Regras/Regras da dona', '# Regras da dona\n\nNunca grave senhas. Cite o Cérebro no fim das respostas.', 'Como falar, segredos e gastos.', 'regra');
 
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.json': 'application/json' };

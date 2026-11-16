@@ -315,10 +315,25 @@ test('19c. interruptor de emergência (CONECTOR_DESLIGADO=1): o conector sai do 
   assert.equal((await rpc(c.access_token, 'ping')).status, 200, 'religado: as conexões voltam a valer');
 });
 
+test('19d. o cerebro.mjs com login do Google: token cbt_ vale só nas rotas do programa, com as permissões de sempre', async () => {
+  const maria3 = await conectar('maria', { porta: 52060, rotulo: 'linha de comando' }), dona3 = await conectar('dona', { porta: 52061, rotulo: 'linha de comando da dona' });
+  const B = t => ({ authorization: 'Bearer ' + t });
+  for (const r of ['/cerebro/comece', '/cerebro/inicio', '/cerebro', '/cerebro/item?caminho=' + encodeURIComponent('Programas/Animador'), '/cerebro/buscar?q=legendas', '/cerebro/trechos?q=legendas', '/cerebro/pedidos?estado=novo', '/cerebro/skills']) assert.equal((await chamar(r, { cab: B(maria3.access_token) })).status, 200, r);
+  const g = await chamar('/cerebro/salvar', { corpo: { caminho: 'Aprendizados/Teste pela linha de comando', corpo: 'texto', resumo: 'r', ia: 'Claude Teste', pedidoPor: 'Maria', motivo: 'teste' }, cab: B(maria3.access_token) }); assert.equal(g.status, 200, g.t);
+  const rev = await env.EQUIPE_DB.prepare("SELECT quem, skill FROM cerebro_revisao WHERE caminho = 'Aprendizados/Teste pela linha de comando'").first(); assert.equal(rev.quem, 'Maria Teste (conector: linha de comando)', 'quem não é ADM: vai para a Revisar');
+  const gd = await chamar('/cerebro/salvar', { corpo: { caminho: 'Aprendizados/Teste ADM pela linha de comando', corpo: 'texto', resumo: 'r', ia: 'Claude Teste', pedidoPor: 'Dona', motivo: 'teste' }, cab: B(dona3.access_token) }); assert.equal(gd.status, 200); assert.equal(await env.EQUIPE_DB.prepare("SELECT 1 FROM cerebro_revisao WHERE caminho = 'Aprendizados/Teste ADM pela linha de comando'").first(), null, 'ADM grava direto');
+  for (const [m, r] of [['GET', '/cerebro/chaves'], ['GET', '/cerebro/revisao'], ['GET', '/cerebro/tudo'], ['POST', '/cerebro/lixeira'], ['POST', '/cerebro/restaurar'], ['POST', '/cerebro/chaves'], ['POST', '/cerebro/reindexar'], ['POST', '/cerebro/cartao']]) assert.equal((await chamar(r, { metodo: m, corpo: m === 'POST' ? {} : undefined, cab: B(dona3.access_token) })).status, 403, m + ' ' + r + ' (nem para ADM: é pelo site)');
+  assert.equal((await chamar('/cerebro/comece', { cab: { authorization: 'Bearer cbt_' + 'q'.repeat(43) } })).status, 401, 'token falso');
+  assert.equal((await chamar('/cerebro/comece', { cab: { ...B(maria3.access_token), origin: 'https://evil.example' } })).status, 403, 'navegador de outro site');
+  const segredo = await chamar('/cerebro/salvar', { corpo: { caminho: 'Aprendizados/x', corpo: 'sk-ant-api03-' + 'A'.repeat(40), resumo: 'r', ia: 'C', pedidoPor: 'M', motivo: 'm' }, cab: B(maria3.access_token) }); assert.equal(segredo.status, 400, 'segredo recusado também aqui');
+  env.EQUIPE_DB._bruto.exec("UPDATE cerebro_conexao SET revogada = 1 WHERE rotulo = 'linha de comando'"); assert.equal((await chamar('/cerebro/comece', { cab: B(maria3.access_token) })).status, 401, 'revogado = fora');
+  env.CONECTOR_DESLIGADO = '1'; try { assert.equal((await chamar('/cerebro/comece', { cab: B(dona3.access_token) })).status, 503, 'interruptor de emergência'); } finally { delete env.CONECTOR_DESLIGADO; }
+});
+
 test('19. rotas internas não vazam: o /cerebro/revisao e outras rotas de gente seguem fechadas para o conector', async () => {
   const c = await conectar('dona', { porta: 52040 }); // até a conexão de um ADM é "IA": não revisa, não mexe em chaves
-  const rr = await chamar('/cerebro/revisao', { cab: { origin: ORIGEM_SITE, authorization: 'Bearer ' + c.access_token } }); assert.equal(rr.status, 401, 'o token do conector não vale fora do /cerebro/mcp');
-  const ch = await chamar('/cerebro/chaves', { cab: { origin: ORIGEM_SITE, authorization: 'Bearer ' + c.access_token } }); assert.equal(ch.status, 401);
+  const rr = await chamar('/cerebro/revisao', { cab: { origin: ORIGEM_SITE, authorization: 'Bearer ' + c.access_token } }); assert.equal(rr.status, 403, 'o token do Google não abre a Revisar (só o site)');
+  const ch = await chamar('/cerebro/chaves', { cab: { origin: ORIGEM_SITE, authorization: 'Bearer ' + c.access_token } }); assert.equal(ch.status, 403, 'nem as chaves');
   const o = await chamar('/quem', { cab: { authorization: 'Bearer ' + c.access_token, origin: ORIGEM_SITE } }); assert.equal(o.status, 401);
   assert.equal(rede.chamadas.length, 0);
 });
