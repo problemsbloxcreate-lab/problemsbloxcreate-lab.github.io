@@ -1,6 +1,6 @@
 # Conector do Cérebro: plano de segurança e como publicar (para a dona aprovar)
 
-Estado em 16/11/2026: **código pronto e testado em local. Nada foi publicado**: não houve deploy do Worker, nada foi para o site, nenhuma chave foi criada ou copiada. O trabalho está na ramificação `conector-mcp` do repositório do site (um push em `main` publica sozinho, por isso ela não foi enviada para lá).
+Estado em 16/11/2026: **PUBLICADO, com o OK da dona digitado na conversa** (servidor `turma-ia` e site no ar a partir do commit `86dbddd`; o `CLAUDE.md` novo foi enviado a 7 repositórios; as páginas do Cérebro e a skill celestia foram atualizadas). Segue valendo o plano de segurança abaixo.
 
 ## O que é, em uma frase
 
@@ -65,12 +65,12 @@ Três diferenças em relação à chave de computador, de propósito:
 
 | Teste | Resultado |
 |---|---|
-| 24 testes automáticos (`node --test servidor/turma-ia/teste/conector.test.mjs`) rodando o `worker.js` real, banco SQLite em memória, logins do Google falsos, rede bloqueada | **24 de 24** |
+| 40 testes automáticos (25 do servidor em `teste/conector.test.mjs`, 15 do programa `cerebro.mjs` em `teste/cerebro-mjs.test.mjs`) rodando o `worker.js` e o `cerebro.mjs` reais, banco SQLite em memória, logins do Google falsos, rede bloqueada | **40 de 40** |
 | Claude Code **2.1.325 com pasta de configuração limpa** (sem `cerebro.mjs`, sem chave, sem gancho): `claude mcp add`, `claude mcp login`, tela de permissão no navegador, **Permitir** | `Authenticated with "cerebro"`, `claude mcp list` = **Connected**, 9 ferramentas listadas |
 | Cliente oficial do MCP (SDK 1.32): descoberta, registro, PKCE, token, **renovação automática**, `comece`, `buscar`, `ler`, `salvar`, erro de ferramenta | passou |
 | `wrangler dev` (o motor da Cloudflare, workerd, wrangler 4.20.0, o mesmo da Action) com D1 local | passou (registro, `/autorizar`, recusas sem login, as 9 ferramentas, busca, gravação, fluxo antigo) |
 | Fluxo antigo da chave (principal, chave autorizada pela pessoa, revisão de quem não é ADM, skill retida) | **igual ao de antes** |
-| Revisão de segurança independente (outro modelo, sem ver as minhas conclusões), com prova de conceito | **1 falha média achada e corrigida**, mais 7 pontos menores (ver abaixo); os 6 requisitos de segurança foram conferidos como atendidos |
+| Duas revisões de segurança independentes (outro modelo, sem ver as minhas conclusões), com prova de conceito | 1ª: **1 falha média + 7 menores, corrigidas**; 2ª (do login dentro do `cerebro.mjs`): **1 falha média-alta + 7 menores, corrigidas** (ver abaixo); os requisitos de segurança foram conferidos como atendidos |
 
 **Não foi testado:** o login do Google de verdade (as chaves do Google não dá para simular em local); o aplicativo do Claude e o claude.ai (conectores personalizados); **um modelo usando as ferramentas numa conversa limpa** (o Claude Code isolado não tinha login de modelo); nada em produção. Esses ficam para o primeiro uso real, logo depois de publicar.
 
@@ -97,19 +97,36 @@ Ressalva do revisor: o código nunca manda o token do conector para outro servid
 - Por chamada de ferramenta: 1 leitura extra no D1 (conferir o token) mais o que a ferramenta já gastava. Por login: cerca de 10 escritas. Por renovação (no máximo 1 por hora por conexão em uso): 3 escritas. É pouco perto do limite do plano.
 - A trava do plano (pausa aos 95%) vale também para as ferramentas do conector.
 
-## Passos de publicação (só depois do OK da dona, digitado)
+## O `cerebro.mjs` também entra pelo login do Google (pedido da dona, 16/11/2026)
 
-1. **A dona aprova** este plano (ver "Decisões" abaixo).
-2. Juntar a ramificação `conector-mcp` em `main` (um commit de junção, sem apagar nada) e enviar. Isso dispara sozinho: a Action `turma-ia.yml` (publica `worker.js` + `conector.js` e mantém as variáveis e segredos atuais), e a `pages.yml` (tela de permissão, guias e `instalar.html`). Não precisa de nenhum segredo novo.
-3. Conferir com curl (sem login):
-   - `https://turma-ia.problemsraiz.workers.dev/.well-known/oauth-protected-resource/cerebro/mcp` → 200 com `resource` terminando em `/cerebro/mcp`;
-   - `POST https://turma-ia.problemsraiz.workers.dev/cerebro/mcp` → **401** com `www-authenticate`;
-   - o teste da própria Action (`/cerebro` com chave errada → 401) e o fluxo antigo com a chave normal → 200.
-4. **A dona conecta primeiro** (os dois comandos do `CONECTOR.md`), confere `claude mcp list` = Connected e a conexão em Cérebro › Acesso das IAs, e pede ao Claude: "abra o Cérebro".
-5. Só então o colega conecta. Se o colega tiver outra conta do Google que não está na lista, a tela mostra o motivo.
-6. Depois de publicado: atualizar as páginas do Cérebro `00 Comece aqui/Leia primeiro` e `00 Comece aqui/Como uma IA usa o Cérebro` (o trecho "Computador novo ou conta nova") para falarem do conector.
+A dona pediu que ninguém precise colar código: em qualquer tarefa do Estúdio, em qualquer computador ou conta, ADM ou não, o Claude liga sozinho e a pessoa só toca em **Permitir**. Para isso o programa de linha de comando passou a fazer o **mesmo login** do conector: se registra como programa público, abre o navegador na tela de permissão, recebe a resposta num servidor do **próprio computador** (127.0.0.1, porta aleatória, `state` e `iss` conferidos) e troca o código por um token (`cbt_`, PKCE). Ele guarda a ligação em `~/.claude/cerebro-conexao.json` (só vale para o servidor onde foi feita). **A chave `c-…` ficou só de reserva** (`node ~/.claude/cerebro.mjs entrar --chave`).
+- **No servidor**, o token do Google vale em uma **lista fechada** de rotas `/cerebro/*` (as que o programa usa: `/`, `/comece`, `/inicio`, `/item`, `/versao`, `/skills`, `/buscar`, `/trechos`, `/pedidos` e, para gravar, `/salvar`, `/pedido`), com **as mesmas permissões** do MCP e da chave de IA. Chaves, Revisar, lixeira, restaurar e o resto continuam **só pelo site**, mesmo para ADM (testado).
+- O `instalar` agora também liga o **gancho Stop** da dona (a IA volta e grava no Cérebro quando mudou algo do Estúdio sem gravar; tem trava contra laço) e o do começo da sessão, mesclando com o `settings.json` (cópia de segurança, gravação atômica, arquivo com erro não é tocado) e tenta cadastrar o conector no Claude Code. O script do gancho viaja **dentro do `cerebro.mjs`**: não vem do banco do Cérebro (onde IAs de quem não é ADM gravam).
+- **Renovação do token:** só um programa renova por vez (trava), com tempos que cabem no gancho; se o servidor cair ou for desligado, o programa diz isso e **não manda reinstalar**; com o conector desligado (`CONECTOR_DESLIGADO=1`) ele usa a chave de reserva, se existir.
 
-**Voltar atrás:** `CONECTOR_DESLIGADO=1` na Cloudflare (na hora) ou desfazer o commit de junção (a Action publica o código anterior). As tabelas novas ficam no banco sem atrapalhar.
+## Segunda revisão de segurança independente (login dentro do `cerebro.mjs`)
+
+| # | Gravidade | O que era | Situação |
+|---|---|---|---|
+| 1 | Média-alta | A ligação caía se a renovação fosse interrompida (resposta perdida, gancho morto no tempo limite) ou se uma trava ficasse presa: dois programas renovavam com o mesmo token | **Corrigido**: nunca renova sem a trava; folga do servidor de 60 s; tempos menores; repete se a rede falhar; arquivo gravado de forma atômica. Provas de conceito do revisor agora não derrubam a ligação |
+| 2 | Média | Com o conector desligado, o programa parava e mandava as IAs reinstalarem (criando chave e login novos) | **Corrigido**: mensagem própria para erro de servidor/rede, usa a chave de reserva, não abre login nem cria chave |
+| 3 | Média | Cadeia de suprimentos: o `cerebro.mjs` vem do GitHub Pages deste repositório e roda **sem perguntar** (regra da dona); quem põe código em `main` executa código nos computadores. Além disso, o texto de "00 Comece aqui" entra no contexto de toda sessão e uma IA de quem não é ADM pode mudá-lo | **Não corrigido (decisão da dona)**: ver "O que sobra de risco" |
+| 4 | Baixa | A URL de login impressa poderia ser reaproveitada por alguém que a visse | **Corrigido**: só é mostrada se o navegador não abriu; `iss` obrigatório |
+| 5 | Baixa | No Windows: argumentos concatenados, programas procurados na pasta atual | **Corrigido**: caminho absoluto do `rundll32`, `claude` fora da pasta atual, `CEREBRO_URL` validada |
+| 6 | Baixa | A ligação não estava presa ao servidor | **Corrigido** |
+| 7 | Baixa | `settings.json` não gravado de forma atômica e a cópia de segurança era sobrescrita | **Corrigido** (a primeira cópia nunca é sobrescrita; as seguintes levam data) |
+| 8 | Baixa | O script do gancho Stop é inofensivo (sem rede, sem comandos, sem laço), mas é fácil enganá-lo para não bloquear, e obriga a gravar conteúdo da conversa num banco que a equipe lê | **Aceito** (é regra da dona); o que protege é o filtro de segredos do servidor |
+
+**O que sobra de risco novo (decisão da dona):** como o Claude agora baixa e roda o `cerebro.mjs` **sem perguntar**, a confiança fica toda no repositório do site. Recomendo (1) **proteger a `main`** com revisão obrigatória para `cerebro/**`, `CLAUDE.md` e `.github/workflows/**`; (2) publicar o **SHA-256** do programa por um caminho que só a dona controla e conferi-lo antes de rodar; (3) pôr "00 Comece aqui" sob a mesma retenção de revisão que as skills. Nada disso foi feito sem a dona decidir, porque muda o jeito de a equipe publicar.
+
+## Como foi publicado (16/11/2026, com o OK da dona)
+
+1. A ramificação `conector-mcp` foi enviada para `main` do repositório do site (`ec03c9d..86dbddd`, sem conflito). Isso disparou sozinho a Action **Publicar o servidor turma-ia** (passou, inclusive as conferências dela: sem login 401, chave errada 401, login ligado) e **Publicar no GitHub Pages** (passou).
+2. Conferido no endereço público: `/.well-known/oauth-protected-resource/cerebro/mcp` e `/.well-known/oauth-authorization-server` respondem; `POST /cerebro/mcp` sem token dá **401** com o desafio; token falso nas rotas do programa dá **401**; o fluxo antigo da chave continua lendo; `cerebro/conectar.html` e `cerebro.mjs` publicados (o `cerebro.mjs` baixado é igual ao do repositório).
+3. O `CLAUDE.md` novo foi enviado a 7 repositórios (cada um um commit só nesse arquivo): animador, editor, estudio-problems, jester-dreams, modelador, preparativos e publicacoes.
+4. As páginas do Cérebro `00 Comece aqui/Leia primeiro`, `00 Comece aqui/Como uma IA usa o Cérebro`, `Regras/2026-11-12 CelestIA e Cérebro se instalam sozinhos, sem botão` e `Skills/celestia/Skill principal` (seções 16 e 17) foram atualizadas.
+
+**Voltar atrás:** `CONECTOR_DESLIGADO=1` na Cloudflare (na hora; o programa cai na chave de reserva) ou desfazer o commit de junção (a Action publica o código anterior). As tabelas novas ficam no banco sem atrapalhar.
 
 ## Decisões para a dona
 
