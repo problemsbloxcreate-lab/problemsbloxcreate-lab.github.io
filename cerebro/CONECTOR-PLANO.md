@@ -128,20 +128,17 @@ A dona pediu que ninguém precise colar código: em qualquer tarefa do Estúdio,
 
 **Voltar atrás:** `CONECTOR_DESLIGADO=1` na Cloudflare (na hora; o programa cai na chave de reserva) ou desfazer o commit de junção (a Action publica o código anterior). As tabelas novas ficam no banco sem atrapalhar.
 
-## Decisões para a dona
+## Decisões
 
-1. **Quem entra:** as mesmas contas do Estúdio (lista + cargo com o Cérebro), sem lista nova. *(Recomendado: sim.)*
-2. **A conexão de um ADM grava direto**, como a chave de um ADM. *(Recomendado: sim. A outra opção é tratar todo conector como não-ADM, com revisão, mas aí o ADM revisaria as próprias gravações.)*
-3. **OK para publicar** nos passos acima.
-4. **Pôr um `.mcp.json` nos repositórios do Estúdio** (o conector já vem cadastrado para quem abrir a pasta; sem chave, o endereço não é segredo). *(Recomendado: sim, depois de publicar.)*
-5. **Skills e agentes pelo conector ou por plugin:** ver `CONECTOR-SKILLS.md`. Fica para depois.
-6. **Aceitar o aplicativo do Claude e o claude.ai pelo conector** (endereços de retorno claude.ai e claude.com, já na lista padrão, **não testados**) **ou deixar só o Claude Code** no computador (mais restrito; os do claude.ai entram depois pela variável `CONECTOR_REDIRECTS`)? *(Recomendado: deixar a lista como está, com o aviso na tela, e testar no primeiro uso.)*
+**Já decididas pela dona (16/11/2026):** publicar tudo; o Claude liga sozinho e **sem perguntar**, em qualquer conta ou computador, **ADM ou não** (quem não é ADM grava direto, os ADMs revisam); gravar no Cérebro é automático (gancho Stop); a chave `c-…` é só reserva; a conexão de um ADM grava direto.
 
-## O que mudaria nos CLAUDE.md (NÃO foi editado nenhum)
+**Ainda abertas (recomendo decidir):**
+1. **Proteger a `main`** do repositório do site (revisão obrigatória para `cerebro/**`, `CLAUDE.md`, `.github/workflows/**`) e **publicar o SHA-256** do `cerebro.mjs` por um caminho só da dona (ver a 2ª revisão, achado 3).
+2. Pôr **"00 Comece aqui"** sob a mesma retenção de revisão das skills (hoje uma IA de quem não é ADM muda esse texto na hora e ele entra no contexto de toda sessão).
+3. **Aceitar o aplicativo do Claude e o claude.ai** pelo conector (endereços de retorno já na lista padrão; ainda **não testado**): o teste mexe nas configurações da conta, então depende de a dona autorizar.
+4. **Pôr um `.mcp.json`** nos repositórios do Estúdio (o conector já vem cadastrado para quem abrir a pasta).
+5. **Skills e agentes por plugin** em vez de baixar: ver `CONECTOR-SKILLS.md`. Fica para depois.
 
-Hoje o bloco do começo (2 linhas) manda a IA baixar o `cerebro.mjs`, criar chave e mostrar um código `c-…`. É o que trava o colega. Mudaria em **9 arquivos**: `animador`, `editor`, `estudio-problems` (e a cópia `ep`), `jester-dreams`, `modelador`, `preparativos`, `publicacoes` e `site` (no `site/CLAUDE.md` e no `ep/CLAUDE.md` também há linhas soltas com `cerebro.mjs` para ajustar). Texto novo proposto:
+## O que mudou nos CLAUDE.md (enviado em 16/11/2026)
 
-> ## Estúdio Problems: Cérebro e CelestIA (pedido da dona, 12/11/2026; conector em 16/11/2026)
-> Este repositório é do Estúdio Problems. **O Cérebro entra pelo conector**: se você já tem as ferramentas `mcp__cerebro__comece`, `buscar`, `ler`, `salvar` etc., use elas e **não instale o `cerebro.mjs`**. Se não tem, pergunte uma vez "Posso ligar o Cérebro do Estúdio neste computador? Você só precisa entrar com o seu login do Google." e, com o sim, rode `claude mcp add --transport http --scope user cerebro https://turma-ia.problemsraiz.workers.dev/cerebro/mcp` e peça para a pessoa rodar `claude mcp login cerebro` (login do Google, sem código e sem arquivo de chave). Antes de mudar algo, chame `comece` e leia a página do programa; depois, grave o que mudou (`salvar` ou `aprender`, com resumo, `pedidoPor` e `ia`). As skills e agentes (CelestIA, walt-disney, design-problems) ainda vêm do jeito antigo: baixe https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs e rode `node cerebro.mjs instalar` (precisa autorizar o código `c-…` em https://estudio.problemsraiz.workers.dev/cerebro/?aba=chaves). Passo a passo: https://problemsbloxcreate-lab.github.io/cerebro/instalar.html
-
-Opcional, junto: o aviso do começo da sessão do `cerebro.mjs` (`AVISO_FIXO`) ganhar uma frase "se o conector estiver ligado, use as ferramentas". Isso exige publicar um `cerebro.mjs` novo; por isso ficou de fora.
+Um commit só no `CLAUDE.md` de cada repositório: animador, editor, estudio-problems, jester-dreams, modelador, preparativos, publicacoes e site (neste, junto com as linhas soltas sobre a chave). O bloco do começo, que mandava perguntar e colar código, agora diz: em qualquer tarefa do Estúdio, em qualquer conta ou computador, ADM ou não, o Claude liga o Cérebro e a CelestIA **sozinho, na hora, sem perguntar**, rodando `node cerebro.mjs instalar` (que abre o navegador); o único passo da pessoa é tocar em **Permitir** (login do Google, uma vez por computador), dito numa linha só; depois grava no Cérebro sem pedir licença. A chave `c-…` é só reserva. A pasta `ep` (cópia antiga do estudio-problems) recebe a mudança no próximo `git pull`.
