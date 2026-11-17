@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.12', apelido: 'Celeste', em: '17/11/2026',
+window.EstudioVersao ||= { nome: '2.13', apelido: 'Celeste', em: '17/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Calendário (2.13)', ['Um calendário só: o do Publicações, no menu e em qualquer programa. O calendário de lembretes saiu.', 'O bloco Calendário do menu mostra a próxima publicação, e o aviso na hora marcada vem das publicações.']],
     ['Ícones (2.12)', ['O que você muda em ADM › Ícones (cantos, borda, cores, letras) aparece igual em todo lugar: menu, barra de baixo, cabeçalho, filtros e carregamento.', 'Programa fixado na barra de baixo volta a mostrar o ícone.']],
     ['ADM do menu (2.11)', ['ADM › Ícones com mais opções: tamanho das letras, degradê, espessura da borda e imagem com zoom e posição.', 'ADM › Botões: Ateliê, Cenários e Publicações com bloco próprio (Em teste, Só para ADMs, Invisível) e as etiquetas aparecem na prévia.']],
     ['Menu (2.10)', ['Abrir um programa como no celular: o ícone voa para o centro e vira o carregamento.', 'Clima com mais coisas: sensação, umidade, vento, chuva, sol, 24 horas, 7 dias, °C/°F e onde mostrar.', 'A hora e o calendário abrem o calendário do Publicações; clicar leva ao Preparativos no dia certo.', 'Publicações no menu, com o Preparativos pequeno no canto.', 'Selinhos de dono também na grade de programas do cabeçalho.', 'Ícone do atalho como os dos programas: letras, cores, degradê, imagem com zoom e borda.', 'Filtro de Meus projetos no visual novo.']],

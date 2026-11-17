@@ -1683,17 +1683,6 @@ html.cel body .clp .clp-fonte{margin:10px 4px 0;font-size:11.5px;color:var(--tex
 html.cel body #top .ip-clima{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;margin-right:6px;border:0;border-radius:7px;background:none;color:inherit;font:500 13px var(--fonte);cursor:pointer}
 html.cel body #top .ip-clima:hover{background:var(--fundo-3)}
 html.cel:not(:has(#menu:not([hidden]))) body #top .ip-clima{display:none}
-/* CALENDÁRIO DO PUBLICAÇÕES por cima do menu (17/11/2026) */
-html.cel body .modal.cpub:not(#_){display:flex!important;align-items:center!important;justify-content:center!important;padding:24px!important}
-html.cel body .modal.cpub .cpub-cx{display:flex!important;flex-direction:column;width:min(1100px,94vw)!important;max-width:none!important;height:min(760px,88vh)!important;padding:0!important;overflow:hidden;border-radius:14px!important}
-html.cel body .modal.cpub .mp-cab{display:flex;align-items:center;gap:8px;height:52px;flex:none;padding:0 12px 0 22px;border-bottom:1px solid var(--linha)}
-html.cel body .modal.cpub .mp-cab h3{flex:1;margin:0!important;font:600 17px var(--fonte)!important}
-html.cel body .modal.cpub .mp-x{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--texto-2);cursor:pointer}
-html.cel body .modal.cpub .mp-x:hover{background:var(--fundo-3)}
-html.cel body .modal.cpub .cpub-q{position:relative;flex:1;min-height:0}
-html.cel body .modal.cpub iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
-html.cel body .modal.cpub .cpub-esp{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--texto-2)}
-html.cel body .modal.cpub .cpub-dica{flex:none;margin:0;padding:10px 22px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--texto-2)}
 html.cel.ip body #menu .ip-ola [data-ip-hora]{cursor:pointer}
 /* ADM › ÍCONES com mais opções (17/11/2026) */
 #adm .ic-chk{display:inline-flex;align-items:center;gap:6px;margin:0 6px 0 10px;font-size:13px;cursor:pointer}#adm .ic-chk input{width:16px;height:16px;accent-color:var(--acento,#5cc4ff)}
@@ -2725,20 +2714,20 @@ const estudio = {
   liga() { this.pinta(); if (this._ok) return; this._ok = true;
     ['estudio-mensagens', 'estudio-perm', 'estudio-nuvem-estado'].forEach(ev => addEventListener(ev, () => this.pinta()));
     addEventListener('storage', e => { if (/^ep-(nuvem-uso|calendario)$/.test(e.key || '')) this.pinta(); });
-    addEventListener('click', () => { if (!$('.ep-cal')) return; clearTimeout(this._tc); this._tc = setTimeout(() => this.pinta(), 400); }); // lembrete novo no calendário: o bloco mostra
+    addEventListener('storage', e => { if (e.key === 'ep-publicacoes-v1') { clearTimeout(this._tc); this._tc = setTimeout(() => this.pinta(), 300); } }); // o Publicações mudou (outra aba): o bloco mostra
     setInterval(() => { if (!document.hidden && !$('#menu').hidden) this.pinta(); }, 60e3); },
   pinta() {
     const box = $('#estudio'); if (!box) return; const EC = window.EstudioConta, nao = EC?.mensagens?.naoLidas || 0;
     let nv = null; try { const j = JSON.parse(localStorage.getItem('ep-nuvem-uso') || 'null')?.j; if (j?.limite) nv = j.total / j.limite; } catch { }
-    let hoje = 0; try { const d = new Date().toDateString(); hoje = JSON.parse(localStorage.getItem('ep-calendario') || '[]').filter(e => new Date(e.em).toDateString() === d).length; } catch { }
+    let hoje = 0; try { const d = new Date().toDateString(); hoje = (JSON.parse(localStorage.getItem('ep-publicacoes-v1') || 'null')?.itens || []).filter(e => e?.publicaEm && new Date(e.publicaEm).toDateString() === d).length; } catch { } // publicações de hoje (o calendário é o do Publicações)
     const cor = p => p == null ? 'rgba(255,255,255,.35)' : p > .85 ? 'var(--mn-er)' : p > .6 ? 'var(--mn-at)' : 'var(--mn-ok)';
     const DES = { nuvem: '<path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/>', pc: '<rect x="3" y="4.5" width="18" height="12" rx="1"/><path d="M8.5 20h7M12 16.5V20"/>' };
     const esp = (k, nome, p, bg) => `<button type="button" class="et" data-et="${k}" style="--c:${bg}" title="${nome}${p == null ? '' : ' · ' + Math.round(p * 100) + '% usado'}"><span class="des">${ICE(DES[k], 34)}</span><span class="pct">${p == null ? '—' : Math.round(p * 100) + '<small>%</small>'}</span><span class="barra"><i style="width:${p == null ? 0 : Math.max(3, Math.min(100, p * 100)).toFixed(0)}%;background:${cor(p)}"></i></span><span class="nm">${nome}</span></button>`;
     const d = new Date(), T = [];
     if (false /* SEM MENSAGENS (2.0, pedido da dona, 12/11/2026) */) T.push(`<button type="button" class="et" data-et="msgs" style="--c:#0f5d8f" title="${nao ? nao + (nao > 1 ? ' mensagens novas' : ' mensagem nova') : 'Mensagens'}"><span class="gi">${ICE('<path d="M4 5.5h16v11H9l-5 4z"/>')}</span>${nao ? `<span class="cnt">${nao > 99 ? '99+' : nao}</span>` : ''}<span class="nm">Mensagens</span></button>`);
-    let prox = null; try { const t = Date.now() - 6e4; prox = JSON.parse(localStorage.getItem('ep-calendario') || '[]').filter(e => e.em >= t).sort((a, b) => a.em - b.em)[0] || null; } catch { }
+    let prox = null; try { const p = window.EstudioConta?.proximasPublicacoes?.(1)?.[0]; if (p) prox = { t: p.titulo, em: +p.publicaEm }; } catch { } // a próxima publicação marcada
     const quandoP = e => { const x = new Date(e.em), h = x.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return x.toDateString() === d.toDateString() ? 'hoje, ' + h : x.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '') + ', ' + h; };
-    T.unshift(`<button type="button" class="et w" data-et="cal" style="--c:#1f7a5c" title="Seu calendário (lembretes e metas)"><span class="dia"><b data-mes="de ${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}">${d.getDate()}</b><small><span class="sem">${esc(d.toLocaleDateString('pt-BR', { weekday: 'long' }))}</span><br><span class="mes">${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}</span></small></span><span class="et-r cal${prox ? '' : ' vz'}">${prox ? `<small>Próximo ${prox.tipo === 'meta' ? 'objetivo' : 'lembrete'}</small><b>${esc(prox.t)}</b><small>${esc(quandoP(prox))}</small>` : '<small>Nenhum lembrete</small><b>Calendário</b>'}</span><span class="nm">${hoje ? hoje + (hoje > 1 ? ' lembretes hoje' : ' lembrete hoje') : 'Calendário'}</span></button>`);
+    T.unshift(`<button type="button" class="et w" data-et="cal" style="--c:#1f7a5c" title="Calendário das Publicações"><span class="dia"><b data-mes="de ${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}">${d.getDate()}</b><small><span class="sem">${esc(d.toLocaleDateString('pt-BR', { weekday: 'long' }))}</span><br><span class="mes">${esc(d.toLocaleDateString('pt-BR', { month: 'long' }))}</span></small></span><span class="et-r cal${prox ? '' : ' vz'}">${prox ? `<small>Próxima publicação</small><b>${esc(prox.t)}</b><small>${esc(quandoP(prox))}</small>` : '<small>Nenhuma publicação marcada</small><b>Calendário</b>'}</span><span class="nm">${hoje ? hoje + (hoje > 1 ? ' lembretes hoje' : ' lembrete hoje') : 'Calendário'}</span></button>`);
     T.push(esp('nuvem', 'Nuvem da equipe', nv, '#1a5fb4'), esp('pc', 'Este computador', this.pc, '#3b4b5b'));
     T.push(`<button type="button" class="et" data-et="perfil" style="--c:#6a4fd8"><span class="foto">${avatarHtml(CONTA?.foto, CONTA?.nome || fb?.currentUser?.displayName)}</span><span class="nm">Perfil e fundo</span></button>`);
     if (DADOS?.adm) T.push(`<button type="button" class="et" data-et="adm" style="--c:#24364a"><span class="gi">${ICE('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L4 16.7V20h3.3l5.3-5.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>')}</span><span class="nm">ADM</span></button>`);
@@ -2759,26 +2748,8 @@ const estudio = {
 /* CALENDÁRIO DO PUBLICAÇÕES NO MENU (pedido da dona, 17/11/2026): clicar na hora grande ou no bloco do calendário abre, por cima do
    menu, o MESMO calendário da aba Publicações do Preparativos (o próprio Publicações em modo só-calendário, /publicacoes/?inc=1&so=cal;
    nada copiado). Só para olhar: clicar num item ou num dia (ou em "Editar no Preparativos") leva ao Preparativos › Publicações, já no
-   dia ou no item. Os lembretes pessoais continuam no botão "Lembretes". Clicar fora ou Esc fecha. */
-const calPub = {
-  abre() {
-    document.querySelector('.modal.cpub')?.remove();
-    const d = document.createElement('div'); d.className = 'modal cpub';
-    d.innerHTML = '<div class="mc cpub-cx" role="dialog" aria-label="Calendário das Publicações"><div class="mp-cab"><h3>Calendário das Publicações</h3><button type="button" class="btn sm" data-lemb title="Seus lembretes pessoais (o calendário de antes)">Lembretes</button><button type="button" class="btn sm primary" data-edit>Editar no Preparativos</button><button class="mp-x" data-x type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'
-      + '<div class="cpub-q"><p class="cpub-esp">Abrindo o calendário…</p><iframe title="Calendário das Publicações" src="/publicacoes/?inc=1&so=cal" loading="eager"></iframe></div>'
-      + '<p class="cpub-dica">Clique num dia ou numa publicação para abrir no Preparativos › Publicações.</p></div>';
-    const fecha = () => { d.remove(); removeEventListener('keydown', esc1, true); removeEventListener('message', msg); };
-    const ir = q => { fecha(); abrirProg(new URL('/preparativos/?aba=publicacoes' + (q ? '&' + q : ''), location.href).href); };
-    const esc1 = e => { if (e.key === 'Escape') { e.stopPropagation(); fecha(); } };
-    const msg = e => { if (e.origin !== location.origin || e.data?.ep !== 'abrir-pub') return; const o = e.data; ir(o.item ? 'item=' + encodeURIComponent(o.item) : o.dia ? 'dia=' + (+o.dia) : ''); };
-    addEventListener('keydown', esc1, true); addEventListener('message', msg);
-    d.onclick = e => { if (e.target === d) fecha(); };
-    document.body.appendChild(d);
-    $('[data-x]', d).onclick = fecha; $('[data-edit]', d).onclick = () => ir('');
-    $('[data-lemb]', d).onclick = () => { fecha(); window.EstudioConta?.calendario?.(); };
-    const fr = $('iframe', d); fr.onload = () => { d.querySelector('.cpub-esp')?.remove(); try { fr.contentWindow.addEventListener('keydown', esc1, true); } catch { } }; // Esc dentro do calendário também fecha
-  },
-};
+   dia ou no item. Clicar fora ou Esc fecha. É o único calendário do Estúdio: o calendário pessoal de lembretes saiu (17/11/2026). */
+const calPub = { abre: () => window.EstudioConta?.calendario?.({ ir: u => abrirProg(u) }) }; // o mesmo componente do Estúdio todo (estudio-conta.js), com a transição do menu
 document.addEventListener('click', e => { if (e.target.closest?.('.ip-ola [data-ip-hora]')) calPub.abre(); }); // a hora grande também abre
 /* CLIMA (pedido da dona, 05/11/2026): bloco com o tempo agora, direto do Open-Meteo (gratuito, sem chave) pelo navegador — NÃO passa
    pela nossa nuvem. Um pedido só para todas as cidades, guardado 30 min no localStorage ('ep-clima'). Cidades padrão: Rio, São Paulo,
