@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.10', apelido: 'Celeste', em: '17/11/2026',
+window.EstudioVersao ||= { nome: '2.11', apelido: 'Celeste', em: '17/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['ADM do menu (2.11)', ['ADM › Ícones com mais opções: tamanho das letras, degradê, espessura da borda e imagem com zoom e posição.', 'ADM › Botões: Ateliê, Cenários e Publicações com bloco próprio (Em teste, Só para ADMs, Invisível) e as etiquetas aparecem na prévia.']],
     ['Menu (2.10)', ['Abrir um programa como no celular: o ícone voa para o centro e vira o carregamento.', 'Clima com mais coisas: sensação, umidade, vento, chuva, sol, 24 horas, 7 dias, °C/°F e onde mostrar.', 'A hora e o calendário abrem o calendário do Publicações; clicar leva ao Preparativos no dia certo.', 'Publicações no menu, com o Preparativos pequeno no canto.', 'Selinhos de dono também na grade de programas do cabeçalho.', 'Ícone do atalho como os dos programas: letras, cores, degradê, imagem com zoom e borda.', 'Filtro de Meus projetos no visual novo.']],
     ['Menu (2.9)', ['A logo antiga do Problems voltou: no menu, na entrada e nos carregamentos.', 'Ícones dos programas maiores no menu.', 'Barra de baixo consertada: não pula mais com o mouse, os atalhos têm a cor escolhida e Esc fecha o Novo atalho.', 'Atalhos com imagem própria e a opção de aparecer também na grade de programas.', 'Apagar pasta: botão direito na pasta ou no ⋯, com Desfazer.', 'Carregamento e Atualizando com fundo preto.']],
     ['Animador (2.8)', ['Cenário 3D que acompanha a câmera da cena: a câmera 3D anda junto com a câmera do Animador, quadro a quadro, e mantém o enquadramento e o tempo de cada cena. Já está em uso no "Série EP1 (3D)".', 'Vista 3D: mover o personagem no 3D agora move ele no vídeo também.']],
