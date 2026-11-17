@@ -2466,7 +2466,8 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   }
   /* TELA "ATUALIZANDO" (Celeste, 12/11/2026): nada de montanha nem tela cheia. Um blur por cima do programa, com o MESMO anel e a
      MESMA logo do carregamento (só a logo pulsa, o anel mostra a %), "Atualizando…" e uma linha. Usada pelo Atualizar e pelo automático. */
-  const CLAQ_ATZ = "<svg viewBox=\"0 0 64 64\" aria-hidden=\"true\"><defs><linearGradient id=\"epclq-atz\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5cc4ff\"/><stop offset=\"1\" stop-color=\"#6b5cff\"/></linearGradient></defs><rect width=\"64\" height=\"64\" rx=\"14.5\" fill=\"url(#epclq-atz)\"/><g fill=\"none\" stroke=\"#fff\" stroke-width=\"3.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><rect x=\"15\" y=\"27\" width=\"34\" height=\"22\" rx=\"3\"/><path d=\"M15 27l3-9 31 0-3 9\"/><path d=\"M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9\"/></g><path d=\"M29 33v10l8-5z\" fill=\"#fff\"/></svg>"; // claquete do Estúdio (quando não há ícone do programa, ex.: menu)
+  const CLAQ_ATZ = "<svg viewBox=\"0 0 64 64\" class=\"ep-logo-p\" aria-hidden=\"true\"><g transform=\"translate(-9 -23.5) scale(.17)\"><path d=\"M200.5 154 339 228V380L200.5 454 62 380V228Z\" fill=\"#fff\" stroke=\"#000\" stroke-width=\"13\" stroke-linejoin=\"round\"/><g fill=\"none\" stroke=\"#000\" stroke-width=\"9\" stroke-linecap=\"round\"><path d=\"M202 224Q184 249 163 267\"/><path d=\"M267 255Q254 279 239 298\"/><path d=\"M116 307Q111 325 111.5 343\"/></g></g><g stroke=\"#000\" stroke-width=\"2.2\" stroke-linejoin=\"round\"><rect x=\"26.5\" y=\"37.5\" width=\"24\" height=\"20\" rx=\"4.5\" fill=\"#19d3f0\"/><path d=\"M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z\" fill=\"#19d3f0\"/></g></svg>"; // logo antiga do Problems (pedido da dona, 17/11/2026) // claquete do Estúdio (quando não há ícone do programa, ex.: menu)
+  const ATZ_FUNDO = 'preto'; // 'preto' ou 'blur' (a dona escolhe)
   function telaAtualizando(frase) {
     document.getElementById('ep-atz')?.remove();
     if (!document.getElementById('ep-atz-css')) { const s = document.createElement('style'); s.id = 'ep-atz-css'; s.textContent = `
@@ -2480,9 +2481,14 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
 #ep-atz .atz-l{display:flex;gap:5px;font-size:13.5px;color:var(--atz-tx2);white-space:nowrap}
 #ep-atz .atz-p{display:inline-block;min-width:3.4em;text-align:right;font-weight:600;color:var(--atz-tx);font-variant-numeric:tabular-nums}#ep-atz .atz-p::after{content:" ·";font-weight:400;color:var(--atz-tx2)}
 @keyframes epAtzPulsa{50%{transform:scale(1.06)}}@keyframes epAtzEntra{from{opacity:0}}
+/* FUNDO PRETO (pedido da dona, 17/11/2026): nos dois temas; opção "blur" = preto com o papel de parede do menu borrado a 20% */
+#ep-atz,html[data-tema="claro"] #ep-atz{background:#000;-webkit-backdrop-filter:none;backdrop-filter:none;--atz-tx:#f5f5f7;--atz-tx2:rgba(235,235,245,.7);overflow:hidden}
+#ep-atz.atz-blur::before{content:"";position:absolute;inset:-60px;background:var(--atz-fundo,url(/fundo-montanha.jpg)) center/cover no-repeat;filter:blur(40px);opacity:.2;pointer-events:none}
+#ep-atz .atz-c{position:relative;z-index:1}
+#ep-atz .atz-lg>svg.ep-logo-p{border-radius:0;box-shadow:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
 @media (prefers-reduced-motion:reduce){#ep-atz,#ep-atz .atz-lg>:is(img,svg){animation:none}}`; document.head.appendChild(s); }
     let url = ''; try { const EI = window.EstudioIcones, id = EI?.atual?.(); url = id && EI.url?.(id) || ''; } catch { }
-    const el = document.createElement('div'); el.id = 'ep-atz'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    const el = document.createElement('div'); el.id = 'ep-atz'; let atzF = 'preto'; try { atzF = new URLSearchParams(location.search).get('atz') || localStorage.getItem('ep-atz-fundo') || ATZ_FUNDO; } catch { } if (atzF === 'blur') el.classList.add('atz-blur'); el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
     el.innerHTML = '<div class="atz-c"><div class="atz-lg">' + (url ? '<img alt="" src="' + esc(url) + '">' : CLAQ_ATZ) + '</div><b class="atz-t">Atualizando…</b><div class="atz-l"><b class="atz-p">0%</b><span></span></div></div>';
     document.body.appendChild(el); try { document.activeElement?.blur?.(); } catch { }
     const trava = e => { if (el.isConnected) { e.preventDefault(); e.stopPropagation(); } }; for (const ev of ['keydown', 'wheel', 'contextmenu', 'drop', 'paste']) addEventListener(ev, trava, { capture: true, passive: false });
