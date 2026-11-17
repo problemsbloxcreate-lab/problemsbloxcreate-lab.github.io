@@ -1584,6 +1584,39 @@ html.cel body #menu .pasta-pop .card>.at-marca{top:6px;left:auto;right:6px}
 html.cel body #menu .card>.at-marca svg{width:13px;height:13px}
 html.cel body #menu :is(#grid,.pasta-pop,.pasta-mini) .ic.ic-at:not(#_){background:var(--c,#3a3a40)!important;display:grid!important;place-items:center!important}
 html.cel body #menu :is(#grid,.pasta-pop,.pasta-mini) .ic.ic-at:not(#_)>.at-l{position:static!important;display:grid!important;place-items:center;width:100%!important;height:100%!important;color:#fff!important;text-shadow:none!important}
+/* ÍCONE DO ATALHO desenhado (17/11/2026): o SVG preenche a caixa; a caixa fica sem cor própria (o desenho já tem fundo, cantos e borda) */
+html.cel body #menu :is(.ip-dock .et.at,.ic.ic-at):has(>.at-svg):not(#_){background:transparent!important}
+html.cel body :is(#menu,.mc-painel) .at-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+html.cel body #menu .ic.ic-at:has(>.at-svg){position:relative}
+html.cel body .mc-painel .at-ed-prev{display:flex;align-items:flex-end;gap:16px;margin:0 4px 12px}
+html.cel body .mc-painel .at-prev.at-prev-g{width:96px;height:96px;border-radius:22%;box-shadow:0 8px 20px rgba(0,0,0,.35);background:none;touch-action:none}
+html.cel body .mc-painel .at-prev.at-prev-g.arrasta{cursor:grab}html.cel body .mc-painel .at-prev.at-prev-g.arrasta:active{cursor:grabbing}
+html.cel body .mc-painel .at-prev-mini{display:flex;flex-direction:column;align-items:center;gap:4px}
+html.cel body .mc-painel .at-prev.at-prev-p{width:60px;height:60px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.3);background:none}
+html.cel body .mc-painel .at-prev-mini small{font-size:11px;color:var(--texto-3)}
+html.cel body .mc-painel .at-estilo{margin-left:auto;align-self:center}
+html.cel body .mc-painel .at-seg{display:inline-flex;gap:2px;padding:2px;margin:0 4px 10px;border-radius:9px;background:var(--fundo-3)}
+html.cel body .mc-painel .at-seg button{height:28px;padding:0 14px;border:0;border-radius:7px;background:none;color:var(--texto-2);font:500 13px var(--fonte);cursor:pointer}
+html.cel body .mc-painel .at-seg button[aria-pressed=true]{background:var(--elevado);color:var(--texto);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+html.cel body .mc-painel .at-pn[hidden]{display:none}
+html.cel body .mc-painel .at-lin{display:flex;align-items:center;gap:12px;min-height:36px;margin:0 4px;font:500 13.5px var(--fonte);color:var(--texto)}
+html.cel body .mc-painel .at-lin[hidden]{display:none}
+html.cel body .mc-painel .at-lin>span:first-child{width:110px;flex:none;color:var(--texto-2)}
+html.cel body .mc-painel .at-lin input[type=range]{flex:1;accent-color:var(--acento)}
+html.cel body .mc-painel .at-lin input.at-txt:not(#_){width:90px!important;flex:none!important;text-align:center;font-weight:700;margin:0!important}
+html.cel body .mc-painel .at-cores{display:flex;flex-wrap:wrap;gap:8px}
+html.cel body .mc-painel .at-cor{width:24px;height:24px;border-radius:50%;border:0;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(127,127,127,.45)}
+html.cel body .mc-painel .at-cor.on{box-shadow:0 0 0 2px var(--elevado,#222),0 0 0 4px var(--acento)}
+html.cel body .mc-painel .at-livre{position:relative;overflow:hidden;background:conic-gradient(#ff453a,#ffd60a,#30d158,#64d2ff,#5e5ce6,#bf5af2,#ff453a)!important}
+html.cel body .mc-painel .at-livre.on{background:var(--v,#888)!important}
+html.cel body .mc-painel .at-livre input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+html.cel body .mc-painel .at-chk label,html.cel body .mc-painel .at-chk>span:first-child{display:flex;align-items:center;gap:8px;cursor:pointer}
+html.cel body .mc-painel .at-chk input[type=checkbox]{width:17px;height:17px;accent-color:var(--acento)}
+html.cel body .mc-painel .at-chk input[type=color]{width:34px;height:24px;padding:0;border:0;border-radius:6px;background:none;cursor:pointer}
+html.cel body .mc-painel .at-chk input[type=color]:disabled{opacity:.35;cursor:default}
+html.cel body .mc-painel .at-bd{display:flex;align-items:center;gap:10px;flex:1}html.cel body .mc-painel .at-bd.off{opacity:.45}
+html.cel body .mc-painel .at-dica{display:block;margin:4px 4px 8px;color:var(--texto-3);font-size:12px;line-height:1.4}
+html.cel body .mc-painel .at-pn .at-ico-bts{margin:0 4px 6px}
 /* editor do atalho: prévia do ícone e escolha da imagem */
 html.cel body .mc-painel .at-ico-ed{display:flex;align-items:center;gap:14px;margin:0 4px}
 html.cel body .mc-painel .at-prev{position:relative;width:60px;height:60px;flex:none;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:var(--c,#3a3a40);box-shadow:0 4px 12px rgba(0,0,0,.3)}
@@ -1593,6 +1626,75 @@ html.cel body .mc-painel .at-ico-bts{display:flex;flex-wrap:wrap;gap:6px;align-i
 html.cel body .mc-painel .at-ico-bts small{flex-basis:100%;color:var(--texto-3);font-size:12px}
 html.cel body .mc-painel .at-grade{display:flex;align-items:center;gap:10px;margin:16px 4px 0;font:500 14px var(--fonte);color:var(--texto);cursor:pointer}
 html.cel body .mc-painel .at-grade input{width:18px;height:18px;accent-color:var(--acento)}
+/* FILTRO DE PROGRAMA de Meus projetos no Celeste (pedido da dona, 17/11/2026: "aqui ainda está metro"): caixa com cantos de 10 px,
+   o mesmo material dos outros menus, item escolhido com fundo suave e ✓ (nunca branco sólido), ícones atuais com o selinho do dono */
+html.cel body #menu .mp-prog-menu{min-width:236px;padding:5px!important;border-radius:10px!important;background:var(--elevado,#2a2a2e)!important;color:var(--texto)!important;border:1px solid var(--linha,rgba(255,255,255,.1))!important;box-shadow:var(--sombra-3,0 18px 40px rgba(0,0,0,.45))!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;animation:mnSobe .16s ease both}
+html.cel body #menu .mp-prog-menu button{gap:10px!important;min-height:34px;padding:5px 10px!important;border-radius:7px!important;color:var(--texto)!important;font:500 13.5px var(--fonte)!important;background:none!important}
+html.cel body #menu .mp-prog-menu button:hover,html.cel body #menu .mp-prog-menu button:focus-visible{background:var(--fundo-3)!important;outline:none}
+html.cel body #menu .mp-prog-menu button[aria-checked=true]{background:var(--acento-suave)!important;color:var(--texto)!important;font-weight:600!important}
+html.cel body #menu .mp-prog-menu .pn{flex:1;white-space:nowrap}
+html.cel body #menu .mp-prog-menu .ok{flex:none;color:var(--acento);opacity:0}html.cel body #menu .mp-prog-menu button[aria-checked=true] .ok{opacity:1}
+html.cel body #menu .mp-prog-menu .pi{position:relative;width:24px;height:24px;color:var(--texto-2)}
+html.cel body #menu .mp-prog-menu .pi>span:not(.pi-parte),html.cel body #menu .mp-prog-menu .pi>span:not(.pi-parte) svg{width:24px!important;height:24px!important;border-radius:6px;overflow:hidden;display:block}
+html.cel body #menu .mp-prog-menu .pi>svg{width:16px;height:16px}
+html.cel body #menu .mp-prog-menu .pi-parte{position:absolute;right:-4px;bottom:-3px;width:12px!important;height:12px!important;border-radius:3px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+html.cel body #menu .mp-prog-menu .pi-parte svg{width:12px!important;height:12px!important;display:block}
+/* o seletor Todos / Na nuvem / Neste computador: segmentado arredondado */
+html.cel body #menu .mp-filtro{border-radius:9px!important;padding:2px!important;background:var(--fundo-3,rgba(255,255,255,.08))!important}
+html.cel body #menu .mp-filtro button{border-radius:7px!important;height:24px!important}
+html.cel body #menu .mp-filtro button[aria-pressed="true"]{background:var(--elevado,#3a3a40)!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important}
+html.cel body #menu :is(.rec-atu,.mp-prog-bt){border-radius:7px!important}
+/* o ícone que voa até o carregamento (transição de celular) */
+.ep-voa{position:fixed;z-index:2147483647;pointer-events:none;margin:0;border-radius:22%;overflow:hidden;transform-origin:50% 50%;will-change:transform;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.ep-voa>:is(svg,img){display:block;width:100%!important;height:100%!important}
+/* PAINEL DO CLIMA (17/11/2026) */
+html.cel body .clp .clp-cids{display:flex;flex-wrap:wrap;gap:6px;margin:12px 4px 4px}
+html.cel body .clp .clp-cids button,html.cel body .clp .clp-seg button{height:28px;padding:0 12px;border:0;border-radius:7px;background:var(--fundo-3);color:var(--texto-2);font:500 13px var(--fonte);cursor:pointer}
+html.cel body .clp .clp-cids button[aria-pressed=true]{background:var(--acento-suave);color:var(--texto);font-weight:600}
+html.cel body .clp .clp-hero{display:flex;align-items:center;gap:16px;margin:14px 4px 6px}
+html.cel body .clp .clp-ic{color:var(--texto)}html.cel body .clp .clp-hero>div{display:flex;flex-direction:column}
+html.cel body .clp .clp-t{font:300 52px/1 var(--fonte);color:var(--texto);letter-spacing:-.02em}
+html.cel body .clp .clp-c{font:600 15px var(--fonte);color:var(--texto);margin-top:4px}html.cel body .clp .clp-hero small{color:var(--texto-2);font-size:13px}
+html.cel body .clp .clp-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 4px 0}
+html.cel body .clp .clp-tile{padding:10px 12px;border-radius:10px;background:var(--fundo-2,rgba(255,255,255,.05))}
+html[data-tema="claro"].cel body .clp .clp-tile{background:#f5f5f7}
+html.cel body .clp .clp-tile small{display:block;font-size:11.5px;color:var(--texto-2)}html.cel body .clp .clp-tile b{font:600 15px var(--fonte);color:var(--texto)}
+html.cel body .clp .clp-horas{display:flex;gap:4px;overflow-x:auto;padding:2px 4px 8px;scrollbar-width:thin}
+html.cel body .clp .clp-h{flex:none;width:52px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;border-radius:10px;color:var(--texto)}
+html.cel body .clp .clp-h:first-child{background:var(--acento-suave)}
+html.cel body .clp .clp-h small{font-size:11.5px;color:var(--texto-2)}html.cel body .clp .clp-h b{font:600 13.5px var(--fonte)}html.cel body .clp .clp-h i{font:500 10.5px var(--fonte);color:#64b5ff;min-height:13px;font-style:normal}
+html.cel body .clp .clp-dias{padding:4px 12px}
+html.cel body .clp .clp-d{display:grid;grid-template-columns:44px 24px 34px 34px 1fr 34px;align-items:center;gap:8px;height:38px;color:var(--texto);border-bottom:1px solid var(--linha)}
+html.cel body .clp .clp-d:last-child{border-bottom:0}
+html.cel body .clp .clp-d b{font:600 13.5px var(--fonte)}html.cel body .clp .clp-d i{font:500 11px var(--fonte);color:#64b5ff;font-style:normal}
+html.cel body .clp .clp-d small{font-size:13px;color:var(--texto-2);text-align:right}html.cel body .clp .clp-d small.mx{color:var(--texto);text-align:left}
+html.cel body .clp .clp-bar{position:relative;height:5px;border-radius:3px;background:var(--fundo-3)}
+html.cel body .clp .clp-bar span{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#64d2ff,#ffd60a,#ff9f0a)}
+html.cel body .clp .clp-aj{padding:2px 12px}
+html.cel body .clp .clp-lin{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;border-bottom:1px solid var(--linha);font:500 13.5px var(--fonte);color:var(--texto)}
+html.cel body .clp .clp-lin:last-child{border-bottom:0}
+html.cel body .clp .clp-seg{display:inline-flex;gap:2px;padding:2px;border-radius:9px;background:var(--fundo-3)}
+html.cel body .clp .clp-seg button{height:26px;padding:0 10px;background:none}
+html.cel body .clp .clp-seg button[aria-pressed=true]{background:var(--elevado);color:var(--texto);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+html.cel body .clp .clp-bts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+html.cel body .clp .clp-esp{margin:18px 4px;color:var(--texto-2)}
+html.cel body .clp .clp-fonte{margin:10px 4px 0;font-size:11.5px;color:var(--texto-3)}
+/* clima pequeno na barra de cima */
+html.cel body #top .ip-clima{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;margin-right:6px;border:0;border-radius:7px;background:none;color:inherit;font:500 13px var(--fonte);cursor:pointer}
+html.cel body #top .ip-clima:hover{background:var(--fundo-3)}
+html.cel:not(:has(#menu:not([hidden]))) body #top .ip-clima{display:none}
+/* CALENDÁRIO DO PUBLICAÇÕES por cima do menu (17/11/2026) */
+html.cel body .modal.cpub{display:grid;place-items:center;padding:24px}
+html.cel body .modal.cpub .cpub-cx{display:flex!important;flex-direction:column;width:min(1100px,94vw)!important;max-width:none!important;height:min(760px,88vh)!important;padding:0!important;overflow:hidden;border-radius:14px!important}
+html.cel body .modal.cpub .mp-cab{display:flex;align-items:center;gap:8px;height:52px;flex:none;padding:0 12px 0 22px;border-bottom:1px solid var(--linha)}
+html.cel body .modal.cpub .mp-cab h3{flex:1;margin:0!important;font:600 17px var(--fonte)!important}
+html.cel body .modal.cpub .mp-x{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--texto-2);cursor:pointer}
+html.cel body .modal.cpub .mp-x:hover{background:var(--fundo-3)}
+html.cel body .modal.cpub .cpub-q{position:relative;flex:1;min-height:0}
+html.cel body .modal.cpub iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
+html.cel body .modal.cpub .cpub-esp{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--texto-2)}
+html.cel body .modal.cpub .cpub-dica{flex:none;margin:0;padding:10px 22px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--texto-2)}
+html.cel.ip body #menu .ip-ola [data-ip-hora]{cursor:pointer}
 /* aviso com "Desfazer" */
 .toast.tz-desfaz{display:flex;align-items:center;gap:14px}.toast.tz-desfaz button{border:0;background:none;color:var(--acento,#5cc4ff);font:600 13px var(--fonte,system-ui);cursor:pointer;padding:2px 4px}
 /* pergunta com Cancelar vermelho (regra das janelas do Estúdio) */
@@ -2273,21 +2375,40 @@ function abrirConta() {
 // abrir um programa: a tela escurece com fade e só então troca de página (a tela de carregamento do programa tem o mesmo fundo)
 // A TELA JÁ DIZ O QUE ESTÁ ABRINDO (pedido da dona, 05/11/2026): antes ficava só o escuro, parecendo que o clique não funcionou
 const NOMES_PROG = { cerebro: 'o Cérebro', animador: 'o Animador', shorts: 'os Shorts', editor: 'o Editor', modelador: 'o Modelador', preparativos: 'o Preparativos', musicas: 'as Músicas', publicacoes: 'as Publicações', jester: 'o Jester Dreams', central: 'a Central de Jogos' };
-function irCom(url, trocar) {
+function irCom(url, trocar, de) {
   const s = $('#saida'); let nm = ''; try { const u = new URL(url, location.href), p = u.pathname.split('/')[1]; nm = u.searchParams.get('atelie') ? 'o Ateliê' : NOMES_PROG[p] || ''; } catch { }
   const IC = { animador: 'an', shorts: 'sh', editor: 'ed', modelador: 'md', preparativos: 'pr', cerebro: 'cb', musicas: 'mu', publicacoes: 'x-publicacoes' }; let ic = ''; try { const p = new URL(url, location.href).pathname.split('/')[1], k = IC[p]; if (k && window.EstudioIcones?.svg) { ic = window.EstudioIcones.svg(k, 72); const cor = window.EstudioIcones.config?.()?.[k]?.fg; if (/^#[0-9a-f]{6}$/i.test(cor || '')) s.style.setProperty('--ep-cor', cor); } } catch { }
   if (document.documentElement.classList.contains('cel')) s.innerHTML = '<div class="ep-c" role="status"><div class="ep-lg' + (ic ? ' ep-prog' : '') + '" aria-hidden="true">' + ic + '</div><div class="ep-nm">' + (nm ? 'Abrindo ' + nm : 'Abrindo') + '</div><div class="ep-br"><i></i></div><div class="ep-m">Carregando</div></div>';
   else s.innerHTML = '<div class="sd-c" role="status"><div class="sd-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div>' + (nm ? 'Abrindo ' + nm + '…' : 'Abrindo…') + '<small>Buscando a versão mais nova</small></div></div>';
+  voaParaCarregar(de, s);
   requestAnimationFrame(() => s.classList.add('on'));
   setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
 }
+/* TRANSIÇÃO DE CELULAR (pedido da dona, 17/11/2026): o ícone clicado voa rápido (260 ms, ease-out) do lugar dele até o centro, no lugar
+   e no tamanho da logo do carregamento, enquanto o fundo preto entra; ao chegar ele VIRA a logo do carregamento (o mesmo desenho),
+   e o programa abre no mesmo lugar. Não atrasa nada: a ida para o programa sai no mesmo tempo de antes. Com "reduzir movimento", só o fade. */
+function voaParaCarregar(de, s) {
+  try {
+    if (!de || !de.isConnected || !document.documentElement.classList.contains('cel') || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const lg = s.querySelector('.ep-lg'); if (!lg) return;
+    const desenho = de.querySelector('svg, img'); if (desenho) { lg.innerHTML = desenho.outerHTML; lg.classList.add('ep-prog'); } // a logo do carregamento = o ícone clicado
+    const a = de.getBoundingClientRect(), b = lg.getBoundingClientRect(); if (!a.width || !b.width) return;
+    const c = document.createElement('div'); c.className = 'ep-voa'; c.innerHTML = desenho ? desenho.outerHTML : de.innerHTML;
+    c.style.cssText = 'left:' + a.left + 'px;top:' + a.top + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
+    document.body.appendChild(c); const meu = lg.firstElementChild; if (meu) meu.style.opacity = '0'; // só o desenho some; o anel e o brilho entram junto com o fundo
+    const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2), k = b.width / a.width;
+    const an = c.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
+    an.onfinish = () => { if (meu) meu.style.opacity = ''; c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, fill: 'forwards' }).onfinish = () => c.remove(); };
+    addEventListener('pageshow', () => c.remove(), { once: true }); // voltou pelo botão Voltar
+  } catch { }
+}
 // abrir um programa: na mesma aba, com o fade de sempre (o Dock só tem atalhos; não guarda as abas abertas)
-const abrirProg = url => irCom(url);
+const abrirProg = (url, de) => irCom(url, false, de);
 document.addEventListener('click', e => {
   const a = e.target.closest?.('a.card[href], .rec a[href], #rec a[href]'); if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
   let u; try { u = new URL(a.href, location.href); } catch { return; }
   if (u.origin !== location.origin || u.href === location.href) return; // só os programas deste endereço
-  e.preventDefault(); abrirProg(u.href);
+  e.preventDefault(); abrirProg(u.href, a.querySelector(':scope > .ic') || a.querySelector('.ic'));
 });
 addEventListener('pageshow', e => { if (e.persisted) $('#saida')?.classList.remove('on'); }); // voltou pelo botão Voltar: tira o escuro
 function topo(email) {
@@ -2304,7 +2425,9 @@ function atualizarTudo() {
 addEventListener('estudio-icones', () => { $$('#grid .card').forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); if (l && !l.pasta) pintarIcone(el, l); }); });
 // partes de dentro de um programa (decisão do dono, 02/11/2026): no cartão ANIMAR, com o mouse em cima, aparecem os ícones do
 // ATELIÊ e dos CENÁRIOS; com o mouse no ícone aparece o nome; o clique abre direto aquela parte do Animador
-const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens', 'atelie'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios', 'cenarios']] };
+const SUBPROGS = { an: [['at', 'ATELIÊ', '/animador/?aba=personagens', 'atelie'], ['cn', 'CENÁRIOS', '/animador/?abrir=cenarios', 'cenarios']],
+  pr: [['x-publicacoes', 'PUBLICAÇÕES', '/preparativos/?aba=publicacoes', 'publicacoes', true]] }; // Publicações = aba do Preparativos (pedido da dona, 17/11/2026); true = vale só a permissão do programa
+const DONO_NOME = { an: 'Animador', pr: 'Preparativos' }, DONO_PERM = { an: 'animador', pr: 'preparativos' };
 function subProgs(el, l) {
   const prog = window.EstudioIcones && (progDaUrl(l.url, l.nome) || PROG_IC[l.icone]); const sub = (SUBPROGS[prog] || []).filter(x => permProg(x[3]) && window.EstudioPerm?.pode?.('animador.' + x[3]) !== false); if (!sub.length) return;
   const box = document.createElement('span'); box.className = 'subprog';
@@ -2316,8 +2439,8 @@ function subProgs(el, l) {
 // PARTES DO ANIMADOR (pedido da dona, 05/11/2026): Ateliê e Cenários são blocos próprios em Programas, logo depois do Animador,
 // com o ícone pequeno do Animador do lado (antes apareciam só com o mouse em cima). Seguem o EstudioPerm (animador.atelie / animador.cenarios).
 function comPartes(lista) { const out = [];
-  for (const l of lista) { out.push(l); if (!l.url || l.embreve || progDaUrl(l.url, l.nome) !== 'an') continue;
-    for (const [id, nome, url, f] of SUBPROGS.an) if (permProg(f) && window.EstudioPerm?.pode?.('animador.' + f) !== false) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do Animador', url, prog: id, parte: 'an', id: f, ...(l.partes?.[f]?.etiqueta ? { etiqueta: l.partes[f].etiqueta } : {}) }); }
+  for (const l of lista) { out.push(l); const dono = !l.url || l.embreve ? null : progDaUrl(l.url, l.nome); if (!SUBPROGS[dono]) continue;
+    for (const [id, nome, url, f, soProg] of SUBPROGS[dono]) if (permProg(f) && (soProg || window.EstudioPerm?.pode?.(DONO_PERM[dono] + '.' + f) !== false)) out.push({ nome: nome[0] + nome.slice(1).toLowerCase(), desc: 'Parte do ' + DONO_NOME[dono], url, prog: id, parte: dono, id: f, ...(l.partes?.[f]?.etiqueta ? { etiqueta: l.partes[f].etiqueta } : {}) }); }
   // ORDEM PADRÃO (pedido da dona, 05/11/2026): Shorts, Editar, Animador, Preparativos, Publicações, Ateliê, Cenários, Modelador;
   // o que não está aqui vem depois, na ordem da ADM. A ordem que cada pessoa organizou continua valendo por cima disto.
   const ORDEM = ['cerebro', 'shorts', 'editor', 'animador', 'preparativos', 'musicas', 'publicacoes', 'atelie', 'cenarios', 'modelador'];
@@ -2463,7 +2586,7 @@ function pintaGrid() {
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') + (externoDe(l) ? '<span class="tag teste externo" title="Este site fica fora do Estúdio">Externo</span>' : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do Animador"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
+    el.innerHTML = cardHtml(l, (ok ? (etiquetaDe(l) ? `<span class="tag teste" title="Este programa ainda está sendo feito">${esc(etiquetaDe(l))}</span>` : '') + (externoDe(l) ? '<span class="tag teste externo" title="Este site fica fora do Estúdio">Externo</span>' : '') : '<span class="tag">em breve</span>') + (l.soAdm ? '<span class="tag-adm" title="Só os ADMs veem este programa no menu (ADM › Menu › Só para ADMs)">só ADM</span>' : '')); montarCard(el, { ...l, fundo: null }); if (l.parte) el.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}" title="Parte do ${DONO_NOME[l.parte] || 'Animador'}"></span>`); g.appendChild(el); // sem vídeo/imagem atrás do ícone (visual novo) // etiqueta: ex. "em testes" (Jester Dreams)
   });
   const n = menuVis.length; g.style.setProperty('--cols', n > 20 ? 6 : 5); /* espaço reservado para até 20 programas (5 por linha) */ g.dataset.densidade = n > 12 ? 'compacta' : n > 6 ? 'media' : 'grande'; // muitos programas: cartões menores (veja o CSS)
   $$('.card', g).forEach((el, i) => { const d = menuVis[i]?.desc; if (d && n > 12) el.title = d; }); // na grade compacta a descrição vira dica
@@ -2594,7 +2717,8 @@ const estudio = {
     T.push(esp('nuvem', 'Nuvem da equipe', nv, '#1a5fb4'), esp('pc', 'Este computador', this.pc, '#3b4b5b'));
     T.push(`<button type="button" class="et" data-et="perfil" style="--c:#6a4fd8"><span class="foto">${avatarHtml(CONTA?.foto, CONTA?.nome || fb?.currentUser?.displayName)}</span><span class="nm">Perfil e fundo</span></button>`);
     if (DADOS?.adm) T.push(`<button type="button" class="et" data-et="adm" style="--c:#24364a"><span class="gi">${ICE('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L4 16.7V20h3.3l5.3-5.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>')}</span><span class="nm">ADM</span></button>`);
-    T.push(clima.html());
+    if (!clima.ajuste('barra')) T.push(clima.html()); else if (!clima.dados) clima.busca(); // "Só na barra de cima" (pedido da dona, 17/11/2026)
+    setTimeout(() => clima.barra());
     const ORD = ['cal', 'nuvem', 'pc', 'msgs', 'perfil', 'adm', 'clima'], et = h => ORD.indexOf((h.match(/data-et="(\w+)"/) || [])[1]);
     T.sort((a, b) => et(a) - et(b)); // ordem pedida pela dona: Calendário, Nuvem, Este computador, Mensagens, Perfil, ADM, Clima
     // SEM PISCAR (05/11/2026): só redesenha se algo mudou de verdade (antes cada clique no calendário, cada conferência das Mensagens
@@ -2602,11 +2726,35 @@ const estudio = {
     const html = T.join('').replace(/style="--i:\d+"/, ''); if (html === this._html && box.children.length) return; this._html = html;
     box.innerHTML = T.join(''); box.style.setProperty('--cols', 4); clima.liga(box);
     if (!this._uma) { this._uma = true; setTimeout(() => box.classList.add('pronto'), 1500); }
-    const vai = { clima: () => clima.config(), msgs: () => EC?.mensagens?.abrir?.(), cal: () => EC?.calendario?.(), nuvem: () => EC?.nuvem?.painel?.(), pc: () => EC?.painelEspaco?.(), perfil: () => abrirConta(), adm: () => EC?.adm?.abrir?.() };
+    const vai = { clima: () => clima.painel(), msgs: () => EC?.mensagens?.abrir?.(), cal: () => calPub.abre(), nuvem: () => EC?.nuvem?.painel?.(), pc: () => EC?.painelEspaco?.(), perfil: () => abrirConta(), adm: () => EC?.adm?.abrir?.() };
     $$('[data-et]', box).forEach(b => b.onclick = () => vai[b.dataset.et]?.());
     if (this.pc == null && !this._med) { this._med = 1; navigator.storage?.estimate?.().then(e => { if (e?.quota) { this.pc = e.usage / e.quota; this.pinta(); } }).catch(() => { }); }
   },
 };
+/* CALENDÁRIO DO PUBLICAÇÕES NO MENU (pedido da dona, 17/11/2026): clicar na hora grande ou no bloco do calendário abre, por cima do
+   menu, o MESMO calendário da aba Publicações do Preparativos (o próprio Publicações em modo só-calendário, /publicacoes/?inc=1&so=cal;
+   nada copiado). Só para olhar: clicar num item ou num dia (ou em "Editar no Preparativos") leva ao Preparativos › Publicações, já no
+   dia ou no item. Os lembretes pessoais continuam no botão "Lembretes". Clicar fora ou Esc fecha. */
+const calPub = {
+  abre() {
+    document.querySelector('.modal.cpub')?.remove();
+    const d = document.createElement('div'); d.className = 'modal cpub';
+    d.innerHTML = '<div class="mc cpub-cx" role="dialog" aria-label="Calendário das Publicações"><div class="mp-cab"><h3>Calendário das Publicações</h3><button type="button" class="btn sm" data-lemb title="Seus lembretes pessoais (o calendário de antes)">Lembretes</button><button type="button" class="btn sm primary" data-edit>Editar no Preparativos</button><button class="mp-x" data-x type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'
+      + '<div class="cpub-q"><p class="cpub-esp">Abrindo o calendário…</p><iframe title="Calendário das Publicações" src="/publicacoes/?inc=1&so=cal" loading="eager"></iframe></div>'
+      + '<p class="cpub-dica">Clique num dia ou numa publicação para abrir no Preparativos › Publicações.</p></div>';
+    const fecha = () => { d.remove(); removeEventListener('keydown', esc1, true); removeEventListener('message', msg); };
+    const ir = q => { fecha(); abrirProg(new URL('/preparativos/?aba=publicacoes' + (q ? '&' + q : ''), location.href).href); };
+    const esc1 = e => { if (e.key === 'Escape') { e.stopPropagation(); fecha(); } };
+    const msg = e => { if (e.origin !== location.origin || e.data?.ep !== 'abrir-pub') return; const o = e.data; ir(o.item ? 'item=' + encodeURIComponent(o.item) : o.dia ? 'dia=' + (+o.dia) : ''); };
+    addEventListener('keydown', esc1, true); addEventListener('message', msg);
+    d.onclick = e => { if (e.target === d) fecha(); };
+    document.body.appendChild(d);
+    $('[data-x]', d).onclick = fecha; $('[data-edit]', d).onclick = () => ir('');
+    $('[data-lemb]', d).onclick = () => { fecha(); window.EstudioConta?.calendario?.(); };
+    const fr = $('iframe', d); fr.onload = () => { d.querySelector('.cpub-esp')?.remove(); try { fr.contentWindow.addEventListener('keydown', esc1, true); } catch { } }; // Esc dentro do calendário também fecha
+  },
+};
+document.addEventListener('click', e => { if (e.target.closest?.('.ip-ola [data-ip-hora]')) calPub.abre(); }); // a hora grande também abre
 /* CLIMA (pedido da dona, 05/11/2026): bloco com o tempo agora, direto do Open-Meteo (gratuito, sem chave) pelo navegador — NÃO passa
    pela nossa nuvem. Um pedido só para todas as cidades, guardado 30 min no localStorage ('ep-clima'). Cidades padrão: Rio, São Paulo,
    BH e Curitiba; clicando, a pessoa escolhe quais (ou a cidade dela), salvo só neste computador ('ep-clima-cfg'). Mais de uma cidade:
@@ -2614,14 +2762,19 @@ const estudio = {
 const clima = {
   PADRAO: [{ n: 'Rio de Janeiro', la: -22.91, lo: -43.17 }, { n: 'São Paulo', la: -23.55, lo: -46.63 }, { n: 'Belo Horizonte', la: -19.92, lo: -43.94 }, { n: 'Curitiba', la: -25.43, lo: -49.27 }],
   i: 0,
-  cidades() { try { const v = JSON.parse(localStorage.getItem('ep-clima-cfg') || 'null'); if (Array.isArray(v?.c) && v.c.length) return v.c; } catch { } return this.PADRAO; },
-  grava(c) { try { localStorage.setItem('ep-clima-cfg', JSON.stringify({ c })); localStorage.removeItem('ep-clima'); } catch { } this.dados = null; estudio.pinta(); },
-  chave(c) { return 'h2|' + c.map(x => x.la.toFixed(2) + ',' + x.lo.toFixed(2)).join(';'); }, // h2 = com as próximas horas
+  cfg() { try { const v = JSON.parse(localStorage.getItem('ep-clima-cfg') || 'null'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } },
+  cidades() { const v = this.cfg(); return Array.isArray(v.c) && v.c.length ? v.c : this.PADRAO; },
+  // AJUSTES DO CLIMA (pedido da dona, 17/11/2026): u = 'c' ou 'f'; min = de quanto em quanto atualiza; barra = só o clima pequeno na barra de cima
+  ajuste(k) { const v = this.cfg(); return k === 'u' ? (v.u === 'f' ? 'f' : 'c') : k === 'min' ? ([15, 30, 60].includes(+v.min) ? +v.min : 30) : k === 'barra' ? !!v.barra : undefined; },
+  muda(o) { const v = { ...this.cfg(), ...o }; if (!Array.isArray(v.c) || !v.c.length) v.c = this.cidades(); try { localStorage.setItem('ep-clima-cfg', JSON.stringify(v)); if ('u' in o) localStorage.removeItem('ep-clima'); } catch { } if ('u' in o) { this.dados = null; this._det = {}; } estudio.pinta(); },
+  grava(c) { const v = { ...this.cfg(), c }; try { localStorage.setItem('ep-clima-cfg', JSON.stringify(v)); localStorage.removeItem('ep-clima'); } catch { } this.dados = null; this._det = {}; estudio.pinta(); },
+  chave(c) { return 'h2|' + this.ajuste('u') + '|' + c.map(x => x.la.toFixed(2) + ',' + x.lo.toFixed(2)).join(';'); }, // h2 = com as próximas horas
+  unid() { return this.ajuste('u') === 'f' ? '&temperature_unit=fahrenheit&wind_speed_unit=mph' : ''; },
   async busca() {
     const c = this.cidades(), k = this.chave(c);
-    try { const v = JSON.parse(localStorage.getItem('ep-clima') || 'null'); if (v?.k === k && Date.now() - v.t < 30 * 6e4) return (this.dados = v.d); } catch { }
+    try { const v = JSON.parse(localStorage.getItem('ep-clima') || 'null'); if (v?.k === k && Date.now() - v.t < this.ajuste('min') * 6e4) return (this.dados = v.d); } catch { }
     if (this._buscando) return; this._buscando = true;
-    try { const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.map(x => x.la).join(',') + '&longitude=' + c.map(x => x.lo).join(',') + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code,is_day&forecast_days=1&forecast_hours=6&timezone=America%2FSao_Paulo';
+    try { const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.map(x => x.la).join(',') + '&longitude=' + c.map(x => x.lo).join(',') + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code,is_day&forecast_days=1&forecast_hours=6&timezone=America%2FSao_Paulo' + this.unid();
       const j = await (await fetch(u, { credentials: 'omit', cache: 'no-store' })).json(), L = Array.isArray(j) ? j : [j];
       this.dados = L.map(x => ({ t: Math.round(x?.current?.temperature_2m), w: x?.current?.weather_code, dia: !!x?.current?.is_day, mx: Math.round(x?.daily?.temperature_2m_max?.[0]), mn: Math.round(x?.daily?.temperature_2m_min?.[0]),
         h: (x?.hourly?.time || []).slice(1, 5).map((tm, i) => ({ h: String(tm).slice(11, 13) + 'h', t: Math.round(x.hourly.temperature_2m?.[i + 1]), w: x.hourly.weather_code?.[i + 1], dia: !!x.hourly.is_day?.[i + 1] })) })); // próximas horas (pedido da dona, 12/11/2026)
@@ -2640,16 +2793,72 @@ const clima = {
     raio: '<path d="M7 15.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 15.5z"/><path d="m12.5 15.5-2 3.5h3l-2 3.5"/>' },
   html() {
     const c = this.cidades(), d = this.dados;
-    if (!d) { this.busca(); return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="des">${ICE(this.IC.nuv, 34)}</span><span class="pct">—</span><span class="nm">${esc(c[0].n)}</span></button>`; }
+    if (!d) { this.busca(); return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para ver mais e os ajustes)"><span class="des">${ICE(this.IC.nuv, 34)}</span><span class="pct">—</span><span class="nm">${esc(c[0].n)}</span></button>`; }
     const faces = c.map((x, k) => { const v = d[k] || {}, [txt, ic] = this.tipo(v.w, v.dia);
       return `<span class="cl-f" title="${esc(x.n)}: ${esc(txt)}"><span class="des">${ICE(this.IC[ic], 34)}</span><span class="pct">${v.t == null || isNaN(v.t) ? '—' : v.t + '<small>°</small>'}</span><span class="cl-mm">${v.mx == null || isNaN(v.mx) ? '' : `${v.mx}° / ${v.mn}°`}</span><span class="nm">${esc(x.n)}</span><span class="cl-cond">${esc(txt)}</span><span class="cl-hr">${(v.h || []).filter(o => !isNaN(o.t)).map(o => `<i><small>${esc(o.h)}</small>${ICE(this.IC[this.tipo(o.w, o.dia)[1]], 16)}<b>${o.t}°</b></i>`).join('')}</span></span>`; }).join('');
-    return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para escolher as cidades)"><span class="cl-faces" style="--i:${this.i % c.length}">${faces}</span></button>`;
+    return `<button type="button" class="et clima" data-et="clima" style="--c:#2a7fb8" title="Clima (clique para ver mais e os ajustes)"><span class="cl-faces" style="--i:${this.i % c.length}">${faces}</span></button>`;
   },
   liga(box) { // mais de uma cidade: passa de uma em uma (devagar)
     clearInterval(this._t); const n = this.cidades().length; if (n < 2 || !this.dados) return;
     this._t = setInterval(() => { if (document.hidden) return; const f = box.querySelector('.cl-faces'); if (!f) return clearInterval(this._t); this.i = (this.i + 1) % n; f.style.setProperty('--i', this.i); }, 6000);
-    if (Date.now() - (JSON.parse(localStorage.getItem('ep-clima') || '{"t":0}').t || 0) > 30 * 6e4) this.busca();
+    if (Date.now() - (JSON.parse(localStorage.getItem('ep-clima') || '{"t":0}').t || 0) > this.ajuste('min') * 6e4) this.busca();
   },
+  /* PAINEL DO CLIMA (pedido da dona, 17/11/2026: "ver mais coisas sobre o clima e mais configurações"): mesma fonte (Open-Meteo,
+     grátis e sem chave, direto do navegador). Agora, sensação, umidade, vento, chuva, nascer e pôr do sol, as próximas 24 horas e os
+     próximos 7 dias de cada cidade; ajustes: cidades, minha localização, °C/°F, de quanto em quanto atualiza e onde mostrar. */
+  _det: {},
+  async detalhe(x) { const k = x.la.toFixed(2) + ',' + x.lo.toFixed(2) + '|' + this.ajuste('u'), g = this._det[k]; if (g && Date.now() - g.t < 15 * 6e4) return g.d;
+    const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + x.la + '&longitude=' + x.lo + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day&hourly=temperature_2m,weather_code,is_day,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max&forecast_days=7&forecast_hours=24&timezone=auto' + this.unid();
+    const d = await (await fetch(u, { credentials: 'omit', cache: 'no-store' })).json(); if (!d?.current) throw new Error('clima'); this._det[k] = { t: Date.now(), d }; return d; },
+  painel(qual) {
+    document.querySelector('.modal.clp')?.remove();
+    const d = document.createElement('div'); d.className = 'modal clp'; let k = Math.max(0, Math.min(this.cidades().length - 1, qual ?? (this.i % this.cidades().length)));
+    const R = v => v == null || isNaN(v) ? '—' : Math.round(v), U = () => this.ajuste('u') === 'f' ? '°F' : '°C', V = () => this.ajuste('u') === 'f' ? 'mph' : 'km/h';
+    const hora = s => String(s || '').slice(11, 16), DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const rumo = g => ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'][Math.round(((+g % 360) + 360) % 360 / 45) % 8];
+    const seg = (nome, ops, atual) => '<div class="clp-seg" role="group" aria-label="' + nome + '">' + ops.map(([v, t]) => '<button type="button" data-' + nome + '="' + v + '" aria-pressed="' + (String(atual) === String(v)) + '">' + t + '</button>').join('') + '</div>';
+    const corpo = (j, x) => { const c = j.current, dd = j.daily, hh = j.hourly, [txt, ic] = this.tipo(c.weather_code, c.is_day);
+      const mx = Math.max(...dd.temperature_2m_max), mn = Math.min(...dd.temperature_2m_min), faixa = Math.max(1, mx - mn);
+      return '<div class="clp-hero"><span class="clp-ic">' + ICE(this.IC[ic], 56) + '</span><div><b class="clp-t">' + R(c.temperature_2m) + '°</b><span class="clp-c">' + esc(txt) + '</span><small>Máx ' + R(dd.temperature_2m_max[0]) + '° · Mín ' + R(dd.temperature_2m_min[0]) + '°</small></div></div>'
+        + '<div class="clp-tiles">' + [['Sensação', R(c.apparent_temperature) + '°'], ['Umidade', R(c.relative_humidity_2m) + '%'], ['Vento', R(c.wind_speed_10m) + ' ' + V() + ' · ' + rumo(c.wind_direction_10m)],
+          ['Chance de chuva', R(dd.precipitation_probability_max?.[0]) + '%'], ['Nascer do sol', hora(dd.sunrise?.[0])], ['Pôr do sol', hora(dd.sunset?.[0])]].map(([t, v]) => '<div class="clp-tile"><small>' + t + '</small><b>' + esc(String(v)) + '</b></div>').join('') + '</div>'
+        + '<div class="mp-tit">Próximas 24 horas</div><div class="clp-horas">' + (hh.time || []).map((tm, i) => { const [, ic2] = this.tipo(hh.weather_code[i], hh.is_day[i]), p = hh.precipitation_probability?.[i];
+          return '<div class="clp-h"><small>' + (i ? hora(tm).slice(0, 2) + 'h' : 'Agora') + '</small>' + ICE(this.IC[ic2], 20) + '<b>' + R(hh.temperature_2m[i]) + '°</b><i>' + (p >= 20 ? p + '%' : '') + '</i></div>'; }).join('') + '</div>'
+        + '<div class="mp-tit">Próximos 7 dias</div><div class="clp-dias mp-grupo">' + (dd.time || []).map((tm, i) => { const [t2, ic2] = this.tipo(dd.weather_code[i], true), lo = dd.temperature_2m_min[i], hi = dd.temperature_2m_max[i], p = dd.precipitation_probability_max?.[i];
+          return '<div class="clp-d" title="' + esc(t2) + '"><b>' + (i ? DIAS[new Date(tm + 'T12:00').getDay()] : 'Hoje') + '</b>' + ICE(this.IC[ic2], 20) + '<i>' + (p >= 20 ? p + '%' : '') + '</i><small>' + R(lo) + '°</small><span class="clp-bar"><span style="left:' + ((lo - mn) / faixa * 100).toFixed(1) + '%;right:' + ((mx - hi) / faixa * 100).toFixed(1) + '%"></span></span><small class="mx">' + R(hi) + '°</small></div>'; }).join('') + '</div>'
+        + '<p class="clp-fonte">Dados do Open-Meteo · ' + esc(x.n) + ' · atualizado às ' + new Date(this._det[x.la.toFixed(2) + ',' + x.lo.toFixed(2) + '|' + this.ajuste('u')]?.t || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</p>'; };
+    let vez = 0; const pinta = async () => { const C = this.cidades(); k = Math.min(k, C.length - 1); const x = C[k], minha = ++vez;
+      d.innerHTML = '<div class="mc mc-painel" role="dialog" aria-label="Clima"><div class="mp-cab"><h3>Clima</h3><button class="mp-x" data-x type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'
+        + '<div class="mp-corpo">' + (C.length > 1 ? '<div class="clp-cids">' + C.map((c, i) => '<button type="button" data-cid="' + i + '" aria-pressed="' + (i === k) + '">' + esc(c.n) + '</button>').join('') + '</div>' : '')
+        + '<div class="clp-det"><p class="clp-esp">Carregando o tempo de ' + esc(x.n) + '…</p></div>'
+        + '<div class="mp-tit">Ajustes</div><div class="clp-aj mp-grupo">'
+        + '<div class="clp-lin"><span>Unidade</span>' + seg('u', [['c', '°C'], ['f', '°F']], this.ajuste('u')) + '</div>'
+        + '<div class="clp-lin"><span>Atualizar a cada</span>' + seg('min', [[15, '15 min'], [30, '30 min'], [60, '1 hora']], this.ajuste('min')) + '</div>'
+        + '<div class="clp-lin"><span>Onde mostrar</span>' + seg('barra', [['', 'Bloco no menu'], ['1', 'Só na barra de cima']], this.ajuste('barra') ? '1' : '') + '</div>'
+        + '<div class="clp-lin"><span>Cidades</span><span class="clp-bts"><button type="button" class="btn sm" data-loc>Usar minha localização</button><button type="button" class="btn sm" data-cids>Escolher cidades…</button></span></div></div>'
+        + '<p class="clp-fonte">Fica só neste computador. "Minha localização" pede licença ao navegador e não sai daqui.</p></div>'
+        + '<div class="mp-pe"><button type="button" class="btn" data-atu>Atualizar agora</button></div></div>';
+      $('[data-x]', d).onclick = () => d.remove();
+      $$('[data-cid]', d).forEach(b => b.onclick = () => { k = +b.dataset.cid; pinta(); });
+      $$('[data-u]', d).forEach(b => b.onclick = () => { this.muda({ u: b.dataset.u }); pinta(); });
+      $$('[data-min]', d).forEach(b => b.onclick = () => { this.muda({ min: +b.dataset.min }); pinta(); });
+      $$('[data-barra]', d).forEach(b => b.onclick = () => { this.muda({ barra: !!b.dataset.barra }); pinta(); toast(b.dataset.barra ? 'O clima fica só na barra de cima.' : 'O clima voltou para o menu.'); });
+      $('[data-cids]', d).onclick = () => { d.remove(); this.config(); };
+      $('[data-loc]', d).onclick = () => { if (!navigator.geolocation) return toast('Este navegador não dá a localização.'); toast('Pedindo a localização ao navegador…');
+        navigator.geolocation.getCurrentPosition(p => { const L = this.cidades().filter(c => !c.auto); L.unshift({ n: 'Minha localização', la: +p.coords.latitude.toFixed(3), lo: +p.coords.longitude.toFixed(3), auto: true }); this.i = 0; k = 0; this.grava(L); pinta(); toast('Clima da sua localização.'); },
+          () => toast('Sem licença para a localização.'), { timeout: 10000, maximumAge: 6e5 }); };
+      $('[data-atu]', d).onclick = () => { this._det = {}; try { localStorage.removeItem('ep-clima'); } catch { } this.dados = null; this.busca(); pinta(); };
+      try { const j = await this.detalhe(x); const det = $('.clp-det', d); if (det && minha === vez) det.innerHTML = corpo(j, x); } catch { const det = $('.clp-det', d); if (det && minha === vez) det.innerHTML = '<p class="clp-esp">Não deu para ver o tempo agora (sem internet?). Tente "Atualizar agora".</p>'; } };
+    d.onclick = e => { if (e.target === d) d.remove(); };
+    const esc1 = e => { if (e.key === 'Escape' && d.isConnected) { e.stopPropagation(); d.remove(); } }; addEventListener('keydown', esc1, true);
+    new MutationObserver((_, o) => { if (!d.isConnected) { removeEventListener('keydown', esc1, true); o.disconnect(); } }).observe(document.body, { childList: true });
+    document.body.appendChild(d); pinta();
+  },
+  // "Só na barra de cima": o clima pequeno ao lado da hora (abre o painel)
+  barra() { const t = document.getElementById('top'); if (!t) return; let b = t.querySelector('.ip-clima'); const so = this.ajuste('barra');
+    if (!so) { b?.remove(); return; } const c = this.cidades(), v = this.dados?.[this.i % c.length];
+    if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'ip-clima'; b.onclick = () => this.painel(); t.insertBefore(b, t.querySelector('.ip-hora') || t.querySelector('#lupa') || t.lastChild); }
+    const [txt, ic] = v ? this.tipo(v.w, v.dia) : ['Clima', 'nuv']; b.title = (c[this.i % c.length]?.n || 'Clima') + ': ' + txt + ' (clique para ver mais)'; b.innerHTML = ICE(this.IC[ic], 16) + '<span>' + (v && !isNaN(v.t) ? v.t + '°' : '') + '</span>'; },
   config() { // escolher as cidades (só neste computador)
     const sel = new Set(this.cidades().map(x => x.n)), extras = this.cidades().filter(x => !this.PADRAO.some(p => p.n === x.n));
     const d = document.createElement('div'); d.className = 'modal';
@@ -2676,20 +2885,40 @@ const clima = {
   },
 };
 /* MEUS ATALHOS (pedido da dona, 05/11/2026): blocos e links da própria pessoa. Só neste computador (localStorage 'ep-atalhos'), nada na nuvem. */
-/* ÍCONE DO ATALHO (pedido da dona, 17/11/2026): imagem escolhida pela pessoa (reduzida para 128 px e guardada só neste computador)
-   ou, sem imagem, as duas primeiras letras na cor do atalho. A imagem é redesenhada num canvas: nunca roda código de um SVG. */
-const atIcone = a => a.img && /^data:image\/(png|jpeg|webp);base64,/.test(a.img) ? '<img class="at-img" alt="" draggable="false" src="' + a.img + '">' : '<span class="at-l">' + esc(String(a.nome || '?').slice(0, 2)) + '</span>';
+/* ÍCONE DO ATALHO (pedido da dona, 17/11/2026): desenhado como os ícones dos programas (64×64, cantos de 22%, fundo liso ou em
+   degradê, borda opcional, letras centradas pela altura das maiúsculas) ou com uma IMAGEM que a pessoa move e aproxima dentro do ícone.
+   a.ic = { modo: 'let'|'img', let, tl (tamanho das letras), cl (cor das letras), bg, bg2 (degradê), bd, bc, be (borda), z, x, y (imagem) }.
+   a.img = a imagem redesenhada num canvas (até 384 px, PNG/WEBP), só neste computador. Cores só #rrggbb; nada de SVG enviado vira código. */
+let atNId = 0;
+const atHex = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : '';
+const atImgOk = s => typeof s === 'string' && s.length < 2e6 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
+const atCfg = a => { const c = a.ic || {}, img = atImgOk(a.img);
+  return { modo: img && c.modo !== 'let' ? 'img' : 'let', let: String(c.let ?? '').trim().slice(0, 3) || String(a.nome || '?').trim().slice(0, 2) || '?',
+    tl: Math.min(1.6, Math.max(.5, +c.tl || 1)), cl: atHex(c.cl) || '#ffffff', bg: atHex(c.bg) || atHex(a.cor) || '#1d6fd6', bg2: atHex(c.bg2),
+    bd: !!c.bd, bc: atHex(c.bc) || '#ffffff', be: Math.min(6, Math.max(1, +c.be || 3)),
+    z: Math.min(4, Math.max(.3, +c.z || 1)), x: Math.max(-64, Math.min(64, +c.x || 0)), y: Math.max(-64, Math.min(64, +c.y || 0)) }; };
+const atIcone = a => { const c = atCfg(a), id = 'atg' + (++atNId), r = 14.08, b = c.bd ? c.be : 0, n = [...c.let].length;
+  let s = '<svg class="at-svg" viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true"><defs>' + (c.bg2 ? '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c.bg + '"/><stop offset="1" stop-color="' + c.bg2 + '"/></linearGradient>' : '')
+    + '<clipPath id="' + id + 'c"><rect width="64" height="64" rx="' + r + '"/></clipPath></defs><g clip-path="url(#' + id + 'c)"><rect width="64" height="64" fill="' + (c.bg2 ? 'url(#' + id + 'g)' : c.bg) + '"/>';
+  if (c.modo === 'img') { const t = 64 * c.z; s += '<image href="' + a.img + '" x="' + (32 - t / 2 + c.x).toFixed(2) + '" y="' + (32 - t / 2 + c.y).toFixed(2) + '" width="' + t.toFixed(2) + '" height="' + t.toFixed(2) + '" preserveAspectRatio="xMidYMid meet"/>'; }
+  else { const fs = (n >= 3 ? 23 : n === 2 ? 29 : 36) * c.tl; s += '<text x="32" y="' + (32 + fs * .35).toFixed(2) + '" text-anchor="middle" font-family="\'Segoe UI\', system-ui, -apple-system, Roboto, \'Helvetica Neue\', Arial, sans-serif" font-weight="700" font-size="' + fs.toFixed(2) + '" letter-spacing="-0.5" fill="' + c.cl + '">' + esc(c.let) + '</text>'; }
+  s += '</g>'; if (b) s += '<rect x="' + b / 2 + '" y="' + b / 2 + '" width="' + (64 - b) + '" height="' + (64 - b) + '" rx="' + Math.max(0, r - b / 2) + '" fill="none" stroke="' + c.bc + '" stroke-width="' + b + '"/>';
+  return s + '</svg>'; };
+// imagem escolhida: redesenhada num canvas (até 384 px, mantém a transparência); "cobre" = zoom que enche o quadrado
 const atReduz = f => new Promise((ok, erro) => { const u = URL.createObjectURL(f), im = new Image();
-  im.onload = () => { try { const S = 128, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), w = im.naturalWidth || S, hh = im.naturalHeight || S, e = Math.max(S / w, S / hh);
-    x.drawImage(im, (S - w * e) / 2, (S - hh * e) / 2, w * e, hh * e); URL.revokeObjectURL(u); let r = c.toDataURL('image/webp', .9); if (!r.startsWith('data:image/webp')) r = c.toDataURL('image/png'); ok(r); } catch (er) { erro(er); } };
+  im.onload = () => { try { const w = im.naturalWidth || 256, hh = im.naturalHeight || 256, e = Math.min(1, 384 / Math.max(w, hh)), c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * e)); c.height = Math.max(1, Math.round(hh * e)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+    let r = c.toDataURL('image/webp', .9); if (!r.startsWith('data:image/webp')) r = c.toDataURL('image/png'); ok({ src: r, cobre: Math.max(w, hh) / Math.min(w, hh) }); } catch (er) { erro(er); } };
   im.onerror = () => { URL.revokeObjectURL(u); erro(new Error('imagem')); }; im.src = u; });
+// cor misturada (para o "Estilo dos programas": fundo bem escuro e letras/borda claras na cor escolhida)
+const atMix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
 const SETA_AT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 16 16 8M9.5 8H16v6.5"/></svg>';
 const atalhos = {
   CORES: ['#1d6fd6', '#1f7a5c', '#6a4fd8', '#c2410c', '#b8325a', '#3b4b5b'],
   lista() { try { const v = JSON.parse(localStorage.getItem('ep-atalhos') || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } },
   grava(L) { try { localStorage.setItem('ep-atalhos', JSON.stringify(L.slice(0, 40))); } catch { toast('Sem espaço neste navegador para guardar o atalho.'); } this.pinta(); try { if (DADOS) pintaGrid(); } catch { } },
   // os atalhos marcados "na grade" viram blocos da grade de programas (podem ser arrastados no Organizar e ir para pastas)
-  naGrade() { return this.lista().map((a, i) => ({ ...a, i })).filter(a => a.grade && a.url).map(a => ({ atalho: true, atIdx: a.i, nome: a.nome, url: a.url, cor: a.cor || this.CORES[0], img: a.img || '' })); },
+  naGrade() { return this.lista().map((a, i) => ({ ...a, i })).filter(a => a.grade && a.url).map(a => ({ atalho: true, atIdx: a.i, nome: a.nome, url: a.url, cor: a.cor || this.CORES[0], img: a.img || '', ic: a.ic || null })); },
   pinta() {
     const box = $('#atalhos'); if (!box) return; const L = this.lista();
     box.innerHTML = L.map((a, k) => `<a class="et at" href="${esc(a.url)}" data-at="${k}" style="--c:${esc(a.cor || this.CORES[0])}" title="${esc(a.nome)} · ${esc(a.url)}" target="${/^https?:/i.test(a.url) && !a.url.startsWith(location.origin) ? '_blank' : '_self'}" rel="noopener">${atIcone(a)}<span class="nm">${esc(a.nome)}</span><button type="button" class="at-ed" data-ed="${k}" title="Editar" aria-label="Editar ${esc(a.nome)}">${ICE('<path d="M4 20h4L19 9l-4-4L4 16z"/>', 14)}</button></a>`).join('')
@@ -2699,30 +2928,79 @@ const atalhos = {
     $$('[data-ed]', box).forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); this.edita(+b.dataset.ed); });
   },
   edita(k) {
-    const L = this.lista(), a = k >= 0 ? { ...L[k] } : { nome: '', url: 'https://', cor: this.CORES[0] };
+    const L = this.lista(), a = k >= 0 ? JSON.parse(JSON.stringify(L[k])) : { nome: '', url: 'https://', cor: this.CORES[0] };
+    const c0 = atCfg(a); a.ic = { ...c0, let: a.ic?.let || '' }; const ic = a.ic; // ic.let vazio = segue o nome
+    const bola = (grp, v, extra = '') => '<button type="button" class="at-cor" data-grp="' + grp + '" data-v="' + v + '" style="background:' + v + '" aria-label="Cor ' + v + '"' + extra + '></button>';
+    const livre = (grp, v) => '<label class="at-cor at-livre" title="Escolher outra cor"><input type="color" data-livre="' + grp + '" value="' + v + '" aria-label="Escolher outra cor"></label>';
     const d = document.createElement('div'); d.className = 'modal';
     d.innerHTML = `<div class="mc mc-painel" role="dialog" aria-label="Atalho"><div class="mp-cab"><h3>${k >= 0 ? 'Editar atalho' : 'Novo atalho'}</h3><button class="mp-x" data-x type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <div class="mp-corpo"><label class="mp-tit" for="at-n">Nome</label><input class="mp-campo" type="text" id="at-n" maxlength="30" value="${esc(a.nome)}">
       <label class="mp-tit" for="at-u">Endereço</label><input class="mp-campo" type="url" id="at-u" maxlength="500" value="${esc(a.url)}">
-      <div class="mp-tit">Ícone</div><div class="at-ico-ed"><span class="at-prev" style="--c:${esc(a.cor || this.CORES[0])}"></span><div class="at-ico-bts"><button type="button" class="btn sm" data-img>Escolher imagem…</button><button type="button" class="btn sm" data-semimg hidden>Usar as letras</button><small>PNG, JPG, SVG ou WEBP. Fica só neste computador.</small></div><input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" data-arq hidden></div>
-      <label class="at-grade"><input type="checkbox" data-grade ${a.grade ? 'checked' : ''}><span>Mostrar também na grade de programas</span></label>
-      <div class="mp-tit">Cor</div><div class="mp-cores">${this.CORES.map(c => `<button type="button" class="at-cor${c === a.cor ? ' on' : ''}" data-cor="${c}" style="background:${c}" aria-label="Cor ${c}"></button>`).join('')}</div></div>
+      <div class="mp-tit">Ícone</div>
+      <div class="at-ed-prev"><span class="at-prev at-prev-g" title="Com imagem: arraste para mover, rodinha para aproximar"></span><span class="at-prev-mini"><span class="at-prev at-prev-p"></span><small>Na barra</small></span><button type="button" class="btn sm at-estilo" data-estilo title="Fundo escuro, letras e borda na cor, como os ícones dos programas">Estilo dos programas</button></div>
+      <div class="at-seg" role="group" aria-label="Tipo de ícone"><button type="button" data-modo="let">Letras</button><button type="button" data-modo="img">Imagem</button></div>
+      <div class="at-pn" data-pn="let">
+        <label class="at-lin"><span>Texto</span><input class="mp-campo at-txt" type="text" maxlength="3" data-let placeholder="${esc(String(a.nome || 'Go').slice(0, 2))}" value="${esc(ic.let)}"></label>
+        <label class="at-lin"><span>Tamanho</span><input type="range" min="50" max="160" step="5" data-tl value="${Math.round(ic.tl * 100)}"></label>
+        <div class="at-lin"><span>Cor das letras</span><div class="at-cores">${bola('cl', '#ffffff') + bola('cl', '#000000') + livre('cl', ic.cl)}</div></div>
+      </div>
+      <div class="at-pn" data-pn="img">
+        <div class="at-ico-bts"><button type="button" class="btn sm" data-img>${atImgOk(a.img) ? 'Trocar imagem…' : 'Escolher imagem…'}</button><button type="button" class="btn sm" data-centro>Centralizar</button><button type="button" class="btn sm" data-semimg>Tirar imagem</button></div>
+        <label class="at-lin"><span>Zoom</span><input type="range" min="30" max="400" step="1" data-z value="${Math.round(ic.z * 100)}"></label>
+        <small class="at-dica">Arraste a imagem na prévia para mover; a rodinha também aproxima. A cor de fundo aparece atrás de imagem com partes transparentes. PNG, JPG, SVG ou WEBP; fica só neste computador.</small>
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" data-arq hidden>
+      </div>
+      <div class="at-lin"><span>Fundo</span><div class="at-cores">${this.CORES.map(c => bola('bg', c)).join('') + livre('bg', ic.bg)}</div></div>
+      <label class="at-lin at-chk"><span><input type="checkbox" data-deg ${ic.bg2 ? 'checked' : ''}> Degradê</span><input type="color" data-bg2 value="${ic.bg2 || atMix(ic.bg, '#000000', .45)}" aria-label="Segunda cor do degradê"></label>
+      <div class="at-lin at-chk"><span><label><input type="checkbox" data-bd ${ic.bd ? 'checked' : ''}> Borda</label></span><span class="at-bd"><input type="color" data-bc value="${ic.bc}" aria-label="Cor da borda"><input type="range" min="1" max="6" step="0.5" data-be value="${ic.be}" aria-label="Espessura da borda"></span></div>
+      <label class="at-grade"><input type="checkbox" data-grade ${a.grade ? 'checked' : ''}><span>Mostrar também na grade de programas</span></label></div>
       <div class="mp-pe">${k >= 0 ? '<button class="btn danger" data-rm type="button" style="margin-right:auto">Remover</button>' : ''}<button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
     document.body.appendChild(d); setTimeout(() => $('#at-n', d).focus(), 50);
     const escAt = e => { if (e.key === 'Escape' && d.isConnected) { e.stopPropagation(); d.remove(); } }; addEventListener('keydown', escAt, true); new MutationObserver((_, o) => { if (!d.isConnected) { removeEventListener('keydown', escAt, true); o.disconnect(); } }).observe(document.body, { childList: true });
     $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
-    const prev = () => { const p = $('.at-prev', d); p.style.setProperty('--c', a.cor || this.CORES[0]); p.innerHTML = atIcone({ ...a, nome: $('#at-n', d).value.trim() || a.nome || '?' }); $('[data-semimg]', d).hidden = !a.img; }; prev();
-    $('#at-n', d).addEventListener('input', prev);
+    const pinta = () => { const nm = $('#at-n', d).value.trim() || a.nome || '?', obj = { ...a, nome: nm };
+      $('.at-prev-g', d).innerHTML = atIcone(obj); $('.at-prev-p', d).innerHTML = atIcone(obj);
+      const img = atImgOk(a.img), modo = img && ic.modo !== 'let' ? 'img' : ic.modo === 'img' ? 'img' : 'let';
+      $$('.at-seg [data-modo]', d).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.modo === modo)));
+      $$('.at-pn', d).forEach(p => p.hidden = p.dataset.pn !== modo);
+      $('[data-img]', d).textContent = img ? 'Trocar imagem…' : 'Escolher imagem…'; $('[data-centro]', d).hidden = $('[data-semimg]', d).hidden = !img; $('[data-z]', d).closest('.at-lin').hidden = !img;
+      $('.at-prev-g', d).classList.toggle('arrasta', modo === 'img' && img);
+      $$('.at-cor[data-grp]', d).forEach(b => b.classList.toggle('on', ic[b.dataset.grp]?.toLowerCase() === b.dataset.v));
+      $$('[data-livre]', d).forEach(i => { const v = ic[i.dataset.livre]; i.parentNode.classList.toggle('on', !$$('.at-cor[data-grp="' + i.dataset.livre + '"]', d).some(b => b.dataset.v === v?.toLowerCase())); i.parentNode.style.setProperty('--v', v); });
+      $('[data-bg2]', d).disabled = !ic.bg2; $('.at-bd', d).classList.toggle('off', !ic.bd); };
+    pinta();
+    $('#at-n', d).addEventListener('input', pinta);
+    $('[data-let]', d).addEventListener('input', e => { ic.let = e.target.value.trim(); pinta(); });
+    $('[data-tl]', d).addEventListener('input', e => { ic.tl = e.target.value / 100; pinta(); });
+    $('[data-z]', d).addEventListener('input', e => { ic.z = e.target.value / 100; pinta(); });
+    $$('.at-cor[data-grp]', d).forEach(b => b.onclick = () => { ic[b.dataset.grp] = b.dataset.v; if (b.dataset.grp === 'bg') a.cor = b.dataset.v; pinta(); });
+    $$('[data-livre]', d).forEach(i => i.addEventListener('input', () => { ic[i.dataset.livre] = i.value; if (i.dataset.livre === 'bg') a.cor = i.value; pinta(); }));
+    $('[data-deg]', d).onchange = e => { ic.bg2 = e.target.checked ? $('[data-bg2]', d).value : ''; pinta(); };
+    $('[data-bg2]', d).addEventListener('input', e => { if ($('[data-deg]', d).checked) { ic.bg2 = e.target.value; pinta(); } });
+    $('[data-bd]', d).onchange = e => { ic.bd = e.target.checked; pinta(); };
+    $('[data-bc]', d).addEventListener('input', e => { ic.bc = e.target.value; ic.bd = true; $('[data-bd]', d).checked = true; pinta(); });
+    $('[data-be]', d).addEventListener('input', e => { ic.be = +e.target.value; ic.bd = true; $('[data-bd]', d).checked = true; pinta(); });
+    $$('.at-seg [data-modo]', d).forEach(b => b.onclick = () => { ic.modo = b.dataset.modo; if (ic.modo === 'img' && !atImgOk(a.img)) $('[data-arq]', d).click(); pinta(); });
+    $('[data-estilo]', d).onclick = () => { const base = ic.bg; ic.bg = atMix(base, '#000000', .82); ic.bg2 = ''; ic.cl = ic.bc = atMix(base, '#ffffff', .35); ic.bd = true; ic.be = 3; ic.modo = 'let';
+      $('[data-deg]', d).checked = false; $('[data-bd]', d).checked = true; $('[data-bc]', d).value = ic.bc; $('[data-be]', d).value = 3; pinta(); };
     $('[data-img]', d).onclick = () => $('[data-arq]', d).click();
-    $('[data-semimg]', d).onclick = () => { delete a.img; prev(); };
+    $('[data-semimg]', d).onclick = () => { delete a.img; ic.modo = 'let'; ic.z = 1; ic.x = ic.y = 0; pinta(); };
+    $('[data-centro]', d).onclick = () => { ic.x = ic.y = 0; pinta(); };
     $('[data-arq]', d).onchange = async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; if (f.size > 8e6) return toast('Imagem grande demais (até 8 MB).');
-      try { a.img = await atReduz(f); prev(); } catch { toast('Não deu para abrir essa imagem.'); } };
-    $$('.at-cor', d).forEach(b => b.onclick = () => { a.cor = b.dataset.cor; $$('.at-cor', d).forEach(x => x.classList.toggle('on', x === b)); prev(); });
+      try { const r = await atReduz(f); a.img = r.src; ic.modo = 'img'; ic.z = Math.min(4, r.cobre); ic.x = ic.y = 0; $('[data-z]', d).value = Math.round(ic.z * 100); pinta(); } catch { toast('Não deu para abrir essa imagem.'); } };
+    // arrastar a imagem dentro do ícone e aproximar com a rodinha
+    const pg = $('.at-prev-g', d);
+    pg.addEventListener('pointerdown', e => { if (!pg.classList.contains('arrasta')) return; e.preventDefault(); pg.setPointerCapture(e.pointerId); const t = 64 / pg.getBoundingClientRect().width, x0 = e.clientX, y0 = e.clientY, ix = ic.x, iy = ic.y;
+      const mv = ev => { ic.x = Math.max(-64, Math.min(64, ix + (ev.clientX - x0) * t)); ic.y = Math.max(-64, Math.min(64, iy + (ev.clientY - y0) * t)); pinta(); };
+      const up = () => { pg.removeEventListener('pointermove', mv); pg.removeEventListener('pointerup', up); pg.removeEventListener('pointercancel', up); };
+      pg.addEventListener('pointermove', mv); pg.addEventListener('pointerup', up); pg.addEventListener('pointercancel', up); });
+    pg.addEventListener('wheel', e => { if (!pg.classList.contains('arrasta')) return; e.preventDefault(); ic.z = Math.min(4, Math.max(.3, ic.z * (e.deltaY < 0 ? 1.08 : 1 / 1.08))); $('[data-z]', d).value = Math.round(ic.z * 100); pinta(); }, { passive: false });
     $('[data-rm]', d)?.addEventListener('click', () => { L.splice(k, 1); this.grava(L); d.remove(); toast('Atalho removido.'); });
     $('[data-ok]', d).onclick = () => { const nome = $('#at-n', d).value.trim(); let url = $('#at-u', d).value.trim();
       if (!nome) return toast('Dê um nome ao atalho.'); if (/^[\w-]+(\.[\w-]+)+/.test(url) && !/^https?:\/\//i.test(url)) url = 'https://' + url;
       if (!/^(https?:\/\/[^\s"'<>]+|\/[^\s"'<>]*)$/i.test(url) || url === 'https://') return toast('Endereço inválido (comece com https://).');
-      const n = { nome, url, cor: a.cor }; if (a.img) n.img = a.img; if ($('[data-grade]', d).checked) n.grade = true; if (k >= 0) L[k] = n; else L.push(n); this.grava(L); d.remove(); toast('Atalho salvo neste computador.'); };
+      const img = atImgOk(a.img), g = { modo: img && ic.modo === 'img' ? 'img' : 'let', let: ic.let.slice(0, 3), tl: +ic.tl.toFixed(2), cl: ic.cl, bg: ic.bg, bg2: ic.bg2, bd: ic.bd, bc: ic.bc, be: ic.be, z: +ic.z.toFixed(3), x: +ic.x.toFixed(2), y: +ic.y.toFixed(2) };
+      const n = { nome, url, cor: ic.bg, ic: g }; if (img) n.img = a.img; if ($('[data-grade]', d).checked) n.grade = true; if (k >= 0) L[k] = n; else L.push(n); this.grava(L); d.remove(); toast('Atalho salvo neste computador.'); };
   },
 };
 // apertar um bloco: ele inclina para o lado onde o mouse/dedo apertou (fora do modo Organizar)
@@ -2843,7 +3121,8 @@ const recentes = {
   ligaProg() {
     const bt = $('#mp-prog-bt'), mn = $('#mp-prog-menu'), ic = $('#mp-prog-ic'); if (!bt || !mn) return;
     ic.innerHTML = this.icProg(this.prog()); bt.title = 'Filtrar por programa: ' + (this.PROGS.find(x => x[0] === this.prog())?.[1] || 'Todos');
-    mn.innerHTML = this.PROGS.map(([k, n]) => `<button type="button" role="menuitemradio" aria-checked="${k === this.prog()}" data-pg="${k}"><span class="pi">${this.icProg(k)}</span>${n}</button>`).join('');
+    const DONO = { at: 'an', pu: 'pr' }; // selinho do programa dono, igual ao da grade
+    mn.innerHTML = this.PROGS.map(([k, n]) => `<button type="button" role="menuitemradio" aria-checked="${k === this.prog()}" data-pg="${k}"><span class="pi">${this.icProg(k)}${DONO[k] ? `<span class="pi-parte" data-estudio-icone="${DONO[k]}"></span>` : ''}</span><span class="pn">${n}</span><svg class="ok" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button>`).join('');
     try { window.EstudioIcones?.pinta?.(mn); window.EstudioIcones?.pinta?.(ic); } catch { }
     const fecha = () => { mn.hidden = true; bt.setAttribute('aria-expanded', 'false'); };
     bt.onclick = e => { e.stopPropagation(); mn.hidden = !mn.hidden; bt.setAttribute('aria-expanded', String(!mn.hidden)); };
@@ -3988,7 +4267,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
 <script>/* CELESTE (11/11/2026): guarda os programas que esta pessoa vê no menu (nome, endereço e ícone) em localStorage 'ep-programas'.
    O /estudio-conta.js usa essa lista no botão de programas do cabeçalho de TODOS os programas (trocar de programa sem voltar ao menu). */
 (() => { const g = document.getElementById('grid'); if (!g) return; let t = 0;
-  const guarda = () => { try { const L = [...g.querySelectorAll('a.card[href]')].filter(a => !a.classList.contains('soon')).map(a => ({ nome: (a.querySelector('.txt b')?.textContent || '').trim(), url: a.getAttribute('href'), ic: a.querySelector('[data-estudio-icone]')?.dataset.estudioIcone || '' })).filter(x => x.nome && x.url);
+  const guarda = () => { try { const L = [...g.querySelectorAll('a.card[href]')].filter(a => !a.classList.contains('soon') && !a.classList.contains('card-at')).map(a => ({ nome: (a.querySelector('.txt b')?.textContent || '').trim(), url: a.getAttribute('href'), ic: a.querySelector('.ic [data-estudio-icone]')?.dataset.estudioIcone || '', parte: a.querySelector('.parte')?.dataset.estudioIcone || '' })).filter(x => x.nome && x.url); // parte = selinho do programa dono (Ateliê/Cenários → Animador, Publicações → Preparativos)
     if (L.length) localStorage.setItem('ep-programas', JSON.stringify({ em: Date.now(), L })); } catch { } };
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(guarda, 400); }).observe(g, { childList: true, subtree: true }); })();
 </script>
