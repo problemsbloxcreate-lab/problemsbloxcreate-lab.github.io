@@ -82,18 +82,26 @@
   }
   const ANTIGOS = [[/icones\/atelie\.svg/, 'at'], [/icones\/simbolo\.svg/, 'an'], [/icone-shorts[^/]*\.png/, 'sh'], [/modelador\/icone\.svg/, 'md'], [/editor\/icone\.svg/, 'ed']];
   function antigo(src) { src = String(src || ''); for (const [re, id] of ANTIGOS) if (re.test(src)) return id; return /^(\.\/)?icone\.svg$/.test(src) ? atual : null; } // "icone.svg" solto = o do programa desta página
+  /* FORMA (17/11/2026): os cantos do ícone (raio da ADM › Ícones) valem também para a caixa em volta dele (a caixa do menu, da barra
+     de baixo, do cabeçalho, do filtro, do carregamento), para nenhum lugar cortar o ícone com cantos fixos nem pôr uma sombra quadrada
+     atrás de um ícone redondo. Vai no próprio elemento (style com !important, que vence o CSS de qualquer página) e na caixa que só
+     tem ele dentro. */
+  const CAIXAS = '.ic,.pi,.pg,.mi,.ep-lg,.ic-w,.ic-prog,.logo-ic,.ep-ic';
+  function forma(el, id) { if (!el?.style) return; const c = cfg[id] || PADRAO[id]; if (!c) return; const r = Math.max(0, Math.min(50, +c.raio || 0)) + '%';
+    el.style.setProperty('border-radius', r, 'important'); const d = el.firstElementChild; if (d && /^(svg|img)$/i.test(d.tagName)) d.style.setProperty('border-radius', r, 'important'); // o desenho também (há páginas que arredondam o svg)
+    const pai = el.parentElement; if (pai && pai.childElementCount === 1 && pai.matches?.(CAIXAS)) pai.style.setProperty('border-radius', r, 'important'); }
   function pinta(raiz) {
     favicon();
     if (!porCaminho && !atual) atual = doCaminho();
     (raiz || document).querySelectorAll?.('[data-estudio-icone]').forEach(el => { let id = el.getAttribute('data-estudio-icone'); if (id === 'auto') id = atual || 'an'; if (!cfg[id] && !PADRAO[id]) return; /* ícone novo da ADM que ainda não chegou: mantém o que já está (ex.: as letras), em vez de mostrar o do Animador */ const ch = JSON.stringify(cfg[id] || '') + id;
-      if (el._epIc === ch) return; el._epIc = ch; el.innerHTML = svg(id); });
+      if (el._epIc === ch) return; el._epIc = ch; el.innerHTML = svg(id); forma(el, id); });
     // <img data-estudio-icone-img="an"> (telas de carregamento): troca a imagem pela de agora
     // imagens com os ícones ANTIGOS em qualquer lugar (botões, menus…): viram o ícone de agora (o mesmo da ADM)
     (raiz || document).querySelectorAll?.('img[src*="icone"]:not([data-estudio-icone-img])').forEach(im => { const id = antigo(im.getAttribute('src')); if (id) im.setAttribute('data-estudio-icone-img', id); });
-    (raiz || document).querySelectorAll?.('img[data-estudio-icone-img]').forEach(im => { const u = url(im.getAttribute('data-estudio-icone-img')); if (im.src !== u) im.src = u; });
+    (raiz || document).querySelectorAll?.('img[data-estudio-icone-img]').forEach(im => { const id = im.getAttribute('data-estudio-icone-img'), u = url(id); if (im.src !== u) im.src = u; forma(im, id); });
   }
   // elementos novos com data-estudio-icone (telas que montam depois) também ganham o ícone
-  const obs = new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.hasAttribute?.('data-estudio-icone') || n.hasAttribute?.('data-estudio-icone-img') || (n.tagName === 'IMG' && /icone/.test(n.getAttribute('src') || '')) || n.querySelector?.('[data-estudio-icone],[data-estudio-icone-img],img[src*="icone"]'))) { pinta(n.parentNode || n); return; } });
+  const obs = new MutationObserver(ms => { const raizes = new Set(); /* desenha TODOS os grupos novos (antes parava no primeiro) */ for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.hasAttribute?.('data-estudio-icone') || n.hasAttribute?.('data-estudio-icone-img') || (n.tagName === 'IMG' && /icone/.test(n.getAttribute('src') || '')) || n.querySelector?.('[data-estudio-icone],[data-estudio-icone-img],img[src*="icone"]'))) { raizes.add(n.parentNode || n); } for (const r of raizes) pinta(r); });
   const liga = () => { pinta(); if (document.body) obs.observe(document.body, { childList: true, subtree: true }); };
   if (document.readyState === 'loading') { favicon(); document.addEventListener('DOMContentLoaded', liga, { once: true }); } else liga();
   function troca(m, de) { // m = o que a ADM salvou (só o que difere do padrão)
@@ -113,7 +121,7 @@
   const naTarefa = () => { try { window.EstudioProgresso?.tarefa?.(pronto, 'Ícones dos programas'); } catch { } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', naTarefa, { once: true }); else naTarefa();
   window.EstudioIcones = {
-    PADRAO: copia(PADRAO), get IDS() { return [...IDS]; }, BASE: [...BASE], svg, url, pinta, pronto, ehNovo, novoPadrao,
+    PADRAO: copia(PADRAO), get IDS() { return [...IDS]; }, BASE: [...BASE], svg, url, pinta, forma, pronto, ehNovo, novoPadrao,
     config: () => copia(cfg), padrao: id => copia(PADRAO[id] || cfg[id] || novoPadrao('Novo')),
     usar(id) { atual = id; favicon(); },
     atual: () => atual,
