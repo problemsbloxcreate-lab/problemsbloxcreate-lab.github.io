@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.16', apelido: 'Celeste', em: '17/11/2026',
+window.EstudioVersao ||= { nome: '2.17', apelido: 'Celeste', em: '17/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Grade de programas (2.17)', ['O Início da grade de programas voltou a ser uma casinha.']],
     ['Logo (2.16)', ['O logo do Problems na aba do menu e na barra de cima, no tamanho certo.', 'O Início da grade de programas também com o logo do Problems.']],
     ['Ícones (2.15)', ['Letras dos ícones 10% maiores, em todo lugar.', 'O + da barra de baixo bem no centro.']],
     ['Ícones (2.14)', ['Todos os ícones no estilo novo da Adobe: sem contorno, com degradê vivo na cor de cada programa e letras mais grossas.', 'ADM › Ícones: botão Usar o estilo novo em todos.']],
