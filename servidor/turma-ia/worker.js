@@ -1590,12 +1590,14 @@ export default {
           modo: ['naoListado', 'agora', 'agendado'].includes(i.modo) ? i.modo : 'naoListado', privacidade: ['public', 'unlisted', 'private'].includes(i.privacidade) ? i.privacidade : 'unlisted',
           publicaEm: num(i.publicaEm), enviadoEm: num(i.enviadoEm) || Date.now(), programa: txt(i.programa, 20), duracao: num(i.duracao), conferidoEm: num(i.conferidoEm), confirmadoEm: num(i.confirmadoEm), via: i.via === 'studio' ? 'studio' : 'api',
           formato: i.formato === 'short' || i.formato === 'longo' ? i.formato : null, // aba Shorts (vídeo em pé) ou Vídeos longos (10/11/2026)
+          // PARTE DE EPISÓDIO escolhida à mão (17/11/2026): { n: episódio 1..999, parte: 1..99 }; sem isso o app agrupa pelo nome ("Episódio 2 - Parte 1")
+          ...(i.ep && +i.ep.n >= 1 && +i.ep.n <= 999 && +i.ep.parte >= 1 && +i.ep.parte <= 99 ? { ep: { n: Math.floor(+i.ep.n), parte: Math.floor(+i.ep.parte) } } : {}),
           ...(concl ? { concluido: true, thumb: /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(i.thumb || '') && i.thumb.length < 24000 ? i.thumb : '', abrir: /^\/[A-Za-z0-9/_?=&.%-]{0,200}$/.test(i.abrir || '') ? i.abrir : '', arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}),
           ...(pedido ? { pedido: true, descricao: txt(i.descricao, 5000), criancas: typeof i.criancas === 'boolean' ? i.criancas : null, arquivo: { nome: txt(i.arquivo?.nome, 120), tam: num(i.arquivo?.tam) } } : {}) };
         const k = v.itens.findIndex(x => x.id === limpo.id), antes = k >= 0 ? JSON.stringify(v.itens[k]) : null;
         // ORGANIZAR (10/11/2026): quem não é o dono (nem ADM) mas pode publicar só MOVE o item: formato, canal, data e situação
         if (k >= 0 && !dono(v.itens[k]) && !(await pode(env, login.email, 'publicacoes.publicar'))) return json({ error: { type: 'permissao', message: 'Só quem pode publicar organiza os vídeos dos outros.' } }, 403, cors);
-        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm, ...(x0.editadoPor ? { editadoPor: x0.editadoPor, editadoEm: x0.editadoEm } : {}) } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade, confirmadoEm: limpo.confirmadoEm }) }; }
+        if (k >= 0) { const x0 = v.itens[k]; v.itens[k] = dono(x0) ? { ...limpo, por: x0.por, enviadoEm: x0.enviadoEm, ...(x0.editadoPor ? { editadoPor: x0.editadoPor, editadoEm: x0.editadoEm } : {}) } : { ...x0, formato: limpo.formato, canal: limpo.canal, publicaEm: limpo.publicaEm, ep: limpo.ep, ...(x0.concluido ? {} : { modo: limpo.modo, privacidade: limpo.privacidade, confirmadoEm: limpo.confirmadoEm }) }; }
         else { v.itens.unshift({ ...limpo, por: eu }); if (v.itens.length > 3000) v.itens.length = 3000; }
         let mudou = !(antes && antes === JSON.stringify(v.itens[k >= 0 ? k : 0]));
         if (mudou && k >= 0) { v.itens[k].editadoPor = eu; v.itens[k].editadoEm = Date.now(); } // QUEM MEXEU por último (10/11/2026; sai como código u…, nunca e-mail)
