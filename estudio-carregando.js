@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.8', apelido: 'Celeste', em: '13/11/2026',
+window.EstudioVersao ||= { nome: '2.9', apelido: 'Celeste', em: '17/11/2026',
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Menu (2.9)', ['A logo antiga do Problems voltou: no menu, na entrada e nos carregamentos.', 'Ícones dos programas maiores no menu.', 'Barra de baixo consertada: não pula mais com o mouse, os atalhos têm a cor escolhida e Esc fecha o Novo atalho.', 'Atalhos com imagem própria e a opção de aparecer também na grade de programas.', 'Apagar pasta: botão direito na pasta ou no ⋯, com Desfazer.', 'Carregamento e Atualizando com fundo preto.']],
     ['Animador (2.8)', ['Cenário 3D que acompanha a câmera da cena: a câmera 3D anda junto com a câmera do Animador, quadro a quadro, e mantém o enquadramento e o tempo de cada cena. Já está em uso no "Série EP1 (3D)".', 'Vista 3D: mover o personagem no 3D agora move ele no vídeo também.']],
     ['Animador (2.7)', ['Ajudante do Blender: você instala uma vez (botão "Baixar o instalador" na janela "Ligar o Blender") e o Estúdio liga o Blender deste computador sozinho quando precisa (ao soltar um .blend ou renderizar o cenário). Não fica ligado com o Windows e se desliga sozinho.', 'Cenário 3D da rua com as cores do Blender: árvores com sombra e a casa na árvore com cor.']],
     ['Animador (2.6)', ['Vista 3D com os atalhos e a movimentação do Blender: botão do meio gira e Shift+meio anda; o teclado numérico muda a vista; G move, R gira e S muda o tamanho, com X/Y/Z e número exato; Alt+G/R/S zera; Shift+D duplica; X apaga; H esconde. A lista de atalhos fica no botão "?".', 'Na vista 3D, o personagem continua 2D: R gira no plano dele e S muda o tamanho, no vídeo também.', 'A câmera aparece pequena na vista 3D, como no Blender.']],
@@ -422,7 +423,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   // logo da tela de carregamento = o ícone do próprio programa (o mesmo da aba e do cabeçalho); sem programa, o do menu
   const LOGO_PROG = { ANIMADOR: '/animador/icones/simbolo.svg', EDITOR: '/editor/icone.svg', MODELADOR: '/modelador/icone.svg', SHORTS: '/shorts/icone-shorts-180.png', BLOCKBENCH: '/modelador/icone.svg' }[NOME_PROG] || '';
   const LOGO_EP = window.EstudioIcones?.atual?.() ? window.EstudioIcones.url(window.EstudioIcones.atual()) : ''; // ícone novo do programa (Sh, Ed, An, Md; ADM › Ícones)
-  const logoHtml = () => ((LOGO_EP || LOGO_PROG) ? '<img class="ep-img" alt=""' + (LOGO_EP ? ' data-estudio-icone-img="' + window.EstudioIcones.atual() + '"' : '') + ' src="' + (LOGO_EP || LOGO_PROG) + '" onerror="this.parentNode.classList.remove(\'ep-prog\');this.remove()">' : '') + '<svg viewBox="0 0 64 64" class="ep-cam" width="84" height="84"><defs><linearGradient id="epclq-carr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq-carr)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg>';
+  const logoHtml = () => ((LOGO_EP || LOGO_PROG) ? '<img class="ep-img" alt=""' + (LOGO_EP ? ' data-estudio-icone-img="' + window.EstudioIcones.atual() + '"' : '') + ' src="' + (LOGO_EP || LOGO_PROG) + '" onerror="this.parentNode.classList.remove(\'ep-prog\');this.remove()">' : '') + '<svg viewBox="0 0 64 64" class="ep-cam" width="84" height="84"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg>';
   const st = document.createElement('style');
   st.textContent = `#estudio-porta{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 700px at 50% 35%,#1d2030,#111216 70%);font:14px/1.5 'Segoe UI',system-ui,-apple-system,sans-serif;color:#e9ebef;padding:16px;-webkit-user-select:none;user-select:none;transition:opacity .35s ease}
 #estudio-porta.ep-saindo{opacity:0;pointer-events:none}
@@ -516,6 +517,10 @@ html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260
 #estudio-porta.m2.ep-erro .ep-lg::before{background:color-mix(in srgb,#ff453a 70%,transparent)}
 #estudio-porta.m2 a.ep-bt{grid-column:1/-1;justify-self:center;border-radius:999px!important}
 @media (prefers-reduced-motion:reduce){#estudio-porta.m2 .ep-lg{animation:none}}
+/* PEDIDO DA DONA (17/11/2026): carregamento com fundo PRETO nos dois temas (texto claro); logo antiga do Problems sem caixa atrás */
+#estudio-porta.m2,html[data-tema="claro"] #estudio-porta.m2{background:#000!important;--pt-tx:#f5f5f7!important;--pt-tx2:rgba(235,235,245,.66)!important}
+html[data-tema="claro"] #estudio-porta.m2::before{background:radial-gradient(260px 260px at 50% calc(50% - 64px),color-mix(in srgb,var(--ep-cor,#5cc4ff) 30%,transparent),transparent 72%)!important}
+#estudio-porta.m2 .ep-lg:not(.ep-prog) .ep-cam{border-radius:0!important;box-shadow:none!important;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
 `;
   (document.head || root).appendChild(st);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
