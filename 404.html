@@ -1542,6 +1542,61 @@ html.cel.ip body #menu>.versao-site{display:none!important}
 }
 @media (max-width:820px){html.cel.ip:has(#menu:not([hidden])) body #top #top-sub{white-space:nowrap;font-size:12px!important}html.cel.ip:has(#menu:not([hidden])) body #top .brand,html.cel.ip:has(#menu:not([hidden])) body #top .brand .t{flex:none!important;flex-wrap:nowrap!important;min-width:max-content!important}html.cel.ip body #menu .ip-wid #estudio{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important}html.cel.ip body #menu .ip-wid #g-est{width:100%!important}html.cel.ip body #menu .mn-progs .progs-cab{justify-content:flex-start!important}html.cel.ip body #menu .ip-wid{height:auto}html.cel.ip body #menu .mn-area{grid-template-columns:1fr!important;padding-top:calc(var(--ip-barra) + 16px)!important}html.cel.ip body .ip-wid{grid-template-columns:repeat(2,minmax(0,1fr))}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:none}}
 @media (prefers-reduced-motion:reduce){html.cel.ip body #menu *,html.cel.ip body .ip-dock *{transition:none!important}}
+/* ===== PEDIDO DA DONA (17/11/2026): logo antiga, ícones maiores, dock consertado, carregamento preto ===== */
+/* LOGO ANTIGA DO PROBLEMS (cubo com a câmera) no lugar da claquete: sem caixa nem sombra quadrada atrás (a sombra segue o desenho) */
+html.cel body :is(.login .lcard .logo,#top .brand .logo)>svg.ep-logo-p{border-radius:0!important;box-shadow:none!important;background:none!important;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+html.cel body #top .brand .logo:has(>svg.ep-logo-p){border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:none!important}
+html.cel body #top .brand .logo>svg.ep-logo-p{filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
+/* ENTRADA E SAÍDA DO MENU: fundo PRETO nos dois temas (o texto fica claro) */
+html.cel:not(.x) body :is(.login,#saida),html.cel[data-tema="claro"]:not(.x) body :is(.login,#saida){background:#000!important;--anel-c:#f5f5f7;--texto:#f5f5f7;--texto-2:rgba(235,235,245,.66);color:#f5f5f7}
+/* ÍCONES DOS PROGRAMAS MAIORES (eram 58-74 px; agora 72-96 px), a grade acompanha */
+html.cel.ip{--ip-ic:clamp(72px,6.2vw,96px)}
+html.cel.ip body #menu #grid{grid-template-columns:repeat(auto-fill,minmax(clamp(108px,9vw,132px),1fr))!important}
+html.cel.ip body #menu #grid .card .txt b{font-size:13px!important}
+/* DOCK (barra de baixo) CONSERTADO:
+   - ícones de 60 px (eram 54);
+   - com o mouse o ícone cresce por TRANSFORM (antes mudava largura e altura: a barra inteira pulava para os lados e o ícone saía pela borda);
+   - o atalho volta a ter a cor escolhida (o vidro dos cartões vencia e ele ficava cinza; no tema claro ficava branco e o nome sumia) */
+html.cel.ip body #menu .ip-dock :is(#fixos,#atalhos,#ip-sis)>:is(.card,.et){width:60px!important;height:60px!important;margin:0!important;transform-origin:50% 100%;transform:none!important;transition:transform .18s cubic-bezier(.2,.8,.2,1)!important}
+html.cel.ip body #menu .ip-dock :is(#fixos,#atalhos,#ip-sis)>:is(.card,.et):is(:hover,:focus-visible){width:60px!important;height:60px!important;margin:0!important;transform:translateY(-4px) scale(1.1)!important}
+html.cel.ip body #menu .ip-dock :is(#fixos,#atalhos,#ip-sis)>:is(.card,.et):active{transform:scale(.94)!important}
+html.cel.ip body #menu .ip-dock #atalhos>.et.at{background:var(--c,#3a3a40)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.cel.ip body #menu .ip-dock #atalhos>.et.at .at-l{color:#fff!important}
+html.cel.ip body #menu .ip-dock .ip-sis .gi svg{width:28px!important;height:28px!important}
+html.cel.ip body #menu .ip-dock :is(.ip-sis+#g-fix:not([hidden]),.ip-sis+#g-fix[hidden]+#g-atalhos:not([hidden]),#g-fix:not([hidden])+#g-atalhos)::before{height:50px}
+/* o nome em cima do ícone não cresce junto */
+html.cel.ip body #menu .ip-dock :is(#fixos,#atalhos,#ip-sis)>:is(.card,.et):hover :is(.txt,.nm){transform:translateX(-50%) scale(.91)!important;transform-origin:50% 100%}
+/* PASTA: menu "⋯" e do botão direito, com "Apagar pasta" */
+html.cel body .pasta-cm{position:fixed;z-index:60;min-width:180px;padding:5px;background:var(--elevado,#2a2a2e);color:var(--texto,#f5f5f7);border:1px solid var(--linha,rgba(255,255,255,.1));border-radius:10px;box-shadow:var(--sombra-3,0 18px 40px rgba(0,0,0,.45));animation:mnSobe .16s ease both}
+html.cel body .pasta-cm button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 10px;border:0;border-radius:6px;background:none;color:inherit;font:500 13.5px var(--fonte);text-align:left;cursor:pointer}
+html.cel body .pasta-cm button:hover,html.cel body .pasta-cm button:focus-visible{background:var(--fundo-3,rgba(255,255,255,.08));outline:none}
+html.cel body .pasta-cm button.perigo{color:var(--perigo,#ff453a)}
+html.cel body #menu .pasta-pop .pp-mais{width:32px;height:32px;border:0;border-radius:50%;background:none;color:var(--texto-2);display:grid;place-items:center;cursor:pointer}
+html.cel body #menu .pasta-pop .pp-mais:hover{background:var(--fundo-3)}
+/* ATALHOS: ícone próprio (dock, grade e pasta) e selinho de atalho na grade */
+html.cel.ip body #menu .ip-dock #atalhos>.et.at .at-img{position:absolute;inset:0;width:100%;height:100%;border-radius:14px;object-fit:cover;display:block}
+html.cel body #menu .ic.ic-at{display:grid!important;place-items:center;background:var(--c,#3a3a40)!important;border-radius:22%!important;overflow:hidden;color:#fff}
+html.cel body #menu .ic.ic-at .at-l{font:700 calc(var(--ip-ic,64px) * .3) var(--fonte);color:#fff;letter-spacing:-.01em}
+html.cel body #menu .pasta-mini .ic.ic-at .at-l{font-size:9px}
+html.cel body #menu .ic.ic-at .at-img{width:100%!important;height:100%!important;object-fit:cover;display:block}
+html.cel.ip body #menu #grid .card>.at-marca,html.cel body #menu .pasta-pop .card>.at-marca{position:absolute;top:calc(var(--ip-ic) - 16px);left:calc(50% + var(--ip-ic) / 2 - 14px);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#1d1d1f;box-shadow:0 2px 6px rgba(0,0,0,.4);z-index:2;pointer-events:none}
+html.cel body #menu .pasta-pop .card>.at-marca{top:6px;left:auto;right:6px}
+html.cel body #menu .card>.at-marca svg{width:13px;height:13px}
+html.cel body #menu :is(#grid,.pasta-pop,.pasta-mini) .ic.ic-at:not(#_){background:var(--c,#3a3a40)!important;display:grid!important;place-items:center!important}
+html.cel body #menu :is(#grid,.pasta-pop,.pasta-mini) .ic.ic-at:not(#_)>.at-l{position:static!important;display:grid!important;place-items:center;width:100%!important;height:100%!important;color:#fff!important;text-shadow:none!important}
+/* editor do atalho: prévia do ícone e escolha da imagem */
+html.cel body .mc-painel .at-ico-ed{display:flex;align-items:center;gap:14px;margin:0 4px}
+html.cel body .mc-painel .at-prev{position:relative;width:60px;height:60px;flex:none;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:var(--c,#3a3a40);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+html.cel body .mc-painel .at-prev .at-l{font:700 18px var(--fonte);color:#fff}
+html.cel body .mc-painel .at-prev .at-img{width:100%;height:100%;object-fit:cover;display:block}
+html.cel body .mc-painel .at-ico-bts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html.cel body .mc-painel .at-ico-bts small{flex-basis:100%;color:var(--texto-3);font-size:12px}
+html.cel body .mc-painel .at-grade{display:flex;align-items:center;gap:10px;margin:16px 4px 0;font:500 14px var(--fonte);color:var(--texto);cursor:pointer}
+html.cel body .mc-painel .at-grade input{width:18px;height:18px;accent-color:var(--acento)}
+/* aviso com "Desfazer" */
+.toast.tz-desfaz{display:flex;align-items:center;gap:14px}.toast.tz-desfaz button{border:0;background:none;color:var(--acento,#5cc4ff);font:600 13px var(--fonte,system-ui);cursor:pointer;padding:2px 4px}
+/* pergunta com Cancelar vermelho (regra das janelas do Estúdio) */
+html body .modal .mc.pergunta .acts button.btn.pg-cancela{color:#fff!important;background:var(--perigo,#ff453a)!important;border-color:transparent!important}html body .modal .mc.pergunta .acts button.btn.pg-cancela:hover{filter:brightness(1.1)}
 </style>
 </head>
 <body>
@@ -1551,7 +1606,7 @@ html.cel.ip body #menu>.versao-site{display:none!important}
 <!-- 1) LOGIN — único lugar onde se entra com o Google -->
 <section class="login boot" id="login">
   <div class="lcard">
-    <div class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="epclq1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq1)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg></div>
+    <div class="logo"><svg class="ep-logo-p" viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg></div>
     <h1>Estúdio Problems</h1>
     <p id="login-txt">Acesso restrito. Entre com a conta Google liberada para abrir os projetos.</p>
     <button class="gbtn" id="btn-in" disabled><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button>
@@ -1563,7 +1618,7 @@ html.cel.ip body #menu>.versao-site{display:none!important}
 
 <!-- topo (menu e ADM) -->
 <header class="top view" id="top" hidden>
-  <div class="brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="epclq2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq2)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg></span><span class="t"><b id="top-nome">Início</b><small id="top-sub">Estúdio Problems</small></span><span class="badge" id="badge-adm" hidden>ADM</span><span class="selos-cargo" id="selos-cargo"></span></div>
+  <div class="brand"><span class="logo"><svg class="ep-logo-p" viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(-9 -23.5) scale(.17)"><path d="M200.5 154 339 228V380L200.5 454 62 380V228Z" fill="#fff" stroke="#000" stroke-width="13" stroke-linejoin="round"/><g fill="none" stroke="#000" stroke-width="9" stroke-linecap="round"><path d="M202 224Q184 249 163 267"/><path d="M267 255Q254 279 239 298"/><path d="M116 307Q111 325 111.5 343"/></g></g><g stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="26.5" y="37.5" width="24" height="20" rx="4.5" fill="#19d3f0"/><path d="M50.5 43.5 61.5 37.5V57.5L50.5 51.5Z" fill="#19d3f0"/></g></svg></span><span class="t"><b id="top-nome">Início</b><small id="top-sub">Estúdio Problems</small></span><span class="badge" id="badge-adm" hidden>ADM</span><span class="selos-cargo" id="selos-cargo"></span></div>
   <span class="sp"></span>
   <button type="button" class="mn-lupa" hidden id="lupa" title="Buscar (ou só comece a digitar)" aria-label="Buscar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></button>
   <span class="top-centro" data-estudio-relogio></span><!-- redesign: relógio + calendário pessoal (o /estudio-conta.js preenche) -->
@@ -1920,6 +1975,7 @@ function cardHtml(l, tag) {
 function icNovoDe(l) { const EI = window.EstudioIcones; if (!EI) return null; const c = EI.config(); let cm = ''; try { const u = new URL(l.url || '', location.href); if (u.origin === location.origin) cm = u.pathname; } catch { }
   return EI.IDS.find(id => EI.ehNovo(id) && (c[id].botao === l.nome || (c[id].caminho && cm && cm.startsWith(c[id].caminho)))) || null; }
 function pintarIcone(el, l) {
+  if (l?.atalho) { const box = $('.ic', el); if (box) { box.className = 'ic ic-at'; box.style.setProperty('--c', l.cor); box.innerHTML = atIcone(l); delete box.dataset.k; } return; }
   const box = $('.ic', el); box.classList.toggle('nobox', !!l.iconeImg && l.iconeCaixa === false);
   const prog = window.EstudioIcones && (l.prog || progDaUrl(l.url, l.nome) || PROG_IC[l.icone] || icNovoDe(l)); box.classList.toggle('prog', !!prog); box.classList.remove('nobox'); // o cartão de um programa SEMPRE usa o ícone dele (muda em ADM › Ícones) // Shorts, Editor, Animador, Modelador, Ateliê: o ícone do programa (ADM › Ícones)
   if (prog) { if (box.dataset.k !== 'ep:' + prog) { box.innerHTML = `<span data-estudio-icone="${prog}"></span>`; box.dataset.k = 'ep:' + prog; } return; }
@@ -2302,7 +2358,16 @@ function blocoPasta(l, i) {
   el.setAttribute('aria-label', 'Pasta ' + l.nome); el.title = l.nome + ' · ' + l.itens.length + (l.itens.length === 1 ? ' programa' : ' programas');
   el.innerHTML = `<span class="pasta-mini">${l.itens.slice(0, 4).map(() => '<span class="mi"><span class="ic"></span></span>').join('') || '<span class="vazia">vazia</span>'}</span><span class="txt"><b>${esc(l.nome)}</b><small></small></span>`;
   $$('.mi', el).forEach((mi, k) => pintarIcone(mi, l.itens[k]));
+  el.addEventListener('contextmenu', e => { e.preventDefault(); menuPasta(l.id, e.clientX, e.clientY); });
   const abre = () => abrePasta(l.id, el); el.addEventListener('click', e => { if (Date.now() - (el._arrastou || 0) < 400) return; abre(); }); // depois de arrastar não abre el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abre(); } });
+  return el;
+}
+function blocoAtalho(l, i) {
+  const fora = /^https?:/i.test(l.url) && !l.url.startsWith(location.origin);
+  const el = document.createElement('a'); el.className = 'card card-at'; el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's'; el.href = l.url;
+  if (fora) { el.target = '_blank'; el.rel = 'noopener'; } el.title = l.nome + ' · atalho para ' + l.url;
+  el.innerHTML = cardHtml(l, '') + '<span class="at-marca" title="Atalho">' + SETA_AT + '</span>'; pintarIcone(el, l);
+  el.addEventListener('contextmenu', e => { e.preventDefault(); atalhos.edita(l.atIdx); }); // botão direito = editar o atalho
   return el;
 }
 function pastaNova() { const L = PASTAS.le(), id = 'p' + Date.now().toString(36); L.push({ id, nome: 'Pasta nova', itens: [] }); PASTAS.grava(L); pintaGrid(); setTimeout(() => { const t = $('#grid .pasta-b[data-k="pasta:' + id + '"]'); if (t) abrePasta(id, t, true); }, 60); }
@@ -2310,11 +2375,43 @@ function pastaPoe(id, k) { const L = PASTAS.le(); L.forEach(x => x.itens = (x.it
 function pastaTira(id, k) { const L = PASTAS.le(), p = L.find(x => x.id === id); if (!p) return; p.itens = p.itens.filter(y => y !== k); PASTAS.grava(L);
   try { const o = JSON.parse(localStorage.getItem('ep-menu-ordem') || '[]'), i = o.indexOf('pasta:' + id); if (Array.isArray(o) && i >= 0) { o.splice(i + 1, 0, k); localStorage.setItem('ep-menu-ordem', JSON.stringify([...new Set(o)])); } } catch { } // volta logo depois da pasta
   pintaGrid(); }
+/* APAGAR PASTA (pedido da dona, 17/11/2026): pelo "⋯" da janela da pasta, pelo botão direito no ícone ou no Organizar.
+   Confirma na janela do próprio site (Cancelar vermelho; clicar fora ou Esc cancela). Os programas de dentro voltam para a grade,
+   no lugar da pasta; nada é apagado além da pasta. O aviso tem "Desfazer" (volta a pasta, com os programas e a ordem de antes). */
+function menuPasta(id, x, y, antes) {
+  document.querySelector('.pasta-cm')?.remove(); const p = PASTAS.le().find(q => q.id === id); if (!p) return;
+  const m = document.createElement('div'); m.className = 'pasta-cm'; m.setAttribute('role', 'menu'); m.setAttribute('aria-label', 'Pasta ' + p.nome);
+  m.innerHTML = '<button type="button" role="menuitem" class="perigo" data-apaga><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Apagar pasta…</button>';
+  document.body.appendChild(m); const w = m.offsetWidth, hh = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + 'px'; m.style.top = Math.max(8, Math.min(y, innerHeight - hh - 8)) + 'px';
+  const sai = () => { m.remove(); document.removeEventListener('pointerdown', fora, true); removeEventListener('keydown', tecla, true); };
+  const fora = e => { if (!m.contains(e.target)) sai(); }, tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); sai(); } };
+  setTimeout(() => { document.addEventListener('pointerdown', fora, true); addEventListener('keydown', tecla, true); });
+  $('[data-apaga]', m).onclick = () => { sai(); antes?.(); apagaPasta(id); }; $('[data-apaga]', m).focus();
+}
+async function apagaPasta(id) {
+  const L = PASTAS.le(), p = L.find(q => q.id === id); if (!p) return; const n = (p.itens || []).length;
+  const ok = await pergunta({ titulo: 'Apagar a pasta "' + p.nome + '"?', texto: n ? (n === 1 ? 'O programa de dentro volta para a grade.' : 'Os ' + n + ' programas de dentro voltam para a grade.') + ' Nenhum programa é apagado.' : 'A pasta está vazia.', ok: 'Apagar pasta', cancelaVermelho: true });
+  if (!ok) return;
+  let ordem = null; try { ordem = localStorage.getItem('ep-menu-ordem'); } catch { }
+  try { const o = JSON.parse(ordem || '[]'), i = o.indexOf('pasta:' + id); if (Array.isArray(o) && i >= 0) { o.splice(i, 1, ...(p.itens || [])); localStorage.setItem('ep-menu-ordem', JSON.stringify([...new Set(o)])); } } catch { } // os programas ficam no lugar da pasta
+  PASTAS.grava(L.filter(q => q.id !== id)); $('.pasta-pop')?.remove(); pintaGrid();
+  toastDesfaz('Pasta "' + p.nome + '" apagada.' + (n ? ' Os programas voltaram para a grade.' : ''), () => {
+    const A = PASTAS.le().filter(q => q.id !== id), dentro = new Set(p.itens || []); A.forEach(q => q.itens = (q.itens || []).filter(k => !dentro.has(k))); A.splice(Math.min(L.findIndex(q => q.id === id), A.length), 0, p); PASTAS.grava(A);
+    try { if (ordem == null) localStorage.removeItem('ep-menu-ordem'); else localStorage.setItem('ep-menu-ordem', ordem); } catch { }
+    pintaGrid(); toast('A pasta voltou.'); });
+}
+function toastDesfaz(t, desfaz) {
+  document.querySelector('.toast.tz-desfaz')?.remove();
+  const d = document.createElement('div'); d.className = 'toast tz-desfaz'; d.setAttribute('role', 'status');
+  d.innerHTML = '<span></span><button type="button">Desfazer</button>'; d.firstChild.textContent = t; document.body.appendChild(d);
+  const tm = setTimeout(() => d.remove(), 8000); d.querySelector('button').onclick = () => { clearTimeout(tm); d.remove(); desfaz(); };
+}
 function abrePasta(id, tile, renomear) {
   $('.pasta-pop')?.remove(); const p = PASTAS.le().find(x => x.id === id); if (!p) return;
   const itens = (p.itens || []).map(k => todosProgs.find(l => chaveL(l) === k)).filter(Boolean), org = organizar.on;
   const d = document.createElement('div'); d.className = 'pasta-pop'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Pasta ' + p.nome);
-  d.innerHTML = `<div class="pp-cab">${org ? `<input type="text" class="pp-nome" maxlength="30" value="${esc(p.nome)}" aria-label="Nome da pasta">` : `<b>${esc(p.nome)}</b>`}<span class="sp"></span>${org ? '<button type="button" class="btn-org pp-apaga" title="Apaga a pasta (os programas voltam para a grade)">Apagar pasta</button>' : ''}<button type="button" class="pp-x" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>
+  d.innerHTML = `<div class="pp-cab">${org ? `<input type="text" class="pp-nome" maxlength="30" value="${esc(p.nome)}" aria-label="Nome da pasta">` : `<b>${esc(p.nome)}</b>`}<span class="sp"></span>${org ? '<button type="button" class="btn-org pp-apaga" title="Apaga a pasta (os programas voltam para a grade)">Apagar pasta</button>' : '<button type="button" class="pp-mais" title="Mais opções" aria-label="Mais opções da pasta" aria-haspopup="menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>'}<button type="button" class="pp-x" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>
     <div class="blocos pp-grade">${itens.map(l => `<a class="card" href="${esc(normUrl(l.url || ''))}" data-k="${esc(chaveL(l))}">${cardHtml(l, '')}${org ? '<button type="button" class="pp-tira" title="Tirar da pasta">Tirar</button>' : ''}</a>`).join('') || `<p class="pp-vazia">${org ? 'Arraste programas para cima desta pasta para colocar aqui.' : 'Pasta vazia · em Organizar, arraste programas para cá.'}</p>`}</div>`;
   $('#menu').appendChild(d);
   $$('.pp-grade .card', d).forEach(c => { const l = itens.find(x => chaveL(x) === c.dataset.k); if (l) { pintarIcone(c, l); if (l.parte) c.insertAdjacentHTML('beforeend', `<span class="parte" data-estudio-icone="${l.parte}"></span>`); } });
@@ -2326,10 +2423,11 @@ function abrePasta(id, tile, renomear) {
   const fora = e => { if (!d.contains(e.target) && !e.target.closest?.('.pasta-b')) fecha(); }, esc1 = e => { if (e.key === 'Escape') fecha(); };
   setTimeout(() => { document.addEventListener('pointerdown', fora, true); addEventListener('keydown', esc1); });
   $('.pp-x', d).onclick = fecha;
+  $('.pp-mais', d)?.addEventListener('click', e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); menuPasta(id, r.left, r.bottom + 4, fecha); });
   if (org) {
     const nm = $('.pp-nome', d); nm.onchange = () => { const L = PASTAS.le(), x = L.find(y => y.id === id); if (x) { x.nome = nm.value.trim().slice(0, 30) || 'Pasta'; PASTAS.grava(L); pintaGrid(); } }; nm.onkeydown = e => { if (e.key === 'Enter') nm.blur(); };
     if (renomear) setTimeout(() => { nm.focus(); nm.select(); }, 30);
-    $('.pp-apaga', d).onclick = () => { PASTAS.grava(PASTAS.le().filter(x => x.id !== id)); fecha(); pintaGrid(); toast('Pasta apagada: os programas voltaram para a grade.'); };
+    $('.pp-apaga', d).onclick = () => { fecha(); apagaPasta(id); };
     $$('.pp-tira', d).forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); pastaTira(id, b.closest('.card').dataset.k); fecha(); });
     // arrastar um programa para FORA da janela da pasta também tira
     $$('.pp-grade .card', d).forEach(c => { c.addEventListener('click', e => e.preventDefault()); c.addEventListener('pointerdown', e => { if (e.target.closest('.pp-tira')) return; e.preventDefault(); c.setPointerCapture?.(e.pointerId); const x0 = e.clientX, y0 = e.clientY;
@@ -2355,11 +2453,13 @@ function showMenu() {
 function pintaGrid() {
   const g = $('#grid'); if (!g || !DADOS) return; g.innerHTML = ''; g.classList.toggle('sem-anim', !!pintaGrid.uma); pintaGrid.uma = true; // a entrada em onda só na 1ª vez
   todosProgs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l)));
+  try { todosProgs = [...todosProgs, ...atalhos.naGrade()]; } catch { } // atalhos marcados "na grade" (pedido da dona, 17/11/2026)
   // PASTAS (pedido da dona, 06/11/2026): os programas dentro de uma pasta saem da grade e a pasta vira um bloco
   const pastas = PASTAS.le(), dentro = new Set(pastas.flatMap(x => x.itens || []));
   menuVis = ordenaLinks([...todosProgs.filter(l => !dentro.has(chaveL(l))), ...pastas.map(x => ({ pasta: true, id: x.id, nome: x.nome || 'Pasta', itens: (x.itens || []).map(k => todosProgs.find(l => chaveL(l) === k)).filter(Boolean) }))]); // invisível: some do menu para todos, inclusive ADM (só a ADM › Menu mostra)
   menuVis.forEach((l, i) => {
     if (l.pasta) { g.appendChild(blocoPasta(l, i)); return; }
+    if (l.atalho) { g.appendChild(blocoAtalho(l, i)); return; }
     const ok = l.url && !l.embreve;
     const el = document.createElement(ok ? 'a' : 'div'); el.className = 'card' + (ok ? '' : ' soon'); el.dataset.k = chaveL(l); el.style.animationDelay = (i * .06) + 's';
     if (ok) el.href = normUrl(l.url); else el.setAttribute('aria-disabled', 'true');
@@ -2388,13 +2488,13 @@ const organizar = {
     b.setAttribute('aria-pressed', String(this.on)); b.textContent = this.on ? 'Concluir' : 'Organizar'; $('#org-dica').hidden = !this.on;
     // "Voltar à ordem padrão": aparece sempre que a ordem desta pessoa é diferente da padrão
     const dentroP = new Set(PASTAS.le().flatMap(x => x.itens || [])), padraoKs = comPartes(DADOS.links.filter(l => !l.invisivel && podeVer(l))).map(chaveL).filter(k => !dentroP.has(k)).join('\n'), bp = $('#org-padrao');
-    if (bp) { bp.hidden = padraoKs === menuVis.filter(l => !l.pasta).map(chaveL).join('\n'); /* sempre à vista quando a ordem não é a padrão (pedido da dona) */ bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
+    if (bp) { bp.hidden = padraoKs === menuVis.filter(l => !l.pasta && !l.atalho).map(chaveL).join('\n'); /* sempre à vista quando a ordem não é a padrão (pedido da dona) */ bp.onclick = () => { try { localStorage.removeItem('ep-menu-ordem'); } catch { } pintaGrid(); toast('Voltou à ordem padrão.'); }; } g.classList.toggle('org', this.on);
     $('#btn-org').hidden = menuVis.length < 2;
     cx.classList.toggle('rola', g.dataset.densidade !== 'grande'); this.fimDaRolagem();
     const fx = new Set(this.fixos().map(x => x.k));
     { const np = $('#nova-pasta'); if (np) { np.hidden = !this.on; np.onclick = () => pastaNova(); } }
     $$('.card', g).forEach(el => { const l = menuVis.find(x => chaveL(x) === el.dataset.k); let p = el.querySelector('.fixar');
-      if (!l?.url || l.embreve) { p?.remove(); return; }
+      if (!l?.url || l.embreve || l.atalho) { p?.remove(); return; }
       if (!p) { p = document.createElement('button'); p.type = 'button'; p.className = 'fixar'; p.innerHTML = PINO; el.appendChild(p);
         p.onclick = e => { e.preventDefault(); e.stopPropagation(); const lk = menuVis.find(x => chaveL(x) === el.dataset.k); if (lk) this.fixa(lk, p.getAttribute('aria-pressed') !== 'true'); }; }
       const sim = fx.has(el.dataset.k); p.setAttribute('aria-pressed', String(sim)); p.title = sim ? 'Tirar dos fixados' : 'Fixar no topo'; p.setAttribute('aria-label', p.title); });
@@ -2576,13 +2676,23 @@ const clima = {
   },
 };
 /* MEUS ATALHOS (pedido da dona, 05/11/2026): blocos e links da própria pessoa. Só neste computador (localStorage 'ep-atalhos'), nada na nuvem. */
+/* ÍCONE DO ATALHO (pedido da dona, 17/11/2026): imagem escolhida pela pessoa (reduzida para 128 px e guardada só neste computador)
+   ou, sem imagem, as duas primeiras letras na cor do atalho. A imagem é redesenhada num canvas: nunca roda código de um SVG. */
+const atIcone = a => a.img && /^data:image\/(png|jpeg|webp);base64,/.test(a.img) ? '<img class="at-img" alt="" draggable="false" src="' + a.img + '">' : '<span class="at-l">' + esc(String(a.nome || '?').slice(0, 2)) + '</span>';
+const atReduz = f => new Promise((ok, erro) => { const u = URL.createObjectURL(f), im = new Image();
+  im.onload = () => { try { const S = 128, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), w = im.naturalWidth || S, hh = im.naturalHeight || S, e = Math.max(S / w, S / hh);
+    x.drawImage(im, (S - w * e) / 2, (S - hh * e) / 2, w * e, hh * e); URL.revokeObjectURL(u); let r = c.toDataURL('image/webp', .9); if (!r.startsWith('data:image/webp')) r = c.toDataURL('image/png'); ok(r); } catch (er) { erro(er); } };
+  im.onerror = () => { URL.revokeObjectURL(u); erro(new Error('imagem')); }; im.src = u; });
+const SETA_AT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 16 16 8M9.5 8H16v6.5"/></svg>';
 const atalhos = {
   CORES: ['#1d6fd6', '#1f7a5c', '#6a4fd8', '#c2410c', '#b8325a', '#3b4b5b'],
   lista() { try { const v = JSON.parse(localStorage.getItem('ep-atalhos') || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } },
-  grava(L) { try { localStorage.setItem('ep-atalhos', JSON.stringify(L.slice(0, 40))); } catch { } this.pinta(); },
+  grava(L) { try { localStorage.setItem('ep-atalhos', JSON.stringify(L.slice(0, 40))); } catch { toast('Sem espaço neste navegador para guardar o atalho.'); } this.pinta(); try { if (DADOS) pintaGrid(); } catch { } },
+  // os atalhos marcados "na grade" viram blocos da grade de programas (podem ser arrastados no Organizar e ir para pastas)
+  naGrade() { return this.lista().map((a, i) => ({ ...a, i })).filter(a => a.grade && a.url).map(a => ({ atalho: true, atIdx: a.i, nome: a.nome, url: a.url, cor: a.cor || this.CORES[0], img: a.img || '' })); },
   pinta() {
     const box = $('#atalhos'); if (!box) return; const L = this.lista();
-    box.innerHTML = L.map((a, k) => `<a class="et at" href="${esc(a.url)}" data-at="${k}" style="--c:${esc(a.cor || this.CORES[0])}" title="${esc(a.nome)} · ${esc(a.url)}" target="${/^https?:/i.test(a.url) && !a.url.startsWith(location.origin) ? '_blank' : '_self'}" rel="noopener"><span class="at-l">${esc(String(a.nome || '?').slice(0, 2))}</span><span class="nm">${esc(a.nome)}</span><button type="button" class="at-ed" data-ed="${k}" title="Editar" aria-label="Editar ${esc(a.nome)}">${ICE('<path d="M4 20h4L19 9l-4-4L4 16z"/>', 14)}</button></a>`).join('')
+    box.innerHTML = L.map((a, k) => `<a class="et at" href="${esc(a.url)}" data-at="${k}" style="--c:${esc(a.cor || this.CORES[0])}" title="${esc(a.nome)} · ${esc(a.url)}" target="${/^https?:/i.test(a.url) && !a.url.startsWith(location.origin) ? '_blank' : '_self'}" rel="noopener">${atIcone(a)}<span class="nm">${esc(a.nome)}</span><button type="button" class="at-ed" data-ed="${k}" title="Editar" aria-label="Editar ${esc(a.nome)}">${ICE('<path d="M4 20h4L19 9l-4-4L4 16z"/>', 14)}</button></a>`).join('')
       + `<button type="button" class="et at-mais" title="Adicionar um atalho (só neste computador)"><span class="gi">${ICE('<path d="M12 5v14M5 12h14"/>', 34)}</span><span class="nm">Adicionar</span></button>`;
     box.style.setProperty('--cols', Math.max(1, Math.min(4, L.length + 1))); if (!this._uma) { this._uma = true; setTimeout(() => box.classList.add('pronto'), 1500); }
     $('.at-mais', box).onclick = () => this.edita(-1);
@@ -2594,16 +2704,25 @@ const atalhos = {
     d.innerHTML = `<div class="mc mc-painel" role="dialog" aria-label="Atalho"><div class="mp-cab"><h3>${k >= 0 ? 'Editar atalho' : 'Novo atalho'}</h3><button class="mp-x" data-x type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <div class="mp-corpo"><label class="mp-tit" for="at-n">Nome</label><input class="mp-campo" type="text" id="at-n" maxlength="30" value="${esc(a.nome)}">
       <label class="mp-tit" for="at-u">Endereço</label><input class="mp-campo" type="url" id="at-u" maxlength="500" value="${esc(a.url)}">
+      <div class="mp-tit">Ícone</div><div class="at-ico-ed"><span class="at-prev" style="--c:${esc(a.cor || this.CORES[0])}"></span><div class="at-ico-bts"><button type="button" class="btn sm" data-img>Escolher imagem…</button><button type="button" class="btn sm" data-semimg hidden>Usar as letras</button><small>PNG, JPG, SVG ou WEBP. Fica só neste computador.</small></div><input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" data-arq hidden></div>
+      <label class="at-grade"><input type="checkbox" data-grade ${a.grade ? 'checked' : ''}><span>Mostrar também na grade de programas</span></label>
       <div class="mp-tit">Cor</div><div class="mp-cores">${this.CORES.map(c => `<button type="button" class="at-cor${c === a.cor ? ' on' : ''}" data-cor="${c}" style="background:${c}" aria-label="Cor ${c}"></button>`).join('')}</div></div>
       <div class="mp-pe">${k >= 0 ? '<button class="btn danger" data-rm type="button" style="margin-right:auto">Remover</button>' : ''}<button class="btn primary" data-ok type="button">Salvar</button></div></div>`;
     document.body.appendChild(d); setTimeout(() => $('#at-n', d).focus(), 50);
+    const escAt = e => { if (e.key === 'Escape' && d.isConnected) { e.stopPropagation(); d.remove(); } }; addEventListener('keydown', escAt, true); new MutationObserver((_, o) => { if (!d.isConnected) { removeEventListener('keydown', escAt, true); o.disconnect(); } }).observe(document.body, { childList: true });
     $('[data-x]', d).onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); };
-    $$('.at-cor', d).forEach(b => b.onclick = () => { a.cor = b.dataset.cor; $$('.at-cor', d).forEach(x => x.classList.toggle('on', x === b)); });
+    const prev = () => { const p = $('.at-prev', d); p.style.setProperty('--c', a.cor || this.CORES[0]); p.innerHTML = atIcone({ ...a, nome: $('#at-n', d).value.trim() || a.nome || '?' }); $('[data-semimg]', d).hidden = !a.img; }; prev();
+    $('#at-n', d).addEventListener('input', prev);
+    $('[data-img]', d).onclick = () => $('[data-arq]', d).click();
+    $('[data-semimg]', d).onclick = () => { delete a.img; prev(); };
+    $('[data-arq]', d).onchange = async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; if (f.size > 8e6) return toast('Imagem grande demais (até 8 MB).');
+      try { a.img = await atReduz(f); prev(); } catch { toast('Não deu para abrir essa imagem.'); } };
+    $$('.at-cor', d).forEach(b => b.onclick = () => { a.cor = b.dataset.cor; $$('.at-cor', d).forEach(x => x.classList.toggle('on', x === b)); prev(); });
     $('[data-rm]', d)?.addEventListener('click', () => { L.splice(k, 1); this.grava(L); d.remove(); toast('Atalho removido.'); });
     $('[data-ok]', d).onclick = () => { const nome = $('#at-n', d).value.trim(); let url = $('#at-u', d).value.trim();
       if (!nome) return toast('Dê um nome ao atalho.'); if (/^[\w-]+(\.[\w-]+)+/.test(url) && !/^https?:\/\//i.test(url)) url = 'https://' + url;
       if (!/^(https?:\/\/[^\s"'<>]+|\/[^\s"'<>]*)$/i.test(url) || url === 'https://') return toast('Endereço inválido (comece com https://).');
-      const n = { nome, url, cor: a.cor }; if (k >= 0) L[k] = n; else L.push(n); this.grava(L); d.remove(); toast('Atalho salvo neste computador.'); };
+      const n = { nome, url, cor: a.cor }; if (a.img) n.img = a.img; if ($('[data-grade]', d).checked) n.grade = true; if (k >= 0) L[k] = n; else L.push(n); this.grava(L); d.remove(); toast('Atalho salvo neste computador.'); };
   },
 };
 // apertar um bloco: ele inclina para o lado onde o mouse/dedo apertou (fora do modo Organizar)
@@ -2965,7 +3084,7 @@ function renderMensagens() {
   $('#msg-cfg [data-a=padrao]').onclick = () => { EDIT.mensagens = JSON.parse(JSON.stringify(MSG_PADRAO)); mudou(); renderMensagens(); };
 }
 // janela de confirmação do Estúdio Problems (no lugar do confirm() do navegador)
-function pergunta({ titulo, texto, ok = 'Confirmar', perigo = false, foto, nome, detalhe }) {
+function pergunta({ titulo, texto, ok = 'Confirmar', perigo = false, foto, nome, detalhe, cancelaVermelho = false }) {
   return new Promise(fim => {
     const d = document.createElement('div'); d.className = 'modal'; d.style.zIndex = 40;
     const ini = esc(String(nome || '?')[0].toUpperCase());
@@ -2974,7 +3093,7 @@ function pergunta({ titulo, texto, ok = 'Confirmar', perigo = false, foto, nome,
       <b class="pg-t">${esc(titulo)}</b>
       ${nome ? `<div class="pg-quem"><span class="ac-av">${foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${ini}'))">` : ini}</span><span><b>${esc(nome)}</b><small>${esc(detalhe || '')}</small></span></div>` : ''}
       <p class="pg-x">${esc(texto)}</p>
-      <div class="acts"><span class="sp"></span><button class="btn sm" data-n>Cancelar</button><button class="btn sm ${perigo ? 'danger forte' : 'primary'}" data-s>${esc(ok)}</button></div></div>`;
+      <div class="acts"><span class="sp"></span><button class="btn sm${cancelaVermelho ? ' pg-cancela' : ''}" data-n>Cancelar</button><button class="btn sm ${perigo ? 'danger forte' : 'primary'}" data-s>${esc(ok)}</button></div></div>`;
     document.body.appendChild(d);
     const sai = v => { d.remove(); document.removeEventListener('keydown', tecla); fim(v); };
     const tecla = e => { if (e.key === 'Escape') sai(false); };
