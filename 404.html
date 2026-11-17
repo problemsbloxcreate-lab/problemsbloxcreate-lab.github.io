@@ -1712,6 +1712,9 @@ html.cel.ip body #menu .ip-ola [data-ip-hora]{cursor:pointer}
 #adm .lrow .card>.parte{position:absolute;right:calc(50% - 30px);top:58px;width:22px;height:22px;border-radius:6px;overflow:hidden;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.4)}#adm .lrow .card>.parte svg{width:100%;height:100%;display:block}
 #adm .lrow-parte{margin-left:28px;border-left:3px solid var(--linha-forte,rgba(255,255,255,.18))}
 #adm .lrow-parte .lp-tit{font:600 15px var(--fonte,system-ui);margin-right:8px}#adm .lrow-parte code{font-size:12px}
+/* barra de baixo: os grupos (fixados, atalhos) não encolhem; antes o 2º programa fixado vazava por cima do separador e do + (17/11/2026) */
+html.cel.ip body #menu .ip-dock>:is(.mn-grupo,.ip-sis),html.cel.ip body #menu .ip-dock :is(#fixos,#atalhos){flex:none!important;width:auto!important;min-width:0!important;max-width:none!important}
+html.cel.ip body #menu .ip-dock #fixos>.card:not(#_){border:0!important;background:none!important;box-shadow:none!important} /* sem a borda fininha de 14 px atrás de um ícone com outra forma */
 /* aviso com "Desfazer" */
 .toast.tz-desfaz{display:flex;align-items:center;gap:14px}.toast.tz-desfaz button{border:0;background:none;color:var(--acento,#5cc4ff);font:600 13px var(--fonte,system-ui);cursor:pointer;padding:2px 4px}
 /* pergunta com Cancelar vermelho (regra das janelas do Estúdio) */
@@ -2399,6 +2402,7 @@ function irCom(url, trocar, de) {
   const IC = { animador: 'an', shorts: 'sh', editor: 'ed', modelador: 'md', preparativos: 'pr', cerebro: 'cb', musicas: 'mu', publicacoes: 'x-publicacoes' }; let ic = ''; try { const p = new URL(url, location.href).pathname.split('/')[1], k = IC[p]; if (k && window.EstudioIcones?.svg) { ic = window.EstudioIcones.svg(k, 72); const cor = window.EstudioIcones.config?.()?.[k]?.fg; if (/^#[0-9a-f]{6}$/i.test(cor || '')) s.style.setProperty('--ep-cor', cor); } } catch { }
   if (document.documentElement.classList.contains('cel')) s.innerHTML = '<div class="ep-c" role="status"><div class="ep-lg' + (ic ? ' ep-prog' : '') + '" aria-hidden="true">' + ic + '</div><div class="ep-nm">' + (nm ? 'Abrindo ' + nm : 'Abrindo') + '</div><div class="ep-br"><i></i></div><div class="ep-m">Carregando</div></div>';
   else s.innerHTML = '<div class="sd-c" role="status"><div class="sd-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div>' + (nm ? 'Abrindo ' + nm + '…' : 'Abrindo…') + '<small>Buscando a versão mais nova</small></div></div>';
+  try { const k = IC[new URL(url, location.href).pathname.split('/')[1]]; if (k) window.EstudioIcones?.forma?.(s.querySelector('.ep-lg>svg'), k); } catch { } // a logo da saída com a forma da ADM › Ícones
   voaParaCarregar(de, s);
   requestAnimationFrame(() => s.classList.add('on'));
   setTimeout(() => trocar ? location.replace(url) : (location.href = url), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
@@ -2410,11 +2414,11 @@ function voaParaCarregar(de, s) {
   try {
     if (!de || !de.isConnected || !document.documentElement.classList.contains('cel') || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const lg = s.querySelector('.ep-lg'); if (!lg) return;
-    const desenho = de.querySelector('svg, img'); if (desenho) { lg.innerHTML = desenho.outerHTML; lg.classList.add('ep-prog'); } // a logo do carregamento = o ícone clicado
+    const desenho = de.querySelector('svg, img'), idDe = de.querySelector('[data-estudio-icone]')?.getAttribute('data-estudio-icone'); if (desenho) { lg.innerHTML = desenho.outerHTML; lg.classList.add('ep-prog'); if (idDe) window.EstudioIcones?.forma?.(lg.firstElementChild, idDe); } // a logo do carregamento = o ícone clicado, com a mesma forma
     const a = de.getBoundingClientRect(), b = lg.getBoundingClientRect(); if (!a.width || !b.width) return;
     const c = document.createElement('div'); c.className = 'ep-voa'; c.innerHTML = desenho ? desenho.outerHTML : de.innerHTML;
     c.style.cssText = 'left:' + a.left + 'px;top:' + a.top + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
-    document.body.appendChild(c); const meu = lg.firstElementChild; if (meu) meu.style.opacity = '0'; // só o desenho some; o anel e o brilho entram junto com o fundo
+    c.style.borderRadius = getComputedStyle(de).borderRadius; document.body.appendChild(c); const meu = lg.firstElementChild; if (meu) meu.style.opacity = '0'; // só o desenho some; o anel e o brilho entram junto com o fundo
     const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2), k = b.width / a.width;
     const an = c.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
     an.onfinish = () => { if (meu) meu.style.opacity = ''; c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, fill: 'forwards' }).onfinish = () => c.remove(); };
@@ -2710,7 +2714,7 @@ function pintaFixos() {
   const ls = organizar.fixos().map(x => todosProgs.find(l => chaveL(l) === x.k)).filter(l => l?.url && !l.embreve);
   for (const l of ls) { const o = $('#grid .card[data-k="' + CSS.escape(chaveL(l)) + '"]'); if (!o) continue;
     const c = o.cloneNode(true); c.querySelector('.fixar')?.remove(); c.querySelector('.subprog')?.remove(); c.classList.remove('apaga'); c.style.animationDelay = '0s'; const ic = c.querySelector('.ic'); if (ic) delete ic.dataset.k; pintarIcone(c, l); box.appendChild(c); }
-  box.style.setProperty('--cols', 5); sec.hidden = !box.children.length; // mesma largura dos Programas try { window.EstudioIcones?.pinta?.(box); } catch { }
+  box.style.setProperty('--cols', 5); sec.hidden = !box.children.length; try { window.EstudioIcones?.pinta?.(box); } catch { } // mesma largura dos Programas; o ícone fixado é desenhado na hora
 }
 /* GRUPO ESTÚDIO (no lugar do Dock): Mensagens, Calendário, nuvem da equipe, este computador, perfil e ADM. Abre as mesmas janelas do
    /estudio-conta.js. Nada pede à nuvem: a nuvem usa a medida guardada ('ep-nuvem-uso'), o computador o navigator.storage. */
