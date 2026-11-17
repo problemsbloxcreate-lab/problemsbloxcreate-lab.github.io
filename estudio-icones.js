@@ -10,17 +10,20 @@
 (() => {
   'use strict';
   if (window.EstudioIcones) return;
+  /* ESTILO NOVO DA ADOBE + DEGRADÊ VIVO (escolha "B" da dona, 17/11/2026): sem contorno, fundo em degradê na diagonal do tom escuro
+     (bg) ao tom médio e vivo da cor do programa (bg2 = matiz com 100% de saturação e 34% de luz), letras claras (80% de luz) e mais
+     grossas (800). Antes era o estilo antigo da Adobe: fundo quase preto com contorno colorido. O que a ADM › Ícones mudar vale por cima. */
   const PADRAO = {
-    sh: { nome: 'Shorts', let: 'Sh', fg: '#ff6b93', bg: '#2b0b18', borda: 1, bc: '#ff6b93', raio: 22 },
-    ed: { nome: 'Editor', let: 'Ed', fg: '#a796ff', bg: '#14113a', borda: 1, bc: '#a796ff', raio: 22 },
-    an: { nome: 'Animador', let: 'An', fg: '#3fd6f2', bg: '#062832', borda: 1, bc: '#3fd6f2', raio: 22 },
-    at: { nome: 'Ateliê', let: 'At', fg: '#ffb04a', bg: '#2e1804', borda: 1, bc: '#ffb04a', raio: 22, parte: 'Animador' }, // parte do Animador (como o Cenários)
-    md: { nome: 'Modelador', let: 'Md', fg: '#4fe08f', bg: '#0a2a17', borda: 1, bc: '#4fe08f', raio: 22 },
-    pr: { nome: 'Preparativos', let: 'Pr', fg: '#ffd36b', bg: '#2e2304', borda: 1, bc: '#ffd36b', raio: 22 }, // roteiros, falas e gravações (/preparativos/)
-    cb: { nome: 'Cérebro', let: 'Cb', fg: '#ff8a7a', bg: '#33100c', borda: 1, bc: '#ff8a7a', raio: 22 }, // memória da equipe e das IAs (/cerebro/)
-    mu: { nome: 'Músicas', let: 'Mu', fg: '#5ce0c6', bg: '#06302a', borda: 1, bc: '#5ce0c6', raio: 22 }, // álbum de sons da equipe (/musicas/)
-    cj: { nome: 'Central de Jogos', let: 'Cj', fg: '#e879ff', bg: '#2a0a33', borda: 1, bc: '#e879ff', raio: 22 }, // site externo da dona (problemsite.github.io/central/), fora do porteiro
-    cn: { nome: 'Cenários', let: 'Cn', fg: '#7fd1ff', bg: '#0a1e33', borda: 1, bc: '#7fd1ff', raio: 22, parte: 'Animador' }, // parte de um programa (botão Cenários do Animador)
+    sh: { nome: 'Shorts', let: 'Sh', fg: '#ff99b5', bg: '#2b0b18', bg2: '#ad002f', borda: 0, bc: '#ff99b5', raio: 22 },
+    ed: { nome: 'Editor', let: 'Ed', fg: '#aa99ff', bg: '#14113a', bg2: '#1c00ad', borda: 0, bc: '#aa99ff', raio: 22 },
+    an: { nome: 'Animador', let: 'An', fg: '#99efff', bg: '#062832', bg2: '#0092ad', borda: 0, bc: '#99efff', raio: 22 },
+    at: { nome: 'Ateliê', let: 'At', fg: '#ffd299', bg: '#2e1804', bg2: '#ad6200', borda: 0, bc: '#ffd299', raio: 22, parte: 'Animador' }, // parte do Animador (como o Cenários)
+    md: { nome: 'Modelador', let: 'Md', fg: '#99ffc6', bg: '#0a2a17', bg2: '#00ad4d', borda: 0, bc: '#99ffc6', raio: 22 },
+    pr: { nome: 'Preparativos', let: 'Pr', fg: '#ffe199', bg: '#2e2304', bg2: '#ad7a00', borda: 0, bc: '#ffe199', raio: 22 }, // roteiros, falas e gravações (/preparativos/)
+    cb: { nome: 'Cérebro', let: 'Cb', fg: '#ffa599', bg: '#33100c', bg2: '#ad1500', borda: 0, bc: '#ffa599', raio: 22 }, // memória da equipe e das IAs (/cerebro/)
+    mu: { nome: 'Músicas', let: 'Mu', fg: '#99ffeb', bg: '#06302a', bg2: '#00ad8b', borda: 0, bc: '#99ffeb', raio: 22 }, // álbum de sons da equipe (/musicas/)
+    cj: { nome: 'Central de Jogos', let: 'Cj', fg: '#ed99ff', bg: '#2a0a33', bg2: '#9000ad', borda: 0, bc: '#ed99ff', raio: 22 }, // site externo da dona (problemsite.github.io/central/), fora do porteiro
+    cn: { nome: 'Cenários', let: 'Cn', fg: '#99daff', bg: '#0a1e33', bg2: '#006fad', borda: 0, bc: '#99daff', raio: 22, parte: 'Animador' }, // parte de um programa (botão Cenários do Animador)
   };
   /* ÍCONES NOVOS (ADM › Ícones › "+ Ícone novo", ou um botão novo do menu): id "x-<nome>", com nome e, se quiser, o começo do
      endereço do projeto (caminho, ex.: "/jogos/") — nessa página a aba do navegador e o data-estudio-icone="auto" usam ele. */
@@ -32,8 +35,13 @@
   const PALETA = [['#ffd36b', '#2e2304'], ['#ff8f6b', '#2e1206'], ['#7fd1ff', '#0a1e33'], ['#c99bff', '#1d0f33'], ['#6bffc8', '#06291f'], ['#ff6bd0', '#2e0622'], ['#b6ff6b', '#1a2e06']];
   // ícone novo: letras e cor saem do nome (o mesmo nome dá sempre a mesma cor)
   function novoPadrao(nome) { const t = String(nome || 'Novo').trim().split(/\s+/).filter(Boolean), g = t.filter(w => w.length > 2 || /^[A-Z0-9]/.test(w)), p = g.length ? g : t, l = p.length > 1 ? p[0][0].toUpperCase() + p[1][0].toLowerCase() : (p[0] || 'Nv').slice(0, 2).replace(/^./, c => c.toUpperCase());
-    let h = 0; for (const ch of String(nome)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const [fg, bg] = PALETA[h % PALETA.length];
-    return { nome: String(nome || 'Novo').slice(0, 40), let: l, fg, bg, borda: 1, bc: fg, raio: 22, novo: true }; }
+    let h = 0; for (const ch of String(nome)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const [cor0, bg] = PALETA[h % PALETA.length], v = estiloNovo(cor0);
+    return { nome: String(nome || 'Novo').slice(0, 40), let: l, fg: v.fg, bg, bg2: v.bg2, borda: 0, bc: v.fg, raio: 22, novo: true }; }
+  // a partir de uma cor: as letras claras e o tom médio vivo do degradê (o mesmo cálculo dos ícones padrão)
+  function estiloNovo(cor) { let [r, g, b] = [1, 3, 5].map(i => parseInt(String(cor).substr(i, 2), 16) / 255); if ([r, g, b].some(isNaN)) return { fg: '#ffffff', bg2: '#333333' };
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0; if (mx !== mn) { const d = mx - mn; h = (mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60; }
+    const hx = l => { const k = n => (n + h / 30) % 12, a = Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [0, 8, 4].map(n => Math.round(f(n) * 255).toString(16).padStart(2, '0')).join(''); };
+    return { fg: hx(.8), bg2: hx(.34) }; }
   function junta(m) {
     const out = copia(PADRAO); IDS = [...BASE];
     for (const id of Object.keys(m || {})) if (ehNovo(id) && m[id] && typeof m[id].nome === 'string' && m[id].nome.trim()) { out[id] = novoPadrao(m[id].nome.trim()); IDS.push(id); }
@@ -47,7 +55,10 @@
       // MAIS OPÇÕES (pedido da dona, 17/11/2026): tamanho das letras, degradê, espessura da borda e zoom/posição da imagem
       if (Number.isFinite(+x.tl)) o.tl = Math.max(.5, Math.min(1.6, +x.tl)); if (x.bg2 === '' || cor(x.bg2, '')) o.bg2 = cor(x.bg2, '');
       if (Number.isFinite(+x.be)) o.be = Math.max(1, Math.min(6, +x.be)); if (Number.isFinite(+x.z)) o.z = Math.max(.3, Math.min(4, +x.z));
-      for (const k of ['x', 'y']) if (Number.isFinite(+x[k])) o[k] = Math.max(-64, Math.min(64, +x[k])); }
+      for (const k of ['x', 'y']) if (Number.isFinite(+x[k])) o[k] = Math.max(-64, Math.min(64, +x[k]));
+      // ícone criado na ADM ainda no estilo antigo (contorno da cor das letras, sem degradê): passa sozinho para o estilo novo, a partir da cor dele (17/11/2026)
+      if (o.novo && !('bg2' in x) && (x.borda ?? 1) === 1 && String(x.bc || x.fg || '').toLowerCase() === String(x.fg || x.bc || '').toLowerCase()) { const v = estiloNovo(o.fg); o.fg = o.bc = v.fg; o.bg2 = v.bg2; o.borda = 0; }
+      else if (o.novo && !('bg2' in x)) o.bg2 = ''; }
     return out;
   }
   let guardado = null; try { guardado = JSON.parse(localStorage.getItem(K) || 'null'); } catch { }
@@ -67,7 +78,7 @@
       return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true"><defs>${grad}<clipPath id="${cid}"><rect width="64" height="64" rx="${r}"/></clipPath></defs><g clip-path="url(#${cid})"><rect width="64" height="64" fill="${fundo}"/>${im}</g>${borda}</svg>`; }
     const pequeno = px && px <= 20, fs = (n >= 3 ? 23 : n === 2 ? 29 : 36) * (pequeno ? 1.18 : 1) * (+c.tl || 1);
     return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true">${grad ? '<defs>' + grad + '</defs>' : ''}<rect x="${b / 2}" y="${b / 2}" width="${64 - b}" height="${64 - b}" rx="${Math.max(0, r - b / 2)}" fill="${fundo}"${b ? ` stroke="${c.bc}" stroke-width="${b}"` : ''}/>`
-      + `<text x="32" y="${(32 + fs * 0.35).toFixed(2)}" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="${fs.toFixed(2)}" letter-spacing="-0.5" fill="${c.fg}">${esc(c.let)}</text></svg>`;
+      + `<text x="32" y="${(32 + fs * 0.35).toFixed(2)}" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="${fs.toFixed(2)}" letter-spacing="-0.5" fill="${c.fg}">${esc(c.let)}</text></svg>`;
   }
   const url = id => 'data:image/svg+xml,' + encodeURIComponent(svg(id, 64));
   // programa desta página pelo endereço (o Ateliê troca com usar('at'))
@@ -121,7 +132,7 @@
   const naTarefa = () => { try { window.EstudioProgresso?.tarefa?.(pronto, 'Ícones dos programas'); } catch { } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', naTarefa, { once: true }); else naTarefa();
   window.EstudioIcones = {
-    PADRAO: copia(PADRAO), get IDS() { return [...IDS]; }, BASE: [...BASE], svg, url, pinta, forma, pronto, ehNovo, novoPadrao,
+    PADRAO: copia(PADRAO), get IDS() { return [...IDS]; }, BASE: [...BASE], svg, url, pinta, forma, pronto, ehNovo, novoPadrao, estiloNovo,
     config: () => copia(cfg), padrao: id => copia(PADRAO[id] || cfg[id] || novoPadrao('Novo')),
     usar(id) { atual = id; favicon(); },
     atual: () => atual,
