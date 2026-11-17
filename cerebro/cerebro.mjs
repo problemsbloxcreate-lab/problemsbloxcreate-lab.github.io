@@ -111,9 +111,11 @@ async function itensDeSkills() { try { const j = await pede('/skills'); if (Arra
   const { itens } = await pede('/'), raiz = itens.find(x => x.nome === 'Skills' && !x.pai && !x.apagado); if (!raiz) throw new Error('O Cérebro não tem a pasta Skills.');
   const out = []; for (const p of itens.filter(x => x.pai === raiz.id && x.tipo === 'pasta' && !x.apagado)) for (const c of itens.filter(x => x.pai === p.id && x.tipo !== 'pasta' && !x.apagado)) out.push({ pasta: p.nome, ...c }); return out; }
 const GANCHO_STOP = String.raw`#!/usr/bin/env node
-// Gancho Stop do Estúdio Problems: se nesta resposta a IA mudou algo do Estúdio
+// Gancho Stop do Estúdio Problems: se nesta resposta a IA mudou algo do Estúdio,
+// passou uma ordem adiante ou recebeu uma correção ou decisão da dona ou da equipe,
 // e não gravou no Cérebro, ela não termina: volta e grava.
-// Regra da dona (16/11/2026): gravar no Cérebro é automático, ninguém precisa pedir.
+// Regra da dona (16/11/2026): gravar no Cérebro é automático, ninguém precisa pedir,
+// e vale para TODA mudança e TODA correção, para a IA nunca precisar reaprender nada.
 import { readFileSync } from 'node:fs';
 
 let ent = {};
@@ -125,9 +127,16 @@ if (!caminho) process.exit(0);
 let linhas;
 try { linhas = readFileSync(caminho, 'utf8').split('\n').filter(Boolean); } catch { process.exit(0); }
 
-const ehPedido = (j) => {
-  if (j.type !== 'user' || j.isMeta) return false;
+const textoDe = (j) => {
   const c = j.message && j.message.content;
+  if (typeof c === 'string') return c;
+  if (Array.isArray(c)) return c.filter((x) => x.type === 'text').map((x) => x.text || '').join('\n');
+  return '';
+};
+const ehPedido = (j) => {
+  if (j.type !== 'user' || j.isMeta || j.isCompactSummary) return false;
+  const c = j.message && j.message.content;
+  if (/^\s*This session is being continued from a previous conversation/.test(textoDe(j))) return false; // resumo da conversa, não é pedido
   if (typeof c === 'string') return true;
   return Array.isArray(c) && c.some((x) => x.type === 'text') && !c.some((x) => x.type === 'tool_result');
 };
@@ -135,12 +144,25 @@ const ehPedido = (j) => {
 // só o trecho desde o último pedido (desta resposta)
 const regs = [];
 for (const l of linhas) { try { regs.push(JSON.parse(l)); } catch {} }
-let ini = 0;
+let ini = -1;
 for (let i = regs.length - 1; i >= 0; i--) if (ehPedido(regs[i])) { ini = i; break; }
+if (ini < 0) process.exit(0);
 
-const PASTA_ESTUDIO = /(\\|\/)ep(\\|\/)|Estúdio Problems|Estudio Problems|estudio\.problemsraiz|(\\|\/)\.claude(\\|\/)skills(\\|\/)(celestia|walt-disney|design-problems|ouvir|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d)/i;
-const FORA = /scratchpad|(\\|\/)memory(\\|\/)|conferencia|Backups/i;
+const PASTA_ESTUDIO = /(\\|\/)ep(\\|\/)|Estúdio Problems|Estudio Problems|estudio\.problemsraiz|(\\|\/)\.claude(\\|\/)(skills(\\|\/)(celestia|walt-disney|design-problems|ouvir|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d|esqueleto-padrao|movimento-base|estilo-lumi)|agents(\\|\/)(celestia|walt-disney|design-problems)|hooks(\\|\/)cerebro)/i;
+const FORA = /scratchpad|conferencia|Backups/i;
+const MEMORIA = /(\\|\/)memory(\\|\/)/i;
 const GRAVOU = /cerebro\.mjs['"]?\s+(aprender|salvar|renomear|feito)|gravar-cerebro/i;
+
+// A conversa é do Estúdio? (pedido com palavra do Estúdio, skill do Estúdio ou pasta do Estúdio)
+const PALAVRAS_ESTUDIO = /\/(celestia|walt-disney|design-problems|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d)\b|est[uú]dio|animador|ateli[eê]|c[eé]rebro|\bshorts?\b|\bep ?\d|\bparte ?\d|blender|personage|\bstick\b|\blumi\b|\bproblems\b|preparativos|publica[cç][oõ]es|anima[cç][aã]o|render/i;
+const pedido = regs[ini];
+const txtPedido = textoDe(pedido);
+const avisoAutomatico = /^\s*<(task-notification|side-sessions-event|ci-monitor-event|system-reminder|local-command)/i.test(txtPedido);
+const pastaDaConversa = String(pedido.cwd || ent.cwd || '');
+const ehEstudio = PALAVRAS_ESTUDIO.test(txtPedido) || PASTA_ESTUDIO.test(pastaDaConversa) || /Retomar Claude/i.test(pastaDaConversa);
+
+// Correção, pedido de mudança, aprovação ou decisão da dona ou da equipe
+const CORRECAO = /n[aã]o pedi|errad|t[aá] (errado|feio|horr[ií]vel|estranho|quebrado|torto|duplicado)|ficou (bom|[oó]timo|lindo|perfeito|ruim|feio|horr[ií]vel|estranho)|perfeito|aprovad|tem q(ue)?\b|precisa(m)?\b|nunca\b|sempre\b|arruma|corrig|consert|desfa[zç]|deixa (assim|como)|n[aã]o (é|e) (isso|s[oó]|pra)|prefiro|quero\b|pode (p[oô]r|por|fazer|mandar|renderizar|tirar|colocar|seguir|exportar)|tira\b|coloca\b|troca\b|muda\b|aumenta|diminui|regra/i;
 
 let mudou = null, gravou = false;
 for (const j of regs.slice(ini)) {
@@ -148,25 +170,32 @@ for (const j of regs.slice(ini)) {
   for (const c of j.message.content) {
     if (c.type !== 'tool_use') continue;
     const n = c.name || '', inp = c.input || {};
-    const txt = JSON.stringify(inp);
-    if (GRAVOU.test(txt)) { gravou = true; continue; }
+    // gravou de verdade: comando rodado (não um arquivo que só cita o comando) ou ferramenta do conector do Cérebro
+    if (/^(Bash|PowerShell)$/.test(n) && GRAVOU.test(String(inp.command || ''))) { gravou = true; continue; }
+    if (/cerebro/i.test(n) && /(aprender|salvar|gravar|renomear|feito)/i.test(n)) { gravou = true; continue; }
     if (/^(Edit|Write|NotebookEdit)$/.test(n)) {
       const p = inp.file_path || inp.notebook_path || '';
       if (PASTA_ESTUDIO.test(p) && !FORA.test(p)) mudou = mudou || ('arquivo ' + p);
+      else if (ehEstudio && MEMORIA.test(p)) mudou = mudou || ('memória deste computador (' + p + '): o que importa vai também para o Cérebro, para valer em todo computador');
     } else if (/javascript_tool$/.test(n)) {
       if (/\.salvar\s*\(|Nuvem\w*\.(salvar|gravar|enviar)|NuvemAnim\.|Vetor\.gravar|App\.salvar/i.test(inp.text || '')) mudou = mudou || 'projeto do Estúdio salvo pelo navegador';
     } else if (/^(Bash|PowerShell)$/.test(n)) {
       const cmd = inp.command || '';
       if (/git\s+(commit|push)|wrangler\s+(deploy|publish)/i.test(cmd) && PASTA_ESTUDIO.test(cmd + ' ' + (j.cwd || ''))) mudou = mudou || 'commit ou publicação do Estúdio';
       if (/127\.0\.0\.1:8810\/render/.test(cmd)) mudou = mudou || 'render do Blender do Estúdio';
+    } else if (ehEstudio && /(send_message|SendMessage|start_session|hand_off_to_session)$/.test(n)) {
+      mudou = mudou || 'ordem ou decisão passada para outra sessão ou agente';
     }
   }
 }
 
-if (mudou && !gravou) {
+let motivo = mudou;
+if (!motivo && ehEstudio && !avisoAutomatico && CORRECAO.test(txtPedido)) motivo = 'correção, pedido ou decisão da dona ou da equipe nesta mensagem';
+
+if (motivo && !gravou) {
   console.log(JSON.stringify({
     decision: 'block',
-    reason: 'Regra da dona (Cérebro, Regras/Toda correção da dona ou do Luigi vai para o Cérebro na hora): esta resposta mudou algo do Estúdio (' + mudou + ') e não gravou no Cérebro. Antes de terminar, grave agora com node ~/.claude/cerebro.mjs aprender aprendizado|evitar|regra "<assunto>" --texto "<o que estava errado, o que foi feito, a regra para não repetir>" --resumo "<até 160 letras>" --ia "<sua IA>" --pedido "<quem pediu>" --motivo "<por quê>". Se a mesma coisa já está gravada, atualize a página em vez de criar outra. Não precisa perguntar a ninguém: é automático. Depois diga numa linha qual página gravou.'
+    reason: 'Regra da dona (Cérebro, Regras/Toda correção da dona ou do Luigi vai para o Cérebro na hora): esta resposta teve ' + motivo + ' e não gravou no Cérebro. O Cérebro é o auxiliar da IA: tudo que mudou, foi decidido, aprovado ou corrigido entra lá, para ninguém precisar explicar de novo. Antes de terminar, grave agora com node ~/.claude/cerebro.mjs aprender aprendizado|evitar|regra "<assunto>" --texto "<o que estava errado ou foi decidido, o que foi feito, a regra para não repetir>" --resumo "<até 160 letras>" --ia "<sua IA>" --pedido "<quem pediu>" --motivo "<por quê>". Se já existe página sobre isso, atualize-a (salvar) em vez de criar outra. Se a mesma coisa já está gravada exatamente assim, diga numa linha em qual página está. Não precisa perguntar a ninguém: é automático. Depois diga numa linha qual página gravou.'
   }));
 }
 process.exit(0);
