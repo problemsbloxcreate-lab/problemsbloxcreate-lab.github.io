@@ -3283,7 +3283,7 @@ function renderLinks() {
       </div>`;
     const card = $('.card', row); montarCard(card, l); if (l.invisivel) card.style.opacity = .4;
     const selos = () => { card.classList.toggle('soon', !l.url || !!l.embreve); $$('.tag,.tag-adm', card).forEach(t => t.remove()); card.insertAdjacentHTML('afterbegin', selosHtml(l, !!l.url && !l.embreve)); }; selos(); // a prévia mostra as etiquetas, como no menu
-    const soon = () => { const s = !l.url || l.embreve; card.classList.toggle('soon', s); let t = $('.tag', card); if (s && !t) card.insertAdjacentHTML('afterbegin', '<span class="tag">em breve</span>'); if (!s && t) t.remove(); }; soon();
+    const soon = selos; // "em breve" e as outras etiquetas: tudo pela selos() (a versão antiga apagava a primeira etiqueta, e o "Externo" sumia da prévia)
     const refresh = () => { $('b', card).textContent = nomeMenu(l); $('small', card).textContent = l.desc || ''; pintarIcone(card, l); card.style.setProperty('--esc', l.escurecer ?? .45); selos(); card.dataset.modo = l.fundo ? (MODOS[l.modo] ? l.modo : 'sempre') : 'sempre'; const m = $('.mfill', card); if (m && l.fundo) posicionar(m, l.fundo, blurDoCard(l)); const z = $('[data-k=zoom]', row); if (z && l.fundo) { z.value = l.fundo.zoom; z.nextElementSibling.textContent = vez(l.fundo.zoom); } };
     // (sem arrastar/zoom pela rodinha na prévia: o fundo dos botões não existe mais no menu novo)
     const campoUrl = $('[data-k=url]', row); campoUrl.addEventListener('blur', () => { const n = normUrl(campoUrl.value); if (n !== campoUrl.value.trim()) { campoUrl.value = n; toast('Completei o endereço com https://'); } });
