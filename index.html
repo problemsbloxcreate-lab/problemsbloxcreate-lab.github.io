@@ -1704,6 +1704,9 @@ html.cel.ip body #menu .ip-ola [data-ip-hora]{cursor:pointer}
 /* barra de baixo: os grupos (fixados, atalhos) não encolhem; antes o 2º programa fixado vazava por cima do separador e do + (17/11/2026) */
 html.cel.ip body #menu .ip-dock>:is(.mn-grupo,.ip-sis),html.cel.ip body #menu .ip-dock :is(#fixos,#atalhos){flex:none!important;width:auto!important;min-width:0!important;max-width:none!important}
 html.cel.ip body #menu .ip-dock #fixos>.card:not(#_){border:0!important;background:none!important;box-shadow:none!important} /* sem a borda fininha de 14 px atrás de um ícone com outra forma */
+/* o + (Adicionar) da barra de baixo bem no centro: a caixa do símbolo herdava posições antigas e o + ficava 3,5 px acima (pedido da dona, 17/11/2026) */
+html.cel.ip body #menu .ip-dock #atalhos>.et.at-mais>.gi:not(#_){position:absolute!important;inset:0!important;left:0!important;top:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;transform:none!important;display:grid!important;place-items:center!important;line-height:0!important}
+html.cel.ip body #menu .ip-dock #atalhos>.et.at-mais>.gi:not(#_) svg{display:block!important;margin:0!important}
 /* aviso com "Desfazer" */
 .toast.tz-desfaz{display:flex;align-items:center;gap:14px}.toast.tz-desfaz button{border:0;background:none;color:var(--acento,#5cc4ff);font:600 13px var(--fonte,system-ui);cursor:pointer;padding:2px 4px}
 /* pergunta com Cancelar vermelho (regra das janelas do Estúdio) */
