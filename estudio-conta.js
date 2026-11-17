@@ -1093,6 +1093,10 @@ html[data-tema="claro"] .ep-progs{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-text
 .ep-progs .ep-pg-it.on{background:var(--ce-acento-suave)}
 .ep-progs .ep-pg-it .ic{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;overflow:hidden;font:700 18px var(--ce-fonte)}
 .ep-progs .ep-pg-it .ic svg{width:44px;height:44px;display:block}
+/* selinho do programa dono, no canto de baixo do ícone, igual ao do menu (pedido da dona, 17/11/2026) */
+.ep-progs .ep-pg-it .ic-w{position:relative;display:block;width:44px;height:44px}
+.ep-progs .ep-pg-it .pg-parte{position:absolute;right:-6px;bottom:-4px;width:18px;height:18px;border-radius:5px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.4);z-index:1}
+.ep-progs .ep-pg-it .pg-parte svg{width:18px!important;height:18px!important;display:block}
 .ep-progs .ep-pg-it.inicio .ic{background:var(--ce-fundo-3);color:var(--ce-texto-2)}
 .ep-pg-it.inicio .ic.ic-claq{background:none!important;padding:0!important}.ep-pg-it.inicio .ic.ic-claq svg{width:100%!important;height:100%!important;stroke:none!important;display:block}.ep-progs .ep-pg-it.inicio .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9}
 .ep-progs .ep-pg-it b{font-weight:500;max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
@@ -1266,10 +1270,10 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
      abre a lista de programas (a mesma do menu, guardada em localStorage 'ep-programas' quando a pessoa abre o menu) + Início.
      Ctrl/Shift/botão do meio continuam abrindo o menu como link. Sem a lista guardada, usa os programas conhecidos (respeitando a permissão). */
   const PROGS_PADRAO = [['Animador', '/animador/', 'an', 'animador'], ['Shorts', '/shorts/', 'sh', 'shorts'], ['Editor', '/editor/', 'ed', 'editor'], ['Modelador', '/modelador/', 'md', 'modelador'],
-    ['Preparativos', '/preparativos/', 'pr', 'preparativos'], ['Publicações', '/publicacoes/', 'x-publicacoes', 'publicacoes'], ['Músicas', '/musicas/', 'mu', 'musicas'], ['Cérebro', '/cerebro/', 'cb', 'cerebro']];
+    ['Preparativos', '/preparativos/', 'pr', 'preparativos'], ['Publicações', '/preparativos/?aba=publicacoes', 'x-publicacoes', 'publicacoes', 'pr'], ['Ateliê', '/animador/?aba=personagens', 'at', 'animador', 'an'], ['Cenários', '/animador/?abrir=cenarios', 'cn', 'animador', 'an'], ['Músicas', '/musicas/', 'mu', 'musicas'], ['Cérebro', '/cerebro/', 'cb', 'cerebro']];
   function listaProgramas() {
     try { const j = JSON.parse(localStorage.getItem('ep-programas') || 'null'); if (j?.L?.length) return j.L; } catch { }
-    return PROGS_PADRAO.filter(p => window.EstudioPerm?.pode?.(p[3]) !== false).map(([nome, url, ic]) => ({ nome, url, ic }));
+    return PROGS_PADRAO.filter(p => window.EstudioPerm?.pode?.(p[3]) !== false).map(([nome, url, ic, , parte]) => ({ nome, url, ic, parte: parte || '' }));
   }
   function abreProgramas(bt) {
     const ja = document.querySelector('.ep-progs'); if (ja) { ja.remove(); return; }
@@ -1277,7 +1281,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const aqui = location.pathname, L = listaProgramas();
     const p = document.createElement('div'); p.className = 'ep-progs'; p.setAttribute('role', 'menu'); p.setAttribute('aria-label', 'Programas');
     p.innerHTML = `<a class="ep-pg-it inicio" href="/" role="menuitem"><span class="ic ic-claq"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="epclq-grade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq-grade)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg></span><b>Início</b></a>`
-      + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic">${icDe(x.ic) || esc(String(x.nome)[0] || '?')}</span><b>${esc(x.nome)}</b></a>`; }).join('');
+      + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic-w"><span class="ic">${icDe(x.ic) || esc(String(x.nome)[0] || '?')}</span>${x.parte ? '<span class="pg-parte" title="Parte do ' + ({ an: 'Animador', pr: 'Preparativos' }[x.parte] || 'programa') + '">' + icDe(x.parte) + '</span>' : ''}</span><b>${esc(x.nome)}</b></a>`; }).join('');
     p.style.gridTemplateColumns = 'repeat(' + Math.min(4, L.length + 1) + ',88px)'; // poucos programas: a caixa fica do tamanho deles
     document.body.appendChild(p);
     const r = bt.getBoundingClientRect(); p.style.top = (r.bottom + 8) + 'px'; p.style.right = Math.max(8, innerWidth - r.right - 8) + 'px';
