@@ -14,7 +14,7 @@
     sh: { nome: 'Shorts', let: 'Sh', fg: '#ff6b93', bg: '#2b0b18', borda: 1, bc: '#ff6b93', raio: 22 },
     ed: { nome: 'Editor', let: 'Ed', fg: '#a796ff', bg: '#14113a', borda: 1, bc: '#a796ff', raio: 22 },
     an: { nome: 'Animador', let: 'An', fg: '#3fd6f2', bg: '#062832', borda: 1, bc: '#3fd6f2', raio: 22 },
-    at: { nome: 'Ateliê', let: 'At', fg: '#ffb04a', bg: '#2e1804', borda: 1, bc: '#ffb04a', raio: 22 },
+    at: { nome: 'Ateliê', let: 'At', fg: '#ffb04a', bg: '#2e1804', borda: 1, bc: '#ffb04a', raio: 22, parte: 'Animador' }, // parte do Animador (como o Cenários)
     md: { nome: 'Modelador', let: 'Md', fg: '#4fe08f', bg: '#0a2a17', borda: 1, bc: '#4fe08f', raio: 22 },
     pr: { nome: 'Preparativos', let: 'Pr', fg: '#ffd36b', bg: '#2e2304', borda: 1, bc: '#ffd36b', raio: 22 }, // roteiros, falas e gravações (/preparativos/)
     cb: { nome: 'Cérebro', let: 'Cb', fg: '#ff8a7a', bg: '#33100c', borda: 1, bc: '#ff8a7a', raio: 22 }, // memória da equipe e das IAs (/cerebro/)
@@ -43,7 +43,11 @@
       o.fg = cor(x.fg, o.fg); o.bg = cor(x.bg, o.bg); o.bc = cor(x.bc, o.bc);
       if (x.borda === 0 || x.borda === 1) o.borda = x.borda;
       if (Number.isFinite(+x.raio)) o.raio = Math.max(0, Math.min(50, Math.round(+x.raio)));
-      if (typeof x.img === 'string' && /^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,/i.test(x.img)) o.img = x.img; }
+      if (typeof x.img === 'string' && /^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,/i.test(x.img)) o.img = x.img;
+      // MAIS OPÇÕES (pedido da dona, 17/11/2026): tamanho das letras, degradê, espessura da borda e zoom/posição da imagem
+      if (Number.isFinite(+x.tl)) o.tl = Math.max(.5, Math.min(1.6, +x.tl)); if (x.bg2 === '' || cor(x.bg2, '')) o.bg2 = cor(x.bg2, '');
+      if (Number.isFinite(+x.be)) o.be = Math.max(1, Math.min(6, +x.be)); if (Number.isFinite(+x.z)) o.z = Math.max(.3, Math.min(4, +x.z));
+      for (const k of ['x', 'y']) if (Number.isFinite(+x[k])) o[k] = Math.max(-64, Math.min(64, +x[k])); }
     return out;
   }
   let guardado = null; try { guardado = JSON.parse(localStorage.getItem(K) || 'null'); } catch { }
@@ -53,12 +57,16 @@
   /* O DESENHO (64×64): quadrado com cantos (raio em % do lado), fundo, borda fina e as letras CENTRADAS — na horizontal pelo
      meio da palavra e na vertical pela altura das MAIÚSCULAS (0,70 da fonte): a linha de base fica em 32 + 0,35 × fonte. */
   function svg(id, px, o = {}) {
-    const c = (o.cfg || cfg)[id] || PADRAO[id] || PADRAO.an, r = c.raio / 100 * 64, b = c.borda ? 3 : 0, n = [...c.let].length;
+    const c = (o.cfg || cfg)[id] || PADRAO[id] || PADRAO.an, r = c.raio / 100 * 64, b = c.borda ? (+c.be || 3) : 0, n = [...c.let].length;
     const tam = px ? ` width="${px}" height="${px}"` : ' width="100%" height="100%"';
-    if (c.img) { const cid = 'epic' + (++nId);
-      return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true"><defs><clipPath id="${cid}"><rect width="64" height="64" rx="${r}"/></clipPath></defs><image href="${esc(c.img)}" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/></svg>`; }
-    const pequeno = px && px <= 20, fs = (n >= 3 ? 23 : n === 2 ? 29 : 36) * (pequeno ? 1.18 : 1);
-    return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true"><rect x="${b / 2}" y="${b / 2}" width="${64 - b}" height="${64 - b}" rx="${Math.max(0, r - b / 2)}" fill="${c.bg}"${b ? ` stroke="${c.bc}" stroke-width="${b}"` : ''}/>`
+    const g = /^#[0-9a-f]{6}$/i.test(c.bg2 || '') ? 'epig' + (++nId) : '', grad = g ? `<linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c.bg}"/><stop offset="1" stop-color="${c.bg2}"/></linearGradient>` : '', fundo = g ? `url(#${g})` : c.bg;
+    if (c.img) { const cid = 'epic' + (++nId), borda = b ? `<rect x="${b / 2}" y="${b / 2}" width="${64 - b}" height="${64 - b}" rx="${Math.max(0, r - b / 2)}" fill="none" stroke="${c.bc}" stroke-width="${b}"/>` : '';
+      // sem zoom/posição escolhidos, a imagem enche o quadrado (como antes); com zoom, ela cabe inteira e anda dentro do ícone, com o fundo atrás
+      const im = c.z == null && c.x == null && c.y == null ? `<image href="${esc(c.img)}" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>`
+        : (t => `<image href="${esc(c.img)}" x="${(32 - t / 2 + (+c.x || 0)).toFixed(2)}" y="${(32 - t / 2 + (+c.y || 0)).toFixed(2)}" width="${t.toFixed(2)}" height="${t.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`)(64 * (+c.z || 1));
+      return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true"><defs>${grad}<clipPath id="${cid}"><rect width="64" height="64" rx="${r}"/></clipPath></defs><g clip-path="url(#${cid})"><rect width="64" height="64" fill="${fundo}"/>${im}</g>${borda}</svg>`; }
+    const pequeno = px && px <= 20, fs = (n >= 3 ? 23 : n === 2 ? 29 : 36) * (pequeno ? 1.18 : 1) * (+c.tl || 1);
+    return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true">${grad ? '<defs>' + grad + '</defs>' : ''}<rect x="${b / 2}" y="${b / 2}" width="${64 - b}" height="${64 - b}" rx="${Math.max(0, r - b / 2)}" fill="${fundo}"${b ? ` stroke="${c.bc}" stroke-width="${b}"` : ''}/>`
       + `<text x="32" y="${(32 + fs * 0.35).toFixed(2)}" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="${fs.toFixed(2)}" letter-spacing="-0.5" fill="${c.fg}">${esc(c.let)}</text></svg>`;
   }
   const url = id => 'data:image/svg+xml,' + encodeURIComponent(svg(id, 64));

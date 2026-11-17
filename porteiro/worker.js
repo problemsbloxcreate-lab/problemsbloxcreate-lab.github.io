@@ -1266,7 +1266,7 @@ export default {
 
 /* ---------- ÍCONES DOS PROGRAMAS (Sh, Ed, An, At, Md — ADM › Ícones) ----------
    GET /icones: o que a ADM mudou (o resto é o padrão do /estudio-icones.js); aberto, até antes do login (tela de carregamento).
-   POST /icones (só ADM, pela sessão): { icones: { sh: { let, fg, bg, borda, bc, raio, img? }, … } }. Guardado no KV PERFIS
+   POST /icones (só ADM, pela sessão): { icones: { sh: { let, fg, bg, borda, bc, raio, img?, tl?, bg2?, be?, z?, x?, y? }, … } }. Guardado no KV PERFIS
    ("cfg:icones"): uma gravação por vez que a ADM salva. */
 const ICONES = { j: null, t: 0 };
 async function icones(req, env, url) {
@@ -1288,6 +1288,10 @@ async function icones(req, env, url) {
     for (const k of ['fg', 'bg', 'bc']) if (cor(x[k])) o[k] = cor(x[k]);
     if (x.borda === 0 || x.borda === 1) o.borda = x.borda;
     if (Number.isFinite(+x.raio)) o.raio = Math.max(0, Math.min(50, Math.round(+x.raio)));
+    // mais opções (pedido da dona, 17/11/2026): tamanho das letras, degradê, espessura da borda, zoom e posição da imagem
+    if (Number.isFinite(+x.tl)) o.tl = Math.max(.5, Math.min(1.6, +x.tl)); if (x.bg2 === '') o.bg2 = ''; else if (cor(x.bg2)) o.bg2 = cor(x.bg2);
+    if (Number.isFinite(+x.be)) o.be = Math.max(1, Math.min(6, +x.be)); if (Number.isFinite(+x.z)) o.z = Math.max(.3, Math.min(4, +x.z));
+    for (const k of ['x', 'y']) if (Number.isFinite(+x[k])) o[k] = Math.max(-64, Math.min(64, Math.round(+x[k] * 10) / 10));
     if (typeof x.img === 'string') { if (!/^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,[a-z0-9+/=]+$/i.test(x.img)) return json({ error: { message: 'Imagem inválida (use PNG, JPG, WEBP, GIF ou SVG).' } }, 400);
       if (x.img.length > 600000) return json({ error: { message: 'A imagem do ícone ficou grande demais (até uns 400 KB).' } }, 413); o.img = x.img; }
     if (Object.keys(o).length) out[id] = o; }
