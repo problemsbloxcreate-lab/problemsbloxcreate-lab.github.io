@@ -578,31 +578,17 @@ window.EstudioPerm ||= (() => {
 .ep-relogio{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border:0;border-radius:8px;background:none;color:inherit;font-family:inherit;font-size:13px;font-weight:500;line-height:1;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ep-relogio:hover,.ep-relogio:focus-visible{background:rgba(255,255,255,.1);outline:none}.ep-relogio .dt{opacity:.65}.ep-relogio .pt{width:7px;height:7px;border-radius:50%;background:#ffcc33}
 @media (max-width:820px){.ep-relogio .dt{display:none}.ep-relogio{padding:0 6px}}
-.ep-cal{position:fixed;z-index:2147483004;top:52px;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 20px));max-height:calc(100% - 64px);display:grid;grid-template-columns:300px 1fr;border-radius:14px;overflow:hidden;background:#242428;color:#f5f5f7;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.6);border:.5px solid rgba(255,255,255,.12);font-size:13px;animation:epPop .16s ease-out}
-.ep-cal *{box-sizing:border-box}.ep-cal button{font:inherit;color:inherit}
-.ep-cal .m{padding:14px;border-right:.5px solid rgba(255,255,255,.08)}
-.ep-cal .cab{display:flex;align-items:center;gap:4px;margin-bottom:10px}.ep-cal .cab b{flex:1;font-size:14px}
-.ep-cal .bt{height:24px;min-width:24px;padding:0 9px;border-radius:6px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);cursor:pointer;font-size:12px}
-.ep-cal .bt:hover{background:rgba(255,255,255,.16)}.ep-cal .bt.pri{background:linear-gradient(180deg,#2a92ff,#0a7aff);border-color:transparent;color:#fff}
-.ep-cal .bt.perigo{color:#ff6961}.ep-cal .bt svg{width:13px;height:13px;vertical-align:-2px}
-.ep-cal .g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
-.ep-cal .g .sem{font-size:10.5px;color:#6e6e73;padding:4px 0;font-weight:600}
-.ep-cal .g button{position:relative;aspect-ratio:1;border:0;border-radius:50%;background:none;font-size:12.5px;cursor:pointer;font-variant-numeric:tabular-nums}
-.ep-cal .g button:hover{background:rgba(255,255,255,.08)}.ep-cal .g button.fora{color:#6e6e73}.ep-cal .g button.hoje{color:#ff453a;font-weight:700}.ep-cal .g button.sel{background:#0a84ff;color:#fff}
-.ep-cal .g .pts{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);display:flex;gap:2px}.ep-cal .g .pts i{width:4px;height:4px;border-radius:50%}
-.ep-cal .leg{margin:12px 2px 0;display:flex;gap:12px;flex-wrap:wrap;color:#a1a1a6;font-size:11.5px}.ep-cal .leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
-.ep-cal .d{display:flex;flex-direction:column;min-height:0;min-width:0}
-.ep-cal .dc{display:flex;align-items:center;gap:8px;padding:14px 14px 8px}.ep-cal .dc b{flex:1;font-size:14px}
-.ep-cal .l{flex:1;overflow:auto;padding:0 14px 10px;display:flex;flex-direction:column;gap:8px;min-height:120px}
-.ep-cal .ev{display:flex;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border-left:3px solid #ffcc33}.ep-cal .ev.meta{border-left-color:#30d158}.ep-cal .ev.alvo{box-shadow:0 0 0 1.5px #0a84ff}
-.ep-cal .ev .hr{font-size:12px;color:#a1a1a6;width:40px;flex:none;font-variant-numeric:tabular-nums}.ep-cal .ev .tx{flex:1;min-width:0}.ep-cal .ev .tx b{display:block}.ep-cal .ev .tx p{margin:2px 0 4px;color:#a1a1a6;font-size:12px;-webkit-user-select:text;user-select:text}.ep-cal .ev .tx small{color:#a1a1a6;font-size:11.5px}
-.ep-cal .vz{margin:auto;color:#6e6e73;font-size:12px;padding:20px 0}
-.ep-cal form{padding:10px 14px 14px;border-top:.5px solid rgba(255,255,255,.08);display:grid;gap:8px}
-.ep-cal input[type=text],.ep-cal input[type=time]{height:28px;background:rgba(0,0,0,.25);border:.5px solid rgba(255,255,255,.14);border-radius:6px;padding:0 9px;color:#f5f5f7;outline:none;font:inherit}
-.ep-cal input:focus{border-color:#0a84ff;box-shadow:0 0 0 3px rgba(10,132,255,.35)}
-.ep-cal .lin{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ep-cal .lin .sp{flex:1}.ep-cal label{display:flex;align-items:center;gap:6px;font-size:12px}
-.ep-cal .seg{display:inline-flex;padding:2px;border-radius:8px;background:rgba(0,0,0,.28)}.ep-cal .seg button{height:22px;padding:0 10px;border:0;border-radius:6px;background:none;cursor:pointer;font-size:12px}.ep-cal .seg button.on{background:rgba(255,255,255,.18)}
-@media (max-width:820px){.ep-cal{top:auto;bottom:0;left:0;right:0;transform:none;width:100%;max-height:88%;grid-template-columns:1fr;border-radius:14px 14px 0 0;overflow:auto}.ep-cal .m{border-right:0;border-bottom:.5px solid rgba(255,255,255,.08)}.ep-cal .g button{aspect-ratio:auto;height:36px;border-radius:9px}}
+/* CALENDÁRIO DO PUBLICAÇÕES (17/11/2026): o único calendário do Estúdio, por cima de qualquer programa */
+.ep-cpub{position:fixed;inset:0;z-index:2147483004;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.5);--cp-elevado:#242428;--cp-texto:#f5f5f7;--cp-texto-2:rgba(235,235,245,.64);--cp-linha:rgba(255,255,255,.09);--cp-fundo-3:#2f2f34;--cp-acento:#5cc4ff;--cp-acento-tx:#04223a;font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;animation:epCpEntra .18s ease both}
+html[data-tema="claro"] .ep-cpub{--cp-elevado:#fff;--cp-texto:#1d1d1f;--cp-texto-2:rgba(60,60,67,.72);--cp-linha:rgba(0,0,0,.08);--cp-fundo-3:#ececf0;--cp-acento:#0a74c9;--cp-acento-tx:#fff}
+.ep-cpub .cx{display:flex;flex-direction:column;width:min(1100px,94vw);height:min(760px,88vh);border-radius:14px;overflow:hidden;background:var(--cp-elevado);color:var(--cp-texto);border:1px solid var(--cp-linha);box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.ep-cpub .cb{display:flex;align-items:center;gap:8px;height:52px;flex:none;padding:0 12px 0 22px;border-bottom:1px solid var(--cp-linha)}.ep-cpub .cb b{flex:1;font-size:17px;font-weight:600}
+.ep-cpub .bt{height:30px;padding:0 14px;border:0;border-radius:8px;background:var(--cp-acento);color:var(--cp-acento-tx);font:600 13px inherit;cursor:pointer}.ep-cpub .bt:hover{filter:brightness(1.08)}
+.ep-cpub .x{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:none;color:var(--cp-texto-2);cursor:pointer}.ep-cpub .x:hover{background:var(--cp-fundo-3)}
+.ep-cpub .q{position:relative;flex:1;min-height:0}.ep-cpub iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
+.ep-cpub .esp{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--cp-texto-2)}
+.ep-cpub .dica{flex:none;margin:0;padding:10px 22px;border-top:1px solid var(--cp-linha);font-size:12.5px;color:var(--cp-texto-2)}
+@keyframes epCpEntra{from{opacity:0}}@media (prefers-reduced-motion:reduce){.ep-cpub{animation:none}}
 .ep-notif{position:fixed;z-index:2147483005;top:56px;right:12px;width:min(370px,calc(100% - 24px));display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:rgba(44,44,48,.97);color:#f5f5f7;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 18px 50px rgba(0,0,0,.55);border:.5px solid rgba(255,255,255,.14);cursor:pointer;animation:epNotif .35s cubic-bezier(.2,.8,.2,1)}
 @keyframes epNotif{from{opacity:0;transform:translateX(30px)}}
 .ep-notif .di{width:44px;flex:none;border-radius:9px;overflow:hidden;background:#fff;color:#1c1c1e;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -692,11 +678,6 @@ window.EstudioPerm ||= (() => {
 .ep-msgs .epm-m.epm-meu .epm-b{background:#1d6fd6!important}
 .ep-msgs textarea,.ep-msgs input{border-radius:0!important}
 /* calendário */
-.ep-cal{box-shadow:0 30px 80px rgba(0,20,50,.5)!important;top:0!important;right:0!important;bottom:0!important;left:auto!important;transform:none;width:min(460px,100%)!important;max-height:none!important;height:100%;grid-template-columns:1fr!important;grid-template-rows:auto 1fr;overflow:auto!important;animation:epEntraDir .45s cubic-bezier(.1,.9,.2,1) both} /* entra pela direita, como a nuvem (pedido da dona) */
-.ep-cal .m{border-right:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;padding:22px 20px 16px!important}.ep-cal .d{padding:16px 20px!important;min-height:0}
-.ep-cal .cab b{font:300 20px "Segoe UI Light","Segoe UI",system-ui,sans-serif}
-.ep-cal .g button{border-radius:0!important}.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}.ep-cal .g button.hoje{box-shadow:inset 0 0 0 2px #fff!important}
-.ep-cal input,.ep-cal .seg,.ep-cal .seg button,.ep-cal .ev{border-radius:0!important}
 .ep-notif{border-radius:0!important;background:rgba(14,32,58,.94)!important}
 /* balão da conta (foto no canto) no mesmo estilo */
 .ep-conta-pop{background:rgba(14,32,58,.96)!important;-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);border:0!important;border-radius:0!important;box-shadow:0 22px 60px rgba(0,20,50,.5)!important;color:#fff!important;padding:6px 0!important}
@@ -740,25 +721,11 @@ window.EstudioPerm ||= (() => {
 /* SAÍDA com animação (pedido da dona): as janelas não somem seco */
 .ep-saindo{pointer-events:none!important}
 .ep-esp.ep-saindo{animation:epSome .2s ease both!important}.ep-esp.ep-saindo .cx{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both!important}
-.ep-cal.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both,epSome .2s ease both!important}
 .ep-msgs.ep-saindo,.ep-pg.ep-saindo,.ep-admj.ep-saindo,.modal.ep-saindo{animation:epSome .22s ease both!important}
 .ep-msgs.ep-saindo .cx,.ep-pg.ep-saindo .cx,.ep-admj.ep-saindo .cx,.modal.ep-saindo .mc{animation:epEncolhe .22s ease both!important}
 .ep-notif.ep-saindo{animation:epSome .16s ease both!important}.ep-conta-pop.ep-saindo{animation:epSaiDir .2s cubic-bezier(.4,0,1,1) both,epSome .2s ease both!important}.ep-conta-fundo.ep-saindo{animation:epSome .2s ease both}
 /* calendário: luz do Windows 10 (as bordas dos dias perto do mouse acendem; o dia embaixo do mouse ganha a borda clara) */
-.ep-cal .g{position:relative;gap:2px!important;padding:2px;--mx:-200px;--my:-200px}
-.ep-cal .g::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle 80px at var(--mx) var(--my),rgba(255,255,255,.2),rgba(255,255,255,0) 100%)}
-.ep-cal .g.luz::before{opacity:1}
-.ep-cal .g>*{position:relative;z-index:1}
-.ep-cal .g button{background:rgb(17,37,64)!important;transition:box-shadow .12s,background .12s}
-.ep-cal .g button:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)!important;background:radial-gradient(circle 40px at 50% 50%,rgba(255,255,255,.12),rgba(255,255,255,0)),rgb(17,37,64)!important}
-.ep-cal .g button.sel{background:#fff!important;color:#0d3a66!important}
-.ep-cal .g button.fora{color:rgba(255,255,255,.35)}
-.ep-cal .g button.hoje:not(.sel){color:#7fc4ff!important;font-weight:700;box-shadow:inset 0 0 0 1px rgba(127,196,255,.6)!important}
-.ep-cal .g .sem{background:rgb(17,37,64);padding:4px 0}
-@media (prefers-reduced-motion:reduce){.ep-cal .g::before{transition:none}}
-.ep-cal .g.mes-prox{animation:epMesProx .28s cubic-bezier(.1,.9,.2,1) both}.ep-cal .g.mes-ant{animation:epMesAnt .28s cubic-bezier(.1,.9,.2,1) both}.ep-cal .cab b.mes-nome{animation:epSome2 .3s ease both}
 @keyframes epMesProx{from{opacity:0;transform:translateX(18px)}}@keyframes epMesAnt{from{opacity:0;transform:translateX(-18px)}}@keyframes epSome2{from{opacity:0}}
-@media (prefers-reduced-motion:reduce){.ep-cal .g.mes-prox,.ep-cal .g.mes-ant,.ep-cal .cab b.mes-nome{animation:none}}
 @keyframes epSaiDir{to{transform:translateX(100%)}}@keyframes epSome{to{opacity:0}}@keyframes epEncolhe{to{transform:scale(.97)}}
 @media (prefers-reduced-motion:reduce){.ep-esp .cx,.ep-esp details[open] .grp-l{animation:none}}
 /* PAINEL DA NUVEM MAIS ARRUMADO (pedido da dona, 10/11/2026): mais largo e com respiro, Atualizar e Fechar como botões de ícone do Metro, uso do mês em lista, nomes inteiros */
@@ -1000,42 +967,6 @@ html:not([data-tema="claro"]) body #ep-atualizando :is(.ep-nm,.ep-m,.ep-pc,.ep-a
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){:root:root body #ep-atualizando::before{animation:none}}
 /* --- CALENDÁRIO (Celeste, 11/11/2026): painel da direita como os outros; sem a grade azul do Metro nem a "luz" do Windows 10 --- */
-:root:root body .ep-cal{background:var(--ce-elevado)!important;color:var(--ce-texto)!important;border:0!important;border-left:1px solid var(--ce-linha)!important;border-radius:0!important;box-shadow:var(--ce-sombra-3)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:400 14px/1.4 var(--ce-fonte)!important}
-:root:root body .ep-cal *{border-radius:0}
-:root:root body .ep-cal .m{border-bottom:1px solid var(--ce-linha)!important;padding:0 20px 16px!important}
-:root:root body .ep-cal .cab{height:52px;margin:0 -20px 12px!important;padding:0 12px 0 20px;border-bottom:1px solid var(--ce-linha)}
-:root:root body .ep-cal .cab b,:root:root body .ep-cal .cab b.mes-nome{font:600 17px var(--ce-fonte)!important;color:var(--ce-texto)!important}
-:root:root body .ep-cal .bt{height:28px!important;min-width:28px;padding:0 10px!important;border:0!important;border-radius:6px!important;background:var(--ce-fundo-3)!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important;box-shadow:none!important}
-:root:root body .ep-cal .bt:hover{background:var(--ce-fundo-4)!important}
-:root:root body .ep-cal .bt.pri{background:var(--ce-acento)!important;color:var(--ce-acento-texto)!important;font-weight:600!important}
-:root:root body .ep-cal .bt.perigo{background:transparent!important;color:var(--ce-perigo)!important}
-:root:root body .ep-cal .g{gap:4px!important;padding:0!important}
-:root:root body .ep-cal .g::before{display:none!important}
-:root:root body .ep-cal .g .sem{background:none!important;color:var(--ce-texto-3)!important;font:600 11px var(--ce-fonte)!important;padding:4px 0!important}
-:root:root body .ep-cal .g button{background:transparent!important;border-radius:50%!important;color:var(--ce-texto)!important;font:500 13px var(--ce-fonte)!important;box-shadow:none!important}
-:root:root body .ep-cal .g button:hover{background:var(--ce-fundo-3)!important;box-shadow:none!important}
-:root:root body .ep-cal .g button.fora{color:var(--ce-texto-3)!important}
-:root:root body .ep-cal .g button.hoje:not(.sel){color:var(--ce-perigo)!important;font-weight:700!important;box-shadow:none!important}
-:root:root body .ep-cal .g button.sel{background:var(--ce-acento)!important;color:var(--ce-acento-texto)!important;font-weight:700!important}
-:root:root body .ep-cal .g .pts i{border-radius:50%!important}
-:root:root body .ep-cal .leg{color:var(--ce-texto-3)!important;font-size:12px!important}
-:root:root body .ep-cal .leg i{border-radius:50%!important}
-:root:root body .ep-cal .d{padding:0!important}
-:root:root body .ep-cal .dc{padding:16px 20px 8px!important}
-:root:root body .ep-cal .dc b{font:600 15px var(--ce-fonte)!important;color:var(--ce-texto)!important;text-transform:none!important}
-:root:root body .ep-cal .dc b::first-letter{text-transform:uppercase}
-:root:root body .ep-cal .l{padding:0 20px 12px!important}
-:root:root body .ep-cal .ev{background:var(--ce-fundo-2)!important;border-radius:10px!important;border-left-width:3px!important}
-:root:root body .ep-cal .vz{color:var(--ce-texto-3)!important}
-:root:root body .ep-cal form{border-top:1px solid var(--ce-linha)!important;padding:16px 20px 20px!important;gap:10px!important}
-:root:root body .ep-cal input[type=text],:root:root body .ep-cal input[type=time]{height:34px!important;background:var(--ce-fundo-3)!important;border:1px solid transparent!important;border-radius:8px!important;color:var(--ce-texto)!important;font:400 14px var(--ce-fonte)!important;box-shadow:none!important;padding:0 10px!important}
-:root:root body .ep-cal input:focus{border-color:var(--ce-acento)!important;box-shadow:0 0 0 3px var(--ce-acento-suave)!important}
-:root:root body .ep-cal input[type=checkbox]{accent-color:var(--ce-acento)}
-:root:root body .ep-cal label{color:var(--ce-texto-2)!important;font-size:13px!important}
-:root:root body .ep-cal .seg{background:var(--ce-fundo-3)!important;border-radius:8px!important;padding:2px!important}
-:root:root body .ep-cal .seg button{height:28px!important;border-radius:6px!important;background:transparent!important;color:var(--ce-texto-2)!important;font:500 13px var(--ce-fonte)!important}
-:root:root body .ep-cal .seg button.on{background:var(--ce-fundo-4)!important;color:var(--ce-texto)!important}
-:root:root body .ep-cal{animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
 /* --- JANELA DA ADM por cima dos programas: fundo LISO, sem foto (carregamento C, pedido da dona em 12/11/2026; as regras ficam no bloco "ADM POR CIMA DOS PROGRAMAS") --- */
 /* --- NOTIFICAÇÃO DE VERSÃO NOVA (em cima, à direita): Atualizar / Fechar; atualizar é opcional --- */
 .ep-notif-v{--ce-fonte:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--ce-elevado:#242428;--ce-texto:#f5f5f7;--ce-texto-2:rgba(235,235,245,.64);--ce-texto-3:rgba(235,235,245,.4);--ce-fundo-3:#28282c;--ce-fundo-4:#333338;--ce-linha:rgba(255,255,255,.09);--ce-acento:#5cc4ff;--ce-acento-texto:#04223a;
@@ -2683,7 +2614,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   }
 
   /* ===================== REDESIGN (03/11/2026): relógio + calendário pessoal, Dock, ADM por cima, anel de carregamento =====================
-     Nada disto pede coisa à nuvem: o calendário fica no localStorage ('ep-calendario'); o Dock só tem atalhos.
+     Nada disto pede coisa à nuvem: o calendário é o do Publicações (datas da lista dele neste computador); o Dock só tem atalhos.
      No menu: <span data-estudio-relogio></span> (meio do cabeçalho) e <span data-estudio-dock></span>. */
   const poeCss = () => { if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); } };
   ICONES.cal = svg('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>');
@@ -2694,70 +2625,54 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches?.(SEL_CARR) || n.closest?.(SEL_CARR))) marcaCarr(n.tagName === 'IMG' ? n.parentElement : n); })
     .observe(document.documentElement, { childList: true, subtree: true }); // só olha o que entra nas nossas janelas (o resto da página é ignorado na hora)
 
-  // ---- RELÓGIO + CALENDÁRIO PESSOAL (lembretes e metas só seus, neste computador; a notificação aparece em qualquer programa) ----
-  const CAL_LS = 'ep-calendario', CAL_AV = 'ep-cal-avisados';
-  const leCal = () => { try { const v = JSON.parse(localStorage.getItem(CAL_LS) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
-  const gravaCal = l => { try { localStorage.setItem(CAL_LS, JSON.stringify(l.slice(-500))); } catch { } };
+  // ---- RELÓGIO + CALENDÁRIO DO PUBLICAÇÕES (pedido da dona, 17/11/2026: "vai ser tudo o mesmo calendário do Publicações") ----
+  // O calendário pessoal antigo (lembretes e metas em 'ep-calendario') saiu: os dados dele ficam guardados, mas nada mais lê nem mostra.
+  // Tudo abre o calendário do Publicações (o próprio Publicações em modo só-calendário: /publicacoes/?inc=1&so=cal). As datas vêm da lista do
+  // Publicações guardada neste computador ('ep-publicacoes-v1', atualizada sempre que o Publicações abre): nada é pedido à nuvem.
+  const PUB_LS = 'ep-publicacoes-v1', CAL_AV = 'ep-cal-avisados';
+  const pubItens = () => { try { const v = JSON.parse(localStorage.getItem(PUB_LS) || 'null'); return (Array.isArray(v?.itens) ? v.itens : []).filter(i => i && +i.publicaEm > 0 && i.titulo); } catch { return []; } };
+  const proximasPub = (n = 3) => { const t = Date.now() - 6e4; return pubItens().filter(i => +i.publicaEm >= t).sort((a, b) => a.publicaEm - b.publicaEm).slice(0, n); };
   const mesmoDia = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
   const horaCal = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const corCal = t => t === 'meta' ? '#30d158' : '#ffcc33';
   function pintaRelogios() {
-    const d = new Date(), ev = leCal();
+    const d = new Date(), it = pubItens();
     document.querySelectorAll('.ep-relogio').forEach(b => {
       b.querySelector('.dt').textContent = d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
-      b.querySelector('.hr').textContent = horaCal(d); b.querySelector('.pt').hidden = !ev.some(e => mesmoDia(e.em, d) && e.em >= d - 6e4); });
+      b.querySelector('.hr').textContent = horaCal(d); b.querySelector('.pt').hidden = !it.some(i => mesmoDia(i.publicaEm, d) && i.publicaEm >= d - 6e4); });
   }
-  const CAL = { mes: null, sel: null, alvo: null };
-  function calendario(ev) { // abre o calendário por cima (ev = o lembrete que deve aparecer destacado)
-    poeCss(); document.querySelector('.ep-cal:not(.ep-saindo)')?.remove();
-    const base = ev ? new Date(ev.em) : new Date(); CAL.sel = new Date(base); CAL.sel.setHours(0, 0, 0, 0); CAL.mes = new Date(base.getFullYear(), base.getMonth(), 1); CAL.alvo = ev?.id || null;
-    const c = document.createElement('div'); c.className = 'ep-cal'; c.setAttribute('role', 'dialog'); c.setAttribute('aria-label', 'Seu calendário'); document.body.appendChild(c); pintaCal();
-    c.addEventListener('mousemove', e => { const g = c.querySelector('.g'); if (!g) return; const r = g.getBoundingClientRect(); g.style.setProperty('--mx', (e.clientX - r.left) + 'px'); g.style.setProperty('--my', (e.clientY - r.top) + 'px'); g.classList.toggle('luz', e.clientX >= r.left - 60 && e.clientX <= r.right + 60 && e.clientY >= r.top - 60 && e.clientY <= r.bottom + 60); }); // luz do Windows 10 nos dias
-    c.addEventListener('mouseleave', () => c.querySelector('.g')?.classList.remove('luz'));
-    const fora = e => { if (!c.isConnected) return tira(); if (!e.target.closest('.ep-cal,.ep-relogio,.ep-notif')) { c.remove(); tira(); } };
-    const esc1 = e => { if (e.key === 'Escape') { c.remove(); tira(); } };
-    const tira = () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc1); };
-    setTimeout(() => { document.addEventListener('mousedown', fora); document.addEventListener('keydown', esc1); });
+  // abre o calendário do Publicações por cima (o.dia / o.item: já nesse dia ou item; o.ir: como ir ao Preparativos — o menu passa a transição dele)
+  function calendario(o = {}) {
+    poeCss(); document.querySelector('.ep-cpub')?.remove(); if (o && o.em && !o.dia) o = { dia: o.em }; // (quem ainda manda um lembrete antigo cai no dia dele)
+    const q = (o.item ? '&item=' + encodeURIComponent(o.item) : '') + (o.dia ? '&dia=' + (+o.dia) : '');
+    const d = document.createElement('div'); d.className = 'ep-cpub'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Calendário das Publicações');
+    d.innerHTML = '<div class="cx"><div class="cb"><b>Calendário das Publicações</b><button type="button" class="bt" data-edit>Editar no Preparativos</button><button type="button" class="x" data-x aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'
+      + '<div class="q"><p class="esp">Abrindo o calendário…</p><iframe title="Calendário das Publicações" src="/publicacoes/?inc=1&so=cal' + q + '"></iframe></div>'
+      + '<p class="dica">Clique num dia ou numa publicação para abrir no Preparativos › Publicações.</p></div>';
+    const fecha = () => { d.remove(); removeEventListener('keydown', esc1, true); removeEventListener('message', msg); };
+    const ir = qs => { fecha(); const u = '/preparativos/?aba=publicacoes' + (qs ? '&' + qs : ''); if (typeof o.ir === 'function') o.ir(new URL(u, location.href).href); else location.href = u; };
+    const esc1 = e => { if (e.key === 'Escape') { e.stopPropagation(); fecha(); } };
+    const msg = e => { if (e.origin !== location.origin || e.data?.ep !== 'abrir-pub') return; const x = e.data; ir(x.item ? 'item=' + encodeURIComponent(x.item) : x.dia ? 'dia=' + (+x.dia) : ''); };
+    addEventListener('keydown', esc1, true); addEventListener('message', msg); d.onclick = e => { if (e.target === d) fecha(); };
+    document.body.appendChild(d); d.querySelector('[data-x]').onclick = fecha; d.querySelector('[data-edit]').onclick = () => ir(o.item ? 'item=' + encodeURIComponent(o.item) : o.dia ? 'dia=' + (+o.dia) : '');
+    const fr = d.querySelector('iframe'); fr.onload = () => { d.querySelector('.esp')?.remove(); try { fr.contentWindow.addEventListener('keydown', esc1, true); } catch { } };
   }
-  function pintaCal() {
-    const c = document.querySelector('.ep-cal:not(.ep-saindo)'); if (!c) return; const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const EV = leCal(), ini = new Date(CAL.mes); ini.setDate(1 - ini.getDay()); const dias = [];
-    for (let i = 0; i < 42; i++) { const d = new Date(ini); d.setDate(ini.getDate() + i); dias.push(d); }
-    const doDia = d => EV.filter(e => mesmoDia(e.em, d)).sort((a, b) => a.em - b.em), lista = doDia(CAL.sel);
-    c.innerHTML = `<div class="m"><div class="cab"><b>${esc(CAL.mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^./, x => x.toUpperCase()))}</b><button class="bt" type="button" data-m="-1" title="Mês anterior">‹</button><button class="bt" type="button" data-hoje>Hoje</button><button class="bt" type="button" data-m="1" title="Próximo mês">›</button></div>
-        <div class="g">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(s => `<span class="sem">${s}</span>`).join('')}${dias.map((d, i) => { const e = doDia(d); return `<button type="button" data-d="${i}" class="${d.getMonth() !== CAL.mes.getMonth() ? 'fora' : ''}${+d === +hoje ? ' hoje' : ''}${+d === +CAL.sel ? ' sel' : ''}">${d.getDate()}${e.length ? `<span class="pts">${e.slice(0, 3).map(x => `<i style="background:${corCal(x.tipo)}"></i>`).join('')}</span>` : ''}</button>`; }).join('')}</div>
-        <p class="leg"><span><i style="background:#ffcc33"></i>Lembrete</span><span><i style="background:#30d158"></i>Meta</span><span>Só você vê · fica neste computador</span></p></div>
-      <div class="d"><div class="dc"><b>${esc(CAL.sel.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }))}</b><button class="bt" type="button" data-fx>Fechar</button></div>
-        <div class="l">${lista.map(e => `<div class="ev ${e.tipo === 'meta' ? 'meta' : ''}${e.id === CAL.alvo ? ' alvo' : ''}"><span class="hr">${horaCal(e.em)}</span><div class="tx"><b>${esc(e.t)}</b>${e.txt ? `<p>${esc(e.txt)}</p>` : ''}<small>${e.tipo === 'meta' ? 'Meta' : 'Lembrete'}${e.avisar ? ' · avisa na hora' : ''}</small></div><button class="bt perigo" type="button" data-apg="${e.id}" title="Apagar">${ICONES.lixo}</button></div>`).join('') || '<div class="vz">Nada marcado neste dia.</div>'}</div>
-        <form><input type="text" name="t" required maxlength="80" placeholder="Novo lembrete ou meta…"><div class="lin"><span class="seg"><button type="button" data-v="aviso" class="on">Lembrete</button><button type="button" data-v="meta">Meta</button></span><input type="time" name="h" value="${new Date(Date.now() + 36e5).toTimeString().slice(0, 5)}"><label><input type="checkbox" name="av" checked> Avisar na hora</label><span class="sp"></span><button class="bt pri" type="submit">Adicionar</button></div></form></div>`;
-    // trocar de mês: o mês novo entra deslizando do lado certo (pedido da dona: dá para ver que o mês mudou)
-    const anima = d => { const x = document.querySelector('.ep-cal:not(.ep-saindo)'); x?.querySelector('.g')?.classList.add(d > 0 ? 'mes-prox' : 'mes-ant'); x?.querySelector('.cab b')?.classList.add('mes-nome'); };
-    c.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { CAL.mes.setMonth(CAL.mes.getMonth() + +b.dataset.m); pintaCal(); anima(+b.dataset.m); });
-    c.querySelector('[data-hoje]').onclick = () => { const d0 = CAL.mes.getFullYear() * 12 + CAL.mes.getMonth(), d1 = hoje.getFullYear() * 12 + hoje.getMonth(); setTimeout(() => { if (d0 !== d1) anima(d1 - d0); }); CAL.sel = new Date(hoje); CAL.mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1); pintaCal(); };
-    c.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { CAL.sel = dias[+b.dataset.d]; if (CAL.sel.getMonth() !== CAL.mes.getMonth()) CAL.mes = new Date(CAL.sel.getFullYear(), CAL.sel.getMonth(), 1); CAL.alvo = null; pintaCal(); });
-    c.querySelector('[data-fx]').onclick = () => c.remove();
-    c.querySelectorAll('[data-apg]').forEach(b => b.onclick = () => { gravaCal(leCal().filter(e => String(e.id) !== b.dataset.apg)); pintaCal(); pintaRelogios(); });
-    let tipo = 'aviso'; c.querySelectorAll('.seg button').forEach(b => b.onclick = () => { tipo = b.dataset.v; c.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b)); });
-    c.querySelector('form').onsubmit = e => { e.preventDefault(); const f = e.target, [h, m] = f.h.value.split(':').map(Number), d = new Date(CAL.sel); d.setHours(h || 0, m || 0, 0, 0);
-      gravaCal([...leCal(), { id: Date.now(), tipo, t: f.t.value.trim(), txt: '', em: d.getTime(), avisar: f.av.checked }]); pintaCal(); pintaRelogios(); };
-  }
-  // notificação da hora marcada (em QUALQUER programa): uma vez só, na aba que estiver à vista
-  function notificaCal(ev) {
-    poeCss(); document.querySelector('.ep-notif')?.remove(); const d = new Date(ev.em), n = document.createElement('div'); n.className = 'ep-notif'; n.setAttribute('role', 'alert');
-    n.innerHTML = `<button class="x" type="button" title="Dispensar">×</button><span class="di"><small>${esc(d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''))}</small><b>${d.getDate()}</b></span><span class="tx"><small>${ev.tipo === 'meta' ? 'Meta' : 'Lembrete'} · ${horaCal(ev.em)}</small><b>${esc(ev.t)}</b>${ev.txt ? `<span>${esc(ev.txt)}</span>` : ''}</span>`;
+  // aviso na hora em que uma publicação sai (em QUALQUER programa): uma vez só, na aba que estiver à vista
+  function notificaCal(i) {
+    poeCss(); document.querySelector('.ep-notif')?.remove(); const d = new Date(+i.publicaEm), n = document.createElement('div'); n.className = 'ep-notif'; n.setAttribute('role', 'alert');
+    n.innerHTML = `<button class="x" type="button" title="Dispensar">×</button><span class="di"><small>${esc(d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''))}</small><b>${d.getDate()}</b></span><span class="tx"><small>Publicação · ${esc(horaCal(d))}</small><b>${esc(i.titulo)}</b></span>`;
     document.body.appendChild(n);
     n.querySelector('.x').onclick = e => { e.stopPropagation(); n.remove(); };
-    n.onclick = () => { n.remove(); calendario(ev); };
+    n.onclick = () => { n.remove(); calendario({ item: i.id, dia: +i.publicaEm }); };
     setTimeout(() => n.isConnected && n.remove(), 30000);
   }
   function confereLembretes() {
     if (document.visibilityState !== 'visible') return;
     let av = {}; try { av = JSON.parse(localStorage.getItem(CAL_AV) || '{}') || {}; } catch { }
     const t = Date.now(); for (const k of Object.keys(av)) if (t - av[k] > 8 * 864e5) delete av[k];
-    const e = leCal().find(x => x.avisar && !av[x.id] && x.em <= t && t - x.em < 30 * 6e4); if (!e) return;
-    av[e.id] = t; try { localStorage.setItem(CAL_AV, JSON.stringify(av)); } catch { } notificaCal(e); // marcado: as outras abas não repetem
+    const i = pubItens().find(x => !av['p:' + x.id] && +x.publicaEm <= t && t - x.publicaEm < 30 * 6e4); if (!i) return;
+    av['p:' + i.id] = t; try { localStorage.setItem(CAL_AV, JSON.stringify(av)); } catch { } notificaCal(i); // marcado: as outras abas não repetem
   }
-  addEventListener('storage', e => { if (e.key === CAL_LS) { pintaRelogios(); pintaCal(); } }); // mudou em outra aba (outro programa)
+  addEventListener('storage', e => { if (e.key === PUB_LS) pintaRelogios(); }); // o Publicações mudou em outra aba
 
   // ---- DOCK do menu: Mensagens, Personalizar o perfil e ADM (só ADM) + espaço na nuvem e no navegador, tudo como janela por cima ----
   // (as abas abertas no Dock foram tiradas a pedido do dono, 03/11/2026: o Dock é só de atalhos)
@@ -2824,8 +2739,8 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   // marcadores do menu: relógio no meio do cabeçalho e o Dock
   function poeMarcas() {
     document.querySelectorAll('[data-estudio-relogio]:not([data-ep-montado])').forEach(el => { el.dataset.epMontado = '1';
-      el.innerHTML = '<button class="ep-relogio" type="button" title="Seu calendário (lembretes e metas)"><span class="pt" title="Tem lembrete hoje"></span><span class="dt"></span><span class="hr"></span></button>';
-      el.querySelector('button').onclick = () => document.querySelector('.ep-cal:not(.ep-saindo)') ? document.querySelector('.ep-cal:not(.ep-saindo)').remove() : calendario(); });
+      el.innerHTML = '<button class="ep-relogio" type="button" title="Calendário das Publicações"><span class="pt" title="Tem publicação hoje"></span><span class="dt"></span><span class="hr"></span></button>';
+      el.querySelector('button').onclick = () => document.querySelector('.ep-cpub') ? document.querySelector('.ep-cpub').remove() : calendario(); });
     document.querySelectorAll('[data-estudio-dock]:not([data-ep-montado])').forEach(el => { el.dataset.epMontado = '1'; el.innerHTML = '<nav class="ep-dock" aria-label="Atalhos do Estúdio"></nav>'; });
     pintaRelogios(); pintaDock();
   }
@@ -2843,7 +2758,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
   { const SAI = '.ep-esp,.ep-cal,.ep-msgs,.ep-pg,.ep-admj,.ep-conta-pop,.ep-notif,.modal', rm0 = Element.prototype.remove, calmo = matchMedia('(prefers-reduced-motion: reduce)');
     if (!Element.prototype.remove.epSai) { const rm = function () { if (this.isConnected && !calmo.matches && this.matches?.(SAI) && !this.classList.contains('ep-saindo')) { this.classList.add('ep-saindo'); setTimeout(() => rm0.call(this), 220); return; } return rm0.call(this); }; rm.epSai = true; Element.prototype.remove = rm; } }
   window.EstudioConta = { relatorio: () => pedeRelatorio(), perfil, montar, recarregar, atualizarTudo, ICONES, espaco, painelEspaco, quem, nomeDe, pergunta, aoSair,
-    calendario: ev => calendario(ev), dock: { atualizar: () => pintaDock() },
+    calendario: o => calendario(o || {}), proximasPublicacoes: n => proximasPub(n), dock: { atualizar: () => pintaDock() },
     preImg, sessao: { conferir: () => confereSessao() }, adm: { conversas: admConversas, abrir: abrirAdm }, citar, citacaoRecebida, mensagens: { abrir: () => painelMensagens(), conferir: () => puxaMensagens(), get naoLidas() { return MSG.nao; } },
     versao: { conferir: () => confereVersao(), get nova() { return VERSAO.nova; }, programaMudou: onde => marcaNova(onde || location.pathname), tela: f => telaAtualizando(f), atualizar: () => atualizaTudoGuardado(true) },
     nuvem: { atualizar: () => { try { localStorage.removeItem('ep-nuvem-uso'); } catch { } return atualizaNuvem(true); }, painel: painelNuvem, pedeAdm } };
