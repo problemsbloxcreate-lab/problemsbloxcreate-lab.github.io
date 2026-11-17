@@ -76,7 +76,7 @@
       const im = c.z == null && c.x == null && c.y == null ? `<image href="${esc(c.img)}" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>`
         : (t => `<image href="${esc(c.img)}" x="${(32 - t / 2 + (+c.x || 0)).toFixed(2)}" y="${(32 - t / 2 + (+c.y || 0)).toFixed(2)}" width="${t.toFixed(2)}" height="${t.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`)(64 * (+c.z || 1));
       return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true"><defs>${grad}<clipPath id="${cid}"><rect width="64" height="64" rx="${r}"/></clipPath></defs><g clip-path="url(#${cid})"><rect width="64" height="64" fill="${fundo}"/>${im}</g>${borda}</svg>`; }
-    const pequeno = px && px <= 20, fs = (n >= 3 ? 23 : n === 2 ? 29 : 36) * (pequeno ? 1.18 : 1) * (+c.tl || 1);
+    const pequeno = px && px <= 20, fs = (n >= 3 ? 23 : n === 2 ? 29 : 36) * 1.1 * (pequeno ? 1.12 : 1) * (+c.tl || 1); // letras 10% maiores que antes (pedido da dona, 17/11/2026)
     return `<svg xmlns="http://www.w3.org/2000/svg"${tam} viewBox="0 0 64 64" aria-hidden="true">${grad ? '<defs>' + grad + '</defs>' : ''}<rect x="${b / 2}" y="${b / 2}" width="${64 - b}" height="${64 - b}" rx="${Math.max(0, r - b / 2)}" fill="${fundo}"${b ? ` stroke="${c.bc}" stroke-width="${b}"` : ''}/>`
       + `<text x="32" y="${(32 + fs * 0.35).toFixed(2)}" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="${fs.toFixed(2)}" letter-spacing="-0.5" fill="${c.fg}">${esc(c.let)}</text></svg>`;
   }
