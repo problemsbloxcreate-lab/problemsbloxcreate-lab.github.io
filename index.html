@@ -1809,7 +1809,7 @@ html body .modal .mc.pergunta .acts button.btn.pg-cancela{color:#fff!important;b
           <label for="ic-z" class="ic-so-img">Zoom da imagem</label><div class="ic-cx ic-so-img"><input type="range" id="ic-z" min="30" max="400" step="1"><span id="ic-z-v" class="hint"></span><button type="button" class="btn sm" id="ic-centro">Centralizar</button><span class="hint">ou arraste a prévia grande; a rodinha também aproxima</span></div>
         </div>
         <div class="ic-prev" id="ic-prev"></div>
-        <div class="ic-cx" style="margin-top:14px"><button type="button" class="btn sm" id="ic-padrao">Voltar ao padrão</button><button type="button" class="btn sm danger" id="ic-apagar" hidden>Apagar este ícone</button><span class="hint" id="ic-st"></span><span style="flex:1"></span><button type="button" class="btn sm primary" id="ic-salvar" disabled>Salvar</button></div>
+        <div class="ic-cx" style="margin-top:14px"><button type="button" class="btn sm" id="ic-todos-novo" title="Todos os ícones no estilo novo da Adobe com degradê (mantém letras, cantos, tamanho das letras e imagens). Só vale depois de Salvar.">Usar o estilo novo em todos</button><button type="button" class="btn sm" id="ic-padrao">Voltar ao padrão</button><button type="button" class="btn sm danger" id="ic-apagar" hidden>Apagar este ícone</button><span class="hint" id="ic-st"></span><span style="flex:1"></span><button type="button" class="btn sm primary" id="ic-salvar" disabled>Salvar</button></div>
       </div></div>
   </div>
   <div class="adm-pag" data-pag="fundo">
@@ -3939,6 +3939,11 @@ function renderIcones() {
       const c = st.ed[st.sel]; c.z = Math.round(Math.max(bm.width, bm.height) / Math.min(bm.width, bm.height) * 100) / 100; c.x = 0; c.y = 0; }
     muda('img', u); campos(); };
   $('#ic-semimg').onclick = () => { const c = st.ed[st.sel]; delete c.img; delete c.z; delete c.x; delete c.y; campos(); pinta(); };
+  // ESTILO NOVO EM TODOS (17/11/2026): os programas voltam às cores do padrão novo; os ícones criados na ADM ganham o mesmo cálculo a partir da cor deles
+  $('#ic-todos-novo').onclick = () => { for (const id of ids()) { const c = st.ed[id]; if (!c) continue;
+      if (novo(id)) { const v = EI.estiloNovo(c.fg || c.bc || '#888888'); Object.assign(c, { fg: v.fg, bc: v.fg, bg2: v.bg2, borda: 0 }); }
+      else { const p = EI.padrao(id); for (const k of ['fg', 'bg', 'bg2', 'bc']) c[k] = p[k]; if (c.borda === 1) c.borda = p.borda; } }
+    campos(); pinta(); $('#ic-st').textContent = 'Pronto: confira e clique em Salvar para valer para toda a equipe.'; };
   $('#ic-padrao').onclick = () => { const c = st.ed[st.sel]; st.ed[st.sel] = novo(st.sel) ? Object.assign(EI.novoPadrao(c.nome), c.botao ? { botao: c.botao } : {}, c.caminho ? { caminho: c.caminho } : {}) : EI.padrao(st.sel); campos(); pinta(); };
   $('#ic-nome').oninput = e => { const c = st.ed[st.sel], auto = EI.novoPadrao(c.nome); if (!c.img && c.let === auto.let) { const n = EI.novoPadrao(e.target.value || 'Novo'); c.let = n.let; $('#ic-let').value = n.let; } c.nome = e.target.value.slice(0, 40); $('#ic-st').textContent = ''; pinta(); };
   $('#ic-nome').onblur = e => { if (!e.target.value.trim()) { st.ed[st.sel].nome = e.target.placeholder; campos(); pinta(); } }; // vazio = fica o nome sugerido
