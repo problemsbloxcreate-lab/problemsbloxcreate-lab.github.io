@@ -1092,7 +1092,7 @@ html[data-tema="claro"] .ep-progs{--ce-elevado:#fff;--ce-texto:#1d1d1f;--ce-text
 .ep-progs .ep-pg-it:hover,.ep-progs .ep-pg-it:focus-visible{background:var(--ce-fundo-3)}
 .ep-progs .ep-pg-it.on{background:var(--ce-acento-suave)}
 .ep-progs .ep-pg-it .ic{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;overflow:hidden;font:700 18px var(--ce-fonte)}
-.ep-progs .ep-pg-it .ic svg{width:44px;height:44px;display:block}
+.ep-progs .ep-pg-it .ic svg{width:44px;height:44px;display:block}.ep-progs .ep-pg-it .ic>span{display:block;width:44px;height:44px}
 /* selinho do programa dono, no canto de baixo do ícone, igual ao do menu (pedido da dona, 17/11/2026) */
 .ep-progs .ep-pg-it .ic-w{position:relative;display:block;width:44px;height:44px}
 .ep-progs .ep-pg-it .pg-parte{position:absolute;right:-6px;bottom:-4px;width:18px;height:18px;border-radius:5px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.4);z-index:1}
@@ -1281,9 +1281,9 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
     const aqui = location.pathname, L = listaProgramas();
     const p = document.createElement('div'); p.className = 'ep-progs'; p.setAttribute('role', 'menu'); p.setAttribute('aria-label', 'Programas');
     p.innerHTML = `<a class="ep-pg-it inicio" href="/" role="menuitem"><span class="ic ic-claq"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="epclq-grade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc4ff"/><stop offset="1" stop-color="#6b5cff"/></linearGradient></defs><rect width="64" height="64" rx="14.5" fill="url(#epclq-grade)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="15" y="27" width="34" height="22" rx="3"/><path d="M15 27l3-9 31 0-3 9"/><path d="M24 18l-2.5 9M33 18l-2.5 9M42 18l-2.5 9"/></g><path d="M29 33v10l8-5z" fill="#fff"/></svg></span><b>Início</b></a>`
-      + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic-w"><span class="ic">${icDe(x.ic) || esc(String(x.nome)[0] || '?')}</span>${x.parte ? '<span class="pg-parte" title="Parte do ' + ({ an: 'Animador', pr: 'Preparativos' }[x.parte] || 'programa') + '">' + icDe(x.parte) + '</span>' : ''}</span><b>${esc(x.nome)}</b></a>`; }).join('');
+      + L.map(x => { const on = x.url !== '/' && aqui.startsWith(x.url); return `<a class="ep-pg-it${on ? ' on' : ''}" href="${esc(x.url)}" role="menuitem"${on ? ' aria-current="page"' : ''}><span class="ic-w"><span class="ic">${x.ic && window.EstudioIcones ? '<span data-estudio-icone="' + esc(x.ic) + '"></span>' : esc(String(x.nome)[0] || '?')}</span>${x.parte ? '<span class="pg-parte" data-estudio-icone="' + esc(x.parte) + '" title="Parte do ' + ({ an: 'Animador', pr: 'Preparativos' }[x.parte] || 'programa') + '"></span>' : ''}</span><b>${esc(x.nome)}</b></a>`; }).join('');
     p.style.gridTemplateColumns = 'repeat(' + Math.min(4, L.length + 1) + ',88px)'; // poucos programas: a caixa fica do tamanho deles
-    document.body.appendChild(p);
+    document.body.appendChild(p); try { window.EstudioIcones?.pinta?.(p); } catch { } // o mesmo componente de ícone do Estúdio (forma e cores da ADM › Ícones)
     const r = bt.getBoundingClientRect(); p.style.top = (r.bottom + 8) + 'px'; p.style.right = Math.max(8, innerWidth - r.right - 8) + 'px';
     const fora = e => { if (!p.contains(e.target) && !bt.contains(e.target)) fecha(); }, tecla = e => { if (e.key === 'Escape') fecha(); };
     const fecha = () => { p.remove(); removeEventListener('pointerdown', fora, true); removeEventListener('keydown', tecla, true); bt.setAttribute('aria-expanded', 'false'); };
