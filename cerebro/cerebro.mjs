@@ -231,7 +231,9 @@ const AREAS = {
     pag: 'Regras/Regras de ouro - roteiro, Short e como trabalhar' },
 };
 const ESTUDIO = /est[uú]dio|c[ée]rebro|celest/i;
-const achadas = Object.entries(AREAS).filter(([, a]) => a.re.test(prompt)).map(([k]) => k);
+// área por PONTOS (quantas palavras do pedido casam), a mais forte primeiro
+const pontos = (re) => (prompt.match(new RegExp(re.source, 'gi')) || []).length;
+const achadas = Object.entries(AREAS).map(([k, a]) => [k, pontos(a.re)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).map(([k]) => k);
 if (!achadas.length && !ESTUDIO.test(prompt)) process.exit(0);
 
 const cerebro = join(homedir(), '.claude', 'cerebro.mjs');
@@ -246,8 +248,13 @@ const marcaF = join(pastaMarca, String(ent.session_id || 'sem-sessao').replace(/
 let marca = {};
 try { marca = JSON.parse(readFileSync(marcaF, 'utf8')); } catch {}
 const agora = Date.now();
-const novas = achadas.filter((k) => !(marca[k] && agora - marca[k] < 90 * 60 * 1000));
-if (!novas.includes('fluxo') && !(marca.fluxo && agora - marca.fluxo < 90 * 60 * 1000)) novas.push('fluxo'); // "como trabalhar" vale sempre
+// LIMITE (23/11): o Claude Code guarda num arquivo à parte (e a IA NÃO VÊ) saída de gancho grande (37 mil letras caíram assim),
+// e as páginas têm 10–15 mil letras. Então entram as SEÇÕES ("## ...") das páginas das áreas do pedido que mais têm a ver com ele,
+// até ~5800 letras; seção que já entrou nesta conversa (90 min) não repete. As áreas que sobraram vão só pelo nome.
+const LIM = 8000, ORC = 5800, fresco = (ch) => marca[ch] && agora - marca[ch] < 90 * 60 * 1000;
+const areasPed = achadas.length ? achadas : ['fluxo'];
+if (!areasPed.includes('fluxo')) areasPed.push('fluxo'); // "como trabalhar" vale sempre
+const novas = areasPed;
 
 const PARA = new Set('a o e é de do da dos das em no na nos nas um uma uns umas que se pra para por com sem mas mais muito muita tudo todo toda isso isto esse essa este esta ele ela eles elas eu vc você voce me te nos já ja não nao sim tem ter ta tá está esta estão foi ser era vai fazer faz fica ficar como quando onde porque pq qual quais aqui ali lá la só so também tambem ou ao aos às as os sua seu suas seus minha meu dele dela agora ainda depois antes coisa coisas hora vez cara gente bem mal certo precisa preciso quero pode'.split(' '));
 const palavras = [...new Set(prompt.toLowerCase().match(/[\p{L}\d]{4,}/gu) || [])].filter((p) => !PARA.has(p));
@@ -260,11 +267,27 @@ const [paginas, r1, r2] = await Promise.all([
   q2 && q2 !== q1 ? roda(['buscar', q2]) : '',
 ]);
 
-const blocos = [];
+// seções candidatas, com pontos: palavras do pedido (pelo começo da palavra) + área mais forte + "Antes de entregar"/"Como trabalhar"
+const raiz = palavras.map((p) => p.normalize('NFD').replace(/[̀-ͯ]/g, '').slice(0, 5));
+const cand = [];
 novas.forEach((k, i) => {
-  const t = paginas[i].replace(/^# .*\n(?:.*\n){0,3}?\n/, '').trim(); // tira o cabeçalho de versão
-  if (t) { blocos.push('=== ' + AREAS[k].pag + ' ===\n' + t.slice(0, 12000)); marca[k] = agora; }
+  const t = paginas[i].replace(/^# .*\n(?:.*\n){0,3}?\n/, '').trim(); if (!t) return;
+  t.split(/\n(?=## )/).forEach((sec, ordem) => {
+    const head = (sec.match(/^## (.*)/) || [, '(início)'])[1].trim(), ch = k + '#' + head; if (fresco(ch)) return;
+    const low = sec.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    let pts = raiz.reduce((s, r) => s + (r.length >= 4 && low.includes(r) ? 1 : 0), 0) + (achadas.length - achadas.indexOf(k)) * 0.5;
+    if (/antes de entregar|como trabalhar/i.test(head)) pts += 1.5; // grandes: com peso alto tiravam o lugar das seções do assunto
+    if (/contradi|d[úu]vida/i.test(head)) pts -= 3;
+    if (ordem === 0 && !/^## /.test(sec)) pts -= 2; // a linha de abertura da página
+    cand.push({ k, ordem, head, ch, sec: sec.trim(), pts });
+  });
 });
+let usado = 0; const vai = [];
+for (const c of [...cand].sort((a, b) => b.pts - a.pts)) { if (c.pts <= 0.5) break; if (usado + c.sec.length > ORC) continue; vai.push(c); usado += c.sec.length; }
+const blocos = [];
+for (const k of novas) { const L = vai.filter((c) => c.k === k).sort((a, b) => a.ordem - b.ordem); if (!L.length) continue;
+  blocos.push('=== ' + AREAS[k].pag + ' (só as seções deste pedido; a página inteira: mcp__cerebro__ler) ===\n' + L.map((c) => c.sec).join('\n')); L.forEach((c) => { marca[c.ch] = agora; }); }
+const depois = novas.filter((k) => !vai.some((c) => c.k === k) && !cand.every((c) => c.k !== k)).map((k) => AREAS[k].pag);
 try { mkdirSync(pastaMarca, { recursive: true }); writeFileSync(marcaF, JSON.stringify(marca)); } catch {}
 
 const visto = new Set(Object.values(AREAS).map((a) => a.pag));
@@ -274,17 +297,19 @@ for (const l of (r1 + '\n' + r2).split('\n')) {
   const cam = l.slice(2).split(/ › |: /)[0];
   if (cam.startsWith('Arquivo frio') || cam.startsWith('Ideias à parte') || visto.has(cam)) continue;
   visto.add(cam);
-  trechos.push(l.length > 420 ? l.slice(0, 420) + '…' : l);
-  if (trechos.length >= 6) break;
+  trechos.push(l.length > 300 ? l.slice(0, 300) + '…' : l);
+  if (trechos.length >= 5) break;
 }
 
 let out = 'CÉREBRO (consultado sozinho para este pedido; ninguém precisa citar). São decisões da dona: siga sem perguntar de novo. ' +
   'Se duas regras brigam, vale a mais nova. Pose, rig ou animação: confira com o walt-disney antes de dizer pronto. ' +
   'Erro novo que a dona apontar: atualize a página "Regras de ouro" da área (não crie página solta).';
+out += ' Sempre: faça só o pedido; prove no projeto real com print; sem render longo nem MP4 sem ordem dela; grave no Cérebro na hora.';
+if (depois.length) out += '\nTambém valem para este pedido (leia com mcp__cerebro__ler antes de mexer): ' + depois.join(' · ') + '.';
 if (blocos.length) out += '\n\n' + blocos.join('\n\n');
-else if (achadas.length && achadas.every((k) => marca[k])) out += '\n(As "Regras de ouro" de ' + achadas.join(', ') + ' já estão nesta conversa; continuam valendo.)';
+else if (achadas.length) out += '\n(As seções das Regras de ouro que servem a este pedido já estão nesta conversa; continuam valendo.)';
 if (trechos.length) out += '\n\nTrechos achados no Cérebro para este pedido:\n' + trechos.join('\n');
-process.stdout.write(out + '\n');
+process.stdout.write((out.length > LIM ? out.slice(0, LIM) + '\n…' : out) + '\n');
 process.exit(0);
 `; // gancho UserPromptSubmit da dona (23/11/2026): a cada pedido do Estúdio consulta o Cérebro sozinho e põe as Regras de ouro da área no contexto.
 function poeGancho() { const f = join(CL(), 'settings.json'); let s = {}, msg = [], mudou = false; const carimbo = new Date().toISOString().replace(/[:.]/g, '-');
