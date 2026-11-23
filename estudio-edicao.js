@@ -259,7 +259,11 @@
       const lim = Math.max(0.004, tot * 0.25); if (b - a > P.silencioPonta * 2) { if (rm(a, a + P.silencioPonta) < lim * 0.3) out.push({ i, aviso: 'silêncio no começo' }); if (rm(b - P.silencioPonta, b) < lim * 0.3) out.push({ i, aviso: 'silêncio no fim' }); }
       const letras = String(textos[i] || '').replace(/[^A-Za-zÀ-ÿ0-9]/g, '').length; if (b - a < letras * P.porLetra) out.push({ i, aviso: 'curto demais (palavra cortada?)' });
       if (avisoTom && avisoTom[i]) out.push({ i, aviso: 'parece a voz de outro personagem' });
-      if (ouvidas && ouvidas.some(w => { const m = (w.a + w.b) / 2, n = String(w.t || '').replace(/[^A-Za-zÀ-ÿ0-9]/g, '').length, du = w.b - w.a; return m > a && m < b && (du > P.palavraMax || du > 3 * Math.max(0.25, n * 0.08)); })) out.push({ i, aviso: 'palavra comprida demais: pode ter repetição — ouça' });
+      // REPETIÇÃO escondida (a tomada foi dita duas vezes e o reconhecedor juntou): a fala fica longa demais para o texto.
+      // Medido no navegador (23/11, Short "A sala INTEIRA"): fala normal 0,049–0,081 s por letra; a repetida (L03) 0,115.
+      // Antes usava a duração de cada palavra do reconhecedor, mas o Whisper do navegador estica as palavras e dava aviso falso em 6 falas boas.
+      // Fala curta (menos de 12 letras, ex.: "NÃO." gritado) não entra: ela é lenta por natureza.
+      if (letras >= 12 && (b - a) / letras > (P.porLetraMax || 0.10)) out.push({ i, aviso: 'fala longa demais para o texto: pode ter repetição — ouça' });
       { const M = mede(buf), f0 = Math.ceil(a / 0.01), f1 = Math.min(M.n, Math.floor(b / 0.01)); let run = 0, maior = 0;
         // só conta o silêncio que tem voz dos dois lados (as folgas das pontas não entram)
         let p0 = f0, p1 = f1 - 1; while (p0 < f1 && M.db[p0] < M.ini) p0++; while (p1 > p0 && M.db[p1] < M.ini) p1--; for (let f = p0; f <= p1; f++) { run = M.db[f] < M.ini ? run + 1 : 0; if (run > maior) maior = run; }
