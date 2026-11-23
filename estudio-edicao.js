@@ -26,7 +26,7 @@
   /* ================= PROTOCOLO DA DECUPAGEM (decisão do dono) =================
      corte só com fala, folga pequena nas pontas, pausa curta e fixa entre falas, nada de buraco. */
   const protocolo = {
-    antes: 0.04, depois: 0.07, pausaMin: 0.15, mesmo: 0.10, troca: 0.15, reticencias: 0.40, pausa: 0.60, buraco: 0.30, silencioPonta: 0.25, porLetra: 0.035,
+    antes: 0.04, depois: 0.07, pausaMin: 0.15, palavraMax: 1.2, pausaLonga: 0.6, mesmo: 0.10, troca: 0.15, reticencias: 0.40, pausa: 0.60, buraco: 0.30, silencioPonta: 0.25, porLetra: 0.035,
     /* pausa entre a fala a e a fala b ({quem, texto, nota}): travessão no fim = emenda; "(pausa)" = 0,6; reticências = 0,4; mesma pessoa 0,10; troca 0,15 */
     pausaEntre(a, b) {
       const ta = String(a.texto || '').trim(), tb = String(b.texto || '').trim(), nt = String(a.nota || '') + ' ' + ta;
@@ -250,12 +250,20 @@
     return out;
   }
   /* confere pelo protocolo: [{i, aviso}] — sem voz, silêncio no começo/fim, curto demais para o texto (palavra cortada?), voz de outro personagem */
-  function confere(buf, cortes, textos, avisoTom) {
+  /* ouvidas (opcional) = as palavras do reconhecedor [{t, a, b}]: palavra que dura mais que 1,2 s ou mais que 3× o esperado pelas letras
+     (0,08 s por letra, no mínimo 0,25 s) costuma ser uma REPETIÇÃO que o reconhecedor juntou; e silêncio de 0,6 s ou mais DENTRO do corte
+     costuma ser uma tomada interrompida. Os dois só AVISAM (nenhuma tomada é descartada sozinha). */
+  function confere(buf, cortes, textos, avisoTom, ouvidas) {
     const P = protocolo, d = buf.getChannelData(0), sr = buf.sampleRate, rm = (a, b) => { let q = 0, n = 0; for (let i = Math.max(0, Math.floor(a * sr)); i < Math.min(d.length, Math.floor(b * sr)); i += 4) { q += d[i] * d[i]; n++; } return Math.sqrt(q / Math.max(1, n)); };
     const out = []; cortes.forEach((q, i) => { if (!q) { out.push({ i, aviso: 'sem voz' }); return; } const [a, b] = q, tot = rm(a, b); if (tot < 0.004) { out.push({ i, aviso: 'sem voz' }); return; }
       const lim = Math.max(0.004, tot * 0.25); if (b - a > P.silencioPonta * 2) { if (rm(a, a + P.silencioPonta) < lim * 0.3) out.push({ i, aviso: 'silêncio no começo' }); if (rm(b - P.silencioPonta, b) < lim * 0.3) out.push({ i, aviso: 'silêncio no fim' }); }
       const letras = String(textos[i] || '').replace(/[^A-Za-zÀ-ÿ0-9]/g, '').length; if (b - a < letras * P.porLetra) out.push({ i, aviso: 'curto demais (palavra cortada?)' });
-      if (avisoTom && avisoTom[i]) out.push({ i, aviso: 'parece a voz de outro personagem' }); });
+      if (avisoTom && avisoTom[i]) out.push({ i, aviso: 'parece a voz de outro personagem' });
+      if (ouvidas && ouvidas.some(w => { const m = (w.a + w.b) / 2, n = String(w.t || '').replace(/[^A-Za-zÀ-ÿ0-9]/g, '').length, du = w.b - w.a; return m > a && m < b && (du > P.palavraMax || du > 3 * Math.max(0.25, n * 0.08)); })) out.push({ i, aviso: 'palavra comprida demais: pode ter repetição — ouça' });
+      { const M = mede(buf), f0 = Math.ceil(a / 0.01), f1 = Math.min(M.n, Math.floor(b / 0.01)); let run = 0, maior = 0;
+        // só conta o silêncio que tem voz dos dois lados (as folgas das pontas não entram)
+        let p0 = f0, p1 = f1 - 1; while (p0 < f1 && M.db[p0] < M.ini) p0++; while (p1 > p0 && M.db[p1] < M.ini) p1--; for (let f = p0; f <= p1; f++) { run = M.db[f] < M.ini ? run + 1 : 0; if (run > maior) maior = run; }
+        if (maior * 0.01 >= P.pausaLonga) out.push({ i, aviso: 'pausa longa no meio da fala — confira a tomada' }); } });
     return out;
   }
   /* pedaço [s, e] (segundos) de um AudioBuffer */
