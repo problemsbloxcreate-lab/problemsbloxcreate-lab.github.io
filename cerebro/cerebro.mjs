@@ -4,7 +4,7 @@
 
    node cerebro.mjs aviso                                  o aviso curto do começo da sessão (usado pelo gancho do Claude Code)
    node cerebro.mjs entrar [--chave]                       liga este computador ao Cérebro: abre o navegador e a pessoa só toca em Permitir (login do Google). --chave = o jeito antigo, só de reserva (cria a chave e mostra o código c-...)
-   node cerebro.mjs instalar [--so celestia,ouvir] [--manter]  liga o computador (login do Google, se faltar), baixa as skills e agentes para ~/.claude, liga os ganchos (começo da sessão e Stop) e cadastra o conector no Claude Code (com cópia do que mudar)
+   node cerebro.mjs instalar [--so celestia,ouvir] [--manter]  liga o computador (login do Google, se faltar), baixa as skills e agentes para ~/.claude, liga os ganchos (começo da sessão, consulta a cada pedido e Stop) e cadastra o conector no Claude Code (com cópia do que mudar)
    node cerebro.mjs conferir                              diz se faltam skills ou se o Cérebro tem versão mais nova
    node cerebro.mjs inicio                                 o que a IA lê primeiro: o guia e o índice de tudo
    node cerebro.mjs comece | indice | pedidos              o guia, a árvore toda, os pedidos que estão esperando
@@ -200,6 +200,93 @@ if (motivo && !gravou) {
 }
 process.exit(0);
 `; // gancho Stop da dona (16/11/2026): se a IA mudou algo do Estúdio e não gravou no Cérebro, ela volta e grava. Nunca prende em laço (stop_hook_active).
+const GANCHO_CONSULTA = String.raw`#!/usr/bin/env node
+// Gancho UserPromptSubmit do Estúdio Problems (pedido da dona, 23/11/2026):
+// "era pra ele ser consultado sozinho, sem chamar, sem citar".
+// A cada mensagem sobre o Estúdio:
+//  1. descobre a área (animação, áudio, arte, roteiro/Short) e, na 1ª vez da conversa
+//     (ou depois de 90 min), põe no contexto a página "Regras de ouro" daquela área inteira;
+//  2. sempre busca no Cérebro com as palavras do pedido e põe os trechos achados.
+// Falha em silêncio (sem internet, sem ligação): nunca trava a conversa.
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { homedir, tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+let ent = {};
+try { ent = JSON.parse(readFileSync(0, 'utf8') || '{}'); } catch { process.exit(0); }
+const prompt = String(ent.prompt || '');
+if (prompt.length < 8) process.exit(0);
+// relatório de agente, aviso de tarefa ou evento do app: não é pedido da pessoa
+if (/<agent-message|<task-notification|<side-sessions-event|<ci-monitor-event|Another Claude session sent a message/.test(prompt.slice(0, 400))) process.exit(0);
+
+const AREAS = {
+  animacao: { re: /anima|animad|ateli|rive|\brig\b|pose|personag|cachecol|capa|pupila|olho|piscar|boca|m[ãa]o|polegar|bra[çc]o|perna|zoom|c[âa]mera|movimen|fluid|duro|dura\b|lumi|clara|melzinha|stick|problems|walt|cena/i,
+    pag: 'Regras/Regras de ouro - animação e personagens' },
+  audio: { re: /[áa]udio|voz|vozes|fala|dubla|cort|m[úu]sica|som|efeito sonoro|sfx|volume|legenda|export|mp4|render|blender/i,
+    pag: 'Regras/Regras de ouro - áudio, cortes e exportação' },
+  arte: { re: /arte|desenh|cen[áa]rio|fundo|gpt|imagem|ilustra|thumb|cara de ia|parece ia|svg|estilo|pintur|luz/i,
+    pag: 'Regras/Regras de ouro - arte, desenho e cenários' },
+  fluxo: { re: /roteir|short|preparativ|publica[çc]|epis[óo]dio|\bep\d|piada|humor|agend|torajo|batatinha|v[íi]deo/i,
+    pag: 'Regras/Regras de ouro - roteiro, Short e como trabalhar' },
+};
+const ESTUDIO = /est[uú]dio|c[ée]rebro|celest/i;
+const achadas = Object.entries(AREAS).filter(([, a]) => a.re.test(prompt)).map(([k]) => k);
+if (!achadas.length && !ESTUDIO.test(prompt)) process.exit(0);
+
+const cerebro = join(homedir(), '.claude', 'cerebro.mjs');
+const roda = (args) => new Promise((ok) => {
+  execFile(process.execPath, [cerebro, ...args], { timeout: 9000, windowsHide: true, maxBuffer: 4 << 20 },
+    (err, out) => ok(err ? '' : String(out || '')));
+});
+
+// quais páginas de área já foram postas nesta conversa (por 90 min)
+const pastaMarca = join(tmpdir(), 'cerebro-consulta');
+const marcaF = join(pastaMarca, String(ent.session_id || 'sem-sessao').replace(/[^\w-]/g, '') + '.json');
+let marca = {};
+try { marca = JSON.parse(readFileSync(marcaF, 'utf8')); } catch {}
+const agora = Date.now();
+const novas = achadas.filter((k) => !(marca[k] && agora - marca[k] < 90 * 60 * 1000));
+if (!novas.includes('fluxo') && !(marca.fluxo && agora - marca.fluxo < 90 * 60 * 1000)) novas.push('fluxo'); // "como trabalhar" vale sempre
+
+const PARA = new Set('a o e é de do da dos das em no na nos nas um uma uns umas que se pra para por com sem mas mais muito muita tudo todo toda isso isto esse essa este esta ele ela eles elas eu vc você voce me te nos já ja não nao sim tem ter ta tá está esta estão foi ser era vai fazer faz fica ficar como quando onde porque pq qual quais aqui ali lá la só so também tambem ou ao aos às as os sua seu suas seus minha meu dele dela agora ainda depois antes coisa coisas hora vez cara gente bem mal certo precisa preciso quero pode'.split(' '));
+const palavras = [...new Set(prompt.toLowerCase().match(/[\p{L}\d]{4,}/gu) || [])].filter((p) => !PARA.has(p));
+const q1 = palavras.slice(0, 8).join(' ');
+const q2 = [...palavras].sort((a, b) => b.length - a.length).slice(0, 4).join(' ');
+
+const [paginas, r1, r2] = await Promise.all([
+  Promise.all(novas.map((k) => roda(['ler', AREAS[k].pag]))),
+  q1 ? roda(['buscar', q1]) : '',
+  q2 && q2 !== q1 ? roda(['buscar', q2]) : '',
+]);
+
+const blocos = [];
+novas.forEach((k, i) => {
+  const t = paginas[i].replace(/^# .*\n(?:.*\n){0,3}?\n/, '').trim(); // tira o cabeçalho de versão
+  if (t) { blocos.push('=== ' + AREAS[k].pag + ' ===\n' + t.slice(0, 12000)); marca[k] = agora; }
+});
+try { mkdirSync(pastaMarca, { recursive: true }); writeFileSync(marcaF, JSON.stringify(marca)); } catch {}
+
+const visto = new Set(Object.values(AREAS).map((a) => a.pag));
+const trechos = [];
+for (const l of (r1 + '\n' + r2).split('\n')) {
+  if (!l.startsWith('- ') || /Nada encontrado/.test(l)) continue;
+  const cam = l.slice(2).split(/ › |: /)[0];
+  if (cam.startsWith('Arquivo frio') || cam.startsWith('Ideias à parte') || visto.has(cam)) continue;
+  visto.add(cam);
+  trechos.push(l.length > 420 ? l.slice(0, 420) + '…' : l);
+  if (trechos.length >= 6) break;
+}
+
+let out = 'CÉREBRO (consultado sozinho para este pedido; ninguém precisa citar). São decisões da dona: siga sem perguntar de novo. ' +
+  'Se duas regras brigam, vale a mais nova. Pose, rig ou animação: confira com o walt-disney antes de dizer pronto. ' +
+  'Erro novo que a dona apontar: atualize a página "Regras de ouro" da área (não crie página solta).';
+if (blocos.length) out += '\n\n' + blocos.join('\n\n');
+else if (achadas.length && achadas.every((k) => marca[k])) out += '\n(As "Regras de ouro" de ' + achadas.join(', ') + ' já estão nesta conversa; continuam valendo.)';
+if (trechos.length) out += '\n\nTrechos achados no Cérebro para este pedido:\n' + trechos.join('\n');
+process.stdout.write(out + '\n');
+process.exit(0);
+`; // gancho UserPromptSubmit da dona (23/11/2026): a cada pedido do Estúdio consulta o Cérebro sozinho e põe as Regras de ouro da área no contexto.
 function poeGancho() { const f = join(CL(), 'settings.json'); let s = {}, msg = [], mudou = false; const carimbo = new Date().toISOString().replace(/[:.]/g, '-');
   if (existsSync(f)) { try { s = JSON.parse(readFileSync(f, 'utf8')); } catch { return 'settings.json com erro de formato: NÃO mexi. Conserte e rode de novo.'; } }
   s.hooks = s.hooks || {}; s.hooks.SessionStart = s.hooks.SessionStart || []; s.hooks.Stop = s.hooks.Stop || []; const tem = (a, t) => JSON.stringify(a).includes(t);
@@ -208,6 +295,9 @@ function poeGancho() { const f = join(CL(), 'settings.json'); let s = {}, msg = 
   const sf = join(CL(), 'hooks', 'cerebro-gravou.mjs'), atual = existsSync(sf) ? readFileSync(sf, 'utf8').replace(/\r\n/g, '\n') : null;
   if (atual !== GANCHO_STOP) { mkdirSync(dirname(sf), { recursive: true }); if (atual !== null) copyFileSync(sf, existsSync(sf + '.antes') ? sf + '.antes-' + carimbo : sf + '.antes'); writeFileSync(sf, GANCHO_STOP); msg.push(atual === null ? 'script do gancho Stop gravado' : 'script do gancho Stop atualizado (o anterior ficou guardado ao lado)'); }
   if (!tem(s.hooks.Stop, 'cerebro-gravou.mjs')) { s.hooks.Stop.push({ hooks: [{ type: 'command', command: 'node ' + sf.replace(/\\/g, '/'), timeout: 20, statusMessage: 'Conferindo se gravou no Cérebro' }] }); mudou = true; msg.push('gancho Stop adicionado'); } else msg.push('o gancho Stop já estava');
+  s.hooks.UserPromptSubmit = s.hooks.UserPromptSubmit || []; const cf = join(CL(), 'hooks', 'cerebro-consulta.mjs'), catual = existsSync(cf) ? readFileSync(cf, 'utf8').replace(/\r\n/g, '\n') : null;
+  if (catual !== GANCHO_CONSULTA) { mkdirSync(dirname(cf), { recursive: true }); if (catual !== null) copyFileSync(cf, existsSync(cf + '.antes') ? cf + '.antes-' + carimbo : cf + '.antes'); writeFileSync(cf, GANCHO_CONSULTA); msg.push(catual === null ? 'script do gancho de consulta gravado' : 'script do gancho de consulta atualizado (o anterior ficou guardado ao lado)'); }
+  if (!tem(s.hooks.UserPromptSubmit, 'cerebro-consulta.mjs')) { s.hooks.UserPromptSubmit.push({ hooks: [{ type: 'command', command: 'node ' + cf.replace(/\\/g, '/'), timeout: 15, statusMessage: 'Consultando o Cérebro' }] }); mudou = true; msg.push('gancho de consulta a cada pedido adicionado'); } else msg.push('o gancho de consulta já estava');
   if (mudou) { if (existsSync(f)) copyFileSync(f, existsSync(f + '.antes-do-cerebro') ? f + '.antes-do-cerebro-' + carimbo : f + '.antes-do-cerebro'); const t = f + '.tmp-' + process.pid; writeFileSync(t, JSON.stringify(s, null, 2)); renameSync(t, f); } // arquivo novo ao lado e troca de nome; a primeira cópia nunca é sobrescrita
   return msg.join('; ') + (mudou ? ' (o resto do settings.json foi mantido; cópia de segurança ao lado, settings.json.antes-do-cerebro).' : '.'); }
 // cadastra o conector no Claude Code (opcional: este programa já lê e grava pelo login do Google; o conector dá as ferramentas nas conversas novas)
