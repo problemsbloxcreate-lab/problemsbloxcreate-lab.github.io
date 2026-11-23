@@ -244,8 +244,8 @@ html[data-tema="claro"] :is(.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt){--sp-el:
 :root:root:root .ep-nov.sai .cx{animation:epCelNovSai .2s cubic-bezier(.4,0,1,1) both!important}:root:root:root .ep-nov.sai{animation:epNovSome .2s ease both!important}:root:root:root .ep-nov:not(.sai){animation:epCelNovF .2s ease both}
 @keyframes epCelNovSai{to{opacity:0;transform:translateX(24px)}}@keyframes epCelNovF{from{opacity:0}}
 /* X vermelho igual ao dos outros painéis (pedido da dona, 23/11/2026) */
-:root:root:root .ep-nov .fx{width:30px!important;height:30px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:50%!important;background:#ff453a!important;color:#fff!important;font-size:0!important;display:grid!important;place-items:center}
-:root:root:root .ep-nov .fx:hover{background:#ff5f55!important}html[data-tema="claro"]:root:root .ep-nov .fx{background:#ff3b30!important}
+:root:root:root .ep-nov .fx{width:30px!important;height:30px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:50%!important;background:rgba(255,69,58,.2)!important;color:#ff6961!important;font-size:0!important;line-height:0!important;display:grid!important;place-items:center}:root:root:root .ep-nov .fx svg{display:block;width:14px;height:14px;margin:0}
+:root:root:root .ep-nov .fx:hover{background:rgba(255,69,58,.32)!important}html[data-tema="claro"]:root:root .ep-nov .fx{background:rgba(255,59,48,.14)!important;color:#d70015!important}
 :root:root:root .ep-nov .cab{height:52px!important;min-height:52px!important;box-sizing:border-box!important}:root:root:root .ep-nov .cx{scrollbar-width:none}:root:root:root .ep-nov .cx::-webkit-scrollbar{display:none}
 :root:root:root .ep-nov .fx i{font-size:14px!important;font-weight:700!important;color:#fff!important;line-height:1!important}
 :root:root .ep-nov .cab{align-items:center!important;height:52px;margin:0 -24px 16px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--sp-ln)}
@@ -292,7 +292,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   function novidades(o) { if (document.querySelector('.ep-nov')) return; estilo();
     const V = window.EstudioVersao || {}, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const d = document.createElement('div'); d.className = 'ep-nov'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Novidades');
-    d.innerHTML = `<div class="cx"><div class="cab"><div><h2>Novidades</h2><small>Versão ${esc(V.rotulo || V.nome || '')}${V.em ? ' · ' + esc(V.em) : ''}</small></div><button type="button" class="fx" data-x title="Fechar (Esc)"><i>✕</i>Fechar</button></div>
+    d.innerHTML = `<div class="cx"><div class="cab"><div><h2>Novidades</h2><small>Versão ${esc(V.rotulo || V.nome || '')}${V.em ? ' · ' + esc(V.em) : ''}</small></div><button type="button" class="fx" data-x title="Fechar (Esc)" aria-label="Fechar"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       ${(V.novidades || []).map(([t, L]) => `<h3>${esc(t)}</h3><ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') || '<p>Nada novo anotado nesta versão.</p>'}
       <div class="pe"><p>Algo deu errado? Gere o relatório de suporte e mande só para quem vai resolver.</p><button type="button" data-r>Gerar relatório de suporte</button></div></div>`;
     const tecla = e => { if (e.key === 'Escape' && !document.querySelector('.ep-sup-pg')) { e.stopPropagation(); fecha(); } };
