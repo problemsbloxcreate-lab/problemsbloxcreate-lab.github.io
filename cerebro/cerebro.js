@@ -59,7 +59,7 @@ const confirma = (titulo, texto, t = 'Confirmar') => dialogo({ titulo, texto, bo
 const pedeTexto = (titulo, texto, ini = '') => dialogo({ titulo, texto, html: `<input id="dlg-v" value="${esc(ini)}" maxlength="120">`, botoes: [{ t: 'Salvar', pri: 1, v: d => $('#dlg-v', d).value.trim() || null }, { t: 'Cancelar' }], aoAbrir: d => { const i = $('#dlg-v', d); i.focus(); i.select(); i.onkeydown = e => { if (e.key === 'Enter') $('[data-i="0"]', d).click(); }; } });
 
 /* ---------- navegação ---------- */
-const ABAS = [['', 'Montanha'], ['arquivos', 'Arquivos'], ['evitar', 'A evitar'], ['referencias', 'Referências'], ['registro', 'Registro'], ['pedidos', 'Pedidos'], ['lixeira', 'Lixeira'], ['revisar', 'Revisar'], ['chaves', 'Acesso das IAs']];
+const ABAS = [['', 'Mapa'], ['arquivos', 'Arquivos'], ['evitar', 'A evitar'], ['referencias', 'Referências'], ['registro', 'Registro'], ['pedidos', 'Pedidos'], ['lixeira', 'Lixeira'], ['revisar', 'Revisar'], ['chaves', 'Acesso das IAs']];
 const SO_ADM = new Set(['lixeira', 'revisar']); // Acesso das IAs agora é de todos: cada pessoa autoriza o próprio computador (12/11/2026)
 const params = () => new URLSearchParams(location.search);
 function pintaAbas() { const p = params(), a = p.get('aba') || (window.Montanha?.eDaMontanha(p) ? '' : 'arquivos'); $('#abas').innerHTML = ABAS.filter(([k]) => !SO_ADM.has(k) || S.adm).map(([k, n]) => `<button type="button" data-aba="${k}" class="${k === a ? 'on' : ''}"${k === a ? ' aria-current="page"' : ''}>${n}${k === 'pedidos' && S.pedidosNovos ? `<em>${S.pedidosNovos}</em>` : ''}${k === 'revisar' && S.revisar ? `<em>${S.revisar}</em>` : ''}</button>`).join(''); }

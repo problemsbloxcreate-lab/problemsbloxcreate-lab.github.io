@@ -14,7 +14,7 @@ const IC = { subir: '<svg class="mt-ic" viewBox="0 0 24 24" aria-hidden="true"><
 
 // ---------- a estrutura da tela (criada uma vez) ----------
 const raiz = document.createElement('div'); raiz.id = 'montanha';
-raiz.innerHTML = `<canvas class="mt-tela" aria-hidden="true"></canvas><div class="mt-cena" tabindex="-1" aria-label="Montanha do Cérebro (rodinha: zoom; arrastar: mover; 0: ver tudo)"></div><div class="mt-carrega" hidden>Abrindo a montanha…</div>
+raiz.innerHTML = `<canvas class="mt-tela" aria-hidden="true"></canvas><div class="mt-cena" tabindex="-1" aria-label="Mapa do Cérebro (rodinha: zoom; arrastar: mover; 0: ver tudo)"></div><div class="mt-carrega" hidden>Abrindo o mapa…</div>
   <div class="mt-dica" hidden></div>
   <div class="mt-titulo"><nav class="mt-trilha" aria-label="Onde você está"></nav><div class="mt-esp"></div><button class="mt-bt" type="button" data-mt-tudo hidden>${IC.tudo}Ver tudo</button><button class="mt-bt pri" type="button" data-mt-add>${IC.mais}Adicionar ao Cérebro</button></div>
   <div class="mt-veu"></div><aside class="mt-painel" aria-label="Detalhes"><header><b></b><button class="mt-x" type="button" title="Fechar" aria-label="Fechar">${IC.x}</button></header><div class="mt-corpo"></div></aside>
@@ -57,36 +57,40 @@ const rnd = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
 const semente = str => { let h = 7; for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) % 2147483646; return h + 1; };
 function grafo(id) {
   const nos = [], arestas = [], idx = new Map(), add = (k, o) => { if (idx.has(k)) return idx.get(k); o.k = k; idx.set(k, o); nos.push(o); return o; };
-  const raio = a => 6 + 2.3 * Math.sqrt(debaixo(a.id));
+  const raio = a => 4.5 + 1.7 * Math.sqrt(debaixo(a.id));
   const vis = (a, niv, ehRaiz) => { const n = add('a' + a.id, { t: ehRaiz ? 'raiz' : 'assunto', a, nivel: niv, r: ehRaiz ? Math.max(14, raio(a)) : raio(a) });
     if (!ehRaiz && a.pai && idx.has('a' + a.pai)) arestas.push({ a: n, b: idx.get('a' + a.pai), L: 64 + n.r * 2 }); for (const f of filhos(a.id)) vis(f, niv + 1); };
-  if (!id) { const campo = add('campo', { t: 'campo', nivel: 0, r: 12 }); D.cartoes.forEach((c, i) => arestas.push({ a: add('c' + i, { t: 'cartao', c, nivel: 0, r: 5.5 }), b: campo, L: 46 })); filhos(null).forEach(a => vis(a, 1)); }
+  if (!id) { const campo = add('campo', { t: 'campo', nivel: 0, r: 9 }); D.cartoes.forEach((c, i) => arestas.push({ a: add('c' + i, { t: 'cartao', c, nivel: 0, r: 4 }), b: campo, L: 46 })); filhos(null).forEach(a => vis(a, 1)); }
   else vis(A.get(id), 0, true);
   for (const p of D.paginas) { const as = assuntosDa(p.id).map(a => idx.get('a' + a.id)).filter(Boolean); if (!as.length) continue;
-    const n = add('p' + p.id, { t: 'pagina', p, nivel: Math.max(...as.map(x => x.nivel)) + .55, r: 2.4 + Math.min(2.6, Math.log10(1 + (p.tam || 0) / 600)) });
+    const n = add('p' + p.id, { t: 'pagina', p, nivel: Math.max(...as.map(x => x.nivel)) + .55, r: 1.8 + Math.min(2, Math.log10(1 + (p.tam || 0) / 600)) });
     for (const x of as) arestas.push({ a: n, b: x, L: 26 + x.r }); }
   D.cartoes.forEach((c, i) => { const p = paginaDoCaminho(c.aponta), a = idx.get('c' + i), b = p && idx.get('p' + p.id); if (a && b) arestas.push({ a, b, fraca: 1 }); });
   for (const l of D.ligas) { const a = idx.get('p' + l.de), b = idx.get('p' + l.para); if (a && b) arestas.push({ a, b, L: 70, liga: 1 }); }
   return { nos, arestas, idx };
 }
 function arruma(G, id) {
+  /* MAPA COMPACTO (pedido da dona, 23/11/2026: "algo mais junto, tipo o Obsidian, só que menor, e não precisa da montanha"):
+     os pontos se ajeitam sozinhos como no grafo do Obsidian. Cada galho de assuntos começa num ângulo (os galhos não se misturam),
+     as páginas ficam coladas no assunto delas e tudo é puxado de leve para o centro, para ficar junto. */
   const r = rnd(semente(id || 'geral')), N = G.nos.length, maxN = Math.max(1, ...G.nos.map(n => n.nivel));
-  const Hm = 420 + N * 6.5, base = 0, cume = base + Hm, cx = 0, baseHalf = Hm * .62;
-  const hw = a => Math.max(10, baseHalf * Math.pow(Math.max(0, 1 - a), 1.08));
-  // cada galho ganha a sua faixa na encosta: as folhas da árvore se espalham da esquerda para a direita
   const ehAs = o => o.t === 'assunto' || o.t === 'raiz', folhas = [], dfs = o => { const fs = G.nos.filter(x => ehAs(x) && x !== o && x.a.pai === o.a.id); if (!fs.length) folhas.push(o); else fs.forEach(dfs); };
   G.nos.filter(o => ehAs(o) && (o.t === 'raiz' || !G.idx.has('a' + o.a.pai))).forEach(dfs); folhas.forEach((o, i) => o.u = (i + .5) / folhas.length);
   const media = o => { if (o.u != null) return o.u; const fs = G.nos.filter(x => ehAs(x) && x !== o && x.a.pai === o.a.id); return o.u = fs.length ? fs.reduce((s, f) => s + media(f), 0) / fs.length : .5; };
   for (const o of G.nos) if (ehAs(o)) media(o);
-  for (const o of G.nos) { if (o.t === 'pagina') { const as = G.arestas.filter(e => e.a === o && !e.liga && !e.fraca).map(e => e.b); o.u = as.length ? as.reduce((s, x) => s + (x.u ?? .5), 0) / as.length : .5; } if (o.u == null) o.u = .5;
-    o.alvo = base + 50 + Math.min(1, o.nivel / maxN) * Hm * .8; o.xalvo = cx + (o.u - .5) * 2 * hw((o.alvo - base) / Hm) * .86; o.y = o.alvo + (r() - .5) * 60; o.x = o.xalvo + (r() - .5) * 40; o.vx = o.vy = 0; }
-  const fixa = o => { const m = hw((o.y - base) / Hm) - o.r - 6; o.y = Math.min(cume - 30, Math.max(base + o.r + 4, o.y)); o.x = Math.min(cx + m, Math.max(cx - m, o.x)); };
-  for (let it = 0, T = 280; it < T; it++) { const esfria = 1 - it / T;
-    for (let i = 0; i < N; i++) { const p = G.nos[i]; for (let j = i + 1; j < N; j++) { const s = G.nos[j]; let dx = s.x - p.x, dy = s.y - p.y; const d2 = dx * dx + dy * dy + .01; if (d2 > 25600) continue;
-      const min = p.r + s.r + (p.t === 'pagina' && s.t === 'pagina' ? 7 : 16), d = Math.sqrt(d2), f = (d < min ? (min - d) * .5 : 0) + 260 / d2; dx /= d; dy /= d; p.vx -= dx * f; p.vy -= dy * f; s.vx += dx * f; s.vy += dy * f; } }
-    for (const e of G.arestas) { if (e.fraca) continue; const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, f = (d - e.L) * .035; e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f * .35; e.b.vy -= dy / d * f * .35; }
-    for (const o of G.nos) { o.vy += (o.alvo - o.y) * (o.t === 'pagina' ? .012 : .03); o.vx += (o.xalvo - o.x) * (o.t === 'pagina' ? .012 : .055); o.vx *= .8; o.vy *= .8; o.x += o.vx * (.4 + esfria); o.y += o.vy * (.4 + esfria); fixa(o); } }
-  return { Hm, base, cume, cx, baseHalf, hw, maxN };
+  for (const o of G.nos) { if (o.t === 'pagina') { const as = G.arestas.filter(e => e.a === o && !e.liga && !e.fraca).map(e => e.b); o.u = as.length ? as.reduce((s, x) => s + (x.u ?? .5), 0) / as.length : .5; }
+    if (o.t === 'campo' || o.t === 'raiz') { o.x = 0; o.y = 0; } else if (o.t === 'cartao') { const a = r() * 6.283; o.x = Math.cos(a) * 30; o.y = Math.sin(a) * 30; }
+    else { const a = (o.u ?? .5) * 6.283, d = 50 + Math.min(4, o.nivel) * 55; o.x = Math.cos(a) * d + (r() - .5) * 20; o.y = Math.sin(a) * d + (r() - .5) * 20; }
+    o.vx = o.vy = 0; }
+  for (const e of G.arestas) if (e.L) e.L *= e.liga ? .8 : .62;
+  for (let it = 0, T = 320; it < T; it++) { const esfria = 1 - it / T;
+    for (let i = 0; i < N; i++) { const p = G.nos[i]; for (let j = i + 1; j < N; j++) { const q = G.nos[j]; let dx = q.x - p.x, dy = q.y - p.y; const d2 = dx * dx + dy * dy + .01; if (d2 > 32400) continue;
+      const min = p.r + q.r + (p.t === 'pagina' && q.t === 'pagina' ? 3 : 8), d = Math.sqrt(d2), f = (d < min ? (min - d) * .5 : 0) + 140 / d2; dx /= d; dy /= d; p.vx -= dx * f; p.vy -= dy * f; q.vx += dx * f; q.vy += dy * f; } }
+    for (const e of G.arestas) { if (e.fraca) continue; const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, f = (d - (e.L || 40)) * .05; e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f * .5; e.b.vy -= dy / d * f * .5; }
+    for (const o of G.nos) { if (o.t === 'campo' || o.t === 'raiz') { o.vx = o.vy = 0; continue; } o.vx -= o.x * .006; o.vy -= o.y * .006; o.vx *= .78; o.vy *= .78; o.x += o.vx * (.35 + esfria); o.y += o.vy * (.35 + esfria); } }
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const o of G.nos) { x0 = Math.min(x0, o.x - o.r); x1 = Math.max(x1, o.x + o.r); y0 = Math.min(y0, o.y - o.r); y1 = Math.max(y1, o.y + o.r); }
+  if (!N) { x0 = y0 = -50; x1 = y1 = 50; }
+  const meia = (x1 - x0) / 2; return { Hm: y1 - y0, base: y0, cume: y1, cx: (x0 + x1) / 2, baseHalf: meia, hw: () => meia, maxN };
 }
 
 // ---------- desenho: a montanha inteira cabe na tela; a rodinha é o zoom e arrastar move a vista ----------
@@ -95,7 +99,7 @@ let atual = null, G = null, M = null, foco = null, BUSCA = new Set(), C = {}, CA
 const V = { s: 1, x: 0, y: 0, fit: 1 }, ALVO = { s: 1, x: 0, y: 0 }; let anima = 0;
 const cor = n => getComputedStyle(H).getPropertyValue(n).trim();
 const pegaCores = () => { C = { acento: cor('--acento'), texto: cor('--texto'), texto2: cor('--texto-2'), texto3: cor('--texto-3'), r1: cor('--rocha-1'), r2: cor('--rocha-2'), r3: cor('--rocha-3'), neve: cor('--neve'), neveS: cor('--neve-sombra'), s1: cor('--serra-1'), s2: cor('--serra-2'), estrela: cor('--estrela'), escuro: H.dataset.tema !== 'claro', fonte: cor('--fonte') || 'system-ui' }; };
-const caixa = () => ({ x0: M.cx - M.baseHalf - 140, x1: M.cx + M.baseHalf + 140, y0: M.base - 110, y1: M.cume + 70 });
+const caixa = () => ({ x0: M.cx - M.baseHalf - 30, x1: M.cx + M.baseHalf + 30, y0: M.base - 30, y1: M.cume + 30 });
 let semTamanho = false;
 function enquadra(suave) { const w = cena.clientWidth, h = cena.clientHeight; if (w < 120 || h < 120) { semTamanho = true; return; } semTamanho = false; const b = caixa(), topo = 64, s = Math.min((w - 90) / (b.x1 - b.x0), (h - topo - 24) / (b.y1 - b.y0));
   V.fit = s; ALVO.s = s; ALVO.x = w / 2 - (b.x0 + b.x1) / 2 * s; ALVO.y = topo + (h - topo) / 2 + (b.y0 + b.y1) / 2 * s; if (!suave || calmo()) { V.s = ALVO.s; V.x = ALVO.x; V.y = ALVO.y; } anda(); }
@@ -114,16 +118,7 @@ function zoomEm(px, py, fator) { if (fator < 1 && ALVO.s * fator <= V.fit * 1.02
 function voa(o) { if (!o) return; const w = cena.clientWidth, h = cena.clientHeight; ALVO.s = Math.max(ALVO.s, V.fit * 3.5); ALVO.x = w / 2 - o.x * ALVO.s; ALVO.y = (h + 64) / 2 + o.y * ALVO.s; prende(); anda(); }
 
 function desenha(id, animar) {
-  atual = id || null; G = grafo(atual); M = arruma(G, atual); const r = rnd(semente('forma' + (atual || ''))), larg = M.baseHalf + 1100;
-  const esq = [], dir = []; for (let v = 0; v <= M.Hm - 50; v += 46) { const a = v / M.Hm, h = M.hw(a) + 20 + r() * 26 + (a < .08 ? (1 - a / .08) * 160 : 0); esq.push([M.cx - h - r() * 14, M.base + v]); dir.push([M.cx + h + r() * 14, M.base + v]); }
-  const pico = [M.cx + (r() - .5) * 18, M.cume + 26], pts = [[M.cx - larg, M.base - 160], [M.cx - M.baseHalf - 420, M.base - 40], ...esq, pico, ...dir.reverse(), [M.cx + M.baseHalf + 430, M.base - 40], [M.cx + larg, M.base - 160]];
-  const p = new Path2D(); p.moveTo(pts[0][0], -pts[0][1]); for (let i = 1; i < pts.length - 1; i++) { const [x, y] = pts[i], [nx, ny] = pts[i + 1]; if (pts[i] === pico) p.lineTo(x, -y); else p.quadraticCurveTo(x, -y, (x + nx) / 2, -(y + ny) / 2); } p.lineTo(pts.at(-1)[0], -pts.at(-1)[1]); p.closePath(); CAMINHO = p;
-  const lin = M.cume - Math.min(320, M.Hm * .16), nv = new Path2D(); nv.moveTo(M.cx - larg, -(M.cume + 300)); nv.lineTo(M.cx + larg, -(M.cume + 300)); for (let i = 0, n = 34; i <= n; i++) nv.lineTo(M.cx + larg - 2 * larg * i / n, -(lin - (i % 2 ? 14 + r() * 30 : r() * 12))); nv.closePath(); NEVE = nv;
-  ESTRELAS = Array.from({ length: 260 }, () => [r(), r(), .4 + r() * 1.1, .25 + r() * .75]);
-  // serras ao fundo, atrás da montanha, um pouco mais largas que ela
-  SERRAS = [[.55, 11, 's1', 1.7], [.36, 17, 's2', 1.25]].map(([alt, n, c, per]) => { const P = M.baseHalf * 2 * per, ys = Array.from({ length: n }, () => M.base - 60 + M.Hm * alt * (.25 + r() * .7)); ys.push(ys[0]); return { c, P, pts: ys.map((y, i) => [i / n, y]) }; });
-  const nomes = ['Acampamento', 'Trilhas', 'Encosta', 'Picos', 'Mais fundo']; MARCAS = [];
-  for (let n = 0; n <= Math.min(4, Math.floor(M.maxN)); n++) { const ns = G.nos.filter(o => Math.floor(o.nivel) === n && o.t !== 'pagina'); if (ns.length) MARCAS.push({ nome: nomes[n], y: Math.min(...ns.map(o => o.y)) }); }
+  atual = id || null; G = grafo(atual); M = arruma(G, atual); CAMINHO = null; NEVE = null; ESTRELAS = []; SERRAS = []; MARCAS = []; // sem montanha (23/11/2026): só os pontos
   trilha(); if (animar && !calmo()) { cv.classList.add('sai'); setTimeout(() => { enquadra(false); requestAnimationFrame(() => cv.classList.remove('sai')); }, 200); } else enquadra(false);
 }
 const vizinhos = o => { const s = new Set([o]); for (const e of G.arestas) { if (e.a === o) s.add(e.b); if (e.b === o) s.add(e.a); } return s; };
@@ -140,10 +135,10 @@ function quadro() {
   const vx0 = (-V.x) / s - 50, vx1 = (w - V.x) / s + 50, vBaixo = (V.y - h) / s - 50, chao = M.base - 160;
   for (const sr of SERRAS) { ctx.fillStyle = C[sr.c]; ctx.beginPath(); const k0 = Math.floor((vx0 - M.cx) / sr.P) - 1, k1 = Math.ceil((vx1 - M.cx) / sr.P) + 1; ctx.moveTo(M.cx + k0 * sr.P, -Math.min(chao, vBaixo));
     for (let k = k0; k < k1; k++) for (const [fx, y] of sr.pts) ctx.lineTo(M.cx + (k + fx) * sr.P, -y); ctx.lineTo(M.cx + k1 * sr.P, -Math.min(chao, vBaixo)); ctx.fill(); }
-  ctx.fillStyle = C.r3; ctx.fillRect(vx0, -chao, vx1 - vx0, chao - vBaixo + 10);
+  if (CAMINHO) { ctx.fillStyle = C.r3; ctx.fillRect(vx0, -chao, vx1 - vx0, chao - vBaixo + 10);
   const g = ctx.createLinearGradient(0, -M.cume, 0, -M.base + 40); g.addColorStop(0, C.r1); g.addColorStop(.55, C.r2); g.addColorStop(1, C.r3); ctx.fillStyle = g; ctx.fill(CAMINHO);
   const lado = ctx.createLinearGradient(M.cx - M.baseHalf, 0, M.cx + M.baseHalf, 0); lado.addColorStop(0, 'rgba(255,255,255,.06)'); lado.addColorStop(.5, 'rgba(0,0,0,0)'); lado.addColorStop(1, 'rgba(0,0,0,.25)'); ctx.fillStyle = lado; ctx.fill(CAMINHO);
-  ctx.save(); ctx.clip(CAMINHO); const gn = ctx.createLinearGradient(M.cx - 300, -M.cume, M.cx + 300, -M.cume + 400); gn.addColorStop(0, C.neve); gn.addColorStop(1, C.neveS); ctx.globalAlpha = C.escuro ? .9 : 1; ctx.fillStyle = gn; ctx.fill(NEVE); ctx.restore(); ctx.globalAlpha = 1;
+  ctx.save(); ctx.clip(CAMINHO); const gn = ctx.createLinearGradient(M.cx - 300, -M.cume, M.cx + 300, -M.cume + 400); gn.addColorStop(0, C.neve); gn.addColorStop(1, C.neveS); ctx.globalAlpha = C.escuro ? .9 : 1; ctx.fillStyle = gn; ctx.fill(NEVE); ctx.restore(); ctx.globalAlpha = 1; }
   // só o que está na tela (com folga)
   const wx0 = (-40 - V.x) / s, wx1 = (w + 40 - V.x) / s, wyTopo = (V.y + 40) / s, wyBase = (V.y - h - 40) / s, ve2 = o => o.x > wx0 && o.x < wx1 && o.y < wyTopo && o.y > wyBase;
   const viz = foco ? vizinhos(foco) : null, busca = BUSCA.size > 0, vivo = o => (!viz || viz.has(o)) && (!busca || BUSCA.has(o.k));
@@ -164,7 +159,7 @@ function quadro() {
   if (foco) escreve(nomeDe(foco), foco, 13);
   const ordem = G.nos.filter(o => o !== foco && ve2(o) && vivo(o)).sort((a, b) => b.r - a.r);
   for (const o of ordem) { const rt = raioTela(o);
-    if (o.t === 'campo') escreve('Acampamento', o, 13);
+    if (o.t === 'campo') escreve('Memórias rápidas', o, 13);
     else if (o.t === 'raiz' || ((o.t === 'assunto') && (rt >= 7 || perto > 2.2))) escreve(o.a.nome, o, o.t === 'raiz' ? 15 : rt >= 10 ? 13 : 12);
     else if (o.t === 'pagina' && perto > 4.5) escreve(o.p.nome, o, 11, 500, C.texto2); }
   ctx.textAlign = 'left'; ctx.font = `600 11px ${F}`; ctx.fillStyle = C.texto3; ctx.globalAlpha = 1;
@@ -177,7 +172,7 @@ function quadro() {
 const noPonto = (px, py) => { if (!G) return null; const x = (px - V.x) / V.s, y = (V.y - py) / V.s; let m = null, md = 1e9;
   for (const o of G.nos) { const d = Math.hypot(o.x - x, o.y - y) * V.s; if (d < raioTela(o) + 7 && d < md) { md = d; m = o; } } return m; };
 const local = ev => { const b = cena.getBoundingClientRect(); return [ev.clientX - b.left, ev.clientY - b.top]; };
-const nomeDe = o => o.t === 'campo' ? 'Acampamento' : o.t === 'cartao' ? 'Memória rápida' : o.t === 'pagina' ? o.p.nome : o.a.nome;
+const nomeDe = o => o.t === 'campo' ? 'Memórias rápidas' : o.t === 'cartao' ? 'Memória rápida' : o.t === 'pagina' ? o.p.nome : o.a.nome;
 const subDe = o => o.t === 'campo' ? 'As memórias rápidas: o que toda IA lê primeiro.' : o.t === 'cartao' ? o.c.texto : o.t === 'pagina' ? (o.p.resumo || o.p.caminho) : o.a.resumo;
 function mostraDica(o, ev) { if (!o) { dica.hidden = true; return; } dica.innerHTML = `<b>${esc(nomeDe(o))}</b><span>${esc(subDe(o))}</span>`; dica.hidden = false;
   const b = cena.getBoundingClientRect(), x = Math.min(ev.clientX + 14, innerWidth - dica.offsetWidth - 12), y = ev.clientY + 16 + dica.offsetHeight > innerHeight ? ev.clientY - dica.offsetHeight - 12 : ev.clientY + 16; dica.style.left = x + 'px'; dica.style.top = Math.max(b.top + 4, y) + 'px'; }
@@ -200,14 +195,14 @@ addEventListener('keydown', ev => { if (!document.body.classList.contains('mt-on
   const w = cena.clientWidth, h = cena.clientHeight; if (ev.key === '+' || ev.key === '=') zoomEm(w / 2, h / 2, 1.4); else if (ev.key === '-') zoomEm(w / 2, h / 2, 1 / 1.4); else if (ev.key === '0') enquadra(true); else return; ev.preventDefault(); });
 function clica(o) { if (!o) return; dica.hidden = true;
   if (o.t === 'pagina') abrePagina(o.p); else if (o.t === 'cartao') { const p = paginaDoCaminho(o.c.aponta); abrePainel('Memória rápida', `<p class="mt-res" style="color:var(--texto)">${esc(o.c.texto)}</p>${p ? `<div class="mt-rot">Mais detalhe em</div><button class="mt-item" type="button" data-p="${p.id}"><b>${esc(p.nome)}</b><small>${esc(p.caminho)}</small></button>` : ''}`); }
-  else if (o.t === 'campo') abrePainel('Acampamento', '<p class="mt-res">As memórias rápidas: o que toda IA lê logo no começo da conversa. Cada uma aponta para a página completa.</p>' + D.cartoes.map(c => { const p = paginaDoCaminho(c.aponta); return `<button class="mt-item" type="button"${p ? ` data-p="${p.id}"` : ''}><b>${esc(c.texto)}</b>${p ? `<small>${esc(p.caminho)}</small>` : ''}</button>`; }).join(''));
+  else if (o.t === 'campo') abrePainel('Memórias rápidas', '<p class="mt-res">As memórias rápidas: o que toda IA lê logo no começo da conversa. Cada uma aponta para a página completa.</p>' + D.cartoes.map(c => { const p = paginaDoCaminho(c.aponta); return `<button class="mt-item" type="button"${p ? ` data-p="${p.id}"` : ''}><b>${esc(c.texto)}</b>${p ? `<small>${esc(p.caminho)}</small>` : ''}</button>`; }).join(''));
   else abreAssunto(o.a); }
 
 // ---------- painel da direita ----------
 function abrePainel(titulo, html) { painel.querySelector('header b').textContent = titulo; painel.querySelector('.mt-corpo').innerHTML = html; painel.classList.add('on'); veu.classList.add('on'); painel.querySelector('.mt-x').focus(); }
 function abreAssunto(a) { const cad = acima(a.id), fs = filhos(a.id), ps = pagsDe(a.id), n = debaixo(a.id);
   abrePainel(a.nome, `${cad.length ? `<div class="mt-cam">${cad.map(x => esc(x.nome)).join(' › ')}</div>` : ''}<h2>${esc(a.nome)}</h2><p class="mt-res">${esc(a.resumo)}</p>
-    ${a.id !== atual && (fs.length || ps.length) ? `<button class="mt-bt pri" type="button" data-subir="${esc(a.id)}">${IC.subir}Subir esta montanha</button>` : ''}
+    ${a.id !== atual && (fs.length || ps.length) ? `<button class="mt-bt pri" type="button" data-subir="${esc(a.id)}">${IC.subir}Ver só este assunto</button>` : ''}
     ${fs.length ? `<div class="mt-rot">Dentro dele</div><div class="mt-chips">${fs.map(f => `<button class="mt-chip" type="button" data-as="${esc(f.id)}">${esc(f.nome)}</button>`).join('')}</div>` : ''}
     <div class="mt-rot">${ps.length ? `Páginas (${ps.length})` : n ? `${n} páginas nos assuntos de dentro` : 'Ainda sem páginas'}</div>${ps.map(p => `<button class="mt-item" type="button" data-p="${p.id}"><b>${esc(p.nome)}</b><small>${esc(p.resumo || p.caminho)}</small></button>`).join('')}`); }
 function abrePagina(p) { if (!p) return; const as = assuntosDa(p.id);
@@ -222,7 +217,7 @@ painel.querySelector('.mt-corpo').onclick = e => { const s = e.target.closest('[
 
 // ---------- trilha e montanha de cada assunto (fica no endereço: ?m=<assunto>) ----------
 function trilha() { const cad = atual ? [...acima(atual), A.get(atual)] : [];
-  raiz.querySelector('.mt-trilha').innerHTML = `<button type="button" data-ir="">Montanha</button>` + cad.map(a => `<span class="mt-sep">›</span><button type="button" data-ir="${esc(a.id)}">${esc(a.nome)}</button>`).join(''); }
+  raiz.querySelector('.mt-trilha').innerHTML = `<button type="button" data-ir="">Mapa</button>` + cad.map(a => `<span class="mt-sep">›</span><button type="button" data-ir="${esc(a.id)}">${esc(a.nome)}</button>`).join(''); }
 raiz.querySelector('.mt-trilha').onclick = e => { const b = e.target.closest('[data-ir]'); if (b) sobe(b.dataset.ir || null); };
 function sobe(id) { if ((id || null) === atual) return; BUSCA = new Set(); history.pushState(null, '', id ? '?m=' + encodeURIComponent(id) : './'); desenha(id, true); }
 const daUrl = () => { const m = new URLSearchParams(location.search).get('m'); return m && A.has(m) ? m : null; };

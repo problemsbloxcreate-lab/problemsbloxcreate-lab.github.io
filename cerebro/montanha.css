@@ -6,7 +6,7 @@ html.cel[data-tema="claro"]{--rocha-1:#8293ab;--rocha-2:#64748d;--rocha-3:#4c5a7
   --ceu-1:#9fc9ef;--ceu-2:#c9e2f7;--ceu-3:#eef5fb}
 
 /* só na Montanha: some a tela antiga e a página não rola (quem rola é a montanha) */
-body.mt-on{overflow:hidden;background:linear-gradient(to bottom,var(--ceu-1),var(--ceu-2) 45%,var(--ceu-3))}
+body.mt-on{overflow:hidden;background:var(--fundo)} /* mapa compacto (23/11/2026): fundo liso, sem céu de montanha */
 body.mt-on #tela,body.mt-on #barra{display:none}
 #montanha{display:none}
 body.mt-on #montanha{display:block}
