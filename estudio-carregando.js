@@ -246,6 +246,7 @@ html[data-tema="claro"] :is(.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt){--sp-el:
 /* X vermelho igual ao dos outros painéis (pedido da dona, 23/11/2026) */
 :root:root:root .ep-nov .fx{width:30px!important;height:30px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:50%!important;background:#ff453a!important;color:#fff!important;font-size:0!important;display:grid!important;place-items:center}
 :root:root:root .ep-nov .fx:hover{background:#ff5f55!important}html[data-tema="claro"]:root:root .ep-nov .fx{background:#ff3b30!important}
+:root:root:root .ep-nov .cab{height:52px!important;min-height:52px!important;box-sizing:border-box!important}:root:root:root .ep-nov .cx{scrollbar-width:none}:root:root:root .ep-nov .cx::-webkit-scrollbar{display:none}
 :root:root:root .ep-nov .fx i{font-size:14px!important;font-weight:700!important;color:#fff!important;line-height:1!important}
 :root:root .ep-nov .cab{align-items:center!important;height:52px;margin:0 -24px 16px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--sp-ln)}
 :root:root .ep-nov h2{font:600 17px/1.2 var(--sp-f)!important;margin:0!important;color:var(--sp-tx)}
