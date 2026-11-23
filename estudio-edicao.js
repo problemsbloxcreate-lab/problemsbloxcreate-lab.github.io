@@ -26,7 +26,7 @@
   /* ================= PROTOCOLO DA DECUPAGEM (decisão do dono) =================
      corte só com fala, folga pequena nas pontas, pausa curta e fixa entre falas, nada de buraco. */
   const protocolo = {
-    antes: 0.03, depois: 0.08, mesmo: 0.10, troca: 0.15, reticencias: 0.40, pausa: 0.60, buraco: 0.30, silencioPonta: 0.25, porLetra: 0.035,
+    antes: 0.04, depois: 0.07, pausaMin: 0.15, mesmo: 0.10, troca: 0.15, reticencias: 0.40, pausa: 0.60, buraco: 0.30, silencioPonta: 0.25, porLetra: 0.035,
     /* pausa entre a fala a e a fala b ({quem, texto, nota}): travessão no fim = emenda; "(pausa)" = 0,6; reticências = 0,4; mesma pessoa 0,10; troca 0,15 */
     pausaEntre(a, b) {
       const ta = String(a.texto || '').trim(), tb = String(b.texto || '').trim(), nt = String(a.nota || '') + ' ' + ta;
@@ -161,18 +161,20 @@
       const thr = LT[i].toks.length <= 3 ? best - 0.1 : Math.max(0.45, best * 0.7); const good = cands.filter(c => c.score >= thr && c.start < limite).sort((a, b) => b.start - a.start); const pick = good[0] || cands.sort((a, b) => b.score - a.score)[0];
       res[i] = pick; ptr[w] = pick.end + 1; }
     const inBlob = x => blobs.find(q => x >= q[0] && x <= q[1]);
-    const snapA = a => { const q = inBlob(a); if (q) return Math.max(0, a - q[0] <= 0.25 ? q[0] : a - 0.04); const nx = blobs.find(q => q[0] > a); return nx && nx[0] - a <= 0.6 ? nx[0] : Math.max(0, a - 0.04); };
-    const snapB = b => { const q = inBlob(b); if (q) return q[1] - b <= 0.25 ? q[1] : b + 0.06; let pv = null; for (const q of blobs) if (q[1] < b) pv = q; return pv && b - pv[1] <= 0.6 ? pv[1] : b + 0.06; };
-    const cortes = [], ouvido = [], nota = [], dono = [], pals = falas.map(() => []);
+    /* livre: entre x0 e x1 não tem o meio de nenhuma palavra ouvida que é de OUTRA frase (fora de r.start..r.end) — o corte não pode engolir fala alheia */
+    const livre = (x0, x1, r) => !W.some((w, k) => (!r || k < r.start || k > r.end) && (w.a + w.b) / 2 > Math.min(x0, x1) && (w.a + w.b) / 2 < Math.max(x0, x1));
+    const snapA = (a, r) => { const q = inBlob(a); if (q) { const v = Math.max(0, a - q[0] <= 0.25 ? q[0] : a - 0.04); return livre(v, a, r) ? v : a; } const nx = blobs.find(q => q[0] > a); return nx && nx[0] - a <= 0.6 ? nx[0] : Math.max(0, a - 0.04); };
+    const snapB = (b, r) => { const q = inBlob(b); if (q) { const v = q[1] - b <= 0.25 ? q[1] : b + 0.06; return livre(b, v, r) ? v : b; } let pv = null; for (const q of blobs) if (q[1] < b) pv = q; return pv && b - pv[1] <= 0.6 ? pv[1] : b + 0.06; };
+    const cortes = [], ouvido = [], nota = [], dono = [], idx = [], pals = falas.map(() => []);
     falas.forEach((F, i) => { const r = res[i], lt = LT[i], ps = partesDe(F);
-      if (!r) { ps.forEach(() => { cortes.push(null); ouvido.push(''); nota.push(0); dono.push(i); }); return; }
+      if (!r) { ps.forEach(() => { cortes.push(null); ouvido.push(''); nota.push(0); dono.push(i); idx.push(null); }); return; }
       const la = W[r.start].a, lb = W[r.end].b;
       const segIdx = ps.map((sg, j) => { const ix = []; lt.segOf.forEach((s, t) => { if (s === j && r.map[t] >= 0) ix.push(r.map[t]); }); return ix; });
       const len = ps.map(sg => sg.length + 3), tot = len.reduce((a, b) => a + b, 0); let acc = 0;
       ps.forEach((sg, j) => { const ix = segIdx[j]; let a, b;
         if (ix.length) { a = W[Math.min(...ix)].a; b = W[Math.max(...ix)].b; } else { a = la + (lb - la) * acc / tot; b = la + (lb - la) * (acc + len[j]) / tot; } acc += len[j];
-        if (j === 0) { const q = inBlob(a + 0.02); if (q) a = Math.min(a, q[0]); } if (j === ps.length - 1) { const q = inBlob(b - 0.02); if (q) b = Math.max(b, q[1]); }
-        cortes.push([a, b]); dono.push(i); ouvido.push(ix.length ? W.slice(Math.min(...ix), Math.max(...ix) + 1).map(w => w.t.trim()).filter(Boolean).join(' ') : ''); nota.push(r.score); });
+        if (j === 0) { const q = inBlob(a + 0.02); if (q && livre(q[0], a, r)) a = Math.min(a, q[0]); } if (j === ps.length - 1) { const q = inBlob(b - 0.02); if (q && livre(b, q[1], r)) b = Math.max(b, q[1]); }
+        cortes.push([a, b]); dono.push(i); idx.push(ix.length ? [Math.min(...ix), Math.max(...ix)] : null); ouvido.push(ix.length ? W.slice(Math.min(...ix), Math.max(...ix) + 1).map(w => w.t.trim()).filter(Boolean).join(' ') : ''); nota.push(r.score); });
       /* tempo de cada palavra da fala (para a legenda): palavra do roteiro → palavra ouvida */
       lt.toks.forEach((t, k) => { const wi = r.map[k]; if (wi >= 0) pals[i].push([t, W[wi].a, W[wi].b]); });
     });
@@ -188,18 +190,64 @@
       const corteA = pts[mi], corteB = pts[mi + 1]; // o maior silêncio vai de corteA a corteB
       if (fa.fim && corteA > A) cortes[ka][1] = corteA;
       if (fb.ini && corteB < B) cortes[kb][0] = corteB; }
-    for (let k = 0; k < cortes.length; k++) { const c = cortes[k]; if (!c) continue; c[0] = snapA(c[0]); c[1] = snapB(c[1]);
+    for (let k = 0; k < cortes.length; k++) { const c = cortes[k]; if (!c) continue; c[0] = snapA(c[0], res[dono[k]]); c[1] = snapB(c[1], res[dono[k]]);
       const nx = cortes[k + 1]; if (nx && dono[k + 1] === dono[k] && c[1] > nx[0]) { const m = (c[1] + nx[0]) / 2; c[1] = m; nx[0] = m; } if (c[1] < c[0] + 0.15) c[1] = c[0] + 0.15; }
-    return { cortes, dono, ouvido, nota, palavras: pals, notaFala: res.map(r => r ? +r.score.toFixed(2) : 0), modo: 'whisper' };
+    /* ZONAS de cada ponta (para o apara achar a pausa certa): começo entre a palavra ouvida de antes e a 1ª palavra do corte; fim entre a
+       última palavra do corte e a de depois. modo 'perto' = a pausa mais perto da palavra (a voz de fora, como respiração ou outra frase,
+       fica de fora); modo 'maior' = a MAIOR pausa da zona, quando o reconhecedor não casou o fim desta fala ou o começo da próxima
+       (o resto da fala está nas palavras que sobraram). */
+    const md = k => (W[k].a + W[k].b) / 2, viz = cortes.map(() => ({ ini: null, fim: null }));
+    for (let k = 0; k < cortes.length; k++) { const x = idx[k]; if (!cortes[k] || !x) continue;
+      if (!viz[k].ini) viz[k].ini = [x[0] > 0 ? md(x[0] - 1) : 0, md(x[0]), 'perto'];
+      if (!viz[k].fim) viz[k].fim = [md(x[1]), x[1] + 1 < W.length ? md(x[1] + 1) : Infinity, 'perto'];
+      const y = idx[k + 1]; if (!cortes[k + 1] || !y || y[0] <= x[1]) continue;
+      const outra = dono[k + 1] !== dono[k], fF = outra && falta(dono[k]).fim > 0, fI = outra && falta(dono[k + 1]).ini > 0, R = [md(x[1]), md(y[0]), 'maior'];
+      if (fF && fI) { viz[k].fim = R; viz[k + 1].ini = R; continue; }
+      if (fF) viz[k].fim = R; if (fI) viz[k + 1].ini = R; if (!fI) viz[k + 1].ini = [md(y[0] - 1), md(y[0]), 'perto']; }
+    return { cortes, dono, ouvido, nota, palavras: pals, viz, notaFala: res.map(r => r ? +r.score.toFixed(2) : 0), modo: 'whisper' };
   }
-  /* apara: cada corte fica só com a fala, com as folgas do protocolo (0,03 antes, 0,08 depois); trecho em silêncio fica como está */
-  function apara(cortes, buf, prot) {
-    const P = prot || protocolo; if (!cortes || !buf) return cortes; const d = buf.getChannelData(0), sr = buf.sampleRate, w = Math.round(sr * 0.01);
-    return cortes.map(q => { if (!q) return q; const [a, b] = q, i0 = Math.max(0, Math.floor(a * sr)), i1 = Math.min(d.length, Math.floor(b * sr)); if (i1 - i0 < w * 4) return q; const r = []; let pico = 0;
-      for (let i = i0; i < i1; i += w) { let s2 = 0; const e = Math.min(i1, i + w); for (let j = i; j < e; j++) s2 += d[j] * d[j]; const v = Math.sqrt(s2 / Math.max(1, e - i)); r.push(v); if (v > pico) pico = v; }
-      if (pico < 0.004) return q; const lim = Math.max(0.004, pico * 0.07); let f0 = r.findIndex(v => v > lim), f1 = r.length - 1; while (f1 > 0 && r[f1] <= lim) f1--; if (f0 < 0) return q;
-      let na = Math.max(0, a + f0 * 0.01 - P.antes), nb = Math.min(buf.duration, a + (f1 + 1) * 0.01 + P.depois); if (nb - na < 0.3) { const m = (na + nb) / 2; na = Math.max(0, m - 0.15); nb = Math.min(buf.duration, m + 0.15); }
-      return [+na.toFixed(3), +nb.toFixed(3)]; });
+  /* apara (regra medida em 20/11, Cérebro "corte de fala pela energia"): janelas de 10 ms na mistura dos canais do ARQUIVO ORIGINAL;
+     começo = primeira janela acima de −50 dBFS depois da pausa; fim = última janela acima de −45 dBFS antes da pausa (o "s" final é fraco,
+     −43 a −60 dB: o limite antigo de 7% do pico, ~−23 dB, comia o "s" de "isso" e de "Pitágoras"). Gravação baixa (pico de amostra abaixo
+     de −10 dBFS): o limite desce junto com o pico (começo = pico − 40 dB, fim = pico − 35 dB; vale o MENOR dos dois, o absoluto ou o
+     relativo, para não cortar a fala fraca de quem gravou baixo) e nunca fica a menos de 6 dB do chiado de fundo.
+     A pausa certa é a MAIOR pausa entre a palavra de fora e a palavra da fala (viz = vizinhas, do alinhar); sem pausa (fala colada), a
+     ponta vai para a janela mais fraca entre as duas. Folgas do protocolo (0,04 antes, 0,07 depois), mas nunca entrando na voz vizinha.
+     Sem viz (chamada antiga), as vizinhas são os cortes do lado. Trecho em silêncio fica como está. */
+  const medidas = new WeakMap();
+  function mede(buf) {
+    let M = medidas.get(buf); if (M) return M;
+    const sr = buf.sampleRate, w = Math.max(1, Math.round(sr * 0.01)), x = buf.numberOfChannels > 1 ? monoOf(buf) : buf.getChannelData(0), n = Math.floor(x.length / w), db = new Float32Array(n); let pk = 0;
+    for (let i = 0; i < x.length; i++) { const v = Math.abs(x[i]); if (v > pk) pk = v; }
+    for (let f = 0; f < n; f++) { let q = 0; const o = f * w; for (let i = 0; i < w; i++) q += x[o + i] * x[o + i]; db[f] = toDb(Math.sqrt(q / w)); }
+    const pico = toDb(pk), chiado = pct(db, 0.05), lim = (abs, rel) => Math.max(Math.min(abs, pico - rel), chiado + 6);
+    M = { db, n, pico, chiado, ini: lim(-50, 40), fim: lim(-45, 35) }; medidas.set(buf, M); return M;
+  }
+  function apara(cortes, buf, prot, viz) {
+    const P = prot || protocolo; if (!cortes || !buf) return cortes; const M = mede(buf), D = M.db, N = M.n, dur = buf.duration, PAUSA = Math.round((P.pausaMin || 0.15) * 100); // pausa = 0,15 s ou mais (o fechamento de um "t" ou "p" dura menos)
+    const lIni = P.dbIni != null ? P.dbIni : M.ini, lFim = P.dbFim != null ? P.dbFim : M.fim;
+    const fr = t => Math.max(0, Math.min(N - 1, Math.floor(t / 0.01 + 1e-6)));
+    /* pausas (janelas seguidas abaixo de lim) que encostam em [t0, t1]: [[primeira quieta, primeira com voz depois], ...] */
+    const pausas = (t0, t1, lim) => { const out = []; for (let f = fr(t0); f <= fr(t1); f++) { if (D[f] >= lim) continue; let a = f, b = f; while (a > 0 && D[a - 1] < lim) a--; while (b + 1 < N && D[b + 1] < lim) b++; out.push([a, b + 1]); f = b; } return out; };
+    const fraca = (t0, t1) => { let m = fr(t0); for (let f = fr(t0); f <= fr(t1); f++) if (D[f] < D[m]) m = f; return m; };
+    /* a pausa da zona: 'perto' = a última antes da palavra (começo) / a primeira depois (fim); 'maior' = a mais longa. Só vale pausa de 0,10 s
+       ou mais (a do fim só depois do começo da voz); sem nenhuma, a maior que tiver; sem pausa nenhuma (fala colada), a janela mais fraca. */
+    const escolhe = (z, lim, ponta, depoisDe) => { const t0 = Math.min(z[0], z[1]), t1 = Math.max(z[0], z[1]); let ps = pausas(t0, t1, lim); if (depoisDe != null) ps = ps.filter(p => p[0] > depoisDe); if (!ps.length) { const m = fraca(depoisDe != null ? Math.max(t0, (depoisDe + 1) * 0.01) : t0, t1); return [m, m]; }
+      const longas = ps.filter(p => p[1] - p[0] >= PAUSA); if (longas.length) ps = longas; else z = [t0, t1, 'maior'];
+      if (z[2] === 'perto') return ponta === 'ini' ? ps[ps.length - 1] : ps[0]; return ps.reduce((m, p) => p[1] - p[0] > m[1] - m[0] ? p : m); };
+    const out = cortes.map((q, k) => { if (!q) return q; const [a, b] = q; if (b - a < 0.04) return q;
+      let tem = false; for (let f = fr(a); f <= fr(b); f++) if (D[f] >= lFim) { tem = true; break; } if (!tem) return q; // só silêncio: fica como está
+      const v = viz && viz[k], ant = cortes.slice(0, k).reverse().find(Boolean), dep = cortes.slice(k + 1).find(Boolean);
+      /* sem zona do alinhar (chamada antiga ou fala sem palavra ouvida): entre o corte de antes e o começo deste; entre o fim deste e o corte de depois */
+      const zi = v && v.ini ? v.ini : [ant ? Math.max(ant[1], a - 1) : Math.max(0, a - 1), Math.min(b, a + 0.1), 'perto'];
+      const zf = v && v.fim ? [v.fim[0], Math.min(dur, v.fim[1]), v.fim[2]] : [Math.max(a, b - 0.1), dep ? Math.min(dep[0], b + 1) : Math.min(dur, b + 1), 'perto'];
+      const pi = escolhe(zi, lIni, 'ini'), s = pi[1] >= N ? fr(a) : pi[1], sMin = pi[1] >= N ? s : pi[0], pf = escolhe(zf, lFim, 'fim', s), e = pf[0], eMax = pf[1];
+      if (e - s < 10) return q; // não achou voz entre as pontas: fica o corte do alinhar
+      const na = Math.max(sMin * 0.01, s * 0.01 - P.antes), nb = Math.min(eMax * 0.01, e * 0.01 + P.depois, dur);
+      return [+Math.max(0, na).toFixed(3), +nb.toFixed(3)]; });
+    /* dois cortes seguidos nunca se sobrepõem (a ponta fica na janela mais fraca entre eles) */
+    for (let k = 0; k + 1 < out.length; k++) if (out[k] && out[k + 1] && out[k][1] > out[k + 1][0] && out[k][0] < out[k + 1][0]) { const m = +(fraca(out[k + 1][0], out[k][1]) * 0.01).toFixed(3); out[k][1] = m; out[k + 1][0] = m; }
+    return out;
   }
   /* confere pelo protocolo: [{i, aviso}] — sem voz, silêncio no começo/fim, curto demais para o texto (palavra cortada?), voz de outro personagem */
   function confere(buf, cortes, textos, avisoTom) {
