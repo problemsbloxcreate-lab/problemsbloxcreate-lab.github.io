@@ -304,7 +304,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
      Aparece sozinho em toda tela de carregamento (porta dos programas, entrada do menu, Atualizando, ADM abrindo, nuvem do Animador). */
   function poeSelo(o = {}) { estilo(); if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || ''; selo.title = DICA_SELO;
     selo.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; document.documentElement.appendChild(selo); }
-  const TELAS = '#estudio-porta,#login,.login.boot,.login.cobrindo,#turma-login,#ep-atualizando,.ep-admj .car,#nuvem-tela,#saida.on,#saida[data-on]';
+  const TELAS = '#estudio-porta,#login,.login.boot,.login.cobrindo,#turma-login,#ep-atualizando,#ep-atz,.ep-admj .car,#nuvem-tela,#saida.on,#saida[data-on]';
   const visivel = e => { if (!e?.isConnected || e.hidden || e.classList.contains('ep-saindo') || e.classList.contains('sai')) return false; const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && +c.opacity > .05 && e.getClientRects().length > 0; };
   let porTela = false; setInterval(() => { let t = false; try { t = [...document.querySelectorAll(TELAS)].some(visivel); } catch { }
     if (t && !selo?.isConnected) { poeSelo({}); porTela = true; } else if (!t && porTela) { porTela = false; if (!postos.size) { selo?.remove(); selo = null; } } }, 300);

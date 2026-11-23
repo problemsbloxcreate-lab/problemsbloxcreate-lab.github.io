@@ -1324,18 +1324,11 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   // NÃO apaga nada guardado no navegador: projetos, rascunhos e preferências (IndexedDB/localStorage) não são tocados.
   async function atualizarTudo(extras = []) {
     // tela no meio do site (igual à de carregamento): bloqueia cliques e teclas enquanto baixa, com a barra, a % e quantos arquivos faltam
-    const aviso = document.createElement('div'); aviso.id = 'ep-atualizando'; aviso.setAttribute('role', 'status'); aviso.setAttribute('aria-live', 'polite');
-    aviso.innerHTML = '<div class="ep-at-c"><div class="ep-at-sp" aria-hidden="true">' + '<i></i>'.repeat(5) + '</div><div class="ep-at-ic" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M32 8 52 19.5v25L32 56 12 44.5v-25Z"/><path d="M12 19.5 32 31l20-11.5M32 31v25"/></svg></div><div class="ep-at-t">Atualizando o Estúdio</div><div class="ep-at-br"><i></i></div><div class="ep-at-pc"><b>0%</b><span>procurando os arquivos…</span></div></div>';
-    const est = document.createElement('style'); est.textContent = '#ep-atualizando{position:fixed;inset:0;z-index:2147483647;background:rgba(8,9,12,.5);-webkit-backdrop-filter:blur(16px) saturate(.9);backdrop-filter:blur(16px) saturate(.9);display:flex;align-items:center;justify-content:center;font:14px/1.5 \'Segoe UI\',system-ui,sans-serif;color:#f1f2f4;cursor:progress;-webkit-user-select:none;user-select:none;animation:epAtEntra .25s ease both}'
-      + '#ep-atualizando .ep-at-c{display:grid;justify-items:center}#ep-atualizando .ep-at-sp{position:relative;width:46px;height:46px}#ep-atualizando .ep-at-sp i{position:absolute;inset:0;opacity:0;animation:epAtGira 4.4s infinite}#ep-atualizando .ep-at-sp i::after{content:\'\';position:absolute;top:0;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff}'
-      + [0, 1, 2, 3, 4].map(n => `#ep-atualizando .ep-at-sp i:nth-child(${n + 1}){animation-delay:${(n * .22).toFixed(2)}s}`).join('')
-      + '@keyframes epAtGira{0%{transform:rotate(180deg);opacity:1;animation-timing-function:ease-out}7%{transform:rotate(300deg);animation-timing-function:linear}30%{transform:rotate(470deg);animation-timing-function:ease-in-out}39%{transform:rotate(645deg);animation-timing-function:linear}70%{transform:rotate(770deg);animation-timing-function:ease-out}75%{transform:rotate(900deg);opacity:1}76%,100%{transform:rotate(900deg);opacity:0}}'
-      + '#ep-atualizando .ep-at-t{margin-top:22px;font-size:17px;font-weight:600;letter-spacing:.2px}#ep-atualizando .ep-at-br{width:200px;height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin:18px 0 10px;overflow:hidden}#ep-atualizando .ep-at-br>i{display:block;height:100%;width:0;background:#f1f2f4;border-radius:3px;transition:width .35s ease}#ep-atualizando .ep-at-pc{display:flex;gap:8px;align-items:baseline;font-size:11.5px;color:#a3a7ae}#ep-atualizando .ep-at-pc b{color:#e3e5e8;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}#ep-atualizando .ep-at-pc span{font-variant-numeric:tabular-nums;white-space:nowrap}'
-      + '@keyframes epAtEntra{from{opacity:0}}@media (prefers-reduced-motion:reduce){#ep-atualizando{animation:none}#ep-atualizando .ep-at-sp i{animation-duration:8s}}';
-    document.head.appendChild(est); document.body.appendChild(aviso); try { document.activeElement?.blur?.(); } catch { }
-    const trava = e => { e.preventDefault(); e.stopPropagation(); }; for (const t of ['keydown', 'keypress', 'keyup', 'wheel', 'contextmenu']) addEventListener(t, trava, { capture: true, passive: false });
-    if (!document.getElementById('ep-conta-css')) { const st = document.createElement('style'); st.id = 'ep-conta-css'; st.textContent = css; document.head.appendChild(st); }
-    const diz = (t, pct) => { aviso.querySelector('.ep-at-pc span').textContent = t; if (pct != null) { const p = Math.max(0, Math.min(100, Math.round(pct))); aviso.querySelector('.ep-at-pc b').textContent = p + '%'; aviso.querySelector('.ep-at-br>i').style.width = p + '%'; } };
+    // TELA REDONDA (pedido da dona, 23/11/2026): o mesmo anel com o logo das telas de carregamento dos programas, por cima do site DESFOCADO
+    // (antes: quadrado azul + barra, e antes disso a foto da montanha). A tela é a mesma do "Atualizar sozinho" (telaAtualizando).
+    const dizA = telaAtualizando('Atualizando os sites…'), aviso = document.getElementById('ep-atz'); aviso.classList.add('atz-desfoque');
+    aviso.querySelector('.atz-t').textContent = 'Atualizando o Estúdio';
+    const diz = (t, pct) => dizA(t, pct);
     diz('Atualizando os sites…');
     try {
       if (navigator.serviceWorker?.getRegistrations) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.update(); } catch { } }
@@ -2441,6 +2434,9 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
 #ep-atz,html[data-tema="claro"] #ep-atz{background:#000;-webkit-backdrop-filter:none;backdrop-filter:none;--atz-tx:#f5f5f7;--atz-tx2:rgba(235,235,245,.7);overflow:hidden}
 #ep-atz.atz-blur::before{content:"";position:absolute;inset:-60px;background:var(--atz-fundo,url(/fundo-montanha.jpg)) center/cover no-repeat;filter:blur(40px);opacity:.2;pointer-events:none}
 #ep-atz .atz-c{position:relative;z-index:1}
+/* Atualizar todos os sites (23/11/2026): o anel redondo por cima do site desfocado */
+#ep-atz.atz-desfoque,html[data-tema="claro"] #ep-atz.atz-desfoque{background:rgba(10,10,12,.42);-webkit-backdrop-filter:blur(22px) saturate(1.1);backdrop-filter:blur(22px) saturate(1.1)}
+#ep-atz.atz-desfoque .atz-t,#ep-atz.atz-desfoque .atz-l{text-shadow:0 1px 12px rgba(0,0,0,.5)}
 #ep-atz .atz-lg>svg.ep-logo-p{border-radius:0;box-shadow:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
 @media (prefers-reduced-motion:reduce){#ep-atz,#ep-atz .atz-lg>:is(img,svg){animation:none}}`; document.head.appendChild(s); }
     let url = ''; try { const EI = window.EstudioIcones, id = EI?.atual?.(); url = id && EI.url?.(id) || ''; } catch { }
