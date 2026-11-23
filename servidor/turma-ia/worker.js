@@ -1685,6 +1685,72 @@ export default {
       }
       return json({ error: { message: 'Pedido desconhecido.' } }, 405, cors);
     }
+    // ===================== CRONOGRAMA (planilha do Google + pastas do Drive, pedido da dona, 23/11/2026) =====================
+    // A planilha "Organização Turma do Problems" manda: data, status, responsável. Cada vídeo é uma pasta do Drive com o Docs do roteiro e os áudios.
+    // Tudo é lido como visitante (a pasta e a planilha estão como "qualquer pessoa com o link"); nada é gravado no Google.
+    //   GET /cronograma                → { itens: [{ pasta, data:'AAAA-MM-DD'|null, titulo, formato, status, resp, aguardando, obs, postado, aba }] }
+    //   GET /cronograma/pasta?id=      → { itens: [{ id, nome, tipo: 'doc'|'pasta'|'arquivo'|'planilha' }] }
+    //   GET /cronograma/doc?id=        → { html } (export do Docs; o Preparativos converte)
+    //   GET /cronograma/arquivo?id=    → o arquivo (áudio da pasta), até 60 MB
+    if (p0 === '/cronograma' || p0 === '/cronograma/pasta' || p0 === '/cronograma/doc' || p0 === '/cronograma/arquivo') {
+      if (!env.FIREBASE_PROJECT_ID || !login.email) return json({ error: { type: 'login', message: 'Entre com sua conta Google.' } }, 401, cors);
+      if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
+      if (typeof pode === 'function' && !(await pode(env, login.email, 'preparativos'))) return json({ error: { type: 'permissao', message: 'Sua conta não pode ver o cronograma.' } }, 403, cors);
+      const PLANILHA = env.CRONOGRAMA_PLANILHA || '11QaKDEZhMxqKZ_z_cvBtM9iExcwK2798-ynWBYzkaLg';
+      const IDG = /^[A-Za-z0-9_-]{10,80}$/, idq = new URL(req.url).searchParams.get('id') || '';
+      const naMemoria = async (chave, seg, faz) => { const c = caches.default, u = 'https://turma.cache/cronograma/' + encodeURIComponent(chave); const v = await c.match(u); if (v) return v.json();
+        const o = await faz(); if (o) ctx?.waitUntil?.(c.put(u, new Response(JSON.stringify(o), { headers: { 'cache-control': 'max-age=' + seg } }))); return o; };
+      const vem = async (url, tipo) => { const r = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'Mozilla/5.0 (Estudio)' } }); if (!r.ok) throw new Error('google ' + r.status); return tipo === 'buf' ? r : r.text(); };
+      try {
+        if (p0 === '/cronograma') {
+          const itens = await naMemoria('lista', 60, async () => {
+            const out = [];
+            for (const aba of ['Cronograma', '📦 Meses passados']) {
+              let t; try { t = await vem(`https://docs.google.com/spreadsheets/d/${PLANILHA}/gviz/tq?tqx=out:json&headers=0&range=A5:K600&sheet=${encodeURIComponent(aba)}`); } catch { continue; }
+              const js = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
+              for (const row of js.table?.rows || []) {
+                const c = (row.c || []).map(x => x || {}), v = i => c[i]?.v ?? null, f = i => String(c[i]?.f ?? c[i]?.v ?? '');
+                const pasta = String(v(10) || ''), titulo = String(v(2) || '').trim();
+                if (!titulo || pasta === '#') continue;
+                let data = null; const dm = String(v(0) || '').match(/Date\((\d+),(\d+),(\d+)/);
+                if (dm) data = `${dm[1]}-${String(+dm[2] + 1).padStart(2, '0')}-${String(dm[3]).padStart(2, '0')}`;
+                else { const tm = (String(v(0) || '') + ' ' + f(0)).match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?/); // a coluna mistura texto (faixas) e data: vem "24/11"
+                  if (tm) { const hoje = new Date(); let ano = +tm[3] || 0;
+                    if (!ano) { let melhor = null; for (const d of [-1, 0, 1]) { const c = new Date(hoje.getFullYear() + d, +tm[2] - 1, +tm[1]); if (!melhor || Math.abs(c - hoje) < Math.abs(melhor - hoje)) melhor = c; } ano = melhor.getFullYear(); }
+                    data = `${ano}-${String(+tm[2]).padStart(2, '0')}-${String(+tm[1]).padStart(2, '0')}`; } }
+                out.push({ pasta: IDG.test(pasta) ? pasta : null, data, titulo: titulo.slice(0, 200), formato: String(v(3) || 'Short'), status: String(v(4) || ''), resp: String(v(5) || ''), aguardando: String(v(6) || '').slice(0, 300), obs: String(v(9) || '').slice(0, 300), postado: /postado/i.test(f(7)), aba });
+              }
+            }
+            return out;
+          });
+          return json({ itens: itens || [] }, 200, { ...cors, 'cache-control': 'no-store' });
+        }
+        if (!IDG.test(idq)) return json({ error: { message: 'id inválido.' } }, 400, cors);
+        if (p0 === '/cronograma/pasta') {
+          const itens = await naMemoria('pasta-' + idq, 60, async () => {
+            const h = await vem('https://drive.google.com/embeddedfolderview?id=' + idq), out = [];
+            const re = /id="entry-([^"]+)"[\s\S]*?href="([^"]+)"[\s\S]*?flip-entry-title">([^<]*)</g; let m;
+            const dec = s => s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+            while ((m = re.exec(h))) { const href = m[2]; const tipo = /\/document\//.test(href) ? 'doc' : /\/folders\//.test(href) ? 'pasta' : /\/spreadsheets\//.test(href) ? 'planilha' : /\/file\//.test(href) ? 'arquivo' : 'outro';
+              const id = (href.match(/\/d\/([A-Za-z0-9_-]+)/) || href.match(/folders\/([A-Za-z0-9_-]+)/) || [])[1] || m[1]; out.push({ id, nome: dec(m[3]).slice(0, 200), tipo }); }
+            return out;
+          });
+          return json({ itens: itens || [] }, 200, { ...cors, 'cache-control': 'no-store' });
+        }
+        if (p0 === '/cronograma/doc') {
+          const html = await vem(`https://docs.google.com/document/d/${idq}/export?format=html`);
+          if (html.length > 3 * 1024 * 1024) return json({ error: { message: 'Documento grande demais.' } }, 413, cors);
+          return json({ html }, 200, { ...cors, 'cache-control': 'no-store' });
+        }
+        if (p0 === '/cronograma/arquivo') {
+          let r = await vem(`https://drive.usercontent.google.com/download?id=${idq}&export=download&confirm=t`, 'buf');
+          const tam = +(r.headers.get('content-length') || 0); if (tam > 60 * 1024 * 1024) return json({ error: { message: 'Arquivo grande demais (máx. 60 MB).' } }, 413, cors);
+          const tipo = r.headers.get('content-type') || 'application/octet-stream';
+          if (/text\/html/i.test(tipo)) return json({ error: { message: 'O Drive não liberou esse arquivo (confira se a pasta está aberta para quem tem o link).' } }, 502, cors);
+          return new Response(r.body, { status: 200, headers: { ...cors, 'content-type': tipo, 'cache-control': 'no-store', ...(tam ? { 'content-length': String(tam) } : {}) } });
+        }
+      } catch (e) { return json({ error: { message: 'Não consegui ler o Google agora (' + String(e?.message || e).slice(0, 80) + '). Tente de novo.' } }, 502, cors); }
+    }
     // ===================== PREPARATIVOS (programa /preparativos/, pedido da dona, 05/11/2026) — bloco próprio =====================
     // Roteiros em partes → falas por personagem → áudio de cada fala, destino (animador|shorts|editor) e legendas. Contrato do
     // formato no CLAUDE.md do site e no README do repo "preparativos". Chaves: preparativos/<id>/prep.json, preparativos/<id>/aud/<fala>-<t>.webm,
@@ -1714,7 +1780,7 @@ export default {
       const quemDe = P => { const q = x => x && /^u[0-9a-f]{16}$/.test(String(x.id || '')) ? { i: x.id, n: String(x.nome || '').replace(/[<>]/g, '').slice(0, 40), t: +x.em || 0 } : null;
         const a = q(P.autor), e = (Array.isArray(P.edicoes) ? P.edicoes : []).map(q).filter(Boolean).slice(-4); return a || e.length ? { a, e } : null; };
       const gravaP = async (P, m0) => { const mod = Date.now(); P.mod = mod; const t = JSON.stringify(P), fs = (P.partes || []).flatMap(p => p.falas || []);
-        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, canal: P.canal?.nome || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), uso: [...new Set((Array.isArray(P.usadoPor) ? P.usadoPor : []).map(u => u.programa).filter(x => DEST.includes(x)))], quem: quemDe(P), por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
+        await env.EQUIPE.put(kP(P.id), t, { metadata: { tipo: 'application/json', tam: t.length, mod, nome: String(P.nome || '').slice(0, 80), destino: P.destino || null, canal: P.canal?.nome || null, status: P.status || 'rascunho', n: fs.length, g: fs.filter(f => f.audio).length, partes: (P.partes || []).length, pers: [...new Map(fs.map(f => [String(f.personagem || '').toLowerCase(), String(f.personagem || '').slice(0, 30)])).values()].filter(Boolean).slice(0, 8), uso: [...new Set((Array.isArray(P.usadoPor) ? P.usadoPor : []).map(u => u.programa).filter(x => DEST.includes(x)))], quem: quemDe(P), pasta: /^[A-Za-z0-9_-]{10,80}$/.test(String(P.drive?.pasta || '')) ? P.drive.pasta : null, por: m0?.por || login.email, em: m0?.em || new Date().toISOString() } });
         return mod; };
       // ESTILO DA LEGENDA (o Animador, o Shorts e o Editor leem): números em fração do quadro; quadro = tamanho do vídeo em px
       const num = (v, a, z, d) => { v = +v; return Number.isFinite(v) ? Math.min(z, Math.max(a, v)) : d; }, corOk = (c, d) => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? String(c).toLowerCase() : d;
@@ -1753,7 +1819,7 @@ export default {
       const coresDe = async p => { const c = await leCores(); for (const [k, e] of Object.entries(p || {})) if (e.cor) c[k] = e.cor; return c; };
       const juntaCores = async novas => coresDe(await juntaPers(Object.fromEntries(Object.entries(novas || {}).map(([k, c]) => [k, { cor: c }]))));
       if (p0 === '/preparativos') { if (req.method !== 'GET') return json({ error: { message: 'Use GET.' } }, 405, cors);
-        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, canal: d.canal || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [], uso: Array.isArray(d.uso) ? d.uso : [], quem: d.quem || null })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
+        const out = []; let cur; do { const r = await env.EQUIPE.list({ prefix: 'preparativos/', cursor: cur }); for (const x of r.keys) { const m = x.name.match(/^preparativos\/([^/]+)\/prep\.json$/); if (m) { const d = x.metadata || {}; out.push(await semEmail({ id: m[1], nome: d.nome || '', destino: d.destino || null, canal: d.canal || null, status: d.status || 'rascunho', mod: d.mod || 0, por: d.por, em: d.em, n: d.n || 0, g: d.g || 0, partes: d.partes || 0, pers: Array.isArray(d.pers) ? d.pers : [], uso: Array.isArray(d.uso) ? d.uso : [], quem: d.quem || null, pasta: d.pasta || null })); } } cur = r.list_complete ? null : r.cursor; } while (cur);
         return json({ itens: out }, 200, { ...cors, 'cache-control': 'no-store' }); }
       if (p0 === '/preparativos/acao') {
         if (req.method !== 'POST') return json({ error: { message: 'Use POST.' } }, 405, cors);
