@@ -221,7 +221,7 @@ if (prompt.length < 8) process.exit(0);
 if (/<agent-message|<task-notification|<side-sessions-event|<ci-monitor-event|Another Claude session sent a message/.test(prompt.slice(0, 400))) process.exit(0);
 
 const AREAS = {
-  animacao: { re: /anima|animad|ateli|rive|\brig\b|pose|personag|cachecol|capa|pupila|olho|piscar|boca|m[ãa]o|polegar|bra[çc]o|perna|zoom|c[âa]mera|movimen|fluid|duro|dura\b|lumi|clara|melzinha|stick|problems|walt|cena/i,
+  animacao: { re: /anima|animad|ateli|rive|\brig\b|pose|personag|cachecol|capa|pupila|olho|piscar|boca|m[ãa]o|polegar|bra[çc]o|perna|zoom|c[âa]mera|movimen|fluid|duro|dura\b|lumi|clara|melzinha|stick|(?<!est[uú]dio )problems|walt|cena/i,
     pag: 'Regras/Regras de ouro - animação e personagens' },
   audio: { re: /[áa]udio|voz|vozes|fala|dubla|cort|m[úu]sica|som|efeito sonoro|sfx|volume|legenda|export|mp4|render|blender/i,
     pag: 'Regras/Regras de ouro - áudio, cortes e exportação' },
@@ -229,6 +229,9 @@ const AREAS = {
     pag: 'Regras/Regras de ouro - arte, desenho e cenários' },
   fluxo: { re: /roteir|short|preparativ|publica[çc]|epis[óo]dio|\bep\d|piada|humor|agend|torajo|batatinha|v[íi]deo/i,
     pag: 'Regras/Regras de ouro - roteiro, Short e como trabalhar' },
+  // design, menu e site (23/11/2026): antes um pedido do menu caía em 'animação' (por causa de 'Estúdio Problems' e 'animação de fechar')
+  design: { re: /menu|design|bot[ãa]o|painel|pain[ée]is|pop.?up|cabe[çc]alho|header|[íi]cone|selo|vers[ãa]o|adm|layout|carregamento|loading|papel de parede|tela d[eo]|fechar|janela|tema (claro|escuro)/i,
+    pag: 'Regras/Regras de ouro - design, menu e site' },
 };
 const ESTUDIO = /est[uú]dio|c[ée]rebro|celest/i;
 // área por PONTOS (quantas palavras do pedido casam), a mais forte primeiro
