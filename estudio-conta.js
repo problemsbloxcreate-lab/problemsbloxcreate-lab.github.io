@@ -934,6 +934,20 @@ html[data-tema="claro"]:root:root body .ep-admj .car .ac-ic{background:color-mix
 /* menos efeito de "pular": o painel entra curto e suave, e o conteúdo não anima */
 :root:root body :is(.ep-conta-pop,.ep-esp .cx){animation:epCelEntra .25s cubic-bezier(.1,.9,.2,1) both!important}
 @keyframes epCelEntra{from{opacity:0;transform:translateX(24px)}}
+/* ABRIR E FECHAR IGUAL EM TODOS OS PAINÉIS (pedido da dona, 23/11/2026, versão 2.18): perfil, nuvem, espaço do navegador, clima e novidades
+   entram e saem do MESMO jeito (desliza 24 px pela direita + aparece/some). A saída não funcionava: a regra de entrada (:root:root, !important) vencia
+   a de saída (.ep-saindo) e o painel sumia seco. Agora a saída tem mais força. O calendário do Publicações e a ADM são pop-ups (ficam de fora). */
+:root:root:root body .ep-conta-pop.ep-saindo,:root:root:root body .ep-esp.ep-saindo .cx{animation:epCelSai .2s cubic-bezier(.4,0,1,1) both!important}
+:root:root:root body .ep-esp.ep-saindo,:root:root:root body .ep-conta-fundo.ep-saindo{animation:epSome .2s ease both!important}
+:root:root:root body .ep-conta-fundo:not([hidden]):not(.ep-saindo),:root:root:root body .ep-esp:not(.ep-saindo){animation:epSome2 .2s ease both}
+@keyframes epCelSai{to{opacity:0;transform:translateX(24px)}}
+@media (prefers-reduced-motion:reduce){:root:root:root body :is(.ep-conta-pop,.ep-esp,.ep-esp .cx,.ep-conta-fundo){animation:none!important}}
+/* O X DE FECHAR É UM SÓ (pedido da dona, 23/11/2026): vermelho, redondo, no canto de cima à direita do painel, no mesmo lugar em todos (o perfil tinha "Fechar") */
+:root:root:root body :is(.ep-conta-pop .ep-pop-x,.ep-esp .ep-x,.modal .mc-painel .mp-x,#adm .adm-x){width:30px!important;height:30px!important;min-width:0!important;margin:0 0 0 auto!important;padding:0!important;display:grid!important;place-items:center;flex:none;border:0!important;border-radius:50%!important;background:#ff453a!important;color:#fff!important;font-size:0!important;cursor:pointer;box-shadow:none!important}
+:root:root:root body :is(.ep-conta-pop .ep-pop-x,.ep-esp .ep-x,.modal .mc-painel .mp-x,#adm .adm-x):hover{background:#ff5f55!important;color:#fff!important}
+:root:root:root body :is(.ep-conta-pop .ep-pop-x,.ep-esp .ep-x,.modal .mc-painel .mp-x,#adm .adm-x):focus-visible{outline:2px solid var(--ce-acento,#5cc4ff)!important;outline-offset:2px}
+:root:root:root body :is(.ep-conta-pop .ep-pop-x,.ep-esp .ep-x,.modal .mc-painel .mp-x,#adm .adm-x) svg{display:block!important;width:14px!important;height:14px!important;padding:0!important;background:none!important;color:#fff!important;stroke:#fff!important;stroke-width:2.4!important}
+html[data-tema="claro"]:root:root body :is(.ep-conta-pop .ep-pop-x,.ep-esp .ep-x,.modal .mc-painel .mp-x,#adm .adm-x){background:#ff3b30!important}
 :root:root body .ep-esp details[open] .grp-l,:root:root body .ep-esp details[open]>.linha{animation:none!important}
 /* --- ATUALIZANDO (Celeste, pedido da dona 11/11/2026): o mesmo desenho da tela única (montanha, ícone, título, barra, uma frase) --- */
 :root:root body #ep-atualizando{--pt-tx:#f5f5f7;--pt-tx2:rgba(235,235,245,.64);--pt-tx3:rgba(235,235,245,.4);--pt-ac:#5cc4ff;--pt-trilho:rgba(255,255,255,.14);
@@ -966,6 +980,13 @@ html[data-tema="claro"] :root:root body #ep-atualizando::after{background:radial
 html:not([data-tema="claro"]) body #ep-atualizando :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.ep-at-pc,h1,p,.msg){text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @keyframes epFotoKB{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,-1.2%,0)}}
 @media (prefers-reduced-motion:reduce){:root:root body #ep-atualizando::before{animation:none}}
+/* ATUALIZAR TODOS OS SITES (pedido da dona, 23/11/2026, 2.18): nada de papel de parede seco por cima. O próprio site fica DESFOCADO atrás
+   e por cima vêm o carregamento (ícone, barra, %) e "Atualizando o Estúdio", até recarregar. */
+:root:root:root body #ep-atualizando{background:rgba(10,10,12,.42)!important;-webkit-backdrop-filter:blur(22px) saturate(1.1)!important;backdrop-filter:blur(22px) saturate(1.1)!important}
+:root:root:root body #ep-atualizando::before{content:none!important;display:none!important}
+:root:root:root body #ep-atualizando::after{background:radial-gradient(36% 30% at 50% 42%,rgba(92,196,255,.16),transparent 70%)!important}
+html[data-tema="claro"]:root:root body #ep-atualizando{background:rgba(245,245,247,.45)!important;--pt-tx:#1d1d1f;--pt-tx2:rgba(60,60,67,.72);--pt-tx3:rgba(60,60,67,.46);--pt-ac:#0a74c9;--pt-trilho:rgba(0,0,0,.1)}
+html[data-tema="claro"]:root:root body #ep-atualizando :is(.ep-at-t,.ep-at-pc){text-shadow:none!important}
 /* --- CALENDÁRIO (Celeste, 11/11/2026): painel da direita como os outros; sem a grade azul do Metro nem a "luz" do Windows 10 --- */
 /* --- JANELA DA ADM por cima dos programas: fundo LISO, sem foto (carregamento C, pedido da dona em 12/11/2026; as regras ficam no bloco "ADM POR CIMA DOS PROGRAMAS") --- */
 /* --- NOTIFICAÇÃO DE VERSÃO NOVA (em cima, à direita): Atualizar / Fechar; atualizar é opcional --- */
@@ -1155,7 +1176,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
       let ex = []; try { ex = (typeof CFG.extras === 'function' ? CFG.extras() : CFG.extras) || []; } catch { }
       ex = ex.filter(Boolean);
       const it = (i, k) => i === '-' ? '<div class="sep"></div>' : `<button class="it" type="button" role="menuitem" data-ex="${k}">${ICONES[i.icone] || i.icone || ''}${esc(i.texto)}</button>`;
-      pop.innerHTML = `<h2 class="ep-pop-tit">${ICONES.conta} Sua conta <button type="button" class="ep-pop-x" data-a="fechar">Fechar</button></h2><div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? seloAdmDe() : ''}</b><small>${esc(p.email)}</small></span></div>
+      pop.innerHTML = `<h2 class="ep-pop-tit">${ICONES.conta} Sua conta <button type="button" class="ep-pop-x" data-a="fechar" title="Fechar (Esc)" aria-label="Fechar"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2><div class="ep-conta-head"><span class="av">${av(p)}</span><span style="min-width:0"><b>${esc(p.nome)}${p.adm ? seloAdmDe() : ''}</b><small>${esc(p.email)}</small></span></div>
         ${htmlNotifs()}
         <button class="it" type="button" role="menuitem" data-a="conta">${ICONES.conta}Minha conta</button>
         <button class="it${MSG.mencoes ? ' msgmenc' : MSG.nao ? ' msgnova' : ''}" type="button" role="menuitem" data-a="msgs" hidden>${ICONES.msg}<span>Mensagens${MSG.mencoes ? '<small>Citaram você com @</small>' : ''}</span>${MSG.mencoes ? '<b class="cont arroba">@</b>' : ''}${MSG.nao ? `<b class="cont">${MSG.nao > 99 ? '99+' : MSG.nao}</b>` : ''}</button>
@@ -1395,7 +1416,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const dataTxt = t => { if (!t) return ''; const d = new Date(t); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
   function anel(pct) {
     const c = pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffcf4a' : '#2f6be6', r = 13, L = 2 * Math.PI * r;
-    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct, 2) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><g fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="10.6" y="11" width="10.8" height="7.4" rx="1.3"/><path d="M14 21.4h4M16 18.4v3"/></g></svg>`; // computador no meio: é o espaço DESTE computador
+    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct, 2) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><g fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="10.5" y="10.5" width="11" height="7.5" rx="1.3"/><path d="M13.8 21.5h4.4M16 18v3.5"/></g></svg>`; // computador no meio: é o espaço DESTE computador
   }
   const estimativa = async () => { try { return await navigator.storage.estimate(); } catch { return {}; } };
   async function atualizaAneis() {
@@ -1459,7 +1480,7 @@ input[type=button],input[type=submit],input[type=checkbox],input[type=radio],inp
   const usandoReserva = j => nivelNuvem(j) > 0;
   function anelNuvem(pct, reserva) {
     const n = reserva === true ? 1 : +reserva || 0, c = pct > 85 ? '#f0584f' : pct > 60 ? '#f0b232' : '#a98bff' /* normal = roxo/lilás; amarelo e vermelho só quando está enchendo. Reserva/terciária vão escritas no painel e na dica */, r = 13, L = 2 * Math.PI * r;
-    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct > 0 ? 3 : 0, Math.min(100, pct)) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><path d="M11.6 19.4h8.6a2.9 2.9 0 0 0 .3-5.78 3.9 3.9 0 0 0-7.6.73 2.6 2.6 0 0 0-1.3 5.05z" fill="${c}"/></svg>`;
+    return `<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="4"/><circle cx="16" cy="16" r="${r}" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(pct > 0 ? 3 : 0, Math.min(100, pct)) / 100 * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 16 16)"/><path transform="translate(-.35 .55)" d="M11.6 19.4h8.6a2.9 2.9 0 0 0 .3-5.78 3.9 3.9 0 0 0-7.6.73 2.6 2.6 0 0 0-1.3 5.05z" fill="${c}"/></svg>`;
   }
   const tokenNuvem = async () => { try {
     if (CFG.token) { const t = await CFG.token(); return t && !/^Bearer /.test(t) ? 'Bearer ' + t : t; }
@@ -2486,12 +2507,12 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
       if (vista === local.nome) return;
       try { localStorage.setItem(VK, local.nome); } catch { }
       const itensL = (Array.isArray(local.novidades) ? local.novidades : []).flatMap(x => Array.isArray(x?.[1]) ? x[1] : []).slice(0, 4).map(String);
-      const nA = { id: 'v:' + local.nome, prog: '*', titulo: 'Estúdio Problems ' + local.nome, itens: itensL, em: Date.now(), feito: Date.now(), aplicada: true, versao: local.nome };
+      const nA = { id: 'v:' + local.nome, prog: '*', titulo: 'Estúdio Problems ' + local.nome + (local.apelido ? ' · ' + local.apelido : ''), itens: itensL, em: Date.now(), feito: Date.now(), aplicada: true, versao: local.nome };
       guardaNotif(nA); mostraNotifVersao(nA); return;
     }
     const itens = (Array.isArray(srv.novidades) ? srv.novidades : []).flatMap(x => Array.isArray(x?.[1]) ? x[1] : []).slice(0, 4).map(String);
     const id = 'v:' + srv.nome;
-    const n = { id, prog: '*', titulo: 'Estúdio Problems ' + srv.nome, itens, importante: !!srv.importante, em: Date.now(), nova: true, versao: srv.nome };
+    const n = { id, prog: '*', titulo: 'Estúdio Problems ' + srv.nome + (srv.apelido ? ' · ' + srv.apelido : ''), itens, importante: !!srv.importante, em: Date.now(), nova: true, versao: srv.nome };
     if (!notifs().some(x => x.id === id && x.feito)) guardaNotif(n);
     document.querySelectorAll('.ep-conta').forEach(b => b.classList.add('ep-novo'));
     if (sozinho()) { await atualizaTudoGuardado(false); return; } // chave ligada: a próxima abertura já vem com a versão nova
@@ -2515,7 +2536,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
     document.querySelector('.ep-notif-v')?.remove();
     const d = document.createElement('div'); d.className = 'ep-notif-v'; d.setAttribute('role', 'status');
     let svgP = ''; try { if (n.icone && window.EstudioIcones?.svg) svgP = window.EstudioIcones.svg(n.icone, 28); } catch { } const ic = '<span class="nv-ep">' + (svgP || ICONES.estudio || ICONES.atualizar) + '</span>'; // ícone do programa quando o aviso é dele
-    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(limpaV(n.titulo)) + (n.aplicada ? '</b><small>Você já está nesta versão. Veja o que mudou.</small>' : ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>')) + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
+    d.innerHTML = '<div class="nv-t"><span class="nv-ic">' + ic + '</span><div class="nv-tx"><b>' + esc(limpaV(n.titulo)) + (n.aplicada ? '</b><small>Você já está nesta versão. Veja o que mudou.</small>' : ' chegou</b>' + (n.importante ? '<em>Importante</em>' : '<small>Você está na ' + esc(window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || 'versão anterior') + '. Atualize quando quiser.</small>')) + '</div><button type="button" class="nv-x" aria-label="Fechar">' + ICONES.fechar + '</button></div>'
       + (n.itens.length ? '<ul>' + n.itens.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>' : '')
       + '<div class="nv-b"><button type="button" class="nv-f">Fechar</button><button type="button" class="nv-a">' + (n.aplicada ? 'Ver novidades' : 'Atualizar') + '</button></div>';
     const fecha = () => { try { (n.importante ? sessionStorage : localStorage).setItem('ep-notif-fechada:' + n.id, '1'); } catch { } d.classList.add('sai'); setTimeout(() => d.remove(), 250); };
@@ -2715,7 +2736,7 @@ html[data-tema="claro"] #ep-atz{background:color-mix(in srgb,#f2f2f5 50%,transpa
     poeCss(); document.querySelector('.ep-admj')?.remove();
     const d = document.createElement('div'); d.className = 'ep-admj'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'ADM');
     d.innerHTML = `<div class="cx"><iframe src="/adm?embed=1${aba ? '#' + encodeURIComponent(aba) : ''}" title="ADM"></iframe><div class="car" role="status" aria-live="polite"><div class="ac-c"><div class="ac-lg"><span class="ac-ic">${ICONES.adm}</span></div><div class="ac-nm">Abrindo a ADM</div><div class="ac-br"><i></i></div><div class="ac-pc"><b>0%</b><span>Carregando…</span></div></div><span class="ac-selo"></span></div></div>`;
-    d.querySelector('.ac-selo').textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || '';
+    d.querySelector('.ac-selo').textContent = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || '';
     document.body.appendChild(d);
     // barrinha que anda sozinha (vai chegando perto de 90%); quando a ADM aparece no quadro, corre até 100% e a tela some
     const car = d.querySelector('.car'), barra = car.querySelector('.ac-br>i'), pct = car.querySelector('.ac-pc b'), t0 = performance.now(); let mostra = 0, pronto = 0, de = 0, acabou = false;

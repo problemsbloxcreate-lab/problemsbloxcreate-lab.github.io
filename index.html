@@ -1067,10 +1067,14 @@ html.cel:not([data-tema="claro"]) body .login :is(.ep-nm,.ep-m,.ep-pc,.ep-at-t,.
    - PAINEL na lateral direita, de cima a baixo: tudo que é ajuste, formulário ou lista (Clima, Novo atalho, Minha conta, Perfil e fundo…), igual ao Sua conta.
    - CAIXA no centro: só perguntas curtas (sim/não, apagar, sair), as .mc.pergunta. */
 html.cel body .modal:not(:has(.pergunta)){display:flex!important;justify-content:flex-end!important;align-items:stretch!important;padding:0!important}
-html.cel body .modal:not(:has(.pergunta)) .mc{width:min(440px,100%)!important;max-width:100%!important;height:100%!important;max-height:none!important;margin:0!important;border-radius:0!important;border-left:1px solid var(--linha)!important;overflow:auto;display:flex;flex-direction:column;animation:mcPainel .3s cubic-bezier(.1,.9,.2,1) both!important}
+html.cel body .modal:not(:has(.pergunta)) .mc{width:min(440px,100%)!important;max-width:100%!important;height:100%!important;max-height:none!important;margin:0!important;border-radius:0!important;border-left:1px solid var(--linha)!important;overflow:auto;display:flex;flex-direction:column;animation:mcPainel .25s cubic-bezier(.1,.9,.2,1) both!important}
 html.cel body .modal:not(:has(.pergunta)) .mc>h3:first-child{margin:-24px -24px 16px!important;padding:0 24px;height:52px;display:flex;align-items:center;border-bottom:1px solid var(--linha);font:600 17px var(--fonte)!important}
 html.cel body .modal:has(.pergunta) .mc{animation:mcAlerta .2s ease both}
-@keyframes mcPainel{from{transform:translateX(32px);opacity:0}}
+@keyframes mcPainel{from{transform:translateX(24px);opacity:0}}
+/* saída igual à dos outros painéis (pedido da dona, 23/11/2026): a regra de cima vencia a .ep-saindo e o painel sumia seco */
+html.cel body .modal.ep-saindo:not(:has(.pergunta)) .mc{animation:mcPainelSai .2s cubic-bezier(.4,0,1,1) both!important}
+html.cel body .modal:not(.ep-saindo){animation:mcFundo .2s ease both}
+@keyframes mcPainelSai{to{transform:translateX(24px);opacity:0}}@keyframes mcFundo{from{opacity:0}}
 @keyframes mcAlerta{from{transform:scale(.96);opacity:0}}
 @media (prefers-reduced-motion:reduce){html.cel body .modal .mc{animation:none!important}}
 /* painel com cabeçalho próprio (.mc-painel): título + X, corpo que rola, rodapé com a ação principal */
@@ -1152,6 +1156,11 @@ html.cel body #adm .adm-abas button[aria-selected=true] small{color:inherit!impo
 html.cel body #adm .adm-abas button small{color:var(--texto-3)!important}
 html.cel body #adm .adm-abas button svg{border-radius:7px!important}
 html.cel body #adm .adm-abas .adm-x{border-radius:50%!important;color:var(--texto-2)!important}
+/* ADM (pedido da dona, 23/11/2026): a barra lateral vai até o fundo do pop-up e o X fica vermelho no canto de cima à direita do pop-up; "Conversas" saiu (as Mensagens não existem mais) */
+html.cel body #adm .adm-abas{align-self:stretch!important;height:auto!important;max-height:none!important;min-height:0!important;overflow:auto}
+html.cel body #adm .adm{position:relative!important}
+html.cel body #adm .adm-abas .adm-cab .adm-x{position:absolute!important;top:12px;right:12px;z-index:6}
+html.cel body #adm .adm-pag{padding-right:56px!important}
 html.cel body #adm .adm-abas .adm-x:hover{background:var(--fundo-3)!important;color:var(--texto)!important}
 html.cel body #adm .adm-busca{background:var(--fundo-3)!important;border:0!important;border-radius:var(--raio-controle)!important;color:var(--texto)!important}
 html.cel body #adm .adm-pag h2{font:700 20px/1.25 var(--fonte)!important;color:var(--texto)!important;margin:22px 0 10px!important}
@@ -1532,6 +1541,23 @@ html.cel.ip[data-tema="claro"] body #menu #grid .card.pasta-b .pasta-mini .vazia
 html.cel.ip body #menu #prog-busca:not([hidden]){background:var(--elevado,#242428)!important;backdrop-filter:none!important;box-shadow:0 12px 40px rgba(0,0,0,.45)!important;position:fixed!important;top:calc(var(--ip-barra) + 12px)!important;left:50%!important;transform:translateX(-50%)!important;z-index:35!important;width:min(520px,90vw)!important;margin:0!important}
 /* a versão que ficava solta no canto foi para a barra */
 html.cel.ip body #menu>.versao-site{display:none!important}
+/* canto da versão (23/11/2026): fixo embaixo à direita, ADM colado no número; some quando o menu não está na tela */
+/* CABEÇALHO DO MENU (pedido da dona, 23/11/2026): o calendário (data e hora) saiu do cabeçalho (a hora grande e o bloco Calendário continuam no menu);
+   botões da direita com o mesmo tamanho (32 px), o mesmo espaço entre eles (8 px) e o desenho centralizado */
+html.cel body #top :is(.ip-hora,[data-estudio-relogio],.ep-relogio){display:none!important}
+html.cel body #top :is(.mn-lupa,.tema-bt,.ep-conta-nuvem,.ep-conta-espaco){width:32px!important;height:32px!important;min-width:0!important;padding:0!important;margin:0!important;display:inline-grid!important;place-items:center!important}
+html.cel body #top :is(.mn-lupa,.tema-bt)>svg{width:18px!important;height:18px!important}
+html.cel body #top :is(.ep-conta-nuvem,.ep-conta-espaco)>svg{width:26px!important;height:26px!important;margin:0!important}
+html.cel body #top .ep-conta{gap:8px!important}html.cel body #top .mn-lupa{margin-right:8px!important}html.cel body #top .tema-bt{margin-right:8px!important}
+html body #versao-canto{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:15;display:flex;align-items:center;gap:6px;pointer-events:none}
+html:not(:has(#menu:not([hidden]))) body #versao-canto,html.embed-adm body #versao-canto{display:none!important}
+html body #versao-canto>*{pointer-events:auto}
+html body #versao-canto #versao-site{position:static!important;display:inline-flex!important;align-items:center;height:24px!important;margin:0!important;padding:0 10px!important;border:1px solid var(--linha-forte,rgba(255,255,255,.16))!important;border-radius:6px!important;background:var(--vidro,rgba(21,21,23,.78))!important;color:var(--texto-2,rgba(235,235,245,.64))!important;font:500 11.5px var(--fonte,system-ui)!important;letter-spacing:0!important;text-shadow:none!important;box-shadow:none!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);cursor:pointer;animation:none!important;white-space:nowrap}
+html body #versao-canto #versao-site:hover{color:var(--texto,#f5f5f7)!important}
+html body #versao-canto #versao-site:empty{display:none!important}
+html body #versao-canto :is(#selos-cargo,#badge-adm){position:static!important;top:auto!important;margin:0!important;align-self:center!important}
+html body #versao-canto #selos-cargo{display:inline-flex!important;gap:4px}html body #versao-canto #selos-cargo:empty,html body #versao-canto #badge-adm[hidden]{display:none!important}
+html body #versao-canto .badge{display:inline-flex!important;align-items:center;height:24px!important;line-height:1!important;margin:0!important;padding:0 9px!important;border-radius:6px!important;font:600 11px var(--fonte,system-ui)!important;position:static!important;top:auto!important}
 /* TELA ÚNICA: sem rolar a página (só a lista de projetos rola por dentro) */
 @media (min-width:821px){
   html.cel.ip:has(#menu:not([hidden])),html.cel.ip:has(#menu:not([hidden])) body{overflow:hidden!important;height:100%!important}
@@ -1781,7 +1807,6 @@ html body .modal .mc.pergunta .acts button.btn.pg-cancela{color:#fff!important;b
     <button role="tab" data-aba="acesso" id="aba-acesso" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg><span><b>Quem pode entrar</b><small>liberar e tirar e-mails</small></span></button>
     <button role="tab" data-aba="niveis" id="aba-niveis" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="M8.5 10.5h7M8.5 14h4.5"/></svg><span><b>Níveis de acesso</b><small>cargos: quem vê cada programa</small></span></button>
     <button role="tab" data-aba="nuvem" id="aba-nuvem" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6-1.4A4.5 4.5 0 0 0 7 18.5z"/></svg><span><b>Nuvem</b><small>o que está guardado e o espaço</small></span></button>
-    <button role="tab" data-aba="conversas" id="aba-conversas" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12z"/><path d="M12 8v4.5"/><path d="M12 15.6v.1"/></svg><span><b>Conversas</b><small>denúncias e mensagens</small></span><b class="adm-aba-alerta" id="aba-conversas-n" hidden></b></button>
     <button role="tab" data-aba="dispositivos" id="aba-dispositivos" hidden><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg><span><b>Dispositivos</b><small>PCs com o Estúdio Local</small></span></button>
   </nav>
   <div class="adm-pag" data-pag="botoes">
@@ -1840,10 +1865,6 @@ html body .modal .mc.pergunta .acts button.btn.pg-cancela{color:#fff!important;b
       <p class="adm-desc">Quem vê cada programa e cada função. Crie cargos (ex.: Animação, Convidado), marque o que cada cargo tem e dê os cargos para as pessoas. Quem não tem cargo fica no cargo padrão "Equipe" (tudo liberado). Os ADMs sempre veem tudo. Nada muda para ninguém até você clicar em Salvar.</p>
       <h2>Níveis de acesso<span class="sp"></span><span class="hint" id="niv-st"></span><button class="btn sm" type="button" id="niv-atu" title="Buscar de novo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg> Atualizar</button><button class="btn sm primary" type="button" id="niv-salvar" disabled>Salvar</button></h2>
       <div id="niv-corpo"><div class="hint">Abra esta aba para ver.</div></div>
-    </section>
-    <section id="conversas-sec" class="adm-pag" data-pag="conversas">
-      <p class="adm-desc">Segurança das Mensagens: as denúncias que a equipe fez e as conversas pela visão de cada pessoa (só leitura).</p>
-      <div id="conversas-adm"></div>
     </section>
     <section id="dispositivos-sec" class="adm-pag" data-pag="dispositivos">
       <p class="adm-desc">Os computadores ligados ao Estúdio Problems Local (o serviço que baixa a mídia e edita no PC de cada pessoa). Revogar desliga o PC na hora; para ligar de novo, a pessoa abre o Estúdio no navegador.</p>
@@ -1993,7 +2014,8 @@ const MSG_PADRAO = { boasVindas: 'Bem-vindo(a) de volta à equipe do Problems! E
    A ADM › Fundo escolhe a primeira (padrão), aleatória ou slideshow; vídeo não entra mais no fundo nem nos cartões. */
 const FOTO_MONTANHA = { tipo: 'imagem', src: '/fundo-montanha.jpg', x: 50, y: 40, zoom: 1, blur: 0, nome: 'Montanha (Celeste)', credito: 'Rohit Tandon · Unsplash' }; // 2.0 Celeste (11/11/2026): Ama Dablam, Nepal; licença do Unsplash (uso livre)
 const FOTOS_ESTUDIO = [FOTO_MONTANHA, { tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
-  { tipo: 'imagem', src: '/fundo-margarida-2.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Margarida sozinha', credito: 'Csaba · Unsplash' }];
+  { tipo: 'imagem', src: '/fundo-margarida-2.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Margarida sozinha', credito: 'Csaba · Unsplash' },
+  { tipo: 'imagem', src: '/fundo-doces.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Doces (Rainbow Candy)', credito: 'Katie Rainbow · Unsplash' }]; // 2.18 Rainbow Candy (23/11/2026): granulado colorido, unsplash.com/photos/U21WOE0jB0E, licença do Unsplash (uso livre), 3840×2560
 const fundoPadrao = () => ({ modo: 'um', intervalo: 30, escurecer: .08, itens: JSON.parse(JSON.stringify(FOTOS_ESTUDIO)) });
 function soImagens(f) { const itens = (f?.itens || []).filter(m => m?.src && m.tipo !== 'video'); return itens.length ? { ...f, itens, modo: f.modo === 'nenhum' ? 'um' : f.modo } : { ...fundoPadrao(), ...(f?.modo && f.modo !== 'nenhum' ? { modo: f.modo } : {}), ...(f?.intervalo ? { intervalo: f.intervalo } : {}) }; } // sem imagem salva: as fotos do Estúdio, no modo escolhido (slideshow continua slideshow)
 { const soImagensAntes = soImagens; soImagens = f => { const r = soImagensAntes(f); if (document.documentElement.classList.contains('cel') && r?.itens?.[0]?.src === '/fundo-margarida.jpg') r.itens = [JSON.parse(JSON.stringify(FOTO_MONTANHA)), ...r.itens.filter(x => x.src !== FOTO_MONTANHA.src)]; return r; }; } // CELESTE: fundo padrão = montanha
@@ -2534,7 +2556,7 @@ function menuPasta(id, x, y, antes) {
 }
 async function apagaPasta(id) {
   const L = PASTAS.le(), p = L.find(q => q.id === id); if (!p) return; const n = (p.itens || []).length;
-  const ok = await pergunta({ titulo: 'Apagar a pasta "' + p.nome + '"?', texto: n ? (n === 1 ? 'O programa de dentro volta para a grade.' : 'Os ' + n + ' programas de dentro voltam para a grade.') + ' Nenhum programa é apagado.' : 'A pasta está vazia.', ok: 'Apagar pasta', cancelaVermelho: true });
+  const ok = await pergunta({ titulo: 'Apagar a pasta "' + p.nome + '"?', texto: n ? (n === 1 ? 'O programa de dentro volta para a grade.' : 'Os ' + n + ' programas de dentro voltam para a grade.') + ' Nenhum programa é apagado.' : 'A pasta está vazia.', ok: 'Apagar pasta', perigo: true });
   if (!ok) return;
   let ordem = null; try { ordem = localStorage.getItem('ep-menu-ordem'); } catch { }
   try { const o = JSON.parse(ordem || '[]'), i = o.indexOf('pasta:' + id); if (Array.isArray(o) && i >= 0) { o.splice(i, 1, ...(p.itens || [])); localStorage.setItem('ep-menu-ordem', JSON.stringify([...new Set(o)])); } } catch { } // os programas ficam no lugar da pasta
@@ -2586,7 +2608,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : /\/cerebro(\/|$)/.test(String(l.url || '')) ? -1 /* quem já tinha uma ordem própria também vê o Cérebro primeiro */ : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); pintaSelos(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || ''; vs.onclick = () => (window.EstudioSuporte?.novidades ? window.EstudioSuporte.novidades() : window.EstudioConta?.relatorio?.()); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
+  pintaGrid(); pintaSelos(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || ''; vs.title = 'Versão do Estúdio · clique para gerar o relatório de erro'; vs.onclick = () => (window.EstudioSuporte?.gerar ? window.EstudioSuporte.gerar() : window.EstudioConta?.relatorio?.()); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
@@ -3295,7 +3317,7 @@ function renderLinks() {
       else if (a === 'centro') { Object.assign(l.fundo, { x: 50, y: 50, zoom: 1 }); }
       else if (a === 'up') EDIT.links.splice(i - 1, 0, EDIT.links.splice(i, 1)[0]);
       else if (a === 'down') EDIT.links.splice(i + 1, 0, EDIT.links.splice(i, 1)[0]);
-      else if (a === 'del') { if (!(await pergunta({ titulo: `Remover o botão "${l.nome}" do menu?`, texto: 'Só vale depois de Salvar. Para esconder sem perder, use "Invisível".', ok: 'Remover', cancelaVermelho: true }))) return; EDIT.links.splice(i, 1); }
+      else if (a === 'del') { if (!(await pergunta({ titulo: `Remover o botão "${l.nome}" do menu?`, texto: 'Só vale depois de Salvar. Para esconder sem perder, use "Invisível".', ok: 'Remover', perigo: true }))) return; EDIT.links.splice(i, 1); }
       mudou(); renderLinks();
     });
     box.appendChild(row);
@@ -3955,7 +3977,7 @@ function renderIcones() {
   $('#ic-nome').onblur = e => { if (!e.target.value.trim()) { st.ed[st.sel].nome = e.target.placeholder; campos(); pinta(); } }; // vazio = fica o nome sugerido
   $('#ic-botao').onchange = e => { const c = st.ed[st.sel]; if (e.target.value) { c.botao = e.target.value; const l = (EDIT?.links || DADOS?.links || []).find(x => x.nome === c.botao); if (l && !c.caminho) { const cm = caminhoDe(l.url); if (cm) c.caminho = cm; } } else delete c.botao; campos(); pinta(); };
   $('#ic-caminho').oninput = e => { const v = e.target.value.trim(); if (v) st.ed[st.sel].caminho = v.startsWith('/') ? v : '/' + v; else delete st.ed[st.sel].caminho; $('#ic-st').textContent = /^(\/[a-z0-9/_-]{1,60})?$/i.test(st.ed[st.sel].caminho || '') ? '' : 'Use só letras, números, - e / (ex.: /jogos/).'; pinta(); };
-  $('#ic-apagar').onclick = async () => { if (!(await pergunta({ titulo: `Apagar o ícone "${st.ed[st.sel].nome}"?`, texto: 'Os lugares que usam ele voltam ao ícone comum. Só vale depois de Salvar.', ok: 'Apagar ícone', cancelaVermelho: true }))) return; delete st.ed[st.sel]; st.sel = 'sh'; campos(); pinta(); };
+  $('#ic-apagar').onclick = async () => { if (!(await pergunta({ titulo: `Apagar o ícone "${st.ed[st.sel].nome}"?`, texto: 'Os lugares que usam ele voltam ao ícone comum. Só vale depois de Salvar.', ok: 'Apagar ícone', perigo: true }))) return; delete st.ed[st.sel]; st.sel = 'sh'; campos(); pinta(); };
   $('#ic-salvar').onclick = async () => {
     const b = $('#ic-salvar'); b.disabled = true; $('#ic-st').textContent = 'Salvando…';
     const m = {}; for (const id of ids()) { const o = {}, novoId = novo(id), ref = novoId ? {} : P[id]; if (novoId && !String(st.ed[id].nome || '').trim()) st.ed[id].nome = 'Projeto novo';
@@ -4175,11 +4197,10 @@ function abaAdm(n) {
   const abas = $$('.adm-abas [data-aba]'); if (!abas.some(b => b.dataset.aba === n && !b.hidden)) n = 'botoes';
   abas.forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === n)));
   $$('.adm-pag').forEach(p => p.hidden = p.dataset.pag !== n);
-  if (n === 'conversas') window.EstudioConta?.adm?.conversas($('#conversas-adm'));
   if (n === 'icones') renderIcones();
   if (n === 'niveis') renderNiveis();
   abaAdm.atual = n; barraUnica();
-  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'conversas' || n === 'dispositivos'; // quem pode entrar salva sozinho; a nuvem é só para ver
+  $('#adm .savebar').hidden = n === 'acesso' || n === 'nuvem' || n === 'dispositivos'; // quem pode entrar salva sozinho; a nuvem é só para ver
   if (n === 'nuvem') { renderUsoDia(); if (!renderNuvem.feito) nvEspera(); } // o gasto (rápido) aparece na hora; a lista dos arquivos (demorada, gasta listas do dia) só ao clicar
   if (n === 'dispositivos') renderDispositivos();
   try { localStorage.setItem('ep-adm-aba', n); } catch { }
@@ -4193,9 +4214,7 @@ function showAdm(sobre) {
     busca.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $$('.adm-abas [data-aba]').find(b => !b.hidden && !b.classList.contains('fora'))?.click(); } }; }
   $('#adm-x').onclick = fecharAdm;
   let ultima = 'botoes'; try { ultima = localStorage.getItem('ep-adm-aba') || 'botoes'; } catch { }
-  if (/^#denuncias/.test(location.hash)) ultima = 'conversas'; // veio do alerta de denúncia (foto da conta)
-  addEventListener('hashchange', () => { if (/^#denuncias/.test(location.hash)) abaAdm('conversas'); });
-  ['#aba-acesso', '#aba-niveis', '#aba-nuvem', '#aba-conversas', '#aba-dispositivos'].forEach(q => { const b = $(q); if (b) b.hidden = false; }); // só chega aqui quem o servidor confirmou ADM
+  ['#aba-acesso', '#aba-niveis', '#aba-nuvem', '#aba-dispositivos'].forEach(q => { const b = $(q); if (b) b.hidden = false; }); // só chega aqui quem o servidor confirmou ADM
   abaAdm(ultima); renderAcesso().then(() => abaAdm(ultima));
   $('#nuvem-atu').onclick = async () => { const b = $('#nuvem-atu'); b.disabled = true; b.classList.add('girando'); if (renderNuvem.feito) await renderNuvem(true); else await renderUsoDia(true); b.classList.remove('girando'); b.disabled = false; };
   try { const f = localStorage.getItem('ep-nuvem-fonte'); if (NV_FONTE[f]) NV.fonte = f; } catch { }
@@ -4317,10 +4336,18 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(guarda, 400); }).observe(g, { childList: true, subtree: true }); })();
 </script>
 <script>
+/* CANTO DA VERSÃO (pedido da dona, 23/11/2026): o número e o nome da versão ('2.18 · Rainbow Candy') ficam FIXOS no canto de baixo à direita do menu,
+   com o selo do ADM (e os selos de cargo) colado nele. Clicar na versão pergunta se quer gerar o relatório de erro (o mesmo selo das telas de carregamento). */
+window.epCantoVersao = () => { const v = document.getElementById('versao-site'); if (!v) return; let c = document.getElementById('versao-canto');
+  if (!c) { c = document.createElement('div'); c.id = 'versao-canto'; document.body.appendChild(c); }
+  for (const id of ['badge-adm', 'selos-cargo']) { const e = document.getElementById(id); if (e && e.parentNode !== c) c.appendChild(e); }
+  if (v.parentNode !== c) c.appendChild(v); };
+</script>
+<script>
 /* MENU EM COLUNAS (html.m2): versão e saudação no cabeçalho, altura do cabeçalho para o menu caber na tela */
 (() => { if (!document.documentElement.classList.contains('m2')) return;
   const corDo = card => { const t = card.querySelector('.ic svg text, .ic svg [fill]:not(rect)'), r = card.querySelector('.ic svg rect'); const c = t?.getAttribute('fill') || r?.getAttribute('stroke'); if (c && c !== 'none') card.style.setProperty('--c', c); };
-  const arruma = () => { const v = document.getElementById('versao-site'), sm = document.querySelector('#top .brand small'); if (v && sm && v.parentNode !== sm && v.textContent) sm.appendChild(v);
+  const arruma = () => { window.epCantoVersao?.();
     const h = document.getElementById('hello'), conta = document.querySelector('#top [data-estudio-conta]'); if (h && conta && h.parentNode !== conta.parentNode && h.textContent) conta.parentNode.insertBefore(h, document.querySelector('#top .mn-lupa') || conta); };
   new MutationObserver(arruma).observe(document.documentElement, { childList: true, subtree: true }); arruma();
   const topo = () => { const t = document.getElementById('top'); if (t && t.offsetHeight) document.documentElement.style.setProperty('--m2-topo', t.offsetHeight + 'px'); }; addEventListener('resize', topo); new ResizeObserver(topo).observe(document.getElementById('top') || document.body); topo();
@@ -4348,7 +4375,7 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
         .filter(x => x[0] !== 'adm' || document.querySelector('#estudio .et[data-et="adm"]'));
       const k = L.map(x => x[0]).join(','); if (sis.dataset.k !== k) { sis.dataset.k = k; sis.innerHTML = L.map(([id, nm, c, p]) => '<button type="button" class="et ip-sis-b" data-sis="' + id + '" style="--c:' + c + '" aria-label="' + nm + '"><span class="gi">' + S + p + '</svg></span><span class="nm">' + nm + '</span></button>').join(''); } }
     if (!hora) { const t = $('#top'); if (t) { hora = document.createElement('span'); hora.className = 'ip-hora'; t.insertBefore(hora, $('#lupa') || t.querySelector('[data-estudio-conta]')); } }
-    const v = document.getElementById('versao-site'), sub = document.getElementById('top-sub'); if (v && sub && v.parentNode !== sub && v.textContent) sub.appendChild(v);
+    window.epCantoVersao?.();
     const h = document.getElementById('hello'), sd = wid.querySelector('[data-ip-saud]'); if (h && sd && sd.textContent !== h.textContent) sd.textContent = h.textContent;
     const vazio = !document.querySelector('.ip-dock .card, .ip-dock .et'); if (dock) dock.hidden = vazio;
   };

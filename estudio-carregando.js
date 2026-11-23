@@ -26,12 +26,13 @@
    Ao virar o dia, o que não é erro sai; os erros ficam 7 dias; limite de ~700 linhas / 400 mil letras.
    RELATÓRIO: "Gerar relatório de suporte" (menu da conta, em todos os programas) baixa um .md para OUTRO chat do Claude ler sem contexto:
    o que é o Estúdio, versão, navegador e tela, e o diário com os erros primeiro. E-mail mascarado como na ADM; tokens de login, passes, chaves, senhas e assinaturas de link não entram. */
-window.EstudioVersao ||= { nome: '2.17', apelido: 'Celeste', em: '17/11/2026',
+window.EstudioVersao ||= { nome: '2.18', apelido: 'Rainbow Candy', em: '23/11/2026', /* apelido = o NOME da versão (pedido da dona, 23/11/2026: 'Rainbow Candy'); aparece junto do número em todo lugar (rotulo) */
   /* NOVIDADES (o selo do canto abre este painel; pedido da dona, 10/11/2026). Ao lançar uma versão nova, troque o nome e esta lista. */
   /* VERSÃO ÚNICA (Celeste, 11/11/2026): este nome vale para o Estúdio TODO (todos os programas seguem a mesma numeração). Ao publicar uma versão nova,
      a notificação aparece em qualquer página com Atualizar / Fechar (atualizar é opcional). Ponha  importante: true  aqui quando a versão
      consertar algo sério: a notificação volta a cada abertura até a pessoa atualizar. */
   novidades: [
+    ['Rainbow Candy (2.18)', ['A versão ganhou nome: Rainbow Candy, junto do número em todo lugar.', 'O selo da versão fica fixo no canto de baixo à direita, também nas telas de carregamento. Clicar nele pergunta se quer gerar o relatório de erro.', 'Painéis do menu (perfil, nuvem, espaço do navegador, clima e novidades) abrem e fecham com a mesma animação, e todos têm o X vermelho no mesmo lugar.', 'Apagar pasta: Cancelar cinza e Apagar pasta em vermelho; os itens voltam para o menu.', 'ADM: a barra lateral vai até o fundo, o X vermelho fica no canto e Conversas saiu.', 'Fundo novo de doces na ADM › Fundo.', 'Atualizar todos os sites: o menu fica desfocado com o carregamento dizendo que está atualizando.']],
     ['Grade de programas (2.17)', ['O Início da grade de programas voltou a ser uma casinha.']],
     ['Logo (2.16)', ['O logo do Problems na aba do menu e na barra de cima, no tamanho certo.', 'O Início da grade de programas também com o logo do Problems.']],
     ['Ícones (2.15)', ['Letras dos ícones 10% maiores, em todo lugar.', 'O + da barra de baixo bem no centro.']],
@@ -60,6 +61,7 @@ window.EstudioVersao ||= { nome: '2.17', apelido: 'Celeste', em: '17/11/2026',
     ['Animador e Ateliê', ['Juntas com trava: cotovelo e joelho só dobram para o lado certo.', 'Andar sem travar e acessórios com atraso suave.', 'Exportar com o volume certo: o som não estoura mais (pico em −1 dB) e fica no volume dos Shorts e do YouTube (−14 LUFS). Dá para desligar o nivelamento na janela Exportar.']],
     ['Saiu', ['As Mensagens saíram do menu.']]
   ] };
+window.EstudioVersao.rotulo ||= window.EstudioVersao.nome + (window.EstudioVersao.apelido ? ' · ' + window.EstudioVersao.apelido : ''); // o que aparece na tela: '2.18 · Rainbow Candy'
 window.ESTUDIO_VERSAO ||= window.EstudioVersao.nome; // nome antigo (compatibilidade)
 window.EstudioDiario ||= (() => {
   const K = 'ep-diario', MAX = 700, MAXCH = 400000, DIAS_ERRO = 7;
@@ -205,7 +207,7 @@ ${pub && !so ? '- (não entra: relatório gerado numa tela sem login liberado)' 
    de limite. Elementos com  data-ep-suporte  (ex.: página 403 do porteiro) ganham o botão sozinhos; ="publico" = tela sem login.
    O botão e o selo só geram o arquivo: não abrem nada atrás nem mudam o acesso. Tudo com textContent (nada vira HTML). */
 window.EstudioSuporte ||= (() => {
-  const DICA = 'Gera um relatório para enviar aos ADMs', DICA_SELO = 'Novidades desta versão (e o relatório de suporte)', postos = new Set(); let css = false, selo = null;
+  const DICA = 'Gera um relatório para enviar aos ADMs', DICA_SELO = 'Versão do Estúdio · clique para gerar o relatório de erro', postos = new Set(); let css = false, selo = null;
   const estilo = () => { if (css) return; css = true; const st = document.createElement('style');
     st.textContent = `.ep-sup-bt{display:flex;align-items:center;justify-content:center;margin:12px auto 0;height:34px;padding:0 16px;border:1px solid rgba(255,255,255,.22);border-radius:0;background:rgba(255,255,255,.08);color:#f1f2f4;font:500 13px/1 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-sup-bt:hover{background:rgba(255,255,255,.16)}
 .ep-sup-selo{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:2147483647;height:22px;margin:0;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);border-radius:0;background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:.5px;white-space:nowrap;cursor:pointer}.ep-sup-selo:hover{background:rgba(14,32,58,.6)}
@@ -239,6 +241,12 @@ html[data-tema="claro"] :is(.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt){--sp-el:
 :root:root .ep-nov{background:rgba(0,0,0,.45)!important;color:var(--sp-tx)!important;font:400 14px/1.5 var(--sp-f)!important}
 :root:root .ep-nov .cx{width:min(460px,100%)!important;padding:0 24px 24px!important;background:var(--sp-el)!important;border-left:1px solid var(--sp-ln);border-radius:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)!important;animation:epCelNov .25s cubic-bezier(.1,.9,.2,1) both!important}
 @keyframes epCelNov{from{opacity:0;transform:translateX(24px)}}
+:root:root:root .ep-nov.sai .cx{animation:epCelNovSai .2s cubic-bezier(.4,0,1,1) both!important}:root:root:root .ep-nov.sai{animation:epNovSome .2s ease both!important}:root:root:root .ep-nov:not(.sai){animation:epCelNovF .2s ease both}
+@keyframes epCelNovSai{to{opacity:0;transform:translateX(24px)}}@keyframes epCelNovF{from{opacity:0}}
+/* X vermelho igual ao dos outros painéis (pedido da dona, 23/11/2026) */
+:root:root:root .ep-nov .fx{width:30px!important;height:30px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:50%!important;background:#ff453a!important;color:#fff!important;font-size:0!important;display:grid!important;place-items:center}
+:root:root:root .ep-nov .fx:hover{background:#ff5f55!important}html[data-tema="claro"]:root:root .ep-nov .fx{background:#ff3b30!important}
+:root:root:root .ep-nov .fx i{font-size:14px!important;font-weight:700!important;color:#fff!important;line-height:1!important}
 :root:root .ep-nov .cab{align-items:center!important;height:52px;margin:0 -24px 16px!important;padding:0 12px 0 24px;border-bottom:1px solid var(--sp-ln)}
 :root:root .ep-nov h2{font:600 17px/1.2 var(--sp-f)!important;margin:0!important;color:var(--sp-tx)}
 :root:root .ep-nov .cab small{color:var(--sp-tx3)!important;font-size:12px!important}
@@ -283,7 +291,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   function novidades(o) { if (document.querySelector('.ep-nov')) return; estilo();
     const V = window.EstudioVersao || {}, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const d = document.createElement('div'); d.className = 'ep-nov'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Novidades');
-    d.innerHTML = `<div class="cx"><div class="cab"><div><h2>Novidades</h2><small>Versão ${esc(V.nome || '')}${V.em ? ' · ' + esc(V.em) : ''}</small></div><button type="button" class="fx" data-x title="Fechar (Esc)"><i>✕</i>Fechar</button></div>
+    d.innerHTML = `<div class="cx"><div class="cab"><div><h2>Novidades</h2><small>Versão ${esc(V.rotulo || V.nome || '')}${V.em ? ' · ' + esc(V.em) : ''}</small></div><button type="button" class="fx" data-x title="Fechar (Esc)"><i>✕</i>Fechar</button></div>
       ${(V.novidades || []).map(([t, L]) => `<h3>${esc(t)}</h3><ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') || '<p>Nada novo anotado nesta versão.</p>'}
       <div class="pe"><p>Algo deu errado? Gere o relatório de suporte e mande só para quem vai resolver.</p><button type="button" data-r>Gerar relatório de suporte</button></div></div>`;
     const tecla = e => { if (e.key === 'Escape' && !document.querySelector('.ep-sup-pg')) { e.stopPropagation(); fecha(); } };
@@ -291,8 +299,14 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
     addEventListener('keydown', tecla, true); d.onclick = e => { if (e.target === d) fecha(); }; d.querySelector('[data-x]').onclick = fecha;
     d.querySelector('[data-r]').onclick = () => { fecha(); gerar(o); };
     document.documentElement.appendChild(d); try { d.querySelector('[data-x]').focus(); } catch { } }
-  function poeSelo(o) { if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.nome || ''; selo.title = DICA_SELO;
-    selo.onclick = () => novidades(o); document.documentElement.appendChild(selo); }
+  /* SELO DA VERSÃO (pedido da dona, 23/11/2026): número + nome, fixo no canto de baixo à direita; clicar pergunta se quer gerar o relatório de erro.
+     Aparece sozinho em toda tela de carregamento (porta dos programas, entrada do menu, Atualizando, ADM abrindo, nuvem do Animador). */
+  function poeSelo(o = {}) { estilo(); if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || ''; selo.title = DICA_SELO;
+    selo.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; document.documentElement.appendChild(selo); }
+  const TELAS = '#estudio-porta,#login,.login.boot,.login.cobrindo,#turma-login,#ep-atualizando,.ep-admj .car,#nuvem-tela,#saida.on,#saida[data-on]';
+  const visivel = e => { if (!e?.isConnected || e.hidden || e.classList.contains('ep-saindo') || e.classList.contains('sai')) return false; const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && +c.opacity > .05 && e.getClientRects().length > 0; };
+  let porTela = false; setInterval(() => { let t = false; try { t = [...document.querySelectorAll(TELAS)].some(visivel); } catch { }
+    if (t && !selo?.isConnected) { poeSelo({}); porTela = true; } else if (!t && porTela) { porTela = false; if (!postos.size) { selo?.remove(); selo = null; } } }, 300);
   function poe(c, o = {}) { if (!c) return; estilo();
     if (!c.querySelector('.ep-sup-bt')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ep-sup-bt'; b.textContent = 'Gerar relatório de suporte'; b.title = DICA;
       b.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; c.appendChild(b); postos.add(b); }
@@ -300,7 +314,7 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
   function tira() { postos.forEach(b => b.remove()); postos.clear(); selo?.remove(); selo = null; }
   const auto = () => document.querySelectorAll('[data-ep-suporte]').forEach(c => poe(c, { publico: c.getAttribute('data-ep-suporte') === 'publico' }));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else auto();
-  const S = { gerar, novidades, poe, tira, aberto: false, DICA }; return S;
+  const S = { gerar, novidades, poe, poeSelo, tira, aberto: false, DICA }; return S;
 })();
 
 /* ---------- motor do progresso (porcentagem + o que está carregando) ----------
