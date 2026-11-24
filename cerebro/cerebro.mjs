@@ -148,7 +148,7 @@ let ini = -1;
 for (let i = regs.length - 1; i >= 0; i--) if (ehPedido(regs[i])) { ini = i; break; }
 if (ini < 0) process.exit(0);
 
-const PASTA_ESTUDIO = /(\\|\/)ep(\\|\/)|Estúdio Problems|Estudio Problems|estudio\.problemsraiz|(\\|\/)\.claude(\\|\/)(skills(\\|\/)(celestia|walt-disney|design-problems|ouvir|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d|esqueleto-padrao|movimento-base|estilo-lumi)|agents(\\|\/)(celestia|walt-disney|design-problems)|hooks(\\|\/)cerebro)/i;
+const PASTA_ESTUDIO = /(\\|\/)ep(\\|\/)|Estúdio Problems|Estudio Problems|Turma do Problems|estudio\.problemsraiz|(\\|\/)\.claude(\\|\/)(skills(\\|\/)(celestia|walt-disney|design-problems|ouvir|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d|esqueleto-padrao|movimento-base|estilo-lumi)|agents(\\|\/)(celestia|walt-disney|design-problems)|hooks(\\|\/)cerebro)/i;
 const FORA = /scratchpad|conferencia|Backups/i;
 const MEMORIA = /(\\|\/)memory(\\|\/)/i;
 const GRAVOU = /cerebro\.mjs['"]?\s+(aprender|salvar|renomear|feito)|gravar-cerebro/i;
