@@ -195,11 +195,18 @@ test('10. gravação de quem NÃO é ADM: entra na hora, aparece na Revisar, sin
 
 test('11. gravação de ADM: direto, sem entrar na revisão; aprender, renomear e feito', async () => {
   const antes = (await env.EQUIPE_DB.prepare('SELECT count(*) AS n FROM cerebro_revisao').first()).n;
-  const a = await ferramenta(dona.access_token, 'aprender', { tipo: 'evitar', assunto: 'Não usar / barra no nome', texto: 'Barra vira pasta.', resumo: 'Evite barra no título.', ...regs }); assert.equal(a.isError, undefined, texto(a)); assert.match(texto(a), /Gravado em A evitar/);
-  const hoje = new Date().toISOString().slice(0, 10); const lido = texto(await ferramenta(dona.access_token, 'ler', { caminho: `A evitar/${hoje} Não usar - barra no nome` })); assert.match(lido, /marca evitar/); assert.match(lido, /Última mudança: Claude Teste 1, a pedido de Dona Teste/);
+  // aprender (Livro, 26/11/2026): a lição entra DENTRO da página do Livro, na seção certa; nada de página solta
+  const pg = await ferramenta(dona.access_token, 'salvar', { caminho: 'Livro/2 O Short/04 Animação', corpo: '# Animação\n\n## Boca\n- boca pela voz\n\n## Evitar\n- nada\n\n## Ligações\n- [[Roteiro]]: texto\n', resumo: 'Animação.', ...regs }); assert.equal(pg.isError, undefined, texto(pg));
+  const a = await ferramenta(dona.access_token, 'aprender', { pagina: 'Animação', tipo: 'evitar', texto: 'Barra no nome vira pasta.', ...regs }); assert.equal(a.isError, undefined, texto(a)); assert.match(texto(a), /Gravado no Livro: Animação › Evitar/);
+  const b = await ferramenta(dona.access_token, 'aprender', { pagina: 'animacao', secao: 'Boca', assunto: 'Número', texto: 'Número falado pelas vogais.', ...regs }); assert.match(texto(b), /Animação › Boca/);
+  const c2 = await ferramenta(dona.access_token, 'aprender', { pagina: 'Animação', texto: 'Uma lição sem seção.', ...regs }); assert.match(texto(c2), /Lições novas \(a organizar\)/);
+  assert.match(texto(await ferramenta(dona.access_token, 'aprender', { pagina: 'Animação', tipo: 'evitar', texto: 'Barra no nome vira pasta.', ...regs })), /Já está no Livro/);
+  const lido = texto(await ferramenta(dona.access_token, 'ler', { caminho: 'Livro/2 O Short/04 Animação' })); assert.match(lido, /Última mudança: Claude Teste 1, a pedido de Dona Teste/);
+  const corpoL = lido.slice(lido.indexOf('# Animação')); assert.ok(corpoL.indexOf('Barra no nome vira pasta.') > corpoL.indexOf('## Evitar') && corpoL.indexOf('Barra no nome vira pasta.') < corpoL.indexOf('## Ligações'), 'evitar entra na seção Evitar');
+  assert.ok(corpoL.indexOf('**Número:** Número falado pelas vogais.') > corpoL.indexOf('## Boca') && corpoL.indexOf('**Número:**') < corpoL.indexOf('## Evitar'), 'entra na seção pedida');
+  assert.ok(corpoL.indexOf('## Lições novas (a organizar)') < corpoL.indexOf('## Evitar'), 'seção nova vem antes de Evitar');
   assert.equal((await env.EQUIPE_DB.prepare('SELECT count(*) AS n FROM cerebro_revisao').first()).n, antes, 'ADM não gera revisão');
-  const r = await ferramenta(dona.access_token, 'aprender', { tipo: 'referencia', assunto: 'Doc do MCP', texto: 'Especificação.', url: 'https://modelcontextprotocol.io', resumo: 'Link da especificação.', ...regs }); assert.equal(r.isError, undefined, texto(r));
-  const invalido = await ferramenta(dona.access_token, 'aprender', { tipo: 'outro', assunto: 'x', texto: 'y', ...regs }); assert.equal(invalido.isError, true);
+  const invalido = await ferramenta(dona.access_token, 'aprender', { pagina: 'Página que não existe', texto: 'y', ...regs }); assert.equal(invalido.isError, true);
   const ren = await ferramenta(dona.access_token, 'renomear', { caminho: 'Programas/Pagina grande', nomeNovo: 'Pagina grande renomeada', ...regs }); assert.equal(ren.isError, undefined, texto(ren)); assert.match(texto(await ferramenta(dona.access_token, 'ler', { caminho: 'Programas/Pagina grande renomeada', parte: 3 })), /Fim da página/);
   const f = await ferramenta(maria.access_token, 'feito', { id: env.pedidoId, nota: 'Registrado em Programas/Animador', ia: 'Claude Sonnet 5.5', pedidoPor: 'Maria' }); assert.equal(f.isError, undefined, texto(f)); assert.equal(texto(await ferramenta(maria.access_token, 'pedidos')), 'Nenhum pedido esperando.');
   const nf = await ferramenta(maria.access_token, 'feito', { id: 'nao-existe', ia: 'Claude', pedidoPor: 'Maria' }); assert.equal(nf.isError, true);
@@ -208,7 +215,7 @@ test('11. gravação de ADM: direto, sem entrar na revisão; aprender, renomear 
 test('12. segredos são recusados (e e-mails mascarados) também pelo conector; token do conector nunca entra no Cérebro', async () => {
   for (const [segredo, nome] of [['sk-ant-api03-' + 'A'.repeat(40), 'chave da Anthropic'], ['Authorization: Bearer ' + 'x'.repeat(48), 'token de login'], ['cbt_' + 'B'.repeat(43), 'token do conector do Cérebro'], ['cbr_' + 'B'.repeat(43), 'token do conector do Cérebro'], ['-----BEGIN PRIVATE KEY-----', 'chave privada']]) {
     const r = await ferramenta(dona.access_token, 'salvar', { caminho: 'Aprendizados/segredo', corpo: 'um texto com ' + segredo, resumo: 'r', ...regs }); assert.equal(r.isError, true, nome); assert.match(texto(r), new RegExp('Não gravei: .*' + nome));
-    const r2 = await ferramenta(dona.access_token, 'aprender', { tipo: 'regra', assunto: 'segredo', texto: 'ok', resumo: segredo.slice(0, 80), ...regs }); assert.equal(r2.isError, true); }
+    const r2 = await ferramenta(dona.access_token, 'aprender', { pagina: 'Animação', texto: 'ok ' + segredo, ...regs }); assert.equal(r2.isError, true); }
   assert.equal(await env.EQUIPE_DB.prepare("SELECT 1 FROM cerebro_no WHERE nome = 'segredo'").first(), null);
 });
 

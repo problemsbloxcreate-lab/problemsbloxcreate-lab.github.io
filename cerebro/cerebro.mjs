@@ -11,17 +11,14 @@
    node cerebro.mjs ler "<Pasta/Arquivo>"                  mostra o arquivo com a versão
    node cerebro.mjs buscar "<palavras>"
    node cerebro.mjs salvar "<Pasta/Arquivo>" --arquivo x.md --base 3 --marca regra --ia "Claude Opus 5.5" --pedido "Fulana" --motivo "..."
-   node cerebro.mjs aprender evitar|aprendizado|referencia|regra "<assunto>" --texto "..." [--url https://...] --ia "..." --pedido "..." --motivo "..."
+   node cerebro.mjs aprender "<Página do Livro>" --texto "<lição geral>" [--secao "<seção>"] [--tipo evitar] --ia "..." --pedido "..." --motivo "..."   põe a lição DENTRO da página do Livro
    node cerebro.mjs renomear "<Pasta/Arquivo>" "<nome novo>" --ia "..." --pedido "..." --motivo "..."   muda só o nome (o conteúdo e o histórico ficam)
    node cerebro.mjs feito <id do pedido> --nota "..."
 */
 import { readFileSync, writeFileSync, mkdirSync, rmSync, renameSync } from 'node:fs'; import { homedir, hostname } from 'node:os'; import http from 'node:http'; import { spawn, spawnSync } from 'node:child_process'; import { join } from 'node:path'; import { randomBytes, createHash } from 'node:crypto';
 const SERVIDOR = process.env.CEREBRO_URL || 'https://turma-ia.problemsraiz.workers.dev';
 if (!/^https?:\/\/[\w.:-]+$/.test(SERVIDOR)) { console.error('CEREBRO_URL inválida (use só http:// ou https:// e o endereço, sem espaços nem símbolos).'); process.exit(1); }
-const AVISO_FIXO = 'CÉREBRO DO ESTÚDIO PROBLEMS = o LIVRO DO ESTÚDIO (refeito em 26/11/2026). SÓ para tarefas do Estúdio (programas do site estudio.problemsraiz.workers.dev, personagens, animações, Shorts e vídeos da Turma do Problems, repositórios da pasta ep). FORA DISSO (outro site, Minecraft direto, Problems Raiz, qualquer outro assunto) NÃO leia, NÃO grave e NÃO cite o Cérebro; na dúvida, pergunte. ' +
-  'LER: o livro inteiro em texto, sem login: https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md (para gente: https://problemsbloxcreate-lab.github.io/cerebro/livro/). A cada pedido, as seções certas do Livro já chegam sozinhas no contexto. Antes de mexer num assunto, leia a página dele (mcp__cerebro__ler "Livro/..."). ' +
-  'GRAVAR: só decisão, regra ou correção da dona e o estado atual de um programa, como lição geral ("a animação tem que ser assim", nunca diário, versão ou rodada), ATUALIZANDO a página do Livro do assunto, nunca página solta; se não há nada durável, não grave. Nunca senha, chave, token ou e-mail. ' +
-  'Ao perguntar à dona: grill-me (perguntas numeradas, cada uma com recomendação). No fim da resposta do Estúdio: "> 🧠 **Cérebro:** consultei <página>" (e "· gravei <página>"). Computador sem ~/.claude/cerebro.mjs: baixe https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs e rode node cerebro.mjs instalar (a pessoa só toca em Permitir).';
+const AVISO_FIXO = 'CÉREBRO DO ESTÚDIO PROBLEMS = o LIVRO DO ESTÚDIO (refeito em 26/11/2026). SÓ para tarefas do Estúdio (programas do site estudio.problemsraiz.workers.dev, personagens, animações, Shorts e vídeos da Turma do Problems, repositórios da pasta ep). FORA DISSO (outro site, Minecraft direto, Problems Raiz, qualquer outro assunto) NÃO leia, NÃO grave e NÃO cite o Cérebro; na dúvida, pergunte. LER: o livro inteiro em texto, sem login: https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md (para gente: https://problemsbloxcreate-lab.github.io/cerebro/livro/). A cada pedido, as seções certas do Livro já chegam sozinhas no contexto. Antes de mexer num assunto, leia a página dele (mcp__cerebro__ler "Livro/..."). GRAVAR: só decisão, regra ou correção da dona e o estado atual de um programa, como lição geral ("a animação tem que ser assim", nunca diário, versão ou rodada), ATUALIZANDO a página do Livro do assunto, nunca página solta; se não há nada durável, não grave. Nunca senha, chave, token ou e-mail. Ao perguntar à dona: grill-me (perguntas numeradas, cada uma com recomendação). No fim da resposta do Estúdio: "> 🧠 **Cérebro:** consultei <página>" (e "· gravei <página>"). Computador sem ~/.claude/cerebro.mjs: baixe https://problemsbloxcreate-lab.github.io/cerebro/cerebro.mjs e rode node cerebro.mjs instalar (a pessoa só toca em Permitir).';
 function chave() { if (process.env.CEREBRO_CHAVE) return process.env.CEREBRO_CHAVE.trim(); try { return readFileSync(join(homedir(), '.claude', 'cerebro-chave.txt'), 'utf8').trim(); } catch { return ''; } }
 /* ---- acesso (16/11/2026): o computador entra pelo LOGIN DO GOOGLE (a pessoa só toca em Permitir, uma vez); a chave c-... ficou só de reserva ---- */
 const CONEXAO = () => join(homedir(), '.claude', 'cerebro-conexao.json');
@@ -378,6 +375,28 @@ async function conferir(forca) { const fc = join(CL(), 'cerebro-conferido.json')
   let n = 0; try { const man = lerJson(MANI(), {}), it = await itensDeSkills(); for (const x of it) { if (man[x.id] !== x.ver || !existsSync(join(CL(), ...destinoDe(x.pasta, x.nome)))) n++; } writeFileSync(fc, JSON.stringify({ t: Date.now(), n })); } catch { return { n: c.n, falta }; }
   return { n, falta }; }
 const PASTAS = { evitar: 'A evitar', aprendizado: 'Aprendizados', referencia: 'Referências', regra: 'Regras' };
+// LIVRO (Cérebro novo, 26/11/2026): "aprender" não cria mais página solta; põe a lição DENTRO da página do Livro do assunto.
+const LIVRO_CAMINHOS = { 'Comece aqui': 'Livro/1 Comece/01 Comece aqui', 'Como trabalhar': 'Livro/1 Comece/02 Como trabalhar', 'Estilo do Short': 'Livro/2 O Short/01 Estilo do Short', 'Roteiro': 'Livro/2 O Short/02 Roteiro', 'Personagens': 'Livro/2 O Short/03 Personagens', 'Animação': 'Livro/2 O Short/04 Animação', 'Áudio': 'Livro/2 O Short/05 Áudio', 'Arte e cenários': 'Livro/2 O Short/06 Arte e cenários', 'Animador': 'Livro/3 Programas/01 Animador', 'Ateliê': 'Livro/3 Programas/02 Ateliê', 'Preparativos': 'Livro/3 Programas/03 Preparativos', 'Publicações': 'Livro/3 Programas/04 Publicações', 'Editor': 'Livro/3 Programas/05 Editor', 'Shorts': 'Livro/3 Programas/06 Shorts', 'Cenários': 'Livro/3 Programas/07 Cenários', 'Modelador': 'Livro/3 Programas/08 Modelador', 'Menu e ADM': 'Livro/3 Programas/09 Menu e ADM', 'Cérebro': 'Livro/3 Programas/10 Cérebro', 'Outros programas': 'Livro/3 Programas/11 Outros programas', 'Site e servidores': 'Livro/4 Apoio/01 Site e servidores', 'Referências': 'Livro/4 Apoio/02 Referências' };
+const LIVRO_PAGS = Object.keys(LIVRO_CAMINHOS);
+const livroNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const livroPagina = n => LIVRO_PAGS.find(p => livroNorm(p) === livroNorm(n)) || LIVRO_PAGS.find(p => livroNorm(n) && livroNorm(p).includes(livroNorm(n)));
+// põe a lição como item "- ..." no fim da seção certa: tipo evitar → "## Evitar"; senão a seção pedida; senão "## Lições novas (a organizar)" (criada antes de Evitar/Ligações)
+function livroInsere(md, { tipo, secao, assunto, texto }) {
+  const corpo = String(texto || '').trim().replace(/^[-*]\s+/, '').replace(/\s*\n+\s*/g, ' ');
+  if (!corpo) throw new Error('Falta o texto da lição.');
+  const d = new Date(), data = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+  const linha = '- ' + (assunto ? '**' + String(assunto).trim().replace(/[:.]+$/, '') + ':** ' : '') + corpo + ' (' + data + ')';
+  if (livroNorm(md).includes(livroNorm(corpo))) return { md, igual: true };
+  const L = String(md || '').replace(/\s+$/, '').split('\n');
+  const secs = () => L.map((l, i) => ({ l, i })).filter(x => /^## /.test(x.l)).map(x => ({ t: x.l.slice(3).trim(), i: x.i }));
+  const acha = n => secs().find(s => livroNorm(s.t) === livroNorm(n)) || secs().find(s => livroNorm(n) && livroNorm(s.t).includes(livroNorm(n)));
+  let alvo = tipo === 'evitar' ? acha('Evitar') : secao ? acha(secao) : null;
+  if (!alvo) { alvo = acha('Lições novas (a organizar)'); if (!alvo) { const antes = acha('Evitar') || acha('Ligações'), at = antes ? antes.i : L.length; L.splice(at, 0, '## Lições novas (a organizar)', ''); alvo = acha('Lições novas (a organizar)'); } }
+  const prox = secs().find(s => s.i > alvo.i); let fim = prox ? prox.i : L.length; while (fim > alvo.i + 1 && !L[fim - 1].trim()) fim--;
+  L.splice(fim, 0, linha);
+  return { md: L.join('\n').replace(/\n(## )/g, (m, h, off, s) => s[off - 1] === '\n' ? m : '\n\n' + h) + '\n', secao: alvo.t };
+}
+
 if (!cmd || cmd === 'ajuda' || cmd === 'help' || cmd === '-h' || cmd === '--help' || op.help || op.ajuda) { AJUDA(); process.exit(0); }
 if (desconhecidas.length) { console.error('Opção desconhecida: ' + desconhecidas.join(' ') + '. Nada foi feito. Veja: node cerebro.mjs --help'); process.exit(1); }
 try {
@@ -394,7 +413,14 @@ try {
     else for (const x of (await pede('/buscar?q=' + encodeURIComponent(pos.join(' ')))).itens) console.log(`- ${x.nome} [${x.id}]: ${String(x.trecho || x.resumo || '').replace(/\s+/g, ' ')}`); }
   else if (cmd === 'pedidos') for (const x of (await pede('/pedidos?estado=novo')).itens) console.log(`- ${x.id} (${x.tipo}) de ${x.por}${x.alvo ? ', sobre ' + x.alvo : ''}: ${x.texto}`);
   else if (cmd === 'salvar') mostra(await pede('/salvar', { caminho: pos[0], tipo: op.tipo || 'texto', corpo: op.arquivo ? readFileSync(op.arquivo, 'utf8') : op.texto, ...(op.acrescentar ? { acrescentar: op.acrescentar } : {}), ...(op.base ? { base: +op.base } : {}), ...(op.marca ? { marca: op.marca } : {}), ...(op.resumo ? { resumo: op.resumo } : {}), ...(op.url ? { url: op.url } : {}), ...reg() }));
-  else if (cmd === 'aprender') { const t = pos[0]; if (!PASTAS[t]) throw new Error('Use: evitar, aprendizado, referencia ou regra.'); mostra(await pede('/salvar', { caminho: `${PASTAS[t]}/${hoje()} ${String(pos[1] || '').replace(/[\/\\]+/g, '-')}`, tipo: t === 'referencia' ? 'referencia' : 'texto', marca: t, corpo: op.arquivo ? readFileSync(op.arquivo, 'utf8') : op.texto, ...(op.url ? { url: op.url } : {}), ...(op.resumo ? { resumo: op.resumo } : {}), ...reg() })); }
+  else if (cmd === 'aprender') { // node cerebro.mjs aprender "<Página do Livro>" --texto "..." [--secao "..."] [--tipo evitar] [--assunto "..."] --ia ... --pedido ... --motivo ...
+    let pag = livroPagina(pos[0]), tipo = op.tipo; if (!pag && PASTAS[pos[0]]) { tipo = tipo || pos[0]; pag = livroPagina(op.pagina); } // jeito antigo (aprender evitar "assunto" --pagina X)
+    if (!pag) throw new Error('Diga a página do Livro: aprender "<página>" --texto "...". Páginas: ' + LIVRO_PAGS.join(', '));
+    const cam = LIVRO_CAMINHOS[pag], texto = op.arquivo ? readFileSync(op.arquivo, 'utf8') : op.texto; let feito = false;
+    for (let tenta = 0; tenta < 2 && !feito; tenta++) { const { item: x } = await pede('/item?caminho=' + encodeURIComponent(cam)); const r = livroInsere(x.corpo || '', { tipo, secao: op.secao, assunto: op.assunto || (PASTAS[pos[0]] ? pos[1] : undefined), texto });
+      if (r.igual) { console.log('Já está no Livro (' + pag + '): nada mudou.'); feito = true; break; }
+      try { mostra(await pede('/salvar', { caminho: cam, corpo: r.md, base: x.ver, ...reg() })); console.log('Gravado no Livro: ' + pag + ' › ' + r.secao); feito = true; } catch (e) { if (tenta) throw e; } }
+  }
   else if (cmd === 'renomear') { if (!pos[0] || !pos[1]) throw new Error('Use: renomear "<Pasta/Arquivo>" "<nome novo>" --ia ... --pedido ... --motivo ...'); const { item: x } = await pede('/item?caminho=' + encodeURIComponent(pos[0])); mostra(await pede('/salvar', { id: x.id, nome: pos[1], base: x.ver, ...reg() })); }
   else if (cmd === 'feito') mostra(await pede('/pedido', { id: pos[0], estado: op.estado || 'feito', nota: op.nota, ...reg() }));
   else console.log(readFileSync(new URL(import.meta.url), 'utf8').split('*/')[0]);

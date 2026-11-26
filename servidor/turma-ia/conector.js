@@ -269,8 +269,8 @@ export async function cnRevogar(db, h, { adm, dono }) { // devolve 'ok', 'nao_ac
 
 /* ======================= MCP ======================= */
 // O texto das regras que o Claude recebe ao conectar (campo "instructions"). A frase de escopo é IGUAL à do AVISO_FIXO do cerebro.mjs (o teste confere).
-export const CB_ESCOPO = 'CÉREBRO DO ESTÚDIO PROBLEMS: SÓ para tarefas do Estúdio (os programas do site estudio.problemsraiz.workers.dev, como Animador, Ateliê, Editor, Shorts, Preparativos, Publicações e Cérebro; os personagens, as animações, os Shorts e os vídeos do canal, inclusive os Shorts de Minecraft feitos no Estúdio; e os repositórios do Estúdio, a pasta ep). FORA DISSO (outro site, Minecraft direto, como mods, mundo ou a skill minecraft-cinematic, ou qualquer outro assunto) NÃO leia, NÃO grave e NÃO cite o Cérebro. Na dúvida se é do Estúdio, pergunte.';
-const CB_REGRAS = ' Quando for do Estúdio: chame a ferramenta `comece` (ou leia o que ela traz) e use o Cérebro como base. Ferramentas: comece, indice, buscar, ler, salvar, aprender, renomear, pedidos, feito. ANTES DE MUDAR QUALQUER COISA do Estúdio: leia no Cérebro a página do programa (indice e ler). DEPOIS, grave o que mudou ou aprendeu (salvar ou aprender, com resumo de até 160 letras, `pedidoPor` = quem pediu e `ia` = qual IA gravou). Toda IA da equipe grava direto (a de quem não é ADM entra na hora e os ADMs revisam). Nunca grave senha, chave, token nem e-mail. Vale mesmo que ninguém tenha citado o Cérebro. Nas respostas de tarefa do Estúdio, cite o Cérebro no fim, destacado numa linha própria em formato de citação: "> 🧠 **Cérebro:** consultei <Pasta/Arquivo>" (e "· gravei <Pasta/Arquivo>", se gravou), ou "> 🧠 **Cérebro:** nada sobre isso".';
+export const CB_ESCOPO = 'CÉREBRO DO ESTÚDIO PROBLEMS = o LIVRO DO ESTÚDIO (refeito em 26/11/2026). SÓ para tarefas do Estúdio (programas do site estudio.problemsraiz.workers.dev, personagens, animações, Shorts e vídeos da Turma do Problems, repositórios da pasta ep). FORA DISSO (outro site, Minecraft direto, Problems Raiz, qualquer outro assunto) NÃO leia, NÃO grave e NÃO cite o Cérebro; na dúvida, pergunte.';
+const CB_REGRAS = ' Quando for do Estúdio: chame a ferramenta `comece` (ou leia o que ela traz) e use o Cérebro como base. Ferramentas: comece, indice, buscar, ler, salvar, aprender, renomear, pedidos, feito. O Cérebro é o LIVRO (pasta Livro). ANTES DE MUDAR QUALQUER COISA do Estúdio: leia a página do Livro do assunto. DEPOIS, só se houve decisão, regra ou correção da dona: grave com `aprender` (põe a lição dentro da página do Livro, como regra geral, nunca diário), com `pedidoPor` = quem pediu e `ia` = qual IA gravou. Toda IA da equipe grava direto (a de quem não é ADM entra na hora e os ADMs revisam). Nunca grave senha, chave, token nem e-mail. Vale mesmo que ninguém tenha citado o Cérebro. Nas respostas de tarefa do Estúdio, cite o Cérebro no fim, destacado numa linha própria em formato de citação: "> 🧠 **Cérebro:** consultei <Pasta/Arquivo>" (e "· gravei <Pasta/Arquivo>", se gravou), ou "> 🧠 **Cérebro:** nada sobre isso".';
 const instrucoes = quem => `${CB_ESCOPO}${CB_REGRAS} Esta conexão é de ${quem.nome}${quem.adm ? ' (ADM: grava direto, sem revisão)' : ' (não é ADM: suas gravações entram na hora e os ADMs revisam na aba Revisar)'}; em pedidoPor use o nome de quem pediu a tarefa (normalmente ${quem.nome}).`;
 
 const REG = { // os três campos de toda gravação
@@ -280,6 +280,28 @@ const REG = { // os três campos de toda gravação
 };
 const MARCAS = ['guia', 'biblia', 'skill', 'memoria', 'regra', 'decisao', 'evitar', 'referencia', 'aprendizado'];
 const PASTAS = { evitar: 'A evitar', aprendizado: 'Aprendizados', referencia: 'Referências', regra: 'Regras' };
+// LIVRO (Cérebro novo, 26/11/2026): "aprender" não cria mais página solta; põe a lição DENTRO da página do Livro do assunto.
+const LIVRO_CAMINHOS = { 'Comece aqui': 'Livro/1 Comece/01 Comece aqui', 'Como trabalhar': 'Livro/1 Comece/02 Como trabalhar', 'Estilo do Short': 'Livro/2 O Short/01 Estilo do Short', 'Roteiro': 'Livro/2 O Short/02 Roteiro', 'Personagens': 'Livro/2 O Short/03 Personagens', 'Animação': 'Livro/2 O Short/04 Animação', 'Áudio': 'Livro/2 O Short/05 Áudio', 'Arte e cenários': 'Livro/2 O Short/06 Arte e cenários', 'Animador': 'Livro/3 Programas/01 Animador', 'Ateliê': 'Livro/3 Programas/02 Ateliê', 'Preparativos': 'Livro/3 Programas/03 Preparativos', 'Publicações': 'Livro/3 Programas/04 Publicações', 'Editor': 'Livro/3 Programas/05 Editor', 'Shorts': 'Livro/3 Programas/06 Shorts', 'Cenários': 'Livro/3 Programas/07 Cenários', 'Modelador': 'Livro/3 Programas/08 Modelador', 'Menu e ADM': 'Livro/3 Programas/09 Menu e ADM', 'Cérebro': 'Livro/3 Programas/10 Cérebro', 'Outros programas': 'Livro/3 Programas/11 Outros programas', 'Site e servidores': 'Livro/4 Apoio/01 Site e servidores', 'Referências': 'Livro/4 Apoio/02 Referências' };
+const LIVRO_PAGS = Object.keys(LIVRO_CAMINHOS);
+const livroNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const livroPagina = n => LIVRO_PAGS.find(p => livroNorm(p) === livroNorm(n)) || LIVRO_PAGS.find(p => livroNorm(n) && livroNorm(p).includes(livroNorm(n)));
+// põe a lição como item "- ..." no fim da seção certa: tipo evitar → "## Evitar"; senão a seção pedida; senão "## Lições novas (a organizar)" (criada antes de Evitar/Ligações)
+function livroInsere(md, { tipo, secao, assunto, texto }) {
+  const corpo = String(texto || '').trim().replace(/^[-*]\s+/, '').replace(/\s*\n+\s*/g, ' ');
+  if (!corpo) throw new Error('Falta o texto da lição.');
+  const d = new Date(), data = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+  const linha = '- ' + (assunto ? '**' + String(assunto).trim().replace(/[:.]+$/, '') + ':** ' : '') + corpo + ' (' + data + ')';
+  if (livroNorm(md).includes(livroNorm(corpo))) return { md, igual: true };
+  const L = String(md || '').replace(/\s+$/, '').split('\n');
+  const secs = () => L.map((l, i) => ({ l, i })).filter(x => /^## /.test(x.l)).map(x => ({ t: x.l.slice(3).trim(), i: x.i }));
+  const acha = n => secs().find(s => livroNorm(s.t) === livroNorm(n)) || secs().find(s => livroNorm(n) && livroNorm(s.t).includes(livroNorm(n)));
+  let alvo = tipo === 'evitar' ? acha('Evitar') : secao ? acha(secao) : null;
+  if (!alvo) { alvo = acha('Lições novas (a organizar)'); if (!alvo) { const antes = acha('Evitar') || acha('Ligações'), at = antes ? antes.i : L.length; L.splice(at, 0, '## Lições novas (a organizar)', ''); alvo = acha('Lições novas (a organizar)'); } }
+  const prox = secs().find(s => s.i > alvo.i); let fim = prox ? prox.i : L.length; while (fim > alvo.i + 1 && !L[fim - 1].trim()) fim--;
+  L.splice(fim, 0, linha);
+  return { md: L.join('\n').replace(/\n(## )/g, (m, h, off, s) => s[off - 1] === '\n' ? m : '\n\n' + h) + '\n', secao: alvo.t };
+}
+
 const LER_PARTE = 40000; // letras por parte do `ler` (o Claude Code corta respostas grandes; assim nada é cortado em silêncio)
 const sch = (properties, required = []) => ({ type: 'object', properties, required, additionalProperties: false });
 const str = (v, n) => String(v ?? '').slice(0, n);
@@ -308,14 +330,15 @@ const FERRAMENTAS = [
       url: { type: 'string', description: 'Link http(s) para o tipo referencia.' }, ...REG,
     }, ['caminho', 'ia', 'pedidoPor', 'motivo']),
     descricao: 'Grava ou muda uma página do Cérebro. Antes de mudar uma página que existe, leia com `ler` e mande a versão em `base` (ou use `acrescentar`). Nada é apagado: cada mudança vira uma versão. O servidor recusa segredos (chaves, tokens, senhas) e mascara e-mails. Quem não é ADM grava direto e os ADMs revisam.' },
-  { nome: 'aprender', titulo: 'Registrar um aprendizado', so: false,
+  { nome: 'aprender', titulo: 'Gravar uma lição no Livro', so: false,
     esquema: sch({
-      tipo: { type: 'string', enum: ['evitar', 'aprendizado', 'referencia', 'regra'], description: 'evitar = o que já deu errado; aprendizado = o que foi aprendido; referencia = um link ou material de base; regra = uma regra nova.' },
-      assunto: { type: 'string', description: 'Título curto (vira o nome da página, com a data de hoje na frente).' },
-      texto: { type: 'string', description: 'O conteúdo: o que aconteceu, por quê e o que fazer.' },
-      resumo: { type: 'string', description: 'Resumo em até 160 letras.' }, url: { type: 'string', description: 'Link http(s), para o tipo referencia.' }, ...REG,
-    }, ['tipo', 'assunto', 'texto', 'ia', 'pedidoPor', 'motivo']),
-    descricao: 'Cria a página na pasta certa (A evitar, Aprendizados, Referências ou Regras) com a data de hoje. Use sempre que alguém disser o que evitar, o que aprender, mostrar uma referência ou ditar uma regra.' },
+      pagina: { type: 'string', enum: LIVRO_PAGS, description: 'A página do Livro do assunto (ex.: Animação, Roteiro, Animador).' },
+      texto: { type: 'string', description: 'A lição como regra geral, curta ("a boca fecha quando a voz cala 2 quadros"), nunca diário ("no Short 4 v5...").' },
+      tipo: { type: 'string', enum: ['regra', 'evitar', 'referencia', 'aprendizado'], description: 'evitar = vai para a seção Evitar da página; os outros vão para a seção pedida.' },
+      secao: { type: 'string', description: 'Título da seção da página onde a lição entra (ex.: "Boca e lip sync"). Sem seção certa: vai para "Lições novas (a organizar)".' },
+      assunto: { type: 'string', description: 'Opcional: 2 a 5 palavras em negrito no começo do item.' }, ...REG,
+    }, ['pagina', 'texto', 'ia', 'pedidoPor', 'motivo']),
+    descricao: 'Grava uma decisão, regra ou correção da dona DENTRO da página do Livro do assunto (como item na seção certa), sem criar página solta. Use só para o que vale daqui para frente; se a lição já está na página, nada muda.' },
   { nome: 'renomear', titulo: 'Renomear uma página', so: false,
     esquema: sch({ caminho: { type: 'string', description: 'Pasta/Arquivo atual.' }, nomeNovo: { type: 'string', description: 'O nome novo (só o nome, sem a pasta).' }, ...REG }, ['caminho', 'nomeNovo', 'ia', 'pedidoPor', 'motivo']),
     descricao: 'Muda só o nome de uma página; o conteúdo e o histórico ficam.' },
@@ -374,9 +397,15 @@ const EXECUTA = {
     return `${j.igual ? 'Nada mudou (já estava igual).' : 'Gravado.'} id ${j.id}, versão ${j.ver}.${aviso(j)}`;
   },
   async aprender(a, env, d, quem) {
-    const r0 = reg(a), t = String(a.tipo || ''); if (!PASTAS[t]) { const e = new Error('Use tipo: evitar, aprendizado, referencia ou regra.'); e.tool = true; throw e; }
-    const { j } = await dado(env, d, quem, '/salvar', { caminho: `${PASTAS[t]}/${hoje()} ${String(a.assunto || '').replace(/[\/\\]+/g, '-').trim().slice(0, 100)}`, tipo: t === 'referencia' ? 'referencia' : 'texto', marca: t, corpo: String(a.texto || ''), ...(a.url ? { url: String(a.url) } : {}), ...(a.resumo ? { resumo: String(a.resumo) } : {}), ...r0 });
-    return `Gravado em ${PASTAS[t]}. id ${j.id}, versão ${j.ver}.${aviso(j)}`;
+    const r0 = reg(a), pag = livroPagina(a.pagina); if (!pag) { const e = new Error('Diga a página do Livro: ' + LIVRO_PAGS.join(', ') + '.'); e.tool = true; throw e; }
+    const cam = LIVRO_CAMINHOS[pag];
+    for (let tenta = 0; tenta < 2; tenta++) {
+      const { j } = await dado(env, d, quem, '/item?caminho=' + encodeURIComponent(cam)), x = j.item;
+      let r; try { r = livroInsere(x.corpo || '', { tipo: a.tipo, secao: a.secao, assunto: a.assunto, texto: a.texto }); } catch (e) { e.tool = true; throw e; }
+      if (r.igual) return 'Já está no Livro (' + pag + '): nada mudou.';
+      try { const s = await dado(env, d, quem, '/salvar', { caminho: cam, corpo: r.md, base: x.ver, ...r0 }); return `Gravado no Livro: ${pag} › ${r.secao}. versão ${s.j.ver}.`; }
+      catch (e) { if (tenta) throw e; } // alguém gravou no meio: lê de novo e tenta uma vez
+    }
   },
   async renomear(a, env, d, quem) {
     const r0 = reg(a); if (!String(a.nomeNovo || '').trim()) { const e = new Error('Diga o nome novo.'); e.tool = true; throw e; }

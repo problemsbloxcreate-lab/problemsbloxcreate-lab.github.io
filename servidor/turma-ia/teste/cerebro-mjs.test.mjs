@@ -48,7 +48,9 @@ test('3. o aviso, o comece, o buscar, o ler, o salvar e os pedidos funcionam com
   assert.match(roda(PC1, ['comece']).stdout, /Texto base|Leia primeiro|Cérebro/);
   assert.match(roda(PC1, ['buscar', 'legendas']).stdout, /Programas\/Animador/); assert.match(roda(PC1, ['ler', 'Programas/Animador']).stdout, /versão 1/); assert.match(roda(PC1, ['inicio']).stdout, /Índice/);
   const sv = roda(PC1, ['salvar', 'Aprendizados/Teste do cerebro.mjs', '--texto', 'gravado pelo programa', '--resumo', 'Teste.', '--marca', 'aprendizado', '--ia', 'Claude Teste', '--pedido', 'Maria', '--motivo', 'teste']); assert.equal(sv.status, 0, sv.stderr); assert.match(sv.stdout, /"ok": true/);
-  const ap = roda(PC1, ['aprender', 'evitar', 'Coisa que deu errado', '--texto', 'Não faça isso.', '--resumo', 'Evitar isso.', '--ia', 'Claude Teste', '--pedido', 'Maria', '--motivo', 'teste']); assert.equal(ap.status, 0, ap.stderr);
+  const pg = roda(PC1, ['salvar', 'Livro/2 O Short/04 Animação', '--texto', '# Animação\n\n## Evitar\n- nada\n', '--resumo', 'Animação.', '--marca', 'guia', '--ia', 'Claude Teste', '--pedido', 'Maria', '--motivo', 'teste']); assert.equal(pg.status, 0, pg.stderr);
+  const ap = roda(PC1, ['aprender', 'Animação', '--tipo', 'evitar', '--texto', 'Não faça isso.', '--ia', 'Claude Teste', '--pedido', 'Maria', '--motivo', 'teste']); assert.equal(ap.status, 0, ap.stderr); assert.match(ap.stdout, /Gravado no Livro: Animação › Evitar/);
+  const ap2 = roda(PC1, ['aprender', 'Animação', '--tipo', 'evitar', '--texto', 'Não faça isso.', '--ia', 'Claude Teste', '--pedido', 'Maria', '--motivo', 'teste']); assert.match(ap2.stdout, /Já está no Livro/);
   const segredo = roda(PC1, ['salvar', 'Aprendizados/segredo', '--texto', 'sk-ant-api03-' + 'A'.repeat(40), '--resumo', 'x', '--ia', 'C', '--pedido', 'M', '--motivo', 'm']); assert.equal(segredo.status, 1); assert.match(segredo.stderr, /segredo não entra/);
   assert.equal(roda(PC1, ['pedidos']).status, 0); assert.match(roda(PC1, ['conferir']).stdout, /em dia|mais novos|Faltam/);
 });
