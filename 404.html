@@ -927,7 +927,8 @@ html.cel[data-tema="claro"]{--vidro-cartao:rgba(255,255,255,.6);--vidro-cartao-2
 html.cel body{font-family:var(--fonte)!important;color:var(--texto);-webkit-font-smoothing:antialiased}
 /* fundo: foto desfocada + véu */
 html.cel body #pagebg{background:var(--fundo)!important}
-html.cel body #pagebg img{filter:blur(var(--b,0px)) saturate(1.1)!important} /* 23/11/2026: o Blur (e o Zoom) da ADM › Fundo valem de verdade; antes um blur fixo de 4 px e scale(1.04) com !important passavam por cima */
+html.cel body #pagebg img{filter:blur(var(--b,0px)) saturate(1.1)!important}
+html.cel body #adm .bgit .frame .mfill{filter:blur(var(--b,0px)) saturate(1.1)!important}html.cel body #adm .bgit .frame::after{content:'';position:absolute;inset:0;background:var(--veu-fundo);pointer-events:none;z-index:1} /* prévia da ADM › Fundo igual ao menu (26/11/2026) */ /* 23/11/2026: o Blur (e o Zoom) da ADM › Fundo valem de verdade; antes um blur fixo de 4 px e scale(1.04) com !important passavam por cima */
 html.cel body #pagebg::after{background:var(--veu-fundo)!important}
 /* ---------- cabeçalho ---------- */
 html.cel body #top{height:var(--alt-cabecalho)!important;min-height:0!important;padding:0 var(--e4)!important;flex-wrap:nowrap!important;gap:var(--e3)!important;
@@ -2015,7 +2016,8 @@ const MSG_PADRAO = { boasVindas: 'Bem-vindo(a) de volta à equipe do Problems! E
 /* FOTOS DO ESTÚDIO (05/11/2026): fundo padrão do menu, no lugar do vídeo. Licença do Unsplash (uso livre): Linh Pham e Csaba (unsplash.com).
    A ADM › Fundo escolhe a primeira (padrão), aleatória ou slideshow; vídeo não entra mais no fundo nem nos cartões. */
 const FOTO_MONTANHA = { tipo: 'imagem', src: '/fundo-montanha.jpg', x: 50, y: 40, zoom: 1, blur: 0, nome: 'Montanha (Celeste)', credito: 'Rohit Tandon · Unsplash' }; // 2.0 Celeste (11/11/2026): Ama Dablam, Nepal; licença do Unsplash (uso livre)
-const FOTOS_ESTUDIO = [FOTO_MONTANHA, { tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
+const FOTO_OFICIAL = { tipo: 'imagem', src: '/fundo-doces-oficial.jpg', x: 50, y: 66, zoom: 1, blur: 0, nome: 'Doces (oficial do Estúdio)', credito: 'Escolhida pela dona' }; // 26/11/2026: a dona mandou esta foto como fundo OFICIAL (736×981, vertical; mira no pirulito)
+const FOTOS_ESTUDIO = [FOTO_OFICIAL, FOTO_MONTANHA, { tipo: 'imagem', src: '/fundo-margarida.jpg', x: 50, y: 70, zoom: 1, blur: 0, nome: 'Margaridas', credito: 'Linh Pham · Unsplash' },
   { tipo: 'imagem', src: '/fundo-margarida-2.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Margarida sozinha', credito: 'Csaba · Unsplash' },
   { tipo: 'imagem', src: '/fundo-doces.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Doces (Rainbow Candy)', credito: 'Katie Rainbow · Unsplash' },
   { tipo: 'imagem', src: '/fundo-pirulito.jpg', x: 50, y: 50, zoom: 1, blur: 0, nome: 'Pirulito (Rainbow Candy)', credito: 'Anita Austvika · Unsplash' }]; // 23/11/2026: um pirulito colorido na areia com céu azul (a dona achou os doces 'sujos demais' como papel de parede); unsplash.com/photos/4pU9yDD9J8Q, licença do Unsplash, 3840×2560 // 2.18 Rainbow Candy (23/11/2026): granulado colorido, unsplash.com/photos/U21WOE0jB0E, licença do Unsplash (uso livre), 3840×2560
@@ -3189,7 +3191,7 @@ function arrastavel(frame, getM, onChange) {
     m.x = clamp(p0.mx - (e.clientX - p0.x) / r.width * k, 0, 100); m.y = clamp(p0.my - (e.clientY - p0.y) / r.height * k, 0, 100); onChange(false); });
   const fim = () => { if (!p0) return; p0 = null; frame.classList.remove('drag'); onChange(true); };
   frame.addEventListener('pointerup', fim); frame.addEventListener('pointercancel', fim);
-  frame.addEventListener('wheel', e => { const m = getM(); if (!m) return; e.preventDefault(); m.zoom = clamp(+(m.zoom * (e.deltaY < 0 ? 1.06 : 1 / 1.06)).toFixed(3), 1, 4); onChange(true); }, { passive: false });
+  frame.addEventListener('wheel', e => { if (!e.ctrlKey) return; /* 26/11/2026: rolar a página por cima da foto mudava o zoom sem ninguém ver (e marcava mudança); agora o zoom pela rodinha é só com Ctrl */ const m = getM(); if (!m) return; e.preventDefault(); m.zoom = clamp(+(m.zoom * (e.deltaY < 0 ? 1.06 : 1 / 1.06)).toFixed(3), 1, 4); onChange(true); }, { passive: false });
 }
 function pedirArquivo(accept = 'image/*,video/*') { return new Promise(res => { const p = $('#pick'); p.accept = accept; p.value = ''; p.onchange = () => res(p.files[0] || null); p.click(); }); }
 async function novaMidia(como) {
@@ -3198,7 +3200,7 @@ async function novaMidia(como) {
     if (!/^https:\/\/[^\s"'<>]+$/i.test(u)) { toast('O link precisa começar com https://'); return null; }
     return { tipo: tipoDe('', u), src: u, x: 50, y: 50, zoom: 1 };
   }
-  const f = await pedirArquivo(); if (!f) return null;
+  let f = await pedirArquivo(); if (!f) return null; // 'let' (26/11/2026): era 'const' e a linha do paraWebp dava erro, então Enviar imagem nunca funcionava
   if (!/^(image|video)\//.test(f.type)) { toast('Escolha uma imagem, GIF ou vídeo.'); return null; }
   if (f.size > 25 * 1048576) { toast('Arquivo maior que 25 MB. Para vídeos grandes, use "Colar link".'); return null; }
   f = await paraWebp(f); st(`Enviando ${f.name}…`);
@@ -3368,7 +3370,9 @@ function renderFundo() {
       <button class="btn sm" data-a="up" ${i ? '' : 'disabled'} title="Mover para antes">↑</button><button class="btn sm danger" data-a="del">Remover</button></div>`;
     const fr = $('.frame', it), el = midiaEl(m, { tocar: false }); fr.prepend(el);
     if (m.tipo === 'video') { fr.addEventListener('mouseenter', () => el.play?.().catch(() => { })); fr.addEventListener('mouseleave', () => el.pause?.()); } // na ADM o fundo não toca sozinho
-    const refresh = () => { posicionar($('.mfill', fr), m); const z = $('[data-k=zoom]', it); z.value = m.zoom; z.nextElementSibling.textContent = vez(m.zoom); };
+    // PRÉVIA = MENU (26/11/2026): a moldura tem o formato desta tela e o blur é proporcional ao tamanho (19 px na tela cheia = 19 × largura da prévia ÷ largura da tela)
+    fr.style.aspectRatio = Math.max(1, innerWidth) + ' / ' + Math.max(1, innerHeight);
+    const refresh = () => { const k = (fr.clientWidth || 320) / Math.max(1, innerWidth); posicionar($('.mfill', fr), m, (m.blur || 0) * k); const z = $('[data-k=zoom]', it); z.value = m.zoom; z.nextElementSibling.textContent = vez(m.zoom); };
     arrastavel(fr, () => m, fim => { refresh(); if (fim) mudou(); });
     $('[data-k=zoom]', it).addEventListener('input', e => { m.zoom = +e.target.value; refresh(); mudou(); });
     $('[data-k=blur]', it).addEventListener('input', e => { m.blur = +e.target.value; e.target.nextElementSibling.textContent = px(e.target.value); refresh(); mudou(); });
@@ -3380,7 +3384,7 @@ function renderFundo() {
       if (a === 'del') { if (!confirm('Remover este fundo?')) return; f.itens.splice(i, 1); }
       mudou(); renderFundo();
     });
-    box.appendChild(it);
+    box.appendChild(it); requestAnimationFrame(refresh);
   });
 }
 function renderMensagens() {
