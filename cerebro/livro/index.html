@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cérebro do Estúdio</title>
+<meta name="description" content="Livro do Estúdio Problems: regras, decisões e o estado de cada programa. Para IAs, o livro inteiro em texto: https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md">
+<link rel="alternate" type="text/markdown" href="https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<style>
+:root{
+  --bg:#f6f3ee; --papel:#fffdf9; --tinta:#1f1d1a; --suave:#6b665e; --linha:#e7e1d6;
+  --acento:#5b4bd6; --acento-fundo:#ece9fc; --marca:#fff1a8; --cod:#f1ede5; --lado:#efebe3;
+  --sombra:0 1px 2px rgba(40,30,10,.05),0 8px 30px rgba(40,30,10,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141317; --papel:#1b1a20; --tinta:#ecebf2; --suave:#9d9aaa; --linha:#2c2a33;
+  --acento:#a79bff; --acento-fundo:#2a2645; --marca:#4a3f12; --cod:#24222b; --lado:#17161b; --sombra:none;}}
+:root[data-theme="dark"]{
+  --bg:#141317; --papel:#1b1a20; --tinta:#ecebf2; --suave:#9d9aaa; --linha:#2c2a33;
+  --acento:#a79bff; --acento-fundo:#2a2645; --marca:#4a3f12; --cod:#24222b; --lado:#17161b; --sombra:none;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--tinta);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acento)}
+.app{display:grid;grid-template-columns:290px 1fr 220px;min-height:100vh}
+/* lado esquerdo */
+.lado{background:var(--lado);border-right:1px solid var(--linha);padding:22px 16px;position:sticky;top:0;height:100vh;overflow:auto}
+.marca{display:flex;align-items:center;gap:10px;margin:0 6px 18px}
+.marca .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acento),#e46fb4);display:grid;place-items:center;color:#fff;font:650 18px Fraunces,serif}
+.marca b{font:650 19px Fraunces,serif;letter-spacing:-.01em}
+.marca small{display:block;color:var(--suave);font-size:12px;margin-top:-2px}
+.busca{position:relative;margin:0 0 16px}
+.busca input{width:100%;padding:10px 12px 10px 36px;border-radius:10px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);font:inherit;font-size:14px;outline:none}
+.busca input:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-fundo)}
+.busca svg{position:absolute;left:11px;top:11px;color:var(--suave)}
+.grupo{margin:14px 6px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);font-weight:600}
+.lado nav a{display:block;padding:7px 10px;border-radius:8px;color:var(--tinta);text-decoration:none;font-size:14.5px}
+.lado nav a:hover{background:var(--papel)}
+.lado nav a.on{background:var(--acento-fundo);color:var(--acento);font-weight:600}
+.rodape{margin:22px 6px 0;padding-top:14px;border-top:1px solid var(--linha);display:grid;gap:8px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;border-radius:9px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);font:500 13.5px Inter,sans-serif;cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--acento);color:var(--acento)}
+/* página */
+main{padding:46px 56px 120px;min-width:0}
+.folha{max-width:760px;margin:0 auto;background:var(--papel);border:1px solid var(--linha);border-radius:18px;padding:44px 52px;box-shadow:var(--sombra)}
+.migalha{color:var(--suave);font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.folha h1{font:650 36px/1.15 Fraunces,serif;letter-spacing:-.02em;margin:4px 0 12px}
+.folha h1+p{font-size:17.5px;color:var(--suave);margin-top:0}
+.folha h2{font:650 23px/1.3 Fraunces,serif;margin:42px 0 10px;padding-top:18px;border-top:1px solid var(--linha);scroll-margin-top:20px}
+.folha h3{font-size:16px;margin:24px 0 6px}
+.folha ul,.folha ol{padding-left:22px}
+.folha li{margin:5px 0}
+.folha li::marker{color:var(--acento)}
+.folha code{font:13.5px "JetBrains Mono",monospace;background:var(--cod);padding:1px 6px;border-radius:5px}
+.folha pre{background:var(--cod);padding:14px 16px;border-radius:10px;overflow:auto}
+.folha pre code{background:none;padding:0}
+.folha table{border-collapse:collapse;width:100%;font-size:14.5px;display:block;overflow:auto}
+.folha th,.folha td{border-bottom:1px solid var(--linha);padding:8px 10px;text-align:left;vertical-align:top}
+.folha blockquote{margin:16px 0;padding:10px 16px;border-left:3px solid var(--acento);background:var(--acento-fundo);border-radius:0 10px 10px 0}
+.folha h2[id$="evitar"]{color:#c2410c}
+mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
+/* índice da direita */
+.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:52px 18px 20px 0;font-size:13px}
+.toc b{display:block;color:var(--suave);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.toc a{display:block;color:var(--suave);text-decoration:none;padding:4px 0 4px 10px;border-left:2px solid var(--linha)}
+.toc a:hover,.toc a.on{color:var(--acento);border-left-color:var(--acento)}
+/* busca */
+.res h1{font:650 28px Fraunces,serif;margin:0 0 18px}
+.res a.item{display:block;padding:14px 16px;border:1px solid var(--linha);border-radius:12px;margin-bottom:10px;text-decoration:none;color:var(--tinta)}
+.res a.item:hover{border-color:var(--acento)}
+.res .onde{font-size:12.5px;color:var(--acento);font-weight:600}
+.res .trecho{font-size:14px;color:var(--suave);margin-top:4px}
+.copiado{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--tinta);color:var(--papel);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none}
+.copiado.ver{opacity:1}
+.menu{display:none}
+@media (max-width:1180px){.app{grid-template-columns:270px 1fr}.toc{display:none}}
+@media (max-width:820px){
+  .app{display:block}
+  .lado{position:fixed;inset:0 auto 0 0;width:86%;max-width:320px;z-index:5;transform:translateX(-105%);transition:.2s;height:100%}
+  .lado.aberto{transform:none;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .menu{display:flex;position:sticky;top:0;z-index:4;background:var(--bg);padding:12px 16px;border-bottom:1px solid var(--linha);gap:10px;align-items:center}
+  main{padding:16px 16px 80px}
+  .folha{padding:26px 20px;border-radius:14px}
+  .folha h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="menu"><button class="btn" id="abre">☰ Páginas</button><b style="font:650 17px Fraunces,serif">Cérebro do Estúdio</b></div>
+<div class="app">
+  <aside class="lado" id="lado">
+    <div class="marca"><div class="logo">C</div><div><b>Cérebro</b><small>Estúdio Problems</small></div></div>
+    <div class="busca"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar no livro…  ( / )" autocomplete="off"></div>
+    <nav id="nav"></nav>
+    <div class="rodape">
+      <button class="btn" id="copia">Copiar esta página (para IA)</button>
+      <a class="btn" id="tudo" download="cerebro-do-estudio.md">Baixar o livro inteiro (.md)</a>
+      <button class="btn" id="tema">Claro / escuro</button>
+    </div>
+  </aside>
+  <main><article class="folha" id="folha"></article></main>
+  <aside class="toc" id="toc"></aside>
+</div>
+<div class="copiado" id="aviso">Copiado</div>
+<script>
+/* Livro do Estúdio (Cérebro novo, 26/11/2026). Leitura aberta: lê a pasta "Livro" do Cérebro pelo servidor turma-ia.
+   Texto puro para IAs: https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md */
+const API = 'https://turma-ia.problemsraiz.workers.dev/cerebro/livro';
+let LIVRO = [];
+const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const $ = s => document.querySelector(s), esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// [[Nome]] vira link para a página
+const liga = md => md.replace(/\[\[([^\]]+)\]\]/g, (m, n) => LIVRO.some(p => p.nome === n) ? '[' + n + '](#' + slug(n) + ')' : n);
+function prepara(dados) {
+  LIVRO = [];
+  for (const g of dados.grupos || []) for (const p of g.paginas) {
+    const t = (p.md.match(/^# (.+)$/m) || [, p.nome])[1].trim();
+    const x = { g: g.nome, c: slug(p.nome), nome: p.nome, t, md: p.md, em: p.em, secoes: [] };
+    let atual = { t, id: '', txt: '' };
+    for (const l of p.md.split('\n')) { const m = l.match(/^## (.+)/); if (m) { x.secoes.push(atual); atual = { t: m[1].trim(), id: slug(m[1]), txt: '' }; } else atual.txt += l + '\n'; }
+    x.secoes.push(atual); LIVRO.push(x);
+  }
+}
+const renderer = new marked.Renderer(); renderer.heading = (txt, lv, raw) => `<h${lv} id="${slug(raw)}">${txt}</h${lv}>`;
+marked.setOptions({ renderer, mangle: false, headerIds: false });
+function pintaNav(cod) { let h = '', g = ''; for (const p of LIVRO) { if (p.g !== g) { g = p.g; h += `<div class="grupo">${esc(g)}</div>`; } h += `<a href="#${p.c}" class="${p.c === cod ? 'on' : ''}">${esc(p.nome)}</a>`; } $('#nav').innerHTML = h; }
+function abre(cod, sec) {
+  const p = LIVRO.find(x => x.c === cod) || LIVRO[0]; if (!p) return; pintaNav(p.c);
+  $('#folha').className = 'folha';
+  $('#folha').innerHTML = `<div class="migalha"><span>${esc(p.g)} · ${esc(p.nome)}</span><span>${Math.max(1, Math.round(p.md.split(/\s+/).length / 220))} min de leitura</span></div>`
+    + marked.parse(liga(p.md)) + `<p style="color:var(--suave);font-size:13px;margin-top:40px">Atualizada em ${new Date(p.em).toLocaleDateString('pt-BR')}</p>`;
+  const hs = [...document.querySelectorAll('#folha h2')];
+  $('#toc').innerHTML = hs.length ? '<b>Nesta página</b>' + hs.map(h => `<a href="#${p.c}/${h.id}" data-id="${h.id}">${esc(h.textContent)}</a>`).join('') : '';
+  document.title = p.nome + ' · Cérebro do Estúdio';
+  if (sec) document.getElementById(sec)?.scrollIntoView(); else window.scrollTo(0, 0);
+  $('#lado').classList.remove('aberto');
+}
+function busca(q) {
+  const ps = norm(q).split(/\s+/).filter(w => w.length > 1); if (!ps.length) return rota();
+  const achados = [];
+  for (const p of LIVRO) for (const s of p.secoes) { const n = norm(s.t + ' ' + s.txt); let pts = 0; for (const w of ps) { const k = n.split(w).length - 1; if (!k) { pts = 0; break; } pts += k + (norm(s.t).includes(w) ? 5 : 0); } if (pts) achados.push({ p, s, pts }); }
+  achados.sort((a, b) => b.pts - a.pts);
+  const trecho = t => { const n = norm(t), i = Math.max(0, n.indexOf(ps[0]) - 70); let x = esc(t.slice(i, i + 220).replace(/[#*`>|\[\]]/g, '')); for (const w of ps) x = x.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>'); return (i ? '… ' : '') + x + ' …'; };
+  $('#folha').className = 'folha res'; $('#toc').innerHTML = '';
+  $('#folha').innerHTML = `<h1>${achados.length} resultado${achados.length === 1 ? '' : 's'} para “${esc(q)}”</h1>`
+    + achados.slice(0, 40).map(a => `<a class="item" href="#${a.p.c}/${a.s.id}"><div class="onde">${esc(a.p.nome)} › ${esc(a.s.t)}</div><div class="trecho">${trecho(a.s.txt || a.s.t)}</div></a>`).join('');
+}
+function rota() { const [c, s] = decodeURIComponent(location.hash.slice(1)).split('/'); abre(c || (LIVRO[0] && LIVRO[0].c), s); }
+addEventListener('hashchange', () => { $('#q').value = ''; rota(); });
+$('#q').addEventListener('input', e => busca(e.target.value));
+addEventListener('keydown', e => { if (e.key === '/' && document.activeElement !== $('#q')) { e.preventDefault(); $('#q').focus(); } if (e.key === 'Escape') { $('#q').value = ''; rota(); } });
+$('#abre').onclick = () => $('#lado').classList.toggle('aberto');
+const aviso = t => { $('#aviso').textContent = t; $('#aviso').classList.add('ver'); setTimeout(() => $('#aviso').classList.remove('ver'), 1400); };
+$('#copia').onclick = async () => { const [c] = location.hash.slice(1).split('/'); const p = LIVRO.find(x => x.c === c) || LIVRO[0]; try { await navigator.clipboard.writeText(p.md); aviso('Página copiada'); } catch { aviso('Não deu para copiar'); } };
+$('#tudo').href = API + '.md'; $('#tudo').removeAttribute('download'); $('#tudo').target = '_blank'; $('#tudo').textContent = 'Livro inteiro em texto (para IA)';
+$('#tema').onclick = () => { const r = document.documentElement, escuro = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = escuro ? 'light' : 'dark'; try { localStorage.setItem('cerebro-tema', r.dataset.theme); } catch { } };
+try { const t = localStorage.getItem('cerebro-tema'); if (t) document.documentElement.dataset.theme = t; } catch { }
+addEventListener('scroll', () => { let on = null; for (const h of document.querySelectorAll('#folha h2')) if (h.getBoundingClientRect().top < 140) on = h.id; document.querySelectorAll('.toc a').forEach(a => a.classList.toggle('on', a.dataset.id === on)); }, { passive: true });
+$('#folha').innerHTML = '<p style="color:var(--suave)">Abrindo o livro…</p>';
+fetch(API).then(r => r.json()).then(d => { prepara(d); rota(); })
+  .catch(() => { $('#folha').innerHTML = '<h1>Não deu para abrir</h1><p>O servidor do Cérebro não respondeu. Tente de novo em instantes.</p>'; });
+</script>
+</body>
+</html>

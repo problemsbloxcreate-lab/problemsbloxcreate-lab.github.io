@@ -1099,6 +1099,23 @@ function cbGrava(db, n, antes, acao, a, motivo) {
     cbMuda(db, 'no', n.id, null, a.por),
   ] };
 }
+// LIVRO DO ESTÚDIO: leitura ABERTA (sem login), pedido da dona em 26/11/2026: qualquer pessoa ou IA (Claude, ChatGPT) lê pelo link.
+// Só a pasta "Livro" do Cérebro sai por aqui; gravar continua só com login. /cerebro/livro = JSON (grupos e páginas) · /cerebro/livro.md = o livro inteiro em texto.
+async function livroPublico(env, comoTexto) {
+  const h = { 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=60' }, db = env.EQUIPE_DB;
+  if (!db) return json({ error: { type: 'cerebro', message: 'O banco do Cérebro não está ligado.' } }, 503, h);
+  const { results } = await db.prepare('SELECT id, pai, tipo, nome, resumo, corpo, em FROM cerebro_no WHERE apagado = 0').all(), t = results || [];
+  const raiz = t.find(x => !x.pai && x.nome === 'Livro' && x.tipo === 'pasta'); if (!raiz) return json({ grupos: [] }, 200, h);
+  const filhos = id => t.filter(x => x.pai === id).sort((a, b) => a.nome.localeCompare(b.nome, 'pt', { numeric: true })), limpa = s => s.replace(/^\d+\s+/, '');
+  const pag = x => ({ nome: limpa(x.nome), resumo: x.resumo || '', md: x.corpo || '', em: x.em || 0 });
+  const grupos = [];
+  for (const g of filhos(raiz.id)) { if (g.tipo === 'pasta') grupos.push({ nome: limpa(g.nome), paginas: filhos(g.id).filter(x => x.tipo !== 'pasta').map(pag) }); else (grupos[0] ||= { nome: 'Livro', paginas: [] }).paginas.push(pag(g)); }
+  const em = Math.max(0, ...grupos.flatMap(g => g.paginas.map(p => p.em)));
+  if (!comoTexto) return json({ atualizado: em, grupos }, 200, h);
+  const txt = '# Livro do Estúdio Problems (Cérebro)\n\nAtualizado em ' + new Date(em).toISOString().slice(0, 10) + '. Leia a página do assunto antes de mexer nele. Links [[Nome]] apontam para outras páginas deste mesmo texto.\n\n'
+    + grupos.map(g => g.paginas.map(p => p.md.trim()).join('\n\n---\n\n')).join('\n\n---\n\n') + '\n';
+  return new Response(txt, { headers: { ...h, 'content-type': 'text/markdown; charset=utf-8' } });
+}
 async function cerebro(req, env, login, path, cors) {
   const nc = { ...cors, 'cache-control': 'no-store' }, ok = (o, s = 200) => json(o, s, nc), erro = (m, s = 400, type = 'cerebro') => json({ error: { type, message: m } }, s, nc), db = env.EQUIPE_DB;
   if (!db) return erro('O banco do Cérebro não está ligado neste servidor.', 503);
@@ -1330,6 +1347,7 @@ export default {
     const cors = { 'access-control-allow-origin': liberado ? (origin || '*') : 'null', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS', 'access-control-max-age': '86400', vary: 'origin' };
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path0 = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
+    if (req.method === 'GET' && (path0 === '/cerebro/livro' || path0 === '/cerebro/livro.md')) return livroPublico(env, path0 === '/cerebro/livro.md'); // aberto, sem login (só a pasta Livro)
     // CÉREBRO: as IAs (sem navegador) entram com a chave x-cerebro-chave, que só vale nas rotas /cerebro
     const ehCerebro = path0 === '/cerebro' || path0.startsWith('/cerebro/'), ehMusicas = path0 === '/musicas' || path0.startsWith('/musicas/'), chaveCb = ehCerebro || path0.startsWith('/musicas/copia') ? req.headers.get('x-cerebro-chave') : null; // a chave das IAs só vale no Cérebro e em copiar a biblioteca para as Músicas
     const chaveInfo = chaveCb ? await cbChaveOk(env, chaveCb) : null;
