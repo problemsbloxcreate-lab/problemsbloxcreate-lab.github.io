@@ -37,7 +37,7 @@ button{font:inherit;color:inherit}
 .marca small{color:var(--suave);font-size:12.5px}
 .busca input{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);font:inherit;font-size:14px;outline:none}
 .busca input:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-fundo)}
-.modo{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:12px 0 4px;background:var(--papel);border:1px solid var(--linha);border-radius:10px;padding:3px}
+.modo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:12px 0 4px;background:var(--papel);border:1px solid var(--linha);border-radius:10px;padding:3px}
 .modo button{border:0;background:none;padding:7px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer;color:var(--suave)}
 .modo button.on{background:var(--acento-fundo);color:var(--acento)}
 .grupo{margin:16px 8px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);font-weight:600}
@@ -110,6 +110,16 @@ mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
 .detalhe .linha{display:grid;grid-template-columns:110px 1fr;gap:10px;margin:10px 0;align-items:start}
 .detalhe .linha span{font-size:12px;color:var(--suave);font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding-top:4px}
 .abrir{display:inline-block;margin-top:10px;background:var(--acento);color:#fff;text-decoration:none;padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px}
+/* memórias rápidas (curtas) → páginas (longas) */
+.mems{max-width:860px;margin:0 auto}
+.mems h1{font:650 30px Fraunces,serif;margin:0 0 6px}
+.mems .sub{color:var(--suave);margin:0 0 22px}
+.mem{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:start;width:100%;text-align:left;background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer}
+.mem .num{font:650 15px Fraunces,serif;color:var(--fraco);padding-top:1px}
+.mem p{margin:0;font-size:14.5px;line-height:1.5}
+.mem.sel{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-fundo)}
+.mem.sel .num{color:var(--acento)}
+.guia .mem-mini{display:block;font-size:12.5px;line-height:1.45;color:var(--tinta);background:var(--acento-fundo);border-radius:9px;padding:8px 10px;margin-bottom:6px;text-decoration:none}
 /* busca */
 .res a.item{display:block;padding:14px 16px;border:1px solid var(--linha);border-radius:12px;margin-bottom:10px;text-decoration:none;color:var(--tinta);background:var(--papel)}
 .res a.item:hover{border-color:var(--acento)}
@@ -140,7 +150,7 @@ mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
   <aside class="lado" id="lado">
     <a class="marca" href="#"><b>Cérebro</b><small>O Livro do Estúdio Problems</small></a>
     <div class="busca"><input id="q" placeholder="Buscar no livro  ( / )" autocomplete="off" aria-label="Buscar no livro"></div>
-    <div class="modo"><button id="m-ler" class="on">Ler</button><button id="m-mapa">Mapa</button></div>
+    <div class="modo"><button id="m-ler" class="on">Ler</button><button id="m-mapa">Mapa</button><button id="m-mem">Memórias</button></div>
     <nav id="nav" aria-label="Páginas do livro"></nav>
     <div class="rodape">
       <button id="copia">Copiar esta página (para IA)</button>
@@ -157,7 +167,7 @@ mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
 <div class="aviso" id="aviso"></div>
 <script>
 const API = 'https://turma-ia.problemsraiz.workers.dev/cerebro/livro';
-let LIVRO = [], POR = {}, ATUAL = null;
+let LIVRO = [], POR = {}, ATUAL = null, MEMS = [];
 const slug = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -176,6 +186,7 @@ function prepara(d) {
     x.secoes.push(atual); LIVRO.push(x); POR[x.c] = x;
   }
   for (const p of LIVRO) for (const m of p.md.matchAll(/\[\[([^\]]+)\]\]/g)) { const o = POR[slug(m[1])]; if (o && o !== p) { p.vai.add(o.c); o.vem.add(p.c); } }
+  MEMS = (d.memorias || []).map((m, i) => ({ n: i + 1, texto: m.texto, c: m.pagina && POR[slug(m.pagina)] ? slug(m.pagina) : '' }));
 }
 const secoesReais = p => p.secoes.filter(s => s.id && s.id !== 'ligacoes');
 const resumo = p => (p.resumo || '').replace(/^Para que serve:\s*/i, '');
@@ -206,7 +217,16 @@ function pintaNav(cod, sec) {
   }
   $('#nav').innerHTML = h;
 }
-const modo = m => { $('#m-ler').classList.toggle('on', m === 'ler'); $('#m-mapa').classList.toggle('on', m === 'mapa'); };
+const modo = m => { $('#m-ler').classList.toggle('on', m === 'ler'); $('#m-mapa').classList.toggle('on', m === 'mapa'); $('#m-mem').classList.toggle('on', m === 'mem'); };
+
+/* memórias rápidas: cada memória curta leva à página longa; a escolhida fica marcada */
+function memorias(sel) {
+  modo('mem'); ATUAL = null; pintaNav(null); document.title = 'Memórias · Cérebro do Estúdio'; sel = +sel || 0;
+  $('#vista').innerHTML = `<div class="mems"><h1>Memórias rápidas</h1><p class="sub">O que vale sempre, em uma frase. Cada uma leva à página completa do livro.</p>`
+    + MEMS.map(m => `<div class="mem ${m.n === sel ? 'sel' : ''}" data-n="${m.n}"><span class="num">${m.n}</span><p>${esc(m.texto)}</p>${m.c ? `<a class="chip liga" href="#${m.c}">${esc(POR[m.c].nome)} →</a>` : ''}</div>`).join('') + '</div>';
+  document.querySelectorAll('.mem').forEach(el => el.onclick = e => { if (e.target.closest('a')) return; guarda('cb-mem', +el.dataset.n); location.hash = 'memorias/' + el.dataset.n; });
+  pintaCaminho(); if (!sel) window.scrollTo(0, 0);
+}
 
 /* ler */
 function abre(cod, sec) {
@@ -217,6 +237,7 @@ function abre(cod, sec) {
       ${marked.parse(liga(p.md.replace(/\n## Ligações[\s\S]*$/, '')))}
       <p class="data">Atualizada em ${new Date(p.em).toLocaleDateString('pt-BR')}</p></article>
     <aside class="guia">
+      ${MEMS.some(m => m.c === p.c) ? `<div class="bloco"><b>Memórias rápidas daqui</b>${MEMS.filter(m => m.c === p.c).map(m => `<a class="mem-mini" href="#memorias/${m.n}">${esc(m.texto)}</a>`).join('')}</div>` : ''}
       <div class="bloco toc"><b>Nesta página</b>${secoesReais(p).map(s => `<a href="#${p.c}/${s.id}" data-id="${s.id}">${esc(s.t)}</a>`).join('')}</div>
       <div class="bloco"><b>Liga a</b><div class="chips">${chipsDe(p.vai)}</div></div>
       <div class="bloco"><b>Ligado por</b><div class="chips">${chipsDe(p.vem)}</div></div>
@@ -268,6 +289,7 @@ function busca(q) {
 function rota() {
   const [a, b] = decodeURIComponent(location.hash.slice(1)).split('/');
   if (a === 'mapa') return mapa(b || le('cb-mapa', null));
+  if (a === 'memorias') return memorias(b || le('cb-mem', 0));
   if (a && POR[a] && a === ATUAL && b) { anda(a, b); marca(b); pintaCaminho(a + '/' + b); document.getElementById(b)?.scrollIntoView({ behavior: 'smooth' }); return; }
   abre(POR[a] ? a : (LIVRO[0] && LIVRO[0].c), b);
 }
@@ -276,6 +298,7 @@ $('#q').addEventListener('input', e => busca(e.target.value));
 addEventListener('keydown', e => { if (e.key === '/' && document.activeElement !== $('#q')) { e.preventDefault(); $('#q').focus(); } if (e.key === 'Escape') { $('#q').value = ''; rota(); } });
 $('#m-ler').onclick = () => { const k = ATUAL || CAM[CAM.length - 1] || ''; if (location.hash.slice(1) === k) rota(); else location.hash = k; };
 $('#m-mapa').onclick = () => { const s = le('cb-mapa', null); location.hash = 'mapa' + (s ? '/' + s : ''); };
+$('#m-mem').onclick = () => { const s = le('cb-mem', 0); location.hash = 'memorias' + (s ? '/' + s : ''); };
 $('#abre').onclick = () => $('#lado').classList.toggle('aberto');
 const aviso = t => { $('#aviso').textContent = t; $('#aviso').classList.add('ver'); setTimeout(() => $('#aviso').classList.remove('ver'), 1400); };
 $('#copia').onclick = async () => { const p = POR[ATUAL] || LIVRO[0]; try { await navigator.clipboard.writeText(p.md); aviso('Página copiada'); } catch { aviso('Não deu para copiar'); } };

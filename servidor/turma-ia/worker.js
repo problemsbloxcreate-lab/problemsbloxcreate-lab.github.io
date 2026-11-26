@@ -1111,8 +1111,11 @@ async function livroPublico(env, comoTexto) {
   const grupos = [];
   for (const g of filhos(raiz.id)) { if (g.tipo === 'pasta') grupos.push({ nome: limpa(g.nome), paginas: filhos(g.id).filter(x => x.tipo !== 'pasta').map(pag) }); else (grupos[0] ||= { nome: 'Livro', paginas: [] }).paginas.push(pag(g)); }
   const em = Math.max(0, ...grupos.flatMap(g => g.paginas.map(p => p.em)));
-  if (!comoTexto) return json({ atualizado: em, grupos }, 200, h);
+  // memórias rápidas (curtas): cada uma aponta para a página longa do Livro
+  let memorias = []; try { const r = await db.prepare('SELECT texto, aponta FROM cerebro_cartao WHERE apagado = 0 ORDER BY ordem, em LIMIT 40').all(); memorias = (r.results || []).map(m => ({ texto: m.texto, aponta: m.aponta || '', pagina: String(m.aponta || '').startsWith('Livro/') ? limpa(String(m.aponta).split('/').pop()) : '' })); } catch { }
+  if (!comoTexto) return json({ atualizado: em, memorias, grupos }, 200, h);
   const txt = '# Livro do Estúdio Problems (Cérebro)\n\nAtualizado em ' + new Date(em).toISOString().slice(0, 10) + '. Leia a página do assunto antes de mexer nele. Links [[Nome]] apontam para outras páginas deste mesmo texto.\n\n'
+    + (memorias.length ? '## Memórias rápidas (o que vale sempre; cada uma aponta para a página completa)\n' + memorias.map(m => '- ' + m.texto + (m.pagina ? ' → [[' + m.pagina + ']]' : '')).join('\n') + '\n\n---\n\n' : '')
     + grupos.map(g => g.paginas.map(p => p.md.trim()).join('\n\n---\n\n')).join('\n\n---\n\n') + '\n';
   return new Response(txt, { headers: { ...h, 'content-type': 'text/markdown; charset=utf-8' } });
 }
