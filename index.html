@@ -875,11 +875,9 @@ html:not(.cel) :is(#top,#menu,#saida,.login,.modal,.toast) :not(svg):not(svg *):
 #top .badge,#top .selos-cargo{position:relative;top:calc(clamp(24px,3vw,40px) * .09)}
 .na-selo-prev{cursor:grab;touch-action:none;user-select:none}
 
-/* versão do site no canto de baixo à direita (mesmo estilo do selo ADM); em telas pequenas/baixas desce para o fim da página, sem cobrir nada */
-.versao-site{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:4;height:22px;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 var(--font);letter-spacing:.5px;white-space:nowrap;pointer-events:none}
-.versao-site:empty{display:none}
-@media (max-width:1100px),(max-height:640px){.versao-site{position:static;align-self:center;margin:26px auto 0;display:inline-grid}}
-@media (max-width:720px){.versao-site{height:20px;font-size:10px;padding:0 6px}}
+
+
+
 
 /* PASTAS: bloco com até 4 ícones pequenos; janelinha que abre embaixo dele */
 #menu .grid.sem-anim:not(.org) .card{animation:none}
@@ -900,7 +898,7 @@ html:not(.cel) :is(#top,#menu,#saida,.login,.modal,.toast) :not(svg):not(svg *):
 #menu .pasta-pop .pp-tira{position:absolute;top:6px;left:6px;z-index:4;height:22px;padding:0 6px;border:0;background:rgba(0,0,0,.5);color:#fff;font:600 11px var(--font);cursor:pointer}
 #menu .pasta-pop .card{animation:none}
 @media (max-width:720px){#menu .pasta-pop{left:8px!important;right:8px}}
-.versao-site{pointer-events:auto!important;cursor:pointer}.versao-site:hover{background:rgba(14,32,58,.6)}
+
 </style>
 <script>
 // o menu mora no endereço único (porteiro). Quem abrir o antigo no GitHub Pages vai para o mesmo caminho lá.
@@ -990,9 +988,7 @@ html.cel body #menu .et .et-r small{color:var(--texto-3)!important}
 html.cel body #menu .et :is(.gi,.des){color:var(--texto-2)}
 html.cel body #menu .et .foto,html.cel body #menu .et .foto>*{border-radius:50%!important;overflow:hidden}
 html.cel body #menu .et .foto{background:linear-gradient(135deg,#5cc4ff,#7c6cff);color:#fff;font:600 24px var(--fonte)!important}
-/* selo da versão */
-html.cel body .versao-site{height:24px!important;padding:0 10px!important;border:1px solid var(--linha-forte)!important;border-radius:var(--raio-p)!important;background:var(--vidro)!important;color:var(--texto-2)!important;font:500 11px var(--fonte)!important;
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-grid!important;place-items:center}
+
 /* REDESENHO (11/11/2026): uma coluna, largura confortável, seções na ordem de uso */
 html.cel body #menu{width:100%!important;box-sizing:border-box;max-width:1080px!important;margin:0 auto!important;padding:0 var(--e5) 96px!important}
 html.cel body #menu .mn-area{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:var(--e6)!important;grid-template-columns:none!important;width:100%!important;max-width:none!important}
@@ -1260,8 +1256,8 @@ html.cel.m2 body #top .brand .logo svg{width:100%!important;height:100%!importan
 html.cel.m2 body #top .brand .t{display:flex!important;flex-direction:column!important;gap:6px!important}
 html.cel.m2 body #top #top-nome{display:block!important;font:700 32px/1 var(--fonte)!important;letter-spacing:-.02em!important;text-transform:none!important;color:#fff!important;text-shadow:0 2px 16px rgba(0,0,0,.35)}
 html.cel.m2 body #top #top-sub{display:inline-flex!important;align-items:center;gap:8px;font:600 14px var(--fonte)!important;color:rgba(255,255,255,.85)!important;margin:0!important;text-shadow:0 1px 10px rgba(0,0,0,.35)}
-html.cel.m2 body #top .brand .versao-site{position:static!important;display:inline-flex!important;align-items:center;height:22px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:var(--acento)!important;color:var(--acento-texto)!important;font:600 11.5px var(--fonte)!important;text-shadow:none;cursor:pointer;backdrop-filter:none!important;box-shadow:0 2px 8px rgba(0,0,0,.2);animation:apSobe .5s .3s cubic-bezier(.2,.9,.2,1) both}
-html.cel.m2 body #top .brand .versao-site:hover{filter:brightness(1.08)}
+
+
 html.cel.m2 body #top #hello{margin:0 6px 0 0!important;text-align:right;font:600 17px/1.15 var(--fonte)!important;color:#fff!important;text-shadow:0 1px 12px rgba(0,0,0,.4);white-space:nowrap}
 @keyframes apSobe{from{transform:translateY(8px);opacity:0}}
 /* colunas */
@@ -1372,7 +1368,7 @@ html.cel.ip:has(#menu:not([hidden])) body #top .brand .logo svg{width:100%!impor
 html.cel.ip:has(#menu:not([hidden])) body #top .brand .t{display:flex!important;align-items:center;gap:8px}
 html.cel.ip:has(#menu:not([hidden])) body #top #top-nome{display:none!important}
 html.cel.ip:has(#menu:not([hidden])) body #top #top-sub{display:inline-flex!important;align-items:center;gap:8px;margin:0!important;font:700 13px var(--fonte)!important;color:#fff!important;text-shadow:none!important}
-html.cel.ip:has(#menu:not([hidden])) body #top .brand .versao-site{margin:0!important;align-self:center!important;position:static!important;display:inline-flex!important;align-items:center;height:20px!important;padding:0 9px!important;border:0!important;border-radius:999px!important;background:var(--acento)!important;color:var(--acento-texto)!important;font:700 11px var(--fonte)!important;letter-spacing:0!important;text-shadow:none!important;cursor:pointer;backdrop-filter:none!important;box-shadow:none!important}
+
 html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{font:600 13px var(--fonte);color:rgba(255,255,255,.75);white-space:nowrap;margin-right:4px;font-variant-numeric:tabular-nums}
 html.cel.ip:has(#menu:not([hidden])) body #top :is(.btn,.mn-lupa,.tema-bt){flex:none}
 /* o menu ocupa o resto da tela, sem rolar */
@@ -1524,7 +1520,7 @@ html.cel.ip[data-tema="claro"] body .ip-dock{background:rgba(255,255,255,.55);bo
 html.cel.ip[data-tema="claro"] body .ip-dock #atalhos>.et.at-mais{background:rgba(0,0,0,.08)!important}html.cel.ip[data-tema="claro"] body .ip-dock .et.at-mais .gi{color:#1d1d1f}
 html.cel.ip[data-tema="claro"]:has(#menu:not([hidden])) body #top{background:rgba(245,245,247,.6)!important;border-bottom-color:rgba(0,0,0,.08)!important}
 html.cel.ip[data-tema="claro"]:has(#menu:not([hidden])) body #top #top-sub{color:#1d1d1f!important}html.cel.ip[data-tema="claro"]:has(#menu:not([hidden])) body #top .ip-hora{color:rgba(0,0,0,.65)}
-html.cel.ip:not(:has(#menu:not([hidden]))) body #top .versao-site{display:none!important}/* camadas: barra e dock ficam ABAIXO dos painéis e janelas (.modal z 20), senão cobrem o título e o X; o aviso curto sobe para não cair em cima do dock */html.cel.ip:has(#menu:not([hidden])) body .toast{bottom:112px!important}#top .ip-hora{display:none}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:inline}
+/* camadas: barra e dock ficam ABAIXO dos painéis e janelas (.modal z 20), senão cobrem o título e o X; o aviso curto sobe para não cair em cima do dock */html.cel.ip:has(#menu:not([hidden])) body .toast{bottom:112px!important}#top .ip-hora{display:none}html.cel.ip:has(#menu:not([hidden])) body #top .ip-hora{display:inline}
 /* selinho de "parte de outro programa" (Ateliê e Cenários são do Animador): no canto de baixo do ícone, sem encavalar no "Em teste" */
 html.cel.ip body #menu #grid .card>.parte{position:absolute!important;top:calc(var(--ip-ic) - 16px)!important;left:calc(50% + var(--ip-ic) / 2 - 14px)!important;right:auto!important;bottom:auto!important;width:22px!important;height:22px!important;transform:none!important;margin:0!important;z-index:2;border-radius:6px!important;box-shadow:0 2px 6px rgba(0,0,0,.4)!important}
 html.cel.ip body #menu #grid .card>.parte svg{width:100%!important;height:100%!important;display:block}
@@ -1540,8 +1536,7 @@ html.cel.ip[data-tema="claro"] body #menu #grid .card.pasta-b .pasta-mini{backgr
 html.cel.ip[data-tema="claro"] body #menu #grid .card.pasta-b .pasta-mini .vazia{filter:invert(1) brightness(.35)}
 /* busca (aparece ao digitar): por cima, centralizada */
 html.cel.ip body #menu #prog-busca:not([hidden]){background:var(--elevado,#242428)!important;backdrop-filter:none!important;box-shadow:0 12px 40px rgba(0,0,0,.45)!important;position:fixed!important;top:calc(var(--ip-barra) + 12px)!important;left:50%!important;transform:translateX(-50%)!important;z-index:35!important;width:min(520px,90vw)!important;margin:0!important}
-/* a versão que ficava solta no canto foi para a barra */
-html.cel.ip body #menu>.versao-site{display:none!important}
+
 /* canto da versão (23/11/2026): fixo embaixo à direita, ADM colado no número; some quando o menu não está na tela */
 /* CABEÇALHO DO MENU (pedido da dona, 23/11/2026): o calendário (data e hora) saiu do cabeçalho (a hora grande e o bloco Calendário continuam no menu);
    botões da direita com o mesmo tamanho (32 px), o mesmo espaço entre eles (8 px) e o desenho centralizado */
@@ -1550,17 +1545,17 @@ html.cel body #top :is(.mn-lupa,.tema-bt,.ep-conta-nuvem,.ep-conta-espaco){width
 html.cel body #top :is(.mn-lupa,.tema-bt)>svg{width:18px!important;height:18px!important}
 html.cel body #top :is(.ep-conta-nuvem,.ep-conta-espaco)>svg{width:26px!important;height:26px!important;margin:0!important}
 html.cel body #top .ep-conta{gap:8px!important}html.cel body #top .mn-lupa{margin-right:8px!important}html.cel body #top .tema-bt{margin-right:8px!important}
-html body #versao-canto{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:15;display:flex;align-items:center;gap:6px;pointer-events:none}
-html:not(:has(#menu:not([hidden]))) body #versao-canto,html.embed-adm body #versao-canto{display:none!important}
-html body #versao-canto>*{pointer-events:auto}
-html body #versao-canto #versao-hist{display:inline-flex;align-items:center;gap:5px;height:24px;margin:0;padding:0 9px;border:1px solid var(--linha-forte,rgba(255,255,255,.16));border-radius:6px;background:var(--vidro,rgba(21,21,23,.78));color:var(--texto-2,rgba(235,235,245,.64));font:500 11.5px var(--fonte,system-ui);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);cursor:pointer}
-html body #versao-canto #versao-hist:hover{color:var(--texto,#f5f5f7)}html body #versao-canto #versao-hist:focus-visible,html body #versao-canto #versao-site:focus-visible{outline:2px solid var(--acento,#5cc4ff);outline-offset:2px}
-html body #versao-canto #versao-site{position:static!important;display:inline-flex!important;align-items:center;height:24px!important;margin:0!important;padding:0 10px!important;border:1px solid var(--linha-forte,rgba(255,255,255,.16))!important;border-radius:6px!important;background:var(--vidro,rgba(21,21,23,.78))!important;color:var(--texto-2,rgba(235,235,245,.64))!important;font:500 11.5px var(--fonte,system-ui)!important;letter-spacing:0!important;text-shadow:none!important;box-shadow:none!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);cursor:pointer;animation:none!important;white-space:nowrap}
-html body #versao-canto #versao-site:hover{color:var(--texto,#f5f5f7)!important}
-html body #versao-canto #versao-site:empty{display:none!important}
-html body #versao-canto :is(#selos-cargo,#badge-adm){position:static!important;top:auto!important;margin:0!important;align-self:center!important}
-html body #versao-canto #selos-cargo{display:inline-flex!important;gap:4px}html body #versao-canto #selos-cargo:empty,html body #versao-canto #badge-adm[hidden]{display:none!important}
-html body #versao-canto .badge{display:inline-flex!important;align-items:center;height:24px!important;line-height:1!important;margin:0!important;padding:0 9px!important;border-radius:6px!important;font:600 11px var(--fonte,system-ui)!important;position:static!important;top:auto!important}
+
+
+
+
+
+
+
+
+
+
+
 /* TELA ÚNICA: sem rolar a página (só a lista de projetos rola por dentro) */
 @media (min-width:821px){
   html.cel.ip:has(#menu:not([hidden])),html.cel.ip:has(#menu:not([hidden])) body{overflow:hidden!important;height:100%!important}
@@ -1793,7 +1788,6 @@ html body .modal .mc.pergunta .acts button.btn.pg-cancela{color:#fff!important;b
     <section class="mn-grupo" id="g-atalhos"><h2>Meus atalhos</h2><div class="blocos" id="atalhos"></div></section>
     </div>
   </div>
-  <span class="versao-site" id="versao-site" role="button" tabindex="0" title="Novidades desta versão (e o relatório de suporte)"></span><!-- VERSÃO (06/11/2026): o texto vem de window.EstudioVersao.nome, no /estudio-carregando.js (troque só lá) -->
 </main>
 
 <!-- 3) ADM — abre com ?adm (ou /adm) e só depois do login -->
@@ -2613,7 +2607,7 @@ function ordenaLinks(lista) { let o = []; try { o = JSON.parse(localStorage.getI
   return lista.map((l, i) => ({ l, i, p: pos.has(chaveL(l)) ? pos.get(chaveL(l)) : /\/cerebro(\/|$)/.test(String(l.url || '')) ? -1 /* quem já tinha uma ordem própria também vê o Cérebro primeiro */ : 1e6 + i })).sort((a, b) => a.p - b.p).map(x => x.l); }
 function showMenu() {
   $('#menu').hidden = false; aplicaConta(); mensagens(DADOS.mensagens);
-  pintaGrid(); pintaSelos(); $('#lupa').hidden = false; { const vs = $('#versao-site'); if (vs) { vs.textContent = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || window.ESTUDIO_VERSAO || ''; vs.title = 'Versão do Estúdio · clique para gerar o relatório de erro'; vs.onclick = () => (window.EstudioSuporte?.gerar ? window.EstudioSuporte.gerar() : window.EstudioConta?.relatorio?.()); vs.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vs.click(); } }; } } // clicar na versão = gerar relatório de suporte $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
+  pintaGrid(); pintaSelos(); $('#lupa').hidden = false; // (o resto da linha já era comentário) $('#badge-adm').hidden = !DADOS?.adm; pintaSeloAdm(); pintaSelos(); // selo ADM no título (só para quem é ADM) + selos dos cargos marcados na ADM › Níveis document.documentElement.classList.add('no-menu');
   if (!showMenu.uma) { showMenu.uma = true; buscaProgs.liga(); try { window.EstudioPerm?.pronto?.then?.(() => pintaGrid()); } catch { } addEventListener('estudio-perm', () => pintaGrid()); }
   recentes.liga(); // MEUS PROJETOS: um pedido por abertura do menu (guardado 15 min)
   estudio.liga(); // blocos do grupo Estúdio (no lugar do Dock)
@@ -4346,9 +4340,9 @@ const limparVolta = () => { if (location.search) history.replaceState(null, '', 
 /* CANTO DA VERSÃO (pedido da dona, 23/11/2026): o número e o nome da versão ('2.18 · Rainbow Candy') ficam FIXOS no canto de baixo à direita do menu.
    Clicar na versão pergunta se quer gerar o relatório de erro (o mesmo selo das telas de carregamento). Ao lado, "Histórico" abre o histórico de atualizações
    (o painel Novidades, com todas as versões). O selo do ADM fica no cabeçalho, ao lado do título. */
-window.epCantoVersao = () => { const v = document.getElementById('versao-site'); if (!v) return; let c = document.getElementById('versao-canto');
-  if (!c) { c = document.createElement('div'); c.id = 'versao-canto'; c.innerHTML = '<button type="button" id="versao-hist" title="Histórico de atualizações (o que mudou em cada versão)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg>Histórico</button>'; c.firstChild.onclick = () => window.EstudioSuporte?.novidades?.(); document.body.appendChild(c); }
-  if (v.parentNode !== c) c.appendChild(v); };
+// um componente só (26/11/2026): o canto é o do /estudio-carregando.js (EstudioSuporte.fixar), o MESMO das telas de carregamento e do Cérebro;
+// aqui só se diz quando ele fica: com o menu à vista (e fora do ADM embutido), com o "Histórico" ao lado
+window.epCantoVersao = () => { const vis = !!document.querySelector('#menu:not([hidden])') && !document.documentElement.classList.contains('embed-adm'); window.EstudioSuporte?.fixar?.(vis ? { historico: true } : false); };
 </script>
 <script>
 /* MENU EM COLUNAS (html.m2): versão e saudação no cabeçalho, altura do cabeçalho para o menu caber na tela */

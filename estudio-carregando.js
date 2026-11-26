@@ -210,7 +210,6 @@ window.EstudioSuporte ||= (() => {
   const DICA = 'Gera um relatório para enviar aos ADMs', DICA_SELO = 'Versão do Estúdio · clique para gerar o relatório de erro', postos = new Set(); let css = false, selo = null;
   const estilo = () => { if (css) return; css = true; const st = document.createElement('style');
     st.textContent = `.ep-sup-bt{display:flex;align-items:center;justify-content:center;margin:12px auto 0;height:34px;padding:0 16px;border:1px solid rgba(255,255,255,.22);border-radius:0;background:rgba(255,255,255,.08);color:#f1f2f4;font:500 13px/1 'Segoe UI',system-ui,sans-serif;cursor:pointer}.ep-sup-bt:hover{background:rgba(255,255,255,.16)}
-.ep-sup-selo{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:2147483647;height:22px;margin:0;padding:0 8px;display:inline-grid;place-items:center;border:1.5px solid rgba(255,255,255,.85);border-radius:0;background:rgba(14,32,58,.35);color:#fff;font:700 11px/1 'Segoe UI',system-ui,sans-serif;letter-spacing:.5px;white-space:nowrap;cursor:pointer}.ep-sup-selo:hover{background:rgba(14,32,58,.6)}
 .ep-sup-pg{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px;font:14px/1.45 'Segoe UI',system-ui,-apple-system,sans-serif;color:#e9ebef}.ep-sup-pg *{box-sizing:border-box}
 .ep-sup-pg .cx{position:relative;width:min(400px,100%);background:rgba(14,32,58,.96);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 70px rgba(0,0,0,.6);padding:22px 20px 18px;display:grid;justify-items:center;gap:8px;text-align:center}
 .ep-sup-pg .ic{width:46px;height:46px;display:grid;place-items:center;background:rgba(61,139,255,.16);color:#9cc3ff}.ep-sup-pg .ic svg{width:22px;height:22px}
@@ -219,7 +218,7 @@ window.EstudioSuporte ||= (() => {
 .ep-sup-pg button{height:32px;padding:0 14px;border:1px solid rgba(255,255,255,.16);border-radius:0;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font:inherit;font-size:13px}.ep-sup-pg button:hover{background:rgba(255,255,255,.16)}
 .ep-sup-pg button.sim{background:#0a7aff;border-color:#0a7aff;font-weight:600}.ep-sup-pg button.sim:hover{background:#2a8cff}
 .ep-sup-pg button.x{position:absolute;top:8px;right:8px;width:30px;height:30px;padding:0;border:0;background:none;color:rgba(255,255,255,.8);font-size:14px}.ep-sup-pg button.x:hover{background:rgba(255,255,255,.14)}
-.ep-sup-pg button:focus-visible,.ep-sup-bt:focus-visible,.ep-sup-selo:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
+.ep-sup-pg button:focus-visible,.ep-sup-bt:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
 .ep-nov{position:fixed;inset:0;z-index:2147483646;display:flex;justify-content:flex-end;background:rgba(5,20,45,.35);font:14px/1.45 'Segoe UI',system-ui,sans-serif;color:#fff}
 .ep-nov .cx{width:min(520px,100%);height:100%;overflow:auto;box-sizing:border-box;padding:26px 28px 24px;background:rgba(14,32,58,.94);-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);animation:epNovEntra .45s cubic-bezier(.1,.9,.2,1) both;display:flex;flex-direction:column}
 .ep-nov.sai{animation:epNovSome .2s ease both}.ep-nov.sai .cx{animation:epNovSai .2s cubic-bezier(.4,0,1,1) both}
@@ -236,8 +235,8 @@ window.EstudioSuporte ||= (() => {
 .ep-nov button:focus-visible{outline:2px solid #3d8bff;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.ep-nov .cx,.ep-nov.sai,.ep-nov.sai .cx{animation:none}}
 /* ===== CELESTE (11/11/2026, pedido da dona: nada do visual antigo): Novidades = painel da direita, relatório = janela central, selo e botões no padrão ===== */
-.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt{--sp-f:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--sp-el:#242428;--sp-f2:#1e1e21;--sp-f3:#28282c;--sp-f4:#333338;--sp-tx:#f5f5f7;--sp-tx2:rgba(235,235,245,.64);--sp-tx3:rgba(235,235,245,.4);--sp-ln:rgba(255,255,255,.09);--sp-ac:#5cc4ff;--sp-act:#04223a;--sp-vidro:rgba(21,21,23,.78)}
-html[data-tema="claro"] :is(.ep-nov,.ep-sup-pg,.ep-sup-selo,.ep-sup-bt){--sp-el:#fff;--sp-f2:#fff;--sp-f3:#ececf0;--sp-f4:#e1e1e6;--sp-tx:#1d1d1f;--sp-tx2:rgba(60,60,67,.72);--sp-tx3:rgba(60,60,67,.46);--sp-ln:rgba(0,0,0,.08);--sp-ac:#0a74c9;--sp-act:#fff;--sp-vidro:rgba(245,245,247,.8)}
+.ep-nov,.ep-sup-pg,#versao-canto,.ep-sup-bt{--sp-f:"EP Selo","Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--sp-el:#242428;--sp-f2:#1e1e21;--sp-f3:#28282c;--sp-f4:#333338;--sp-tx:#f5f5f7;--sp-tx2:rgba(235,235,245,.64);--sp-tx3:rgba(235,235,245,.4);--sp-ln:rgba(255,255,255,.09);--sp-ln2:rgba(255,255,255,.16);--sp-ac:#5cc4ff;--sp-act:#04223a;--sp-vidro:rgba(21,21,23,.78)}
+html[data-tema="claro"] :is(.ep-nov,.ep-sup-pg,#versao-canto,.ep-sup-bt){--sp-ln2:rgba(0,0,0,.14);--sp-el:#fff;--sp-f2:#fff;--sp-f3:#ececf0;--sp-f4:#e1e1e6;--sp-tx:#1d1d1f;--sp-tx2:rgba(60,60,67,.72);--sp-tx3:rgba(60,60,67,.46);--sp-ln:rgba(0,0,0,.08);--sp-ac:#0a74c9;--sp-act:#fff;--sp-vidro:rgba(245,245,247,.8)}
 :root:root .ep-nov{background:rgba(0,0,0,.45)!important;color:var(--sp-tx)!important;font:400 14px/1.5 var(--sp-f)!important}
 :root:root .ep-nov .cx{width:min(460px,100%)!important;padding:0 24px 24px!important;background:var(--sp-el)!important;border-left:1px solid var(--sp-ln);border-radius:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 0 0 .5px rgba(0,0,0,.6),0 24px 70px rgba(0,0,0,.55)!important;animation:epCelNov .25s cubic-bezier(.1,.9,.2,1) both!important}
 @keyframes epCelNov{from{opacity:0;transform:translateX(24px)}}
@@ -271,8 +270,21 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
 :root:root .ep-sup-pg button:hover{background:var(--sp-f4)!important}
 :root:root .ep-sup-pg button.sim{background:var(--sp-ac)!important;color:var(--sp-act)!important;font-weight:600!important}
 :root:root .ep-sup-pg button.x{border-radius:50%!important;background:transparent!important;color:var(--sp-tx2)!important}
-:root:root .ep-sup-selo{border:1px solid var(--sp-ln)!important;border-radius:6px!important;background:var(--sp-vidro)!important;color:var(--sp-tx2)!important;font:500 11px var(--sp-f)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-:root:root .ep-sup-selo:hover{color:var(--sp-tx)!important}
+/* CANTO DA VERSÃO = UM componente só (pedido da dona, 26/11/2026: o selo "se movia uns pixels" entre o carregando e o menu).
+   O MESMO elemento (#versao-canto) e a MESMA regra no menu, no Cérebro, em toda tela de carregamento e no "Atualizando o Estúdio".
+   O selo fica sempre colado no canto (16 px da direita, 14 px de baixo, 24 px de altura); o "Histórico" entra pela esquerda, só nas páginas que pedem. */
+@font-face{font-family:"EP Selo";src:url("/estudio-inter.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+:root:root #versao-canto{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));left:auto;top:auto;z-index:15;display:flex;align-items:center;gap:6px;margin:0;padding:0;pointer-events:none}
+:root:root #versao-canto[hidden]{display:none}
+:root:root #versao-canto.tela{z-index:2147483647}
+:root:root #versao-canto.tela>:not(.ep-sup-selo){display:none}
+:root:root #versao-canto>*{pointer-events:auto}
+:root:root #versao-canto :is(.ep-sup-selo,.ep-ver-hist){box-sizing:border-box;position:static;display:inline-flex;align-items:center;gap:5px;height:24px;margin:0;padding:0 10px;border:1px solid var(--sp-ln2);border-radius:6px;background:var(--sp-vidro);color:var(--sp-tx2);font:500 11.5px/1 var(--sp-f);letter-spacing:0;text-transform:none;text-shadow:none;box-shadow:none;white-space:nowrap;cursor:pointer;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);animation:none;transition:color .15s}
+:root:root #versao-canto .ep-ver-hist{padding:0 9px}
+:root:root #versao-canto .ep-ver-hist svg{width:13px;height:13px;flex:none}
+:root:root #versao-canto :is(.ep-sup-selo,.ep-ver-hist):hover{color:var(--sp-tx)}
+:root:root #versao-canto :is(.ep-sup-selo,.ep-ver-hist):focus-visible{outline:2px solid var(--sp-ac);outline-offset:2px}
+:root:root #versao-canto .ep-sup-selo:empty{display:none}
 `;
     (document.head || document.documentElement).appendChild(st); };
   const IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>';
@@ -300,22 +312,37 @@ html[data-tema="claro"] :root:root .ep-nov ul{background:#f5f5f7}
     addEventListener('keydown', tecla, true); d.onclick = e => { if (e.target === d) fecha(); }; d.querySelector('[data-x]').onclick = fecha;
     d.querySelector('[data-r]').onclick = () => { fecha(); gerar(o); };
     document.documentElement.appendChild(d); try { d.querySelector('[data-x]').focus(); } catch { } }
-  /* SELO DA VERSÃO (pedido da dona, 23/11/2026): número + nome, fixo no canto de baixo à direita; clicar pergunta se quer gerar o relatório de erro.
-     Aparece sozinho em toda tela de carregamento (porta dos programas, entrada do menu, Atualizando, ADM abrindo, nuvem do Animador). */
-  function poeSelo(o = {}) { estilo(); if (selo?.isConnected) return; selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.textContent = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || ''; selo.title = DICA_SELO;
-    selo.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; document.documentElement.appendChild(selo); }
+  /* SELO DA VERSÃO (pedido da dona, 23/11/2026; um componente só desde 26/11/2026): número + nome no canto de baixo à direita; clicar pergunta se quer
+     gerar o relatório de erro. Aparece sozinho em toda tela de carregamento (porta dos programas, entrada do menu, Atualizando, ADM abrindo, nuvem do Animador)
+     e nas páginas que pedem com EstudioSuporte.fixar({ historico: true }) (menu, Cérebro); fixar(false) tira. Em tela de carregamento só o selo aparece. */
+  let fixo = null, porTela = false, manual = null;
+  const ICH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg>';
+  function canto() { estilo(); let c = document.getElementById('versao-canto');
+    if (!c) { c = document.createElement('div'); c.id = 'versao-canto'; c.hidden = true;
+      const h = document.createElement('button'); h.type = 'button'; h.className = 'ep-ver-hist'; h.title = 'Histórico de atualizações (o que mudou em cada versão)'; h.innerHTML = ICH; h.append('Histórico'); h.onclick = e => { e.preventDefault(); e.stopPropagation(); novidades(); };
+      selo = document.createElement('button'); selo.type = 'button'; selo.className = 'ep-sup-selo'; selo.title = DICA_SELO; selo.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(manual || {}); };
+      c.append(h, selo); document.documentElement.appendChild(c); }
+    selo = c.querySelector('.ep-sup-selo'); return c; }
+  // só mexe no DOM quando algo muda (as páginas chamam fixar() de dentro de MutationObserver)
+  function pinta() { const tela = porTela || !!manual, ver = tela || !!fixo; let c = document.getElementById('versao-canto');
+    if (!ver) { if (c && !c.hidden) c.hidden = true; return; } c = canto();
+    const t = window.EstudioVersao?.rotulo || window.EstudioVersao?.nome || ''; if (selo.textContent !== t) selo.textContent = t;
+    const h = c.querySelector('.ep-ver-hist'), semHist = !fixo?.historico; if (h.hidden !== semHist) h.hidden = semHist;
+    if (c.classList.contains('tela') !== tela) c.classList.toggle('tela', tela); if (c.hidden) c.hidden = false;
+    if (c.parentNode !== document.documentElement) document.documentElement.appendChild(c); }
+  function fixar(o) { const n = o ? { historico: !!o.historico } : null; if (JSON.stringify(n) !== JSON.stringify(fixo)) fixo = n; pinta(); }
+  function poeSelo(o = {}) { manual = o; pinta(); }
   const TELAS = '#estudio-porta,#login,.login.boot,.login.cobrindo,#turma-login,#ep-atualizando,#ep-atz,.ep-admj .car,#nuvem-tela,#saida.on,#saida[data-on]';
   const visivel = e => { if (!e?.isConnected || e.hidden || e.classList.contains('ep-saindo') || e.classList.contains('sai')) return false; const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && +c.opacity > .05 && e.getClientRects().length > 0; };
-  let porTela = false; setInterval(() => { let t = false; try { t = [...document.querySelectorAll(TELAS)].some(visivel); } catch { }
-    if (t && !selo?.isConnected) { poeSelo({}); porTela = true; } else if (!t && porTela) { porTela = false; if (!postos.size) { selo?.remove(); selo = null; } } }, 300);
+  setInterval(() => { let t = false; try { t = [...document.querySelectorAll(TELAS)].some(visivel); } catch { } if (t !== porTela) { porTela = t; pinta(); } else if (t || fixo || manual) pinta(); }, 300);
   function poe(c, o = {}) { if (!c) return; estilo();
     if (!c.querySelector('.ep-sup-bt')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ep-sup-bt'; b.textContent = 'Gerar relatório de suporte'; b.title = DICA;
       b.onclick = e => { e.preventDefault(); e.stopPropagation(); gerar(o); }; c.appendChild(b); postos.add(b); }
     if (o.selo !== false) poeSelo(o); }
-  function tira() { postos.forEach(b => b.remove()); postos.clear(); selo?.remove(); selo = null; }
+  function tira() { postos.forEach(b => b.remove()); postos.clear(); manual = null; pinta(); }
   const auto = () => document.querySelectorAll('[data-ep-suporte]').forEach(c => poe(c, { publico: c.getAttribute('data-ep-suporte') === 'publico' }));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else auto();
-  const S = { gerar, novidades, poe, poeSelo, tira, aberto: false, DICA }; return S;
+  const S = { gerar, novidades, poe, poeSelo, fixar, tira, aberto: false, DICA }; return S;
 })();
 
 /* ---------- motor do progresso (porcentagem + o que está carregando) ----------

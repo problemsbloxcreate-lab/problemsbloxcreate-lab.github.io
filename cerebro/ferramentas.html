@@ -1,33 +1,38 @@
 <!doctype html>
-<html lang="pt-BR" class="cel">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- tema = o MESMO do Estúdio; o padrão é o ESCURO (pedido da dona, 26/11/2026): só fica claro quem escolheu o claro -->
 <script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
-<title>CÉREBRO · Estúdio Problems</title>
+<title>Área da equipe · Cérebro do Estúdio</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">
 <script>
-// o Cérebro mora no endereço único do Estúdio Problems; quem abrir a cópia do GitHub Pages vai para lá
-if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/cerebro/' + location.search);
+// a Área da equipe mora no endereço único do Estúdio Problems; quem abrir a cópia do GitHub Pages vai para lá
+if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/cerebro/ferramentas.html' + location.search);
 </script>
 <!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
 <script src="/estudio-login.js"></script>
-<link rel="preload" href="/estudio-inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="cerebro.css">
-<!-- visual comum (cabeçalho, tokens) -->
-<link rel="stylesheet" href="/estudio-visual.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<!-- o MESMO visual do Livro (cerebro/index.html): fontes, cores, cartões e tema -->
+<link rel="stylesheet" href="/cerebro/cerebro.css">
 </head>
-<body>
-<header class="top">
-  <a class="logo" href="./" title="Voltar ao Livro"><span class="ic-prog" data-estudio-icone="cb" aria-hidden="true"></span><div><b>CÉREBRO</b><small>Estúdio Problems</small></div></a>
-  <nav class="abas" id="abas" aria-label="Seções do Cérebro"></nav>
-  <div class="esp"></div>
-  <form id="busca" role="search"><input id="q" type="search" placeholder="Buscar no Cérebro" aria-label="Buscar no Cérebro" autocomplete="off"></form>
-  <span data-estudio-conta></span>
-</header>
-<div id="prog" hidden aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-<main id="tela"></main>
-<footer id="barra" hidden></footer>
+<body class="equipe">
+<div class="menu"><button id="abre" type="button">Abas</button><b>Área da equipe</b></div>
+<div class="app">
+  <aside class="lado" id="lado">
+    <a class="voltar" href="/cerebro/"><span aria-hidden="true">←</span> Voltar ao Livro</a>
+    <a class="marca" href="?aba=pedidos" data-nav="aba=pedidos"><b>Área da equipe</b><small>Cérebro do Estúdio Problems</small></a>
+    <form class="busca" id="busca" role="search"><input id="q" type="search" placeholder="Buscar em todo o Cérebro" aria-label="Buscar em todo o Cérebro" autocomplete="off"></form>
+    <nav class="abas" id="abas" aria-label="Abas da Área da equipe"></nav>
+  </aside>
+  <main>
+    <div class="topo"><div id="barra" hidden></div><span class="esp"></span><button class="tema-bt" id="tema" type="button" title="Trocar entre claro e escuro" aria-label="Trocar entre claro e escuro"></button><div class="conta"><span data-estudio-conta></span></div></div>
+    <div id="tela"></div>
+  </main>
+</div>
+<div id="prog" hidden aria-hidden="true"></div>
 <div id="avisos" aria-live="polite"></div>
 <script src="cerebro.js"></script>
 <script>window.ESTUDIO_CONTA = { token: () => window.EstudioLogin?.token?.() };</script>
