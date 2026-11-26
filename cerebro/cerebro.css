@@ -20,6 +20,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+/* a barra de rolagem já tem o lugar dela desde o começo: nada (nem o selo da versão) pula quando o texto chega */
+html{scrollbar-gutter:stable}
 body{background:var(--bg);color:var(--tinta);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:var(--acento)}
 button,input,select,textarea{font:inherit;color:inherit}
