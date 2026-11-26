@@ -148,7 +148,7 @@ let ini = -1;
 for (let i = regs.length - 1; i >= 0; i--) if (ehPedido(regs[i])) { ini = i; break; }
 if (ini < 0) process.exit(0);
 
-const PASTA_ESTUDIO = /(\\|\/)ep(\\|\/)|Estúdio Problems|Estudio Problems|Turma do Problems|estudio\.problemsraiz|(\\|\/)\.claude(\\|\/)(skills(\\|\/)(celestia|walt-disney|design-problems|ouvir|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d|esqueleto-padrao|movimento-base|estilo-lumi)|agents(\\|\/)(celestia|walt-disney|design-problems)|hooks(\\|\/)cerebro)/i;
+const PASTA_ESTUDIO = /(\\|\/)ep(\\|\/)|Estúdio Problems|Estudio Problems|estudio\.problemsraiz|(\\|\/)\.claude(\\|\/)(skills(\\|\/)(celestia|walt-disney|design-problems|ouvir|dirigir-cenas|editar-longo|produzir-video|fazer-pedidos|modelar-3d|esqueleto-padrao|movimento-base|estilo-lumi)|agents(\\|\/)(celestia|walt-disney|design-problems)|hooks(\\|\/)cerebro)/i;
 const FORA = /scratchpad|conferencia|Backups/i;
 const MEMORIA = /(\\|\/)memory(\\|\/)/i;
 const GRAVOU = /cerebro\.mjs['"]?\s+(aprender|salvar|renomear|feito)|gravar-cerebro/i;
@@ -175,27 +175,24 @@ for (const j of regs.slice(ini)) {
     if (/cerebro/i.test(n) && /(aprender|salvar|gravar|renomear|feito)/i.test(n)) { gravou = true; continue; }
     if (/^(Edit|Write|NotebookEdit)$/.test(n)) {
       const p = inp.file_path || inp.notebook_path || '';
-      if (PASTA_ESTUDIO.test(p) && !FORA.test(p)) mudou = mudou || ('arquivo ' + p);
-      else if (ehEstudio && MEMORIA.test(p)) mudou = mudou || ('memória deste computador (' + p + '): o que importa vai também para o Cérebro, para valer em todo computador');
-    } else if (/javascript_tool$/.test(n)) {
-      if (/\.salvar\s*\(|Nuvem\w*\.(salvar|gravar|enviar)|NuvemAnim\.|Vetor\.gravar|App\.salvar/i.test(inp.text || '')) mudou = mudou || 'projeto do Estúdio salvo pelo navegador';
+      if (ehEstudio && MEMORIA.test(p)) mudou = mudou || ('memória deste computador (' + p + '): o que importa vai também para o Cérebro, para valer em todo computador');
     } else if (/^(Bash|PowerShell)$/.test(n)) {
       const cmd = inp.command || '';
-      if (/git\s+(commit|push)|wrangler\s+(deploy|publish)/i.test(cmd) && PASTA_ESTUDIO.test(cmd + ' ' + (j.cwd || ''))) mudou = mudou || 'commit ou publicação do Estúdio';
-      if (/127\.0\.0\.1:8810\/render/.test(cmd)) mudou = mudou || 'render do Blender do Estúdio';
-    } else if (ehEstudio && /(send_message|SendMessage|start_session|hand_off_to_session)$/.test(n)) {
-      mudou = mudou || 'ordem ou decisão passada para outra sessão ou agente';
+      if (/git\s+(commit|push)|wrangler\s+(deploy|publish)/i.test(cmd) && PASTA_ESTUDIO.test(cmd + ' ' + (j.cwd || ''))) mudou = mudou || 'publicação de programa do Estúdio (o estado atual do programa mudou: atualize a página dele no Livro, só o que vale daqui para frente)';
     }
   }
 }
 
-let motivo = mudou;
-if (!motivo && ehEstudio && !avisoAutomatico && CORRECAO.test(txtPedido)) motivo = 'correção, pedido ou decisão da dona ou da equipe nesta mensagem';
+// a IA conferiu e não havia nada durável (diz isso na resposta): não cobra
+const ultimaFala = regs.slice(ini).filter((j) => j.type === 'assistant').map(textoDe).join('\n');
+const nadaNovo = /nada (novo|dur[áa]vel) para gravar|j[áa] est[áa] no Livro/i.test(ultimaFala);
+let motivo = nadaNovo ? null : mudou;
+if (!motivo && !nadaNovo && ehEstudio && !avisoAutomatico && CORRECAO.test(txtPedido)) motivo = 'correção, pedido ou decisão da dona ou da equipe nesta mensagem';
 
 if (motivo && !gravou) {
   console.log(JSON.stringify({
     decision: 'block',
-    reason: 'Regra da dona (Cérebro, Regras/Toda correção da dona ou do Luigi vai para o Cérebro na hora): esta resposta teve ' + motivo + ' e não gravou no Cérebro. O Cérebro é o auxiliar da IA: tudo que mudou, foi decidido, aprovado ou corrigido entra lá, para ninguém precisar explicar de novo. Antes de terminar, grave agora com node ~/.claude/cerebro.mjs aprender aprendizado|evitar|regra "<assunto>" --texto "<o que estava errado ou foi decidido, o que foi feito, a regra para não repetir>" --resumo "<até 160 letras>" --ia "<sua IA>" --pedido "<quem pediu>" --motivo "<por quê>". Se já existe página sobre isso, atualize-a (salvar) em vez de criar outra. Se a mesma coisa já está gravada exatamente assim, diga numa linha em qual página está. Não precisa perguntar a ninguém: é automático. Depois diga numa linha qual página gravou.'
+    reason: 'Regra da dona (Livro/1 Comece/01 Comece aqui): esta resposta teve ' + motivo + ' e não gravou no Cérebro. Grave SÓ o que vale daqui para frente (decisão, regra, correção da dona ou estado atual de um programa), como lição geral, ATUALIZANDO a página do Livro do assunto (mcp__cerebro__salvar com acrescentar, ou ler + base), nunca diário de sessão nem página solta. Se não há nada durável, ou se já está no Livro, diga numa linha "nada novo para gravar" ou "já está no Livro: <página>". Depois diga numa linha o que gravou.'
   }));
 }
 process.exit(0);
@@ -221,17 +218,28 @@ if (prompt.length < 8) process.exit(0);
 if (/<agent-message|<task-notification|<side-sessions-event|<ci-monitor-event|Another Claude session sent a message/.test(prompt.slice(0, 400))) process.exit(0);
 
 const AREAS = {
-  animacao: { re: /anima|animad|ateli|rive|\brig\b|pose|personag|cachecol|capa|pupila|olho|piscar|boca|m[ãa]o|polegar|bra[çc]o|perna|zoom|c[âa]mera|movimen|fluid|duro|dura\b|lumi|clara|melzinha|stick|(?<!est[uú]dio )problems|walt|cena/i,
-    pag: 'Regras/Regras de ouro - animação e personagens' },
-  audio: { re: /[áa]udio|voz|vozes|fala|dubla|cort|m[úu]sica|som|efeito sonoro|sfx|volume|legenda|export|mp4|render|blender/i,
-    pag: 'Regras/Regras de ouro - áudio, cortes e exportação' },
-  arte: { re: /arte|desenh|cen[áa]rio|fundo|gpt|imagem|ilustra|thumb|cara de ia|parece ia|svg|estilo|pintur|luz/i,
-    pag: 'Regras/Regras de ouro - arte, desenho e cenários' },
-  fluxo: { re: /roteir|short|preparativ|publica[çc]|epis[óo]dio|\bep\d|piada|humor|agend|torajo|batatinha|v[íi]deo/i,
-    pag: 'Regras/Regras de ouro - roteiro, Short e como trabalhar' },
-  // design, menu e site (23/11/2026): antes um pedido do menu caía em 'animação' (por causa de 'Estúdio Problems' e 'animação de fechar')
-  design: { re: /menu|design|bot[ãa]o|painel|pain[ée]is|pop.?up|cabe[çc]alho|header|[íi]cone|selo|vers[ãa]o|adm|layout|carregamento|loading|papel de parede|tela d[eo]|fechar|janela|tema (claro|escuro)/i,
-    pag: 'Regras/Regras de ouro - design, menu e site' },
+  // Cérebro novo (26/11/2026): cada área aponta para a página do LIVRO do assunto
+  animacao: { re: /anima[çc]|\brig\b|pose|cachecol|capa|pupila|olho|piscar|boca|m[ãa]o|polegar|bra[çc]o|perna|movimen|fluid|duro|dura\b|idle|gesto|walt/i,
+    pag: 'Livro/2 O Short/04 Animação' },
+  personagens: { re: /personag|lumi|clara|melzinha|stick|nimbo|(?<!est[uú]dio )problems\b/i,
+    pag: 'Livro/2 O Short/03 Personagens' },
+  short: { re: /\bshorts?\b|zoom|c[âa]mera|corte|insert|letreiro|gancho|come[çc]o|pacing|ritmo|edi[çc][ãa]o|torajo|ranqueando|cringe|parecer ia|cara de ia/i,
+    pag: 'Livro/2 O Short/01 Estilo do Short' },
+  roteiro: { re: /roteir|piada|humor|ideia|falas?\b|elenco/i,
+    pag: 'Livro/2 O Short/02 Roteiro' },
+  audio: { re: /[áa]udio|voz|vozes|dubla|m[úu]sica|\bsom\b|efeito sonoro|sfx|volume|lufs|legenda|export|mp4/i,
+    pag: 'Livro/2 O Short/05 Áudio' },
+  arte: { re: /arte|desenh|cen[áa]rio|fundo|gpt|imagem|ilustra|thumb|svg|pintur|luz|blender/i,
+    pag: 'Livro/2 O Short/06 Arte e cenários' },
+  animador: { re: /animador|timeline|linha do tempo|trilha|quadro a quadro|legacy|montar|exportar/i,
+    pag: 'Livro/3 Programas/01 Animador' },
+  atelie: { re: /ateli[eê]|vista|perfil|3\/4/i, pag: 'Livro/3 Programas/02 Ateliê' },
+  preparativos: { re: /preparativ|publica[çc]|agend|cronograma/i, pag: 'Livro/3 Programas/03 Preparativos' },
+  design: { re: /menu|design|bot[ãa]o|painel|pop.?up|cabe[çc]alho|[íi]cone|adm|layout|carregamento|papel de parede|janela|tema (claro|escuro)/i,
+    pag: 'Livro/3 Programas/09 Menu e ADM' },
+  site: { re: /\bsite\b|deploy|publicar no ar|porteiro|worker|servidor|github|reposit/i, pag: 'Livro/4 Apoio/01 Site e servidores' },
+  cerebro: { re: /c[ée]rebro|livro do est/i, pag: 'Livro/3 Programas/10 Cérebro' },
+  trabalho: { re: /como trabalhar|navegador|print|celestia|modelo de ia/i, pag: 'Livro/1 Comece/02 Como trabalhar' },
 };
 const ESTUDIO = /est[uú]dio|c[ée]rebro|celest/i;
 // área por PONTOS (quantas palavras do pedido casam), a mais forte primeiro
@@ -255,8 +263,8 @@ const agora = Date.now();
 // e as páginas têm 10–15 mil letras. Então entram as SEÇÕES ("## ...") das páginas das áreas do pedido que mais têm a ver com ele,
 // até ~5800 letras; seção que já entrou nesta conversa (90 min) não repete. As áreas que sobraram vão só pelo nome.
 const LIM = 8000, ORC = 5800, fresco = (ch) => marca[ch] && agora - marca[ch] < 90 * 60 * 1000;
-const areasPed = achadas.length ? achadas : ['fluxo'];
-if (!areasPed.includes('fluxo')) areasPed.push('fluxo'); // "como trabalhar" vale sempre
+const areasPed = (achadas.length ? achadas : []).slice(0, 3);
+if (!areasPed.includes('trabalho')) areasPed.push('trabalho'); // "como trabalhar" vale sempre
 const novas = areasPed;
 
 const PARA = new Set('a o e é de do da dos das em no na nos nas um uma uns umas que se pra para por com sem mas mais muito muita tudo todo toda isso isto esse essa este esta ele ela eles elas eu vc você voce me te nos já ja não nao sim tem ter ta tá está esta estão foi ser era vai fazer faz fica ficar como quando onde porque pq qual quais aqui ali lá la só so também tambem ou ao aos às as os sua seu suas seus minha meu dele dela agora ainda depois antes coisa coisas hora vez cara gente bem mal certo precisa preciso quero pode'.split(' '));
@@ -298,7 +306,7 @@ const trechos = [];
 for (const l of (r1 + '\n' + r2).split('\n')) {
   if (!l.startsWith('- ') || /Nada encontrado/.test(l)) continue;
   const cam = l.slice(2).split(/ › |: /)[0];
-  if (cam.startsWith('Arquivo frio') || cam.startsWith('Ideias à parte') || visto.has(cam)) continue;
+  if (cam.startsWith('Arquivo frio') || cam.startsWith('Ideias à parte') || !cam.startsWith('Livro/') || visto.has(cam)) continue;
   visto.add(cam);
   trechos.push(l.length > 300 ? l.slice(0, 300) + '…' : l);
   if (trechos.length >= 5) break;
@@ -306,11 +314,11 @@ for (const l of (r1 + '\n' + r2).split('\n')) {
 
 let out = 'CÉREBRO (consultado sozinho para este pedido; ninguém precisa citar). São decisões da dona: siga sem perguntar de novo. ' +
   'Se duas regras brigam, vale a mais nova. Pose, rig ou animação: confira com o walt-disney antes de dizer pronto. ' +
-  'Erro novo que a dona apontar: atualize a página "Regras de ouro" da área (não crie página solta).';
-out += ' Sempre: faça só o pedido; prove no projeto real com print; sem render longo nem MP4 sem ordem dela; grave no Cérebro na hora.';
+  'Erro novo ou decisão da dona: atualize a página do Livro do assunto (não crie página solta), como lição geral.';
+out += ' Sempre: faça só o pedido; prove no projeto real com print; sem render longo nem MP4 sem ordem dela; grave no Livro só decisão, regra ou correção da dona (não diário).';
 if (depois.length) out += '\nTambém valem para este pedido (leia com mcp__cerebro__ler antes de mexer): ' + depois.join(' · ') + '.';
 if (blocos.length) out += '\n\n' + blocos.join('\n\n');
-else if (achadas.length) out += '\n(As seções das Regras de ouro que servem a este pedido já estão nesta conversa; continuam valendo.)';
+else if (achadas.length) out += '\n(As seções do Livro que servem a este pedido já estão nesta conversa; continuam valendo.)';
 if (trechos.length) out += '\n\nTrechos achados no Cérebro para este pedido:\n' + trechos.join('\n');
 process.stdout.write((out.length > LIM ? out.slice(0, LIM) + '\n…' : out) + '\n');
 process.exit(0);
