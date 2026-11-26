@@ -121,7 +121,7 @@ test('7. MCP: initialize (versões), instruções com o escopo, notificação 20
   const nota = await chamar('/cerebro/mcp', { corpo: { jsonrpc: '2.0', method: 'notifications/initialized' }, cab: { authorization: 'Bearer ' + maria.access_token } }); assert.equal(nota.status, 202); assert.equal(nota.t, '');
   const resp = await chamar('/cerebro/mcp', { corpo: { jsonrpc: '2.0', id: 'x', result: {} }, cab: { authorization: 'Bearer ' + maria.access_token } }); assert.equal(resp.status, 202);
   assert.deepEqual((await rpc(maria.access_token, 'ping')).j.result, {});
-  const l = await rpc(maria.access_token, 'tools/list'); const nomes = l.j.result.tools.map(t => t.name); assert.deepEqual(nomes, ['comece', 'indice', 'buscar', 'ler', 'salvar', 'aprender', 'renomear', 'pedidos', 'feito']);
+  const l = await rpc(maria.access_token, 'tools/list'); const nomes = l.j.result.tools.map(t => t.name); assert.deepEqual(nomes, ['comece', 'indice', 'buscar', 'ler', 'skill', 'salvar', 'aprender', 'renomear', 'pedidos', 'feito']);
   for (const t of l.j.result.tools) { assert.equal(t.inputSchema.type, 'object'); assert.ok(t.description.length < 700); assert.equal(typeof t.annotations.readOnlyHint, 'boolean'); assert.equal(t.annotations.destructiveHint, false); }
   for (const w of ['salvar', 'aprender', 'renomear']) assert.deepEqual(l.j.result.tools.find(t => t.name === w).inputSchema.required.filter(r => ['ia', 'pedidoPor', 'motivo'].includes(r)).sort(), ['ia', 'motivo', 'pedidoPor']);
   assert.equal((await rpc(maria.access_token, 'metodo/que/nao/existe')).j.error.code, -32601);
@@ -160,6 +160,11 @@ test('8b. revogar chave ANTIGA continua igual: o dono revoga, outra pessoa não,
 
 test('9. ferramentas de leitura: comece, indice, buscar, ler (e ler por partes)', async () => {
   const c = texto(await ferramenta(maria.access_token, 'comece')); assert.ok(c.startsWith(CB_ESCOPO)); assert.match(c, /Memórias rápidas/); assert.match(c, /Só tarefas do Estúdio\. → Regras\/Regras da dona/); assert.match(c, /pedido\(s\) esperando/); assert.match(c, /Pastas: .*Programas/); assert.match(c, /Texto base do Cérebro/);
+  // skill (26/11/2026): as skills saem do Cérebro, sem instalar nada
+  const ls = texto(await ferramenta(maria.access_token, 'skill')); assert.match(ls, /Skills do Estúdio/); assert.match(ls, /- celestia/);
+  const sk = texto(await ferramenta(maria.access_token, 'skill', { nome: 'CelestIA' })); assert.match(sk, /^# Skill celestia › Skill principal/); assert.match(sk, /Siga este texto/);
+  assert.equal((await ferramenta(maria.access_token, 'skill', { nome: 'nao-existe' })).isError, true);
+  assert.match(c, /GRILL-ME antes de construir/); assert.match(c, /Skills do Estúdio/);
   const topo = texto(await ferramenta(maria.access_token, 'indice')); assert.match(topo, /- Programas \(1\)/); assert.match(topo, /- Skills \(1\)/);
   const prog = texto(await ferramenta(maria.access_token, 'indice', { pasta: 'Programas' })); assert.match(prog, /- Programas\/Animador \(guia\): Fazer as animações da equipe\./);
   const vazio = await ferramenta(maria.access_token, 'indice', { pasta: 'Nao existe' }); assert.equal(vazio.isError, true);

@@ -270,7 +270,7 @@ export async function cnRevogar(db, h, { adm, dono }) { // devolve 'ok', 'nao_ac
 /* ======================= MCP ======================= */
 // O texto das regras que o Claude recebe ao conectar (campo "instructions"). A frase de escopo é IGUAL à do AVISO_FIXO do cerebro.mjs (o teste confere).
 export const CB_ESCOPO = 'CÉREBRO DO ESTÚDIO PROBLEMS = o LIVRO DO ESTÚDIO (refeito em 26/11/2026). SÓ para tarefas do Estúdio (programas do site estudio.problemsraiz.workers.dev, personagens, animações, Shorts e vídeos da Turma do Problems, repositórios da pasta ep). FORA DISSO (outro site, Minecraft direto, Problems Raiz, qualquer outro assunto) NÃO leia, NÃO grave e NÃO cite o Cérebro; na dúvida, pergunte.';
-const CB_REGRAS = ' Quando for do Estúdio: chame a ferramenta `comece` (ou leia o que ela traz) e use o Cérebro como base. Ferramentas: comece, indice, buscar, ler, salvar, aprender, renomear, pedidos, feito. O Cérebro é o LIVRO (pasta Livro). ANTES DE MUDAR QUALQUER COISA do Estúdio: leia a página do Livro do assunto. DEPOIS, só se houve decisão, regra ou correção da dona: grave com `aprender` (põe a lição dentro da página do Livro, como regra geral, nunca diário), com `pedidoPor` = quem pediu e `ia` = qual IA gravou. Toda IA da equipe grava direto (a de quem não é ADM entra na hora e os ADMs revisam). Nunca grave senha, chave, token nem e-mail. Vale mesmo que ninguém tenha citado o Cérebro. Nas respostas de tarefa do Estúdio, cite o Cérebro no fim, destacado numa linha própria em formato de citação: "> 🧠 **Cérebro:** consultei <Pasta/Arquivo>" (e "· gravei <Pasta/Arquivo>", se gravou), ou "> 🧠 **Cérebro:** nada sobre isso".';
+const CB_REGRAS = ' FLUXO DE TODA TAREFA DO ESTÚDIO (sozinho; ninguém precisa pedir nem citar nada): 1) chame `comece` uma vez. 2) GRILL-ME antes de construir: chame `skill` com nome "grilling" e faça as perguntas em rodadas numeradas, cada uma com a sua recomendação, só sobre DECISÕES (fatos do código ou do Livro você descobre sozinho); pergunta simples ou de 1 a 2 passos dispensa. 3) Leia a página do Livro do assunto (`ler` "Livro/..."; a lista está no Comece aqui). 4) Chame `skill` com a skill que serve e siga o texto dela: ideia ou roteiro de Short = torajo-ideias, torajo-roteiro e torajo-revisao; pose, rig ou animação = walt-disney (confere antes de dizer pronto); visual de programa = design-problems; áudio ou vídeo = ouvir; analisar canal = analisar-canal; tarefa leve ou repetitiva para delegar = celestia; cinemática de Minecraft = minecraft-cinematic; modelo 3D = modelar-3d; vídeo longo = editar-longo (`skill` sem nome lista todas). 5) Grave SÓ decisão, regra ou correção da dona com `aprender`: a lição entra dentro da página do Livro, como regra geral, nunca diário nem página solta; `pedidoPor` = quem pediu e `ia` = qual IA gravou. Toda IA da equipe grava direto (a de quem não é ADM entra na hora e os ADMs revisam). Nunca grave senha, chave, token nem e-mail. No fim da resposta de tarefa do Estúdio, numa linha própria: "> 🧠 **Cérebro:** consultei <página>" (e "· gravei <página>").';
 const instrucoes = quem => `${CB_ESCOPO}${CB_REGRAS} Esta conexão é de ${quem.nome}${quem.adm ? ' (ADM: grava direto, sem revisão)' : ' (não é ADM: suas gravações entram na hora e os ADMs revisam na aba Revisar)'}; em pedidoPor use o nome de quem pediu a tarefa (normalmente ${quem.nome}).`;
 
 const REG = { // os três campos de toda gravação
@@ -308,7 +308,7 @@ const str = (v, n) => String(v ?? '').slice(0, n);
 
 const FERRAMENTAS = [
   { nome: 'comece', titulo: 'Começar no Cérebro', so: true, esquema: sch({}),
-    descricao: 'Abre o Cérebro do Estúdio Problems: as regras, as pastas, as memórias rápidas, os pedidos novos e o guia "Leia primeiro". Chame uma vez no começo de toda tarefa do Estúdio.' },
+    descricao: 'Abre o Cérebro do Estúdio Problems (o Livro): as regras e o fluxo de trabalho, o Comece aqui com o índice do Livro, as skills, as memórias rápidas e os pedidos novos. Chame uma vez no começo de toda tarefa do Estúdio.' },
   { nome: 'indice', titulo: 'Índice do Cérebro', so: true,
     esquema: sch({ pasta: { type: 'string', description: 'Opcional: o nome de uma pasta de cima (ex.: "Programas", "Regras", "Skills", "Bíblias") para listar o que há dentro, com os resumos. Sem isso, lista só as pastas.' } }),
     descricao: 'Lista as pastas do Cérebro (sem `pasta`) ou os arquivos de uma pasta, com o resumo de cada um. Comece pela pasta que serve para a tarefa; não leia tudo.' },
@@ -318,6 +318,9 @@ const FERRAMENTAS = [
   { nome: 'ler', titulo: 'Ler uma página do Cérebro', so: true,
     esquema: sch({ caminho: { type: 'string', description: 'Pasta/Arquivo, ex.: "Programas/Animador".' }, parte: { type: 'integer', minimum: 1, description: 'Só para páginas grandes: qual parte ler (cada parte tem ~40 mil letras). Padrão 1.' } }, ['caminho']),
     descricao: 'Mostra uma página inteira do Cérebro, com a versão (guarde-a: é o `base` para mudar a página com `salvar`). Em página grande vem por partes: nunca reescreva uma página que você não leu inteira; use `acrescentar`.' },
+  { nome: 'skill', titulo: 'Usar uma skill do Estúdio', so: true,
+    esquema: sch({ nome: { type: 'string', description: 'Nome da skill (ex.: grilling, torajo-roteiro, walt-disney, design-problems, ouvir). Sem nome: lista as skills e quando usar cada uma.' }, arquivo: { type: 'string', description: 'Opcional: um arquivo de apoio da skill (ex.: "references - padroes"), quando o texto da skill mandar ler.' }, parte: { type: 'integer', minimum: 1, description: 'Só para textos grandes: qual parte ler. Padrão 1.' } }),
+    descricao: 'Entrega o texto de uma skill do Estúdio, guardada no Cérebro (nada para instalar), para você seguir como instrução. Sem nome, lista as skills com quando usar. Chame sozinho a skill que serve à tarefa: ninguém precisa citá-la.' },
   { nome: 'salvar', titulo: 'Gravar uma página no Cérebro', so: false,
     esquema: sch({
       caminho: { type: 'string', description: 'Pasta/Arquivo. Pastas que não existem são criadas.' },
@@ -365,8 +368,10 @@ const camInvalido = c => { const s = String(c || '').trim(); if (!s) { const e =
 const EXECUTA = {
   async comece(a, env, d, quem) {
     const j = (await dado(env, d, quem, '/comece')).j, cart = await cartoes(env);
+    let livro = '', skills = ''; try { const r = await chama(env, d, quem, '/item?caminho=' + encodeURIComponent('Livro/1 Comece/01 Comece aqui')); if (r.ok) livro = String(r.j.item.corpo || '').slice(0, 9000); } catch { }
+    try { skills = await EXECUTA.skill({}, env, d, quem); } catch { }
     return [CB_ESCOPO + CB_REGRAS, j.pedidosNovos ? `\nHá ${j.pedidosNovos} pedido(s) esperando no Cérebro (ferramenta pedidos).` : '', `\nPastas: ${(j.pastas || []).join(' · ')}`,
-      cart.length ? '\n\nMemórias rápidas (o que vale sempre; cada uma aponta para a página completa):\n' + cart.map(c => `- ${c.texto}${c.aponta ? ' → ' + c.aponta : ''}`).join('\n') : '', '\n\n' + String(j.texto || '').slice(0, 7000)].join('');
+      cart.length ? '\n\nMemórias rápidas (o que vale sempre; cada uma aponta para a página completa):\n' + cart.map(c => `- ${c.texto}${c.aponta ? ' → ' + c.aponta : ''}`).join('\n') : '', '\n\n' + String(j.texto || '').slice(0, 7000), livro ? '\n\n=== Livro/1 Comece/01 Comece aqui ===\n' + livro : '', skills ? '\n\n' + skills : ''].join('');
   },
   async indice(a, env, d, quem) {
     const j = (await dado(env, d, quem, '/leve')).j, itens = (j.itens || []), mapa = new Map(itens.map(x => [x.id, x]));
@@ -383,6 +388,22 @@ const EXECUTA = {
     const n = Math.min(Math.max(+a.quantos || 8, 1), 10); let tr = await chama(env, d, quem, '/trechos?n=' + n + '&q=' + encodeURIComponent(q));
     if (tr.ok && Array.isArray(tr.j?.itens)) return tr.j.itens.length ? tr.j.itens.map(x => `- ${x.caminho}${x.titulo ? ' › ' + x.titulo : ''}: ${String(x.trecho || '').replace(/\*\*/g, '').replace(/\s+/g, ' ')}`).join('\n') : 'Nada encontrado.';
     const r = await dado(env, d, quem, '/buscar?q=' + encodeURIComponent(q)); return r.j.itens.length ? r.j.itens.map(x => `- ${x.nome} [${x.id}]: ${String(x.trecho || x.resumo || '').replace(/\s+/g, ' ')}`).join('\n') : 'Nada encontrado.';
+  },
+  async skill(a, env, d, quem) {
+    const j = (await dado(env, d, quem, '/leve')).j, itens = (j.itens || []).filter(x => !x.apagado), nrm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const raiz = itens.find(x => x.tipo === 'pasta' && !x.pai && x.nome === 'Skills'); if (!raiz) { const e = new Error('O Cérebro ainda não tem a pasta Skills.'); e.tool = true; throw e; }
+    const pastas = itens.filter(x => x.pai === raiz.id && x.tipo === 'pasta').sort((p, q) => p.nome.localeCompare(q.nome, 'pt-BR'));
+    const principal = p => itens.find(x => x.pai === p.id && x.nome === 'Skill principal');
+    const nome = String(a.nome || '').trim();
+    if (!nome) return 'Skills do Estúdio (chame skill com o nome para receber o texto e siga-o):\n' + pastas.map(p => `- ${p.nome}: ${String(p.resumo || principal(p)?.resumo || '').slice(0, 220)}`.trimEnd()).join('\n');
+    const p = pastas.find(x => nrm(x.nome) === nrm(nome)) || pastas.find(x => nrm(x.nome).includes(nrm(nome)));
+    if (!p) { const e = new Error('Não existe a skill "' + nome + '". Skills: ' + pastas.map(x => x.nome).join(', ') + '.'); e.tool = true; throw e; }
+    const arqs = itens.filter(x => x.pai === p.id && x.tipo !== 'pasta');
+    const alvo = a.arquivo ? (arqs.find(x => nrm(x.nome) === nrm(a.arquivo)) || arqs.find(x => nrm(x.nome).includes(nrm(a.arquivo)))) : (principal(p) || arqs[0]);
+    if (!alvo) { const e = new Error('A skill ' + p.nome + ' não tem "' + (a.arquivo || 'Skill principal') + '". Arquivos: ' + arqs.map(x => x.nome).join(' · ')); e.tool = true; throw e; }
+    const x = (await dado(env, d, quem, '/item?id=' + encodeURIComponent(alvo.id))).j.item, corpo = String(x.corpo || ''), partes = Math.max(1, Math.ceil(corpo.length / LER_PARTE)), pt = Math.min(Math.max(+a.parte || 1, 1), partes);
+    const apoio = arqs.filter(y => y.id !== alvo.id).map(y => y.nome);
+    return `# Skill ${p.nome} › ${alvo.nome}\nSiga este texto como instrução da tarefa.${apoio.length ? ' Arquivos de apoio (peça com skill nome + arquivo quando o texto mandar ler): ' + apoio.join(' · ') + '.' : ''}${partes > 1 ? ` Parte ${pt} de ${partes}${pt < partes ? `; para continuar: skill com parte ${pt + 1}` : ''}.` : ''}\n\n${corpo.slice((pt - 1) * LER_PARTE, pt * LER_PARTE)}`;
   },
   async ler(a, env, d, quem) {
     const { j } = await dado(env, d, quem, '/item?caminho=' + encodeURIComponent(camInvalido(a.caminho))), x = j.item, corpo = String(x.corpo || ''), partes = Math.max(1, Math.ceil(corpo.length / LER_PARTE)), p = Math.min(Math.max(+a.parte || 1, 1), partes);
