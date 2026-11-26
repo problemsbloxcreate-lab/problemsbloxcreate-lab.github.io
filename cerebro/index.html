@@ -52,7 +52,10 @@ button{font:inherit;color:inherit}
 .rodape a:hover,.rodape button:hover{color:var(--acento)}
 /* caminho */
 main{min-width:0;padding:0 40px 120px}
-.caminho{position:sticky;top:0;z-index:3;background:var(--bg);display:flex;align-items:center;gap:6px;padding:12px 0;border-bottom:1px solid var(--linha);margin-bottom:28px;overflow-x:auto;scrollbar-width:none}
+.topo{position:sticky;top:0;z-index:3;background:var(--bg);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--linha);margin-bottom:28px;min-height:52px}
+.topo .conta{flex:none;display:flex;align-items:center;gap:6px}
+.topo .conta:empty{display:none}
+.caminho{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:12px 0;overflow-x:auto;scrollbar-width:none}
 .caminho::-webkit-scrollbar{display:none}
 .caminho .rot{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco);font-weight:600;margin-right:4px;flex:none}
 .caminho a{flex:none;font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--linha);background:var(--papel);color:var(--suave);text-decoration:none;white-space:nowrap}
@@ -136,7 +139,7 @@ mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
   .menu{display:flex;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--linha);gap:10px;align-items:center}
   .menu button{border:1px solid var(--linha);background:var(--papel);border-radius:9px;padding:6px 12px;cursor:pointer}
   main{padding:0 16px 80px}
-  .caminho{top:53px}
+  .topo{top:53px}
   .folha{padding:24px 18px;border-radius:14px}
   .folha h1{font-size:27px}
   .colunas{grid-template-columns:1fr}
@@ -160,7 +163,7 @@ mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
     </div>
   </aside>
   <main>
-    <div class="caminho" id="caminho"></div>
+    <div class="topo"><div class="caminho" id="caminho"></div><div class="conta"><span data-estudio-conta></span></div></div>
     <div id="vista"></div>
   </main>
 </div>
