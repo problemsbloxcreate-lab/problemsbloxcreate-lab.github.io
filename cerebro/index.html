@@ -1,38 +1,289 @@
 <!doctype html>
-<html lang="pt-BR" class="cel">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script>try{document.documentElement.dataset.tema=localStorage.getItem('ep-tema')==='claro'?'claro':'escuro'}catch{document.documentElement.dataset.tema='escuro'}</script>
-<title>CÉREBRO · Estúdio Problems</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icone-180.png">
-<script>
-// o Cérebro mora no endereço único do Estúdio Problems; quem abrir a cópia do GitHub Pages vai para lá
-if (location.hostname === 'problemsbloxcreate-lab.github.io') location.replace('https://estudio.problemsraiz.workers.dev/cerebro/' + location.search);
-</script>
-<!-- login do Google do menu: sem sessão, manda para o menu e volta para cá depois de entrar -->
-<script src="/estudio-login.js"></script>
-<link rel="preload" href="/estudio-inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="cerebro.css">
-<!-- 2.0 Celeste: visual comum (cabeçalho, tokens) e a Montanha, depois do CSS antigo -->
-<link rel="stylesheet" href="/estudio-visual.css">
-<link rel="stylesheet" href="montanha.css">
+<title>Cérebro do Estúdio</title>
+<meta name="description" content="Livro do Estúdio Problems: regras, decisões e o estado de cada programa. Para IAs, o livro inteiro em texto: https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md">
+<link rel="alternate" type="text/markdown" href="https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<style>
+/* Cérebro do Estúdio = o Livro (26/11/2026). Visual próprio, pedido da dona: bonito, organizado, fácil de andar;
+   tudo ligado (páginas, seções e páginas ligadas) e o que se clica FICA selecionado. Sem montanha, sem ícones decorativos. */
+:root{
+  --bg:#f5f2ec; --papel:#fffdf9; --tinta:#1f1d1a; --suave:#6b665e; --fraco:#a39d92; --linha:#e6dfd3;
+  --acento:#5b4bd6; --acento-fundo:#ece9fc; --liga:#0f8a6a; --liga-fundo:#e2f4ee; --marca:#fff1a8; --cod:#f1ede5; --lado:#efebe3;
+  --sombra:0 1px 2px rgba(40,30,10,.05),0 8px 30px rgba(40,30,10,.06); --evitar:#c2410c;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131217; --papel:#1b1a20; --tinta:#ecebf2; --suave:#9d9aaa; --fraco:#6c6978; --linha:#2c2a33;
+  --acento:#a79bff; --acento-fundo:#2a2645; --liga:#4fd1a5; --liga-fundo:#173229; --marca:#4a3f12; --cod:#24222b; --lado:#17161b; --sombra:none; --evitar:#fb923c;}}
+:root[data-theme="dark"]{
+  --bg:#131217; --papel:#1b1a20; --tinta:#ecebf2; --suave:#9d9aaa; --fraco:#6c6978; --linha:#2c2a33;
+  --acento:#a79bff; --acento-fundo:#2a2645; --liga:#4fd1a5; --liga-fundo:#173229; --marca:#4a3f12; --cod:#24222b; --lado:#17161b; --sombra:none; --evitar:#fb923c;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tinta);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acento)}
+button{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:286px 1fr;min-height:100vh}
+/* lado */
+.lado{background:var(--lado);border-right:1px solid var(--linha);padding:20px 14px 28px;position:sticky;top:0;height:100vh;overflow:auto}
+.marca{display:block;margin:2px 8px 16px;text-decoration:none;color:var(--tinta)}
+.marca b{font:650 21px/1.1 Fraunces,serif;letter-spacing:-.01em;display:block}
+.marca small{color:var(--suave);font-size:12.5px}
+.busca input{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);font:inherit;font-size:14px;outline:none}
+.busca input:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-fundo)}
+.modo{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:12px 0 4px;background:var(--papel);border:1px solid var(--linha);border-radius:10px;padding:3px}
+.modo button{border:0;background:none;padding:7px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer;color:var(--suave)}
+.modo button.on{background:var(--acento-fundo);color:var(--acento)}
+.grupo{margin:16px 8px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);font-weight:600}
+.lado nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--tinta);text-decoration:none;font-size:14.5px}
+.lado nav a:hover{background:var(--papel)}
+.lado nav a.on{background:var(--acento-fundo);color:var(--acento);font-weight:600}
+.lado nav .secs{margin:2px 0 6px 12px;border-left:2px solid var(--acento-fundo);padding-left:4px}
+.lado nav .secs a{font-size:13px;padding:4px 8px;color:var(--suave)}
+.lado nav .secs a.on{background:none;color:var(--acento);font-weight:600}
+.rodape{margin:20px 8px 0;padding-top:14px;border-top:1px solid var(--linha);display:grid;gap:6px;font-size:13px}
+.rodape a,.rodape button{color:var(--suave);text-decoration:none;background:none;border:0;padding:3px 0;text-align:left;cursor:pointer}
+.rodape a:hover,.rodape button:hover{color:var(--acento)}
+/* caminho */
+main{min-width:0;padding:0 40px 120px}
+.caminho{position:sticky;top:0;z-index:3;background:var(--bg);display:flex;align-items:center;gap:6px;padding:12px 0;border-bottom:1px solid var(--linha);margin-bottom:28px;overflow-x:auto;scrollbar-width:none}
+.caminho::-webkit-scrollbar{display:none}
+.caminho .rot{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco);font-weight:600;margin-right:4px;flex:none}
+.caminho a{flex:none;font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--linha);background:var(--papel);color:var(--suave);text-decoration:none;white-space:nowrap}
+.caminho a.on{border-color:var(--acento);color:var(--acento);background:var(--acento-fundo);font-weight:600}
+.caminho .seta{color:var(--fraco);flex:none;font-size:12px}
+.caminho .limpa{flex:none;margin-left:auto;font-size:12.5px;color:var(--fraco);background:none;border:0;cursor:pointer}
+/* página */
+.ler{display:grid;grid-template-columns:minmax(0,760px) 230px;gap:36px;justify-content:center}
+.folha{background:var(--papel);border:1px solid var(--linha);border-radius:18px;padding:42px 50px;box-shadow:var(--sombra);min-width:0}
+.migalha{color:var(--suave);font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.folha h1{font:650 34px/1.15 Fraunces,serif;letter-spacing:-.02em;margin:4px 0 12px}
+.folha h1+p{font-size:17px;color:var(--suave);margin-top:0}
+.folha h2{font:650 22px/1.3 Fraunces,serif;margin:40px 0 10px;padding-top:18px;border-top:1px solid var(--linha);scroll-margin-top:80px}
+.folha h2.on{color:var(--acento)}
+.folha h2.evitar{color:var(--evitar)}
+.folha h3{font-size:16px;margin:22px 0 6px}
+.folha ul,.folha ol{padding-left:22px}
+.folha li{margin:5px 0}
+.folha li::marker{color:var(--acento)}
+.folha code{font:13.5px "JetBrains Mono",monospace;background:var(--cod);padding:1px 6px;border-radius:5px;word-break:break-word}
+.folha pre{background:var(--cod);padding:14px 16px;border-radius:10px;overflow:auto}
+.folha pre code{background:none;padding:0}
+.folha table{border-collapse:collapse;width:100%;font-size:14.5px;display:block;overflow:auto}
+.folha th,.folha td{border-bottom:1px solid var(--linha);padding:8px 10px;text-align:left;vertical-align:top}
+.folha a.liga{color:var(--liga);text-decoration:none;border-bottom:1px solid currentColor;font-weight:500}
+.data{color:var(--fraco);font-size:13px;margin-top:40px}
+mark{background:var(--marca);color:inherit;border-radius:3px;padding:0 2px}
+.guia{position:sticky;top:80px;align-self:start;font-size:13px;max-height:calc(100vh - 100px);overflow:auto}
+.guia b{display:block;color:var(--suave);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px}
+.guia .bloco{margin-bottom:22px}
+.guia .toc a{display:block;color:var(--suave);text-decoration:none;padding:4px 0 4px 10px;border-left:2px solid var(--linha)}
+.guia .toc a:hover,.guia .toc a.on{color:var(--acento);border-left-color:var(--acento)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;padding:3px 10px;border-radius:999px;text-decoration:none;border:1px solid var(--linha);color:var(--tinta);background:var(--papel)}
+.chip.liga{border-color:color-mix(in srgb,var(--liga) 45%,transparent);color:var(--liga);background:var(--liga-fundo)}
+.chip:hover{border-color:var(--acento)}
+/* mapa: colunas por grupo, nada de bolinhas */
+.mapa h1{font:650 30px Fraunces,serif;margin:0 0 6px}
+.mapa .sub{color:var(--suave);margin:0 0 22px}
+.colunas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+.col h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);margin:0 0 8px 4px}
+.cartao{display:block;width:100%;text-align:left;background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:opacity .15s,border-color .15s,box-shadow .15s}
+.cartao b{display:block;font-size:14.5px}
+.cartao small{color:var(--suave);font-size:12.5px;line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cartao .n{float:right;font-size:11.5px;color:var(--fraco)}
+.colunas.tem-sel .cartao{opacity:.35}
+.colunas.tem-sel .cartao.sel,.colunas.tem-sel .cartao.vai,.colunas.tem-sel .cartao.vem{opacity:1}
+.cartao.sel{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-fundo)}
+.cartao.vai,.cartao.vem{border-color:color-mix(in srgb,var(--liga) 60%,transparent)}
+.cartao .tag{display:none;font-size:11px;color:var(--liga);font-weight:600;margin-top:4px}
+.cartao.vai .tag.vai,.cartao.vem .tag.vem{display:block}
+.detalhe{margin-top:22px;background:var(--papel);border:1px solid var(--linha);border-radius:16px;padding:22px 26px;box-shadow:var(--sombra)}
+.detalhe h2{font:650 22px Fraunces,serif;margin:0 0 4px}
+.detalhe p{color:var(--suave);margin:0 0 14px}
+.detalhe .linha{display:grid;grid-template-columns:110px 1fr;gap:10px;margin:10px 0;align-items:start}
+.detalhe .linha span{font-size:12px;color:var(--suave);font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding-top:4px}
+.abrir{display:inline-block;margin-top:10px;background:var(--acento);color:#fff;text-decoration:none;padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px}
+/* busca */
+.res a.item{display:block;padding:14px 16px;border:1px solid var(--linha);border-radius:12px;margin-bottom:10px;text-decoration:none;color:var(--tinta);background:var(--papel)}
+.res a.item:hover{border-color:var(--acento)}
+.res .onde{font-size:12.5px;color:var(--acento);font-weight:600}
+.res .trecho{font-size:14px;color:var(--suave);margin-top:4px}
+.aviso{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--tinta);color:var(--papel);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none}
+.aviso.ver{opacity:1}
+.menu{display:none}
+@media (max-width:1240px){.ler{grid-template-columns:minmax(0,760px)}.guia{display:none}.colunas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){
+  .app{display:block}
+  .lado{position:fixed;inset:0 auto 0 0;width:86%;max-width:320px;z-index:6;transform:translateX(-105%);transition:.2s;height:100%}
+  .lado.aberto{transform:none;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .menu{display:flex;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--linha);gap:10px;align-items:center}
+  .menu button{border:1px solid var(--linha);background:var(--papel);border-radius:9px;padding:6px 12px;cursor:pointer}
+  main{padding:0 16px 80px}
+  .caminho{top:53px}
+  .folha{padding:24px 18px;border-radius:14px}
+  .folha h1{font-size:27px}
+  .colunas{grid-template-columns:1fr}
+  .detalhe .linha{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-<header class="top">
-  <a class="logo" href="./" data-nav="" title="Voltar ao mapa"><span class="ic-prog" data-estudio-icone="cb" aria-hidden="true"></span><div><b>CÉREBRO</b><small>Estúdio Problems</small></div></a>
-  <nav class="abas" id="abas" aria-label="Seções do Cérebro"></nav>
-  <div class="esp"></div>
-  <form id="busca" role="search"><input id="q" type="search" placeholder="Buscar no Cérebro" aria-label="Buscar no Cérebro" autocomplete="off"></form>
-  <span data-estudio-conta></span>
-</header>
-<div id="prog" hidden aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-<main id="tela"></main>
-<footer id="barra" hidden></footer>
-<div id="avisos" aria-live="polite"></div>
-<script src="montanha.js"></script>
-<script src="cerebro.js"></script>
-<script>window.ESTUDIO_CONTA = { token: () => window.EstudioLogin?.token?.() };</script>
-<script src="/estudio-conta.js" defer></script>
+<div class="menu"><button id="abre">Páginas</button><b style="font:650 17px Fraunces,serif">Cérebro do Estúdio</b></div>
+<div class="app">
+  <aside class="lado" id="lado">
+    <a class="marca" href="#"><b>Cérebro</b><small>O Livro do Estúdio Problems</small></a>
+    <div class="busca"><input id="q" placeholder="Buscar no livro  ( / )" autocomplete="off" aria-label="Buscar no livro"></div>
+    <div class="modo"><button id="m-ler" class="on">Ler</button><button id="m-mapa">Mapa</button></div>
+    <nav id="nav" aria-label="Páginas do livro"></nav>
+    <div class="rodape">
+      <button id="copia">Copiar esta página (para IA)</button>
+      <a href="https://turma-ia.problemsraiz.workers.dev/cerebro/livro.md" target="_blank" rel="noopener">Livro inteiro em texto (para IA)</a>
+      <button id="tema">Claro / escuro</button>
+      <a id="ferr" href="/cerebro/ferramentas.html">Pedidos, revisão e acesso (equipe)</a>
+    </div>
+  </aside>
+  <main>
+    <div class="caminho" id="caminho"></div>
+    <div id="vista"></div>
+  </main>
+</div>
+<div class="aviso" id="aviso"></div>
+<script>
+const API = 'https://turma-ia.problemsraiz.workers.dev/cerebro/livro';
+let LIVRO = [], POR = {}, ATUAL = null;
+const slug = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const guarda = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { } }, le = (k, d) => { try { return JSON.parse(sessionStorage.getItem(k)) ?? d; } catch { return d; } };
+// fora do site do Estúdio (cópia aberta no GitHub Pages) as ferramentas da equipe ficam no Estúdio
+if (!/problemsraiz\.workers\.dev$/.test(location.hostname)) $('#ferr').href = 'https://estudio.problemsraiz.workers.dev/cerebro/ferramentas.html';
+
+/* dados: páginas, seções (memórias curtas) e ligações (liga a / ligado por) */
+function prepara(d) {
+  LIVRO = []; POR = {};
+  for (const g of d.grupos || []) for (const p of g.paginas) {
+    const t = (p.md.match(/^# (.+)$/m) || [, p.nome])[1].trim();
+    const x = { g: g.nome, c: slug(p.nome), nome: p.nome, t, md: p.md, em: p.em, resumo: p.resumo, secoes: [], vai: new Set(), vem: new Set() };
+    let atual = { t, id: '', txt: '' };
+    for (const l of p.md.split('\n')) { const m = l.match(/^## (.+)/); if (m) { x.secoes.push(atual); atual = { t: m[1].trim(), id: slug(m[1]), txt: '' }; } else atual.txt += l + '\n'; }
+    x.secoes.push(atual); LIVRO.push(x); POR[x.c] = x;
+  }
+  for (const p of LIVRO) for (const m of p.md.matchAll(/\[\[([^\]]+)\]\]/g)) { const o = POR[slug(m[1])]; if (o && o !== p) { p.vai.add(o.c); o.vem.add(p.c); } }
+}
+const secoesReais = p => p.secoes.filter(s => s.id && s.id !== 'ligacoes');
+const resumo = p => (p.resumo || '').replace(/^Para que serve:\s*/i, '');
+const liga = md => md.replace(/\[\[([^\]]+)\]\]/g, (m, n) => POR[slug(n)] ? `<a class="liga" href="#${slug(n)}">${esc(n)}</a>` : esc(n));
+const renderer = new marked.Renderer();
+renderer.heading = (txt, lv, raw) => `<h${lv} id="${slug(raw)}"${lv === 2 && /^evitar$/i.test(raw.trim()) ? ' class="evitar"' : ''}>${txt}</h${lv}>`;
+marked.setOptions({ renderer, mangle: false, headerIds: false });
+
+/* caminho: por onde a pessoa passou (fica guardado nesta aba) */
+let CAM = le('cb-caminho', []);
+function anda(c, s) { const k = c + (s ? '/' + s : ''); CAM = CAM.filter(x => x !== k); CAM.push(k); CAM = CAM.slice(-9); guarda('cb-caminho', CAM); }
+function pintaCaminho(atualK) {
+  const itens = CAM.filter(k => POR[k.split('/')[0]]);
+  $('#caminho').innerHTML = '<span class="rot">Caminho</span>' + (itens.length ? itens.map((k, i) => { const [c, s] = k.split('/'), p = POR[c], sec = s && p.secoes.find(x => x.id === s);
+    return (i ? '<span class="seta">›</span>' : '') + `<a href="#${k}" class="${k === atualK ? 'on' : ''}">${esc(p.nome)}${sec ? ' · ' + esc(sec.t) : ''}</a>`; }).join('') : '<span class="seta">abra uma página</span>')
+    + (itens.length ? '<button class="limpa" id="limpa">limpar</button>' : '');
+  const l = $('#limpa'); if (l) l.onclick = () => { CAM = []; guarda('cb-caminho', CAM); pintaCaminho(); };
+  const on = $('#caminho a.on'); if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+}
+
+/* lado: páginas e, na página aberta, as seções dela */
+function pintaNav(cod, sec) {
+  let h = '', g = '';
+  for (const p of LIVRO) {
+    if (p.g !== g) { g = p.g; h += `<div class="grupo">${esc(g)}</div>`; }
+    h += `<a href="#${p.c}" class="${p.c === cod ? 'on' : ''}">${esc(p.nome)}</a>`;
+    if (p.c === cod) h += '<div class="secs">' + secoesReais(p).map(s => `<a href="#${p.c}/${s.id}" class="${s.id === sec ? 'on' : ''}">${esc(s.t)}</a>`).join('') + '</div>';
+  }
+  $('#nav').innerHTML = h;
+}
+const modo = m => { $('#m-ler').classList.toggle('on', m === 'ler'); $('#m-mapa').classList.toggle('on', m === 'mapa'); };
+
+/* ler */
+function abre(cod, sec) {
+  const p = POR[cod] || LIVRO[0]; if (!p) return; ATUAL = p.c; modo('ler'); anda(p.c, sec);
+  const chipsDe = set => [...set].map(c => `<a class="chip liga" href="#${c}">${esc(POR[c].nome)}</a>`).join('') || '<span style="color:var(--fraco)">nenhuma</span>';
+  $('#vista').innerHTML = `<div class="ler"><article class="folha">
+      <div class="migalha"><span>${esc(p.g)} · ${esc(p.nome)}</span><span>${Math.max(1, Math.round(p.md.split(/\s+/).length / 220))} min de leitura</span></div>
+      ${marked.parse(liga(p.md.replace(/\n## Ligações[\s\S]*$/, '')))}
+      <p class="data">Atualizada em ${new Date(p.em).toLocaleDateString('pt-BR')}</p></article>
+    <aside class="guia">
+      <div class="bloco toc"><b>Nesta página</b>${secoesReais(p).map(s => `<a href="#${p.c}/${s.id}" data-id="${s.id}">${esc(s.t)}</a>`).join('')}</div>
+      <div class="bloco"><b>Liga a</b><div class="chips">${chipsDe(p.vai)}</div></div>
+      <div class="bloco"><b>Ligado por</b><div class="chips">${chipsDe(p.vem)}</div></div>
+    </aside></div>`;
+  document.title = p.nome + ' · Cérebro do Estúdio';
+  marca(sec); pintaCaminho(p.c + (sec ? '/' + sec : ''));
+  if (sec) document.getElementById(sec)?.scrollIntoView(); else window.scrollTo(0, 0);
+  $('#lado').classList.remove('aberto');
+}
+// a seção escolhida FICA marcada (no lado, no índice e no título) até escolher outra
+function marca(sec) {
+  pintaNav(ATUAL, sec);
+  document.querySelectorAll('.guia .toc a').forEach(a => a.classList.toggle('on', a.dataset.id === sec));
+  document.querySelectorAll('.folha h2').forEach(h => h.classList.toggle('on', h.id === sec));
+}
+
+/* mapa: uma coluna por grupo; clicar seleciona a página e acende as ligadas a ela */
+function mapa(sel) {
+  modo('mapa'); ATUAL = null; pintaNav(null); document.title = 'Mapa · Cérebro do Estúdio';
+  const grupos = [...new Set(LIVRO.map(p => p.g))], s = POR[sel];
+  const cls = p => !s ? '' : p.c === s.c ? 'sel' : [s.vai.has(p.c) ? 'vai' : '', s.vem.has(p.c) ? 'vem' : ''].join(' ');
+  const chips = (set, pre) => [...set].map(c => `<a class="chip liga" href="#${pre}${c}">${esc(POR[c].nome)}</a>`).join('') || '—';
+  $('#vista').innerHTML = `<div class="mapa"><h1>Mapa do livro</h1><p class="sub">Clique numa página: ela fica selecionada e as ligadas a ela acendem.</p>
+    <div class="colunas ${s ? 'tem-sel' : ''}">${grupos.map(g => `<div class="col"><h3>${esc(g)}</h3>${LIVRO.filter(p => p.g === g).map(p =>
+      `<button class="cartao ${cls(p)}" data-c="${p.c}"><span class="n">${secoesReais(p).length} seções</span><b>${esc(p.nome)}</b><small>${esc(resumo(p))}</small><span class="tag vai">a selecionada liga a esta</span><span class="tag vem">esta liga à selecionada</span></button>`).join('')}</div>`).join('')}</div>
+    ${s ? `<section class="detalhe"><h2>${esc(s.nome)}</h2><p>${esc(resumo(s))}</p>
+      <div class="linha"><span>Seções</span><div class="chips">${secoesReais(s).map(x => `<a class="chip" href="#${s.c}/${x.id}">${esc(x.t)}</a>`).join('')}</div></div>
+      <div class="linha"><span>Liga a</span><div class="chips">${chips(s.vai, 'mapa/')}</div></div>
+      <div class="linha"><span>Ligado por</span><div class="chips">${chips(s.vem, 'mapa/')}</div></div>
+      <a class="abrir" href="#${s.c}">Abrir a página</a></section>` : ''}</div>`;
+  document.querySelectorAll('.cartao').forEach(b => b.onclick = () => { guarda('cb-mapa', b.dataset.c); location.hash = 'mapa/' + b.dataset.c; });
+  pintaCaminho(); if (s) $('.detalhe')?.scrollIntoView({ block: 'nearest' }); else window.scrollTo(0, 0);
+}
+
+/* busca: acha a seção e leva direto a ela */
+function busca(q) {
+  const ps = norm(q).split(/\s+/).filter(w => w.length > 1); if (!ps.length) return rota();
+  const achados = [];
+  for (const p of LIVRO) for (const s of p.secoes) { if (s.id === 'ligacoes') continue; const n = norm(s.t + ' ' + s.txt); let pts = 0;
+    for (const w of ps) { const k = n.split(w).length - 1; if (!k) { pts = 0; break; } pts += k + (norm(s.t).includes(w) ? 5 : 0); } if (pts) achados.push({ p, s, pts }); }
+  achados.sort((a, b) => b.pts - a.pts);
+  const trecho = t => { const n = norm(t), i = Math.max(0, n.indexOf(ps[0]) - 70); let x = esc(t.slice(i, i + 220).replace(/[#*`>|\[\]]/g, ''));
+    for (const w of ps) x = x.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>'); return (i ? '… ' : '') + x + ' …'; };
+  $('#vista').innerHTML = `<div class="res" style="max-width:760px;margin:0 auto"><h1 style="font:650 28px Fraunces,serif;margin:0 0 18px">${achados.length} resultado${achados.length === 1 ? '' : 's'} para “${esc(q)}”</h1>`
+    + achados.slice(0, 40).map(a => `<a class="item" href="#${a.p.c}${a.s.id ? '/' + a.s.id : ''}"><div class="onde">${esc(a.p.nome)}${a.s.id ? ' › ' + esc(a.s.t) : ''}</div><div class="trecho">${trecho(a.s.txt || a.s.t)}</div></a>`).join('') + '</div>';
+}
+
+/* rotas: #pagina · #pagina/secao · #mapa · #mapa/pagina */
+function rota() {
+  const [a, b] = decodeURIComponent(location.hash.slice(1)).split('/');
+  if (a === 'mapa') return mapa(b || le('cb-mapa', null));
+  if (a && POR[a] && a === ATUAL && b) { anda(a, b); marca(b); pintaCaminho(a + '/' + b); document.getElementById(b)?.scrollIntoView({ behavior: 'smooth' }); return; }
+  abre(POR[a] ? a : (LIVRO[0] && LIVRO[0].c), b);
+}
+addEventListener('hashchange', () => { $('#q').value = ''; rota(); });
+$('#q').addEventListener('input', e => busca(e.target.value));
+addEventListener('keydown', e => { if (e.key === '/' && document.activeElement !== $('#q')) { e.preventDefault(); $('#q').focus(); } if (e.key === 'Escape') { $('#q').value = ''; rota(); } });
+$('#m-ler').onclick = () => { const k = ATUAL || CAM[CAM.length - 1] || ''; if (location.hash.slice(1) === k) rota(); else location.hash = k; };
+$('#m-mapa').onclick = () => { const s = le('cb-mapa', null); location.hash = 'mapa' + (s ? '/' + s : ''); };
+$('#abre').onclick = () => $('#lado').classList.toggle('aberto');
+const aviso = t => { $('#aviso').textContent = t; $('#aviso').classList.add('ver'); setTimeout(() => $('#aviso').classList.remove('ver'), 1400); };
+$('#copia').onclick = async () => { const p = POR[ATUAL] || LIVRO[0]; try { await navigator.clipboard.writeText(p.md); aviso('Página copiada'); } catch { aviso('Não deu para copiar'); } };
+$('#tema').onclick = () => { const r = document.documentElement, escuro = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = escuro ? 'light' : 'dark'; try { localStorage.setItem('cerebro-tema', r.dataset.theme); } catch { } };
+try { const t = localStorage.getItem('cerebro-tema'); if (t) document.documentElement.dataset.theme = t; } catch { }
+$('#vista').innerHTML = '<p style="color:var(--suave)">Abrindo o livro…</p>';
+fetch(API).then(r => r.json()).then(d => { prepara(d); rota(); })
+  .catch(() => { $('#vista').innerHTML = '<h1 style="font:650 28px Fraunces,serif">Não deu para abrir</h1><p>O servidor do Cérebro não respondeu. Tente de novo em instantes.</p>'; });
+</script>
 </body>
 </html>

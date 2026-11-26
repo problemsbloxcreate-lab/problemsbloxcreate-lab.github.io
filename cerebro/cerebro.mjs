@@ -51,7 +51,7 @@ async function pede(rota, corpo, texto) { const h = await cabecalhos(); if (!h) 
 const pedeTexto = rota => pede(rota, null, true);
 async function comeceEmCache() { const f = join(homedir(), '.claude', 'cerebro-aviso-cache.json'); try { const c = JSON.parse(readFileSync(f, 'utf8')); if (Date.now() - c.t < 600000) return c.j; } catch {} const j = await pede('/comece'); try { writeFileSync(f, JSON.stringify({ t: Date.now(), j })); } catch {} return j; }
 const [cmd, ...resto] = process.argv.slice(2), pos = [], op = {};
-const SEM_VALOR = new Set(['simular', 'manter', 'forcar', 'help', 'ajuda', 'chave']), COM_VALOR = new Set(['arquivo', 'base', 'marca', 'ia', 'pedido', 'motivo', 'texto', 'url', 'tipo', 'resumo', 'acrescentar', 'estado', 'nota', 'so']), desconhecidas = [];
+const SEM_VALOR = new Set(['simular', 'manter', 'forcar', 'help', 'ajuda', 'chave']), COM_VALOR = new Set(['arquivo', 'base', 'marca', 'ia', 'pedido', 'motivo', 'texto', 'url', 'tipo', 'resumo', 'acrescentar', 'estado', 'nota', 'so', 'secao', 'assunto', 'pagina']), desconhecidas = [];
 for (let i = 0; i < resto.length; i++) { const a = resto[i]; if (a === '-h') op.help = true; else if (a.startsWith('--')) { const n = a.slice(2); if (SEM_VALOR.has(n)) op[n] = true; else if (COM_VALOR.has(n)) op[n] = resto[++i]; else desconhecidas.push(a); } else pos.push(a); }
 const AJUDA = () => console.log(readFileSync(new URL(import.meta.url), 'utf8').split('*/')[0]);
 const reg = () => ({ ia: op.ia || process.env.CEREBRO_IA, pedidoPor: op.pedido, motivo: op.motivo });

@@ -59,19 +59,18 @@ const confirma = (titulo, texto, t = 'Confirmar') => dialogo({ titulo, texto, bo
 const pedeTexto = (titulo, texto, ini = '') => dialogo({ titulo, texto, html: `<input id="dlg-v" value="${esc(ini)}" maxlength="120">`, botoes: [{ t: 'Salvar', pri: 1, v: d => $('#dlg-v', d).value.trim() || null }, { t: 'Cancelar' }], aoAbrir: d => { const i = $('#dlg-v', d); i.focus(); i.select(); i.onkeydown = e => { if (e.key === 'Enter') $('[data-i="0"]', d).click(); }; } });
 
 /* ---------- navegação ---------- */
-const ABAS = [['', 'Mapa'], ['arquivos', 'Arquivos'], ['evitar', 'A evitar'], ['referencias', 'Referências'], ['registro', 'Registro'], ['pedidos', 'Pedidos'], ['lixeira', 'Lixeira'], ['revisar', 'Revisar'], ['chaves', 'Acesso das IAs']];
+const ABAS = [['arquivos', 'Arquivos'], ['evitar', 'A evitar'], ['referencias', 'Referências'], ['registro', 'Registro'], ['pedidos', 'Pedidos'], ['lixeira', 'Lixeira'], ['revisar', 'Revisar'], ['chaves', 'Acesso das IAs']];
 const SO_ADM = new Set(['lixeira', 'revisar']); // Acesso das IAs agora é de todos: cada pessoa autoriza o próprio computador (12/11/2026)
 const params = () => new URLSearchParams(location.search);
-function pintaAbas() { const p = params(), a = p.get('aba') || (window.Montanha?.eDaMontanha(p) ? '' : 'arquivos'); $('#abas').innerHTML = ABAS.filter(([k]) => !SO_ADM.has(k) || S.adm).map(([k, n]) => `<button type="button" data-aba="${k}" class="${k === a ? 'on' : ''}"${k === a ? ' aria-current="page"' : ''}>${n}${k === 'pedidos' && S.pedidosNovos ? `<em>${S.pedidosNovos}</em>` : ''}${k === 'revisar' && S.revisar ? `<em>${S.revisar}</em>` : ''}</button>`).join(''); }
+function pintaAbas() { const p = params(), a = p.get('aba') || 'arquivos'; $('#abas').innerHTML = ABAS.filter(([k]) => !SO_ADM.has(k) || S.adm).map(([k, n]) => `<button type="button" data-aba="${k}" class="${k === a ? 'on' : ''}"${k === a ? ' aria-current="page"' : ''}>${n}${k === 'pedidos' && S.pedidosNovos ? `<em>${S.pedidosNovos}</em>` : ''}${k === 'revisar' && S.revisar ? `<em>${S.revisar}</em>` : ''}</button>`).join(''); }
 async function largarEdicao() { if (!S.sujo) return true; if (!await confirma('Sair sem salvar?', 'O que você escreveu aqui ainda não foi gravado no Cérebro.', 'Sair sem salvar')) return false; S.sujo = false; return true; }
-async function vai(q) { if (!await largarEdicao()) return; history.pushState(null, '', q ? '?' + q : './'); scrollTo(0, 0); await pinta(); }
+async function vai(q) { if (!await largarEdicao()) return; history.pushState(null, '', q ? '?' + q : location.pathname); scrollTo(0, 0); await pinta(); }
 let geracao = 0;
 // a tela só troca quando ela inteira já está pronta (nada aparece aos poucos)
 async function troca(fazer) { const g = ++geracao; $('#prog').hidden = false; let r; try { r = await fazer(); } catch (e) { if (g === geracao) { $('#tela').innerHTML = `<h1 class="titulo">Não consegui abrir</h1><p class="sub">${esc(e.message)}</p>`; $('#barra').hidden = true; } } finally { if (g === geracao) $('#prog').hidden = true; } if (g !== geracao || !r) return; $('#tela').innerHTML = r.html; const b = $('#barra'); b.hidden = !r.barra?.length; b.innerHTML = (r.barra || []).map((x, i) => `<button type="button" data-b="${i}">${IC[x.ic]}${esc(x.t)}</button>`).join(''); $$('[data-b]', b).forEach(el => el.onclick = () => r.barra[+el.dataset.b].f()); r.depois?.(); }
 const barraPasta = pai => S.adm ? [{ ic: 'pasta', t: 'Nova pasta', f: () => novaPasta(pai) }, { ic: 'texto', t: 'Novo texto', f: () => editar({ tipo: 'texto', pai }) }, { ic: 'imagem', t: 'Nova imagem', f: () => editar({ tipo: 'imagem', pai }) }, { ic: 'referencia', t: 'Referência', f: () => editar({ tipo: 'referencia', pai }) }] : [];
 async function pinta() { const p = params(), aba = p.get('aba');
-  // 2.0 Celeste: sem nada no endereço (ou ?m=<assunto>) a tela é a Montanha; o resto continua como era
-  if (window.Montanha?.eDaMontanha(p)) { $('#prog').hidden = true; pintaAbas(); return window.Montanha.abre(); } window.Montanha?.fecha(); pintaAbas();
+  pintaAbas();
   if (p.get('id')) return troca(() => telaItem(p.get('id')));
   if (aba === 'evitar') return troca(() => telaMarca('evitar', 'A evitar', 'O que já deu errado ou foi proibido. Leia antes de mexer.'));
   if (aba === 'referencias') return troca(() => telaMarca('referencia', 'Referências', 'Os links e materiais que a equipe usa como base.'));
@@ -157,5 +156,5 @@ document.addEventListener('click', e => { const a = e.target.closest?.('[data-na
 $('#busca').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (t.length >= 2) vai('aba=busca&q=' + encodeURIComponent(t)); };
 addEventListener('popstate', () => { S.sujo = false; pinta(); });
 addEventListener('beforeunload', e => { if (S.sujo) { e.preventDefault(); e.returnValue = ''; } });
-{ const inicio = (async () => { await window.EstudioLogin.pronto; if (document.readyState === 'loading') await new Promise(r => addEventListener('DOMContentLoaded', r, { once: true })); try { await window.EstudioPerm?.pronto; } catch { } if (params().has('editar')) history.replaceState(null, '', './'); if (!window.Montanha?.eDaMontanha(params())) await recarrega(); await pinta(); })();
+{ const inicio = (async () => { await window.EstudioLogin.pronto; if (document.readyState === 'loading') await new Promise(r => addEventListener('DOMContentLoaded', r, { once: true })); try { await window.EstudioPerm?.pronto; } catch { } if (params().has('editar')) history.replaceState(null, '', location.pathname); await recarrega(); await pinta(); })();
   window.EstudioProgresso?.tarefa(inicio, 'Abrindo o Cérebro', 20000); inicio.catch(e => { $('#tela').innerHTML = `<h1 class="titulo">Não consegui abrir</h1><p class="sub">${esc(e.message)}</p>`; }); }
